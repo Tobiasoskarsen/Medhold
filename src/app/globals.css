@@ -1,15 +1,31 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Varm nøytral palett. Vi remapper hele `slate`-skalaen (som appen bruker
+ * overalt) fra kald blågrå til en rolig, varm sand/stein-tone. Da får hele
+ * appen et varmere, mer menneskelig uttrykk uten å endre klasser i hver fil.
+ * Teal beholdes som merkevarefarge (sol-over-vei). Verdiene er lånt av en
+ * dempet sand-rampe — bevisst lav metning så det føles rolig, ikke leker.
+ */
+@theme {
+  --color-slate-50: #f7f4ee; /* sidebakgrunn – varmt papir */
+  --color-slate-100: #f0ebe1;
+  --color-slate-200: #e6dfcd; /* hårfine linjer */
+  --color-slate-300: #d8cfbd;
+  --color-slate-400: #aba290; /* dempede ikoner/hint */
+  --color-slate-500: #837b6b;
+  --color-slate-600: #635c4e; /* sekundærtekst */
+  --color-slate-700: #4b453a;
+  --color-slate-800: #332f27;
+  --color-slate-900: #26221c; /* primærtekst – varm nær-svart */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --background: #f7f4ee;
+  --foreground: #26221c;
 }
 
 body {

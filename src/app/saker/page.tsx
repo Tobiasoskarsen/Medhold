@@ -3,8 +3,8 @@ import {
   Plus,
   CalendarClock,
   LayoutTemplate,
-  Target,
   ArrowRight,
+  Sprout,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { KategoriMerke, KategoriIkon, StatusMerke } from "@/components/Merker";
@@ -85,8 +85,7 @@ export default async function SakerPage({
       .eq("status", "aktiv"),
     supabase
       .from("neste_steg")
-      .select("id, tekst, sak_id, saker(tittel)")
-      .eq("fullfort", false)
+      .select("id, tekst, sak_id, fullfort, saker(tittel)")
       .order("rekkefolge", { ascending: true })
       .order("opprettet", { ascending: true }),
   ]);
@@ -97,14 +96,58 @@ export default async function SakerPage({
   const visOversikt =
     aktive > 0 || kommendeFrister.length > 0 || saker.length > 0;
 
-  // «Hva nå?» – den ene viktigste handlingen akkurat nå.
-  type ApentSteg = {
+  type StegRad = {
     id: string;
     tekst: string;
     sak_id: string;
+    fullfort: boolean;
     saker: { tittel: string } | null;
   };
-  const apneSteg = (stegData ?? []) as unknown as ApentSteg[];
+  const alleSteg = (stegData ?? []) as unknown as StegRad[];
+  const apneSteg = alleSteg.filter((s) => !s.fullfort);
+
+  // Framgang per sak + totalt (til framdriftsstriper og momentum-stripen).
+  const stegPerSak = new Map<string, { gjort: number; totalt: number }>();
+  for (const s of alleSteg) {
+    const p = stegPerSak.get(s.sak_id) ?? { gjort: 0, totalt: 0 };
+    p.totalt += 1;
+    if (s.fullfort) p.gjort += 1;
+    stegPerSak.set(s.sak_id, p);
+  }
+  const stegGjortTotalt = alleSteg.filter((s) => s.fullfort).length;
+  const stegTotalt = alleSteg.length;
+
+  // Hilsen etter tid på døgnet (norsk tid), med valgfritt fornavn.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const timeOslo = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Oslo",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(new Date()),
+  );
+  const hilsenTid =
+    timeOslo < 5
+      ? "God natt"
+      : timeOslo < 10
+        ? "God morgen"
+        : timeOslo < 18
+          ? "God dag"
+          : "God kveld";
+  const fornavn = user?.user_metadata?.fornavn as string | undefined;
+  const hilsen = fornavn ? `${hilsenTid}, ${fornavn}` : hilsenTid;
+  const iDagTekst = (() => {
+    const s = new Intl.DateTimeFormat("nb-NO", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone: "Europe/Oslo",
+    }).format(new Date());
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  })();
+
   const nesteFrist = kommendeFrister[0];
   let hvaNa:
     | { tekst: string; sakId: string; sakTittel?: string; frist?: string }
@@ -127,17 +170,22 @@ export default async function SakerPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          Mine saker
-        </h1>
-        <div className="flex items-center gap-2">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            {hilsen}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {iDagTekst} · ta én ting av gangen
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/saker/mal"
             className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
             <LayoutTemplate className="size-4" aria-hidden />
-            Bruk en mal
+            <span className="hidden sm:inline">Bruk en mal</span>
           </Link>
           <Link
             href="/saker/ny"
@@ -149,33 +197,57 @@ export default async function SakerPage({
         </div>
       </div>
 
+      {/* ============ MOMENTUM ============ */}
+      {stegTotalt > 0 && (
+        <div className="mb-4 flex items-center gap-4 rounded-2xl bg-teal-50/70 px-5 py-4">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700">
+            <Sprout className="size-5" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-teal-800">
+              {stegGjortTotalt > 0
+                ? `Du har fullført ${stegGjortTotalt} steg. Hvert steg teller.`
+                : "Kom i gang når du er klar — ett lite steg av gangen."}
+            </p>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-teal-100">
+              <div
+                className="h-full rounded-full bg-teal-500"
+                style={{
+                  width: `${Math.round((stegGjortTotalt / stegTotalt) * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ============ HVA NÅ? ============ */}
       {hvaNa && (
         <Link
           href={`/saker/${hvaNa.sakId}`}
-          className="mb-8 flex items-start gap-4 rounded-2xl border border-teal-200 bg-teal-50/60 p-5 transition hover:border-teal-300"
+          className="mb-8 block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-teal-200"
         >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white">
-            <Target className="size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="text-sm font-semibold text-teal-700">
+          <span className="inline-flex items-center gap-2">
+            <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700">
               Hva nå?
             </span>
-            <span className="mt-1 block font-medium text-slate-900">
-              {hvaNa.tekst}
+            <span className="text-xs text-slate-400">
+              det viktigste akkurat nå
             </span>
-            {(hvaNa.sakTittel || hvaNa.frist) && (
-              <span className="mt-1 block text-sm text-slate-500">
-                {hvaNa.sakTittel}
-                {hvaNa.frist ? ` · ${hvaNa.frist}` : ""}
-              </span>
-            )}
           </span>
-          <ArrowRight
-            className="size-5 shrink-0 self-center text-teal-600"
-            aria-hidden
-          />
+          <p className="mt-2.5 text-lg font-medium text-slate-900">
+            {hvaNa.tekst}
+          </p>
+          {(hvaNa.sakTittel || hvaNa.frist) && (
+            <p className="mt-1 text-sm text-slate-500">
+              {hvaNa.sakTittel}
+              {hvaNa.frist ? ` · ${hvaNa.frist}` : ""}
+            </p>
+          )}
+          <span className="mt-3.5 inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700">
+            Åpne saken
+            <ArrowRight className="size-4" aria-hidden />
+          </span>
         </Link>
       )}
 
@@ -286,27 +358,32 @@ export default async function SakerPage({
       )}
 
       {!sakFeil && saker.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 px-6 py-16 text-center">
-          <p className="text-base font-medium text-slate-700">
-            {aktivtFilter === "alle"
-              ? "Du har ingen saker enda."
-              : "Ingen saker med denne statusen."}
-          </p>
-          {aktivtFilter === "alle" && (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-14 text-center">
+          {aktivtFilter === "alle" ? (
             <>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
+              <span className="mx-auto mb-5 flex size-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+                <Sprout className="size-6" aria-hidden />
+              </span>
+              <p className="text-lg font-medium text-slate-900">
+                Her begynner oversikten
+              </p>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-slate-500">
                 En sak er én tråd i det du står i — for eksempel «Søknad om
-                sykepenger» eller «Oppsigelse av bolig». Begynn med den som
-                ligger tyngst på deg.
+                sykepenger» eller «Oppsigelse av bolig». Vi tar det sammen, én
+                ting av gangen. Begynn med den som ligger tyngst på deg.
               </p>
               <Link
                 href="/saker/ny"
-                className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
               >
                 <Plus className="size-4" aria-hidden />
                 Opprett din første sak
               </Link>
             </>
+          ) : (
+            <p className="text-base font-medium text-slate-700">
+              Ingen saker med denne statusen ennå.
+            </p>
           )}
         </div>
       )}
@@ -326,33 +403,53 @@ export default async function SakerPage({
 
       {saker.length > 0 && (
         <ul className="flex flex-col gap-3">
-          {saker.map((sak) => (
-            <li key={sak.id}>
-              <Link
-                href={`/saker/${sak.id}`}
-                className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
-              >
-                <KategoriIkon kategori={sak.kategori} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-4">
-                    <h3 className="font-medium text-slate-900">{sak.tittel}</h3>
-                    <span className="shrink-0 text-xs text-slate-400">
-                      {formaterDato(sak.sist_endret)}
-                    </span>
+          {saker.map((sak) => {
+            const p = stegPerSak.get(sak.id);
+            return (
+              <li key={sak.id}>
+                <Link
+                  href={`/saker/${sak.id}`}
+                  className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
+                >
+                  <KategoriIkon kategori={sak.kategori} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="font-medium text-slate-900">
+                        {sak.tittel}
+                      </h3>
+                      <span className="shrink-0 text-xs text-slate-400">
+                        {formaterDato(sak.sist_endret)}
+                      </span>
+                    </div>
+                    {sak.beskrivelse && (
+                      <p className="mt-1.5 line-clamp-2 text-sm text-slate-500">
+                        {sak.beskrivelse}
+                      </p>
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <StatusMerke status={sak.status} />
+                      <KategoriMerke kategori={sak.kategori} />
+                    </div>
+                    {p && p.totalt > 0 && (
+                      <div className="mt-3 flex items-center gap-2.5">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-teal-500"
+                            style={{
+                              width: `${Math.round((p.gjort / p.totalt) * 100)}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {p.gjort} av {p.totalt} steg
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  {sak.beskrivelse && (
-                    <p className="mt-1.5 line-clamp-2 text-sm text-slate-500">
-                      {sak.beskrivelse}
-                    </p>
-                  )}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <StatusMerke status={sak.status} />
-                    <KategoriMerke kategori={sak.kategori} />
-                  </div>
-                </div>
-              </Link>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
