@@ -79,6 +79,16 @@ export type BrevSamtaleMelding = {
   opprettet: string;
 };
 
+// Logg over sendte fristpåminnelser (0006_varsler.sql). terskel = antall dager
+// før forfall varselet gjaldt (7, 3 eller 1).
+export type SendtVarsel = {
+  id: string;
+  frist_id: string;
+  bruker_id: string;
+  terskel: number;
+  sendt_at: string;
+};
+
 export const STATUS_ETIKETT: Record<SakStatus, string> = {
   aktiv: "Aktiv",
   venter_pa_svar: "Venter på svar",

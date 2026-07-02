@@ -1,69 +1,68 @@
-# Krisenavigator
+# Klarvei
 
 Et verktøy for å holde oversikt over saker, frister og neste steg i en vanskelig
-periode. Web-app bygget med Next.js 16 (App Router), TypeScript, Tailwind og
-Supabase.
+periode — og for å forstå og oversette offentlige brev. Web-app bygget med
+Next.js 16 (App Router), TypeScript, Tailwind, Supabase og Anthropic.
 
 > Dette er et organiseringsverktøy — ikke en offentlig tjeneste og ikke
 > profesjonell rådgivning.
 
-## Status
+## Funksjoner
 
-- **Fase 0 (ferdig):** oppsett, e-post-innlogging via Supabase Auth, beskyttet
-  «Mine saker»-side.
-- **Fase 1 (ferdig):** saker med full CRUD (opprett, les, oppdater, slett),
-  statusfilter på listen, detalj- og redigeringsside. Alt beskyttet av RLS.
-- **Fase 2 (ferdig):** frister (med dato + hastegrad) og neste steg (oppgaver)
-  per sak, avkryssing som fullført, og en samlet «Kommende frister»-oversikt på
-  forsiden på tvers av alle saker.
-- **Fase 3 (ferdig):** AI-hjelp inne i en sak — lim inn et brev, få forklaring
-  på enkelt norsk + foreslåtte steg/frister du kan legge til med ett klikk.
-  Kun det du limer inn sendes til Anthropic (server-side). Krever
-  `ANTHROPIC_API_KEY` i `.env.local`.
-- **Fase 4 (ferdig):** polish og trygghet — felles topp/bunn med fast
-  disclaimer, personvernerklæring (`/personvern`), og «Min konto» (`/konto`)
-  med bekreftet sletting av all egen data + konto (GDPR). v1 er ferdig.
-- **v1.1 (ferdig):** samtale-per-brev — still oppfølgingsspørsmål til en
-  brevforklaring (f.eks. «oversett til engelsk») med strømmende AI-svar, slett
-  enkelt-forklaring, og utfellbar originaltekst. Deployet på Vercel.
+- **Saker** med full CRUD, status og kategori (helse/økonomi/familie/bolig/annet),
+  alt beskyttet av row-level security.
+- **Frister og neste steg** per sak, med avkryssing. Samlet **«Kommende
+  frister»-dashbord** på tvers av alle saker, med nøkkeltall, dato-chips og
+  hastegrad.
+- **«Hva nå?»-kort** som viser den ene viktigste handlingen akkurat nå.
+- **AI-brevhjelp:** lim inn et brev → forklaring på enkelt norsk + foreslåtte
+  steg/frister du kan legge til med ett klikk. Kun det du limer inn sendes til
+  Anthropic.
+- **Samtale per brev** med strømmende svar, og **oversett-knapper** (engelsk,
+  arabisk, polsk, somali, ukrainsk, tigrinja) for brukere som trenger brevet på
+  eget språk.
+- **Maler for krisetyper** (sykdom, gjeld, samlivsbrudd, dødsfall) som oppretter
+  en sak med konkrete neste steg. Ingen oppdiktede frister.
+- **E-postpåminnelser** før frister (7, 3 og 1 dag før forfall) via daglig
+  Vercel Cron og Resend. Kan skrus av/på under **Min konto**.
+- **Onboarding** første gang, **personvernerklæring** og **«slett all data +
+  konto»** (GDPR).
+
+Deployet på Vercel: <https://app2-chi-five.vercel.app>
 
 ## Kom i gang lokalt
 
 ### 1. Opprett Supabase-prosjekt (EU-region — viktig for GDPR)
 
-1. Gå til <https://supabase.com>, logg inn, og klikk **New project**.
-2. Velg en **EU-region** (f.eks. `Frankfurt (eu-central-1)` eller
-   `Stockholm`). Dette er et krav fordi appen behandler sensitive data.
-3. Vent til prosjektet er klart.
+Gå til <https://supabase.com> → **New project**, og velg en **EU-region**
+(f.eks. Frankfurt eller Stockholm). Dette er et krav fordi appen behandler
+sensitive data.
 
-### 2. Hent nøklene
+### 2. Legg inn miljøvariabler i `.env.local` (gitignored, aldri committet)
 
-I Supabase-prosjektet: **Project Settings → API**.
-
-- `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
-- `anon` / `public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-
-Legg dem i `.env.local` (filen finnes allerede med plassholdere; den er
-gitignored og skal aldri committes).
+- `NEXT_PUBLIC_SUPABASE_URL` og `NEXT_PUBLIC_SUPABASE_ANON_KEY` fra Supabase
+  **Project Settings → API**.
+- `ANTHROPIC_API_KEY` fra <https://console.anthropic.com> (kun server-side —
+  aldri `NEXT_PUBLIC_`-prefiks).
+- For e-postpåminnelser (valgfritt lokalt): `SUPABASE_SERVICE_ROLE_KEY` (samme
+  Supabase-side, hemmelig), `RESEND_API_KEY` fra <https://resend.com>, og
+  `CRON_SECRET` (en tilfeldig streng du velger selv). Uten verifisert domene
+  sender Resend kun til din egen konto-e-post fra `onboarding@resend.dev`.
 
 ### 3. Skru på e-post-innlogging
 
-I Supabase: **Authentication → Providers → Email** skal være på.
+I Supabase: **Authentication → Providers → Email** skal være på. For rask lokal
+testing kan du midlertidig skru **av** «Confirm email» (skru på igjen før
+produksjon). Med bekreftelse på: sett **URL Configuration → Site URL** til
+`http://localhost:3000` og legg `http://localhost:3000/auth/confirm` i
+**Redirect URLs**.
 
-- For raskest mulig testing lokalt kan du midlertidig skru **av** «Confirm
-  email», så slipper du å bekrefte via e-post. Skru den på igjen før produksjon.
-- Hvis «Confirm email» er på, sender Supabase en bekreftelseslenke. Sett
-  **Authentication → URL Configuration → Site URL** til `http://localhost:3000`
-  og legg `http://localhost:3000/auth/confirm` til i **Redirect URLs**.
-
-### 4. Kjør databasemigrasjonen
+### 4. Kjør databasemigrasjonene
 
 Åpne **SQL Editor** i Supabase og kjør migrasjonene i `supabase/migrations/` i
-rekkefølge (`0001_saker.sql`, `0002_frister_neste_steg.sql`,
-`0003_document_note.sql`, `0004_slett_konto.sql`, `0005_brev_samtale.sql`). De
-oppretter tabellene `saker`, `frister`, `neste_steg`, `document_note` og
-`brev_samtale` (alle med row-level security), og funksjonen `slett_egen_konto()`
-for GDPR-sletting.
+rekkefølge (`0001` … `0006`). De oppretter tabellene `saker`, `frister`,
+`neste_steg`, `document_note`, `brev_samtale` og `sendte_varsler` (alle med
+row-level security), og funksjonen `slett_egen_konto()` for GDPR-sletting.
 
 ### 5. Kjør
 
@@ -72,24 +71,44 @@ npm install
 npm run dev
 ```
 
-Åpne <http://localhost:3000>. Du sendes til `/login`. Registrer deg, logg inn,
-og du havner på den (foreløpig tomme) «Mine saker»-siden.
+Åpne <http://localhost:3000>. Du sendes til `/login`. Registrer deg, og du får
+en kort intro (`/velkommen`) før «Mine saker».
+
+## Deploy (Vercel)
+
+Miljøvariablene må ligge på Vercel-prosjektet (Production): de to
+`NEXT_PUBLIC_SUPABASE_*`, `ANTHROPIC_API_KEY`, og for e-postpåminnelser
+`SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY` og `CRON_SECRET`. Deretter
+`vercel --prod`. Cron-jobben registreres automatisk fra `vercel.json`, og Vercel
+sender `Authorization: Bearer <CRON_SECRET>` på hvert kall. Husk å sette Supabase
+**Site URL / Redirect URLs** til prod-domenet.
+
+> ⚠️ Å sette Vercel-env-vars fra PowerShell ved å pipe verdien til
+> `vercel env add` kan legge inn et usynlig BOM-tegn og krasje appen. Skriv
+> heller verdien til en BOM-fri fil og bruk `Start-Process node <vc.js> env add
+> NAVN production -RedirectStandardInput fil`, eller lim inn i Vercel-dashbordet.
+
+> ⚠️ Strømmende/AI-ruter har `export const maxDuration = 60` — Vercels
+> standardgrense (~10s på Hobby) kutter ellers lange AI-svar (oversettelser).
 
 ## Arkitektur (kort)
 
-- `src/lib/supabase/client.ts` — Supabase-klient for nettleseren (Client
-  Components).
-- `src/lib/supabase/server.ts` — Supabase-klient for serveren (Server
-  Components, Route Handlers).
-- `src/lib/supabase/middleware.ts` — fornyer session og beskytter ruter.
-- `src/proxy.ts` — Next.js proxy (tidl. middleware) som kjører session-logikken.
-- `src/app/login/page.tsx` — innlogging og registrering.
-- `src/app/auth/confirm/route.ts` — bekrefter e-postlenke.
-- `src/app/auth/signout/route.ts` — logg ut.
-- `src/app/saker/page.tsx` — beskyttet «Mine saker»-side.
+- `src/lib/supabase/{client,server,middleware}.ts` — Supabase-klienter + session.
+- `src/proxy.ts` — Next.js proxy (tidl. middleware): fornyer session, beskytter
+  ruter.
+- `src/app/saker/` — dashbord (`page.tsx`), detalj/rediger/ny, maler (`mal/`),
+  server actions (`actions.ts`, `frister-steg-actions.ts`, `ai-actions.ts`).
+- `src/app/api/brev-samtale/route.ts` — strømmende AI-samtale (route handler).
+- `src/app/api/cron/paaminnelser/route.ts` — daglig e-postvarsel-jobb
+  (`lib/epost.ts` via Resend, `lib/supabase/admin.ts` service-role-klient).
+- `src/app/{velkommen,konto,personvern}/` — onboarding, konto, personvern.
+- `src/components/` — UI (Logo, Topplinje, Merker, AiBrevhjelp, DokumentNotat,
+  MalKort/MalListe, SlettKonto m.fl.).
+- `src/lib/` — `types.ts`, `dato.ts`, `maler.ts`.
 
 ## Personvern
 
-Appen behandler sensitive personopplysninger og følger GDPR: data lagres i
-EU-region, kun det brukeren selv limer inn sendes til AI (kommer i Fase 3), og
-brukeren skal kunne slette egne data (kommer i Fase 4).
+Sensitive personopplysninger behandles etter GDPR: data lagres i EU-region, kun
+tekst brukeren selv limer inn sendes til AI (Anthropic), og brukeren kan når som
+helst slette alle egne data og hele kontoen under **Min konto**. AI gir aldri
+autoritative vedtak og finner aldri opp frister, beløp eller paragrafer.

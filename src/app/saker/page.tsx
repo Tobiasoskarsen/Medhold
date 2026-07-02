@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { Plus, CalendarClock, LayoutTemplate } from "lucide-react";
+import {
+  Plus,
+  CalendarClock,
+  LayoutTemplate,
+  Target,
+  ArrowRight,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { KategoriMerke, KategoriIkon, StatusMerke } from "@/components/Merker";
 import MalListe from "@/components/MalListe";
@@ -65,6 +71,7 @@ export default async function SakerPage({
     { data: sakData, error: sakFeil },
     { data: fristData },
     { count: aktiveCount },
+    { data: stegData },
   ] = await Promise.all([
     sakSpørring,
     supabase
@@ -76,6 +83,12 @@ export default async function SakerPage({
       .from("saker")
       .select("*", { count: "exact", head: true })
       .eq("status", "aktiv"),
+    supabase
+      .from("neste_steg")
+      .select("id, tekst, sak_id, saker(tittel)")
+      .eq("fullfort", false)
+      .order("rekkefolge", { ascending: true })
+      .order("opprettet", { ascending: true }),
   ]);
 
   const saker = (sakData ?? []) as Sak[];
@@ -83,6 +96,34 @@ export default async function SakerPage({
   const aktive = aktiveCount ?? 0;
   const visOversikt =
     aktive > 0 || kommendeFrister.length > 0 || saker.length > 0;
+
+  // «Hva nå?» – den ene viktigste handlingen akkurat nå.
+  type ApentSteg = {
+    id: string;
+    tekst: string;
+    sak_id: string;
+    saker: { tittel: string } | null;
+  };
+  const apneSteg = (stegData ?? []) as unknown as ApentSteg[];
+  const nesteFrist = kommendeFrister[0];
+  let hvaNa:
+    | { tekst: string; sakId: string; sakTittel?: string; frist?: string }
+    | null = null;
+  if (nesteFrist) {
+    const steg = apneSteg.find((s) => s.sak_id === nesteFrist.sak_id);
+    hvaNa = {
+      tekst: steg ? steg.tekst : `Følg opp: ${nesteFrist.tittel}`,
+      sakId: nesteFrist.sak_id,
+      sakTittel: nesteFrist.saker?.tittel,
+      frist: fristNærhet(nesteFrist.forfallsdato),
+    };
+  } else if (apneSteg.length > 0) {
+    hvaNa = {
+      tekst: apneSteg[0].tekst,
+      sakId: apneSteg[0].sak_id,
+      sakTittel: apneSteg[0].saker?.tittel,
+    };
+  }
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
@@ -107,6 +148,36 @@ export default async function SakerPage({
           </Link>
         </div>
       </div>
+
+      {/* ============ HVA NÅ? ============ */}
+      {hvaNa && (
+        <Link
+          href={`/saker/${hvaNa.sakId}`}
+          className="mb-8 flex items-start gap-4 rounded-2xl border border-teal-200 bg-teal-50/60 p-5 transition hover:border-teal-300"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white">
+            <Target className="size-5" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="text-sm font-semibold text-teal-700">
+              Hva nå?
+            </span>
+            <span className="mt-1 block font-medium text-slate-900">
+              {hvaNa.tekst}
+            </span>
+            {(hvaNa.sakTittel || hvaNa.frist) && (
+              <span className="mt-1 block text-sm text-slate-500">
+                {hvaNa.sakTittel}
+                {hvaNa.frist ? ` · ${hvaNa.frist}` : ""}
+              </span>
+            )}
+          </span>
+          <ArrowRight
+            className="size-5 shrink-0 self-center text-teal-600"
+            aria-hidden
+          />
+        </Link>
+      )}
 
       {/* ============ NØKKELTALL ============ */}
       {visOversikt && (

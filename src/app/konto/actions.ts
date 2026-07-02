@@ -3,6 +3,23 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+export async function settVarsler(
+  pa: boolean,
+): Promise<{ feil: string } | void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase.auth.updateUser({
+    data: { varsler_paa: pa },
+  });
+  if (error) {
+    return { feil: "Kunne ikke lagre innstillingen. Prøv igjen." };
+  }
+}
+
 export async function slettKontoOgData(): Promise<{ feil: string } | void> {
   const supabase = await createClient();
   const {

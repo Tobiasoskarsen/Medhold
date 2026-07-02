@@ -39,7 +39,11 @@ export async function updateSession(request: NextRequest) {
     path === "/" ||
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
-    path.startsWith("/personvern");
+    path.startsWith("/personvern") ||
+    // Cron-endepunktet har ingen innlogget bruker — det sikres av CRON_SECRET
+    // i selve ruten. Uten dette unntaket ville proxy-en sendt Vercel Cron til
+    // /login, og jobben ville aldri kjørt.
+    path.startsWith("/api/cron");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

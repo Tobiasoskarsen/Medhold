@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Topplinje from "@/components/Topplinje";
 import Bunntekst from "@/components/Bunntekst";
 import SlettKonto from "@/components/SlettKonto";
+import VarselInnstilling from "@/components/VarselInnstilling";
 
 export const metadata = {
   title: "Min konto — Klarvei",
@@ -36,6 +37,12 @@ export default async function KontoPage() {
             <dt className="text-slate-400">Innlogget som</dt>
             <dd className="mt-0.5 text-slate-800">{user.email}</dd>
           </dl>
+
+          <div className="mt-6">
+            <VarselInnstilling
+              pa={user.user_metadata?.varsler_paa !== false}
+            />
+          </div>
 
           <p className="mt-6 text-sm text-slate-600">
             Les hvordan dataene dine behandles i{" "}

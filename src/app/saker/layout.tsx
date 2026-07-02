@@ -13,6 +13,8 @@ export default async function SakerLayout({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  // Vis intro/onboarding første gang, til den er fullført eller hoppet over.
+  if (!user.user_metadata?.onboardet) redirect("/velkommen");
 
   return (
     <div className="flex min-h-screen flex-col">
