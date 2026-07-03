@@ -7,6 +7,7 @@ import {
   ListChecks,
   Languages,
   LayoutTemplate,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -43,16 +44,22 @@ const STEG: Steg[] = [
 export default function VelkommenPage() {
   const router = useRouter();
   const [i, setI] = useState(0);
+  const [navn, setNavn] = useState("");
   const [laster, setLaster] = useState(false);
 
+  // Etter de fire intro-stegene kommer en valgfri navne-skjerm.
+  const antallSteg = STEG.length + 1;
+  const paNavn = i === STEG.length;
+  const sisteSteg = paNavn;
   const steg = STEG[i];
-  const Ikon = steg.ikon;
-  const sisteSteg = i === STEG.length - 1;
+  const Ikon = steg?.ikon;
 
   async function fullfor() {
     setLaster(true);
     const supabase = createClient();
-    await supabase.auth.updateUser({ data: { onboardet: true } });
+    const data: Record<string, unknown> = { onboardet: true };
+    if (navn.trim()) data.fornavn = navn.trim();
+    await supabase.auth.updateUser({ data });
     router.push("/saker");
     router.refresh();
   }
@@ -61,7 +68,7 @@ export default function VelkommenPage() {
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
       <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="mb-6 flex justify-center gap-1.5">
-          {STEG.map((_, n) => (
+          {Array.from({ length: antallSteg }).map((_, n) => (
             <span
               key={n}
               className={`h-1.5 rounded-full transition-all ${
@@ -71,17 +78,44 @@ export default function VelkommenPage() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center text-center">
-          <span className="flex size-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
-            <Ikon className="size-7" aria-hidden />
-          </span>
-          <h1 className="mt-5 text-xl font-semibold tracking-tight text-slate-900">
-            {steg.tittel}
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-slate-600">
-            {steg.tekst}
-          </p>
-        </div>
+        {paNavn ? (
+          <div className="flex flex-col items-center text-center">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
+              <Sparkles className="size-7" aria-hidden />
+            </span>
+            <h1 className="mt-5 text-xl font-semibold tracking-tight text-slate-900">
+              Så vi kan hilse deg riktig
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              Hva vil du at vi skal kalle deg? Det er helt valgfritt, og du kan
+              endre det senere.
+            </p>
+            <input
+              type="text"
+              value={navn}
+              onChange={(e) => setNavn(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") fullfor();
+              }}
+              placeholder="Fornavn"
+              maxLength={40}
+              autoFocus
+              className="mt-5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-center text-slate-900 outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center text-center">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
+              {Ikon && <Ikon className="size-7" aria-hidden />}
+            </span>
+            <h1 className="mt-5 text-xl font-semibold tracking-tight text-slate-900">
+              {steg.tittel}
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              {steg.tekst}
+            </p>
+          </div>
+        )}
 
         <div className="mt-8 flex items-center justify-between gap-3">
           {i > 0 ? (
