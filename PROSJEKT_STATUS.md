@@ -8,7 +8,7 @@ etter hver fase.
 | Fase | Beskrivelse | Status |
 |---|---|---|
 | 0 | Rebrand + designfundament | ✅ Ferdig |
-| 1 | Datamodell | ⬜ Ikke startet |
+| 1 | Datamodell | ✅ Ferdig (migrasjoner ikke kjørt i Supabase ennå) |
 | 2 | Skjermene | ⬜ Ikke startet |
 | 3 | Saksbehandleren | ⬜ Ikke startet |
 | 4 | Inntak og posisjonering | ⬜ Ikke startet |
@@ -68,9 +68,61 @@ Kjent, ufarlig: Next advarer om «multiple lockfiles» fordi worktreen har egen
 
 ---
 
+## Fase 1 — Datamodell (ferdig)
+
+Levert (seksjon 4 + seksjon 6):
+
+- Migrasjoner `supabase/migrations/0007–0012`:
+  - `0007_saker_gjeld.sql` — `saker` utvidet med kreditor, opprinnelig_kreditor,
+    saksnummer, belop_hovedstol, belop_totalt, stadium (alle nullable).
+  - `0008_brev.sql` — ny `brev`-tabell m/ RLS + datamigrering fra
+    `document_note` (**samme id-er beholdes**, idempotent).
+  - `0009_frister_kilde.sql` — `frister.kilde`
+    (manuell/brev_eksplisitt/beregnet) + `frister.brev_id`.
+  - `0010_brev_samtale_brev_id.sql` — `brev_samtale.brev_id` (additivt, fylt
+    fra `document_note_id`).
+  - `0011_profiler.sql` — `profiler`-tabell (plan gratis/pluss) m/ RLS.
+  - `0012_slett_egen_konto_utvidet.sql` — dekker nå brev, brev_samtale,
+    profiler m.fl. eksplisitt (guardrail).
+- `src/lib/gjeld.ts` — STADIER, `nesteStadium`, `foreslaStadium`,
+  `fylteSegmenter`, `leggTilDager`, `beregnFrist` (inkassovarsel/
+  betalingsoppfordring → +14 dager, kilde='beregnet'). 9 enhetstester i
+  `src/lib/gjeld.test.ts`, kjøres med `npm test` (Node innebygd test-runner).
+- `src/lib/plan.ts` — `harPluss(brukerId)` (eneste gating-inngang), `erPilot()`,
+  `PLUSS_PRIS`. Pilotmodus via `NEXT_PUBLIC_PILOT`.
+- `src/lib/types.ts` oppdatert: Sak-gjeldfelter, `Brev`, `FristKilde` +
+  Frist.kilde/brev_id, `Plan`/`Profil`.
+- `npm run build`, `npm run lint`, `npm test` grønne.
+
+Valg tatt underveis:
+
+1. **Additiv migrering, ikke hard cutover.** `document_note` og
+   `brev_samtale.document_note_id` beholdes side om side med `brev`/`brev_id`
+   slik at den gamle sakssiden fortsatt virker fram til Fase 2. `brev` får
+   samme id-er som `document_note`, så koblingen bevares. **Opprydding (drop
+   document_note, gjør brev_id NOT NULL, drop document_note_id) gjøres i Fase 2**
+   når de gamle skjermene fjernes.
+2. **⚠ Migrasjonene 0007–0012 er skrevet, men IKKE kjørt i Supabase ennå.**
+   De bør kjøres i SQL Editor (i rekkefølge) sammen med Fase 2, siden det er
+   Fase 2-koden som først bruker de nye tabellene. Kjøres de nå, er det trygt
+   (additivt), men ingen effekt før skjermene finnes.
+3. **Enhetstester:** ingen test-runner fantes; bruker Node sin innebygde
+   (`node --test`, Node 24 stripper TS-typer). `*.test.ts` er ekskludert fra
+   `tsconfig` (unngår `.ts`-import-konflikt) og fra Next-bygget.
+4. **`NEXT_PUBLIC_PILOT=true`** lagt i lokal `.env.local`. **Må settes i Vercel**
+   (og din ekte `.env.local`) for at pilotmodus skal gjelde i prod. Uten den
+   defaulter `harPluss` til gratis — uten effekt før gating tas i bruk (Fase 3).
+5. **`slett_egen_konto`** trengte strengt tatt ikke endring (cascade dekker
+   alt), men eksplisitte deletes er lagt til for å oppfylle guardrailen og tåle
+   framtidige tabeller uten cascade.
+
+---
+
 ## Neste økt
 
-**Fase 1 — Datamodell** (seksjon 4 + `profiler`/`plan.ts` fra seksjon 6):
-`saker`-utvidelser, ny `brev`-tabell m/ RLS og datamigrering fra
-`document_note`, `frister`-utvidelser, `slett_egen_konto()`-oppdatering,
-`src/lib/gjeld.ts` med enhetstester, og `profiler`-tabell + `src/lib/plan.ts`.
+**Fase 2 — Skjermene:** Velkomst + innlogging med engangskode (3.7),
+navigasjon (3.1), Hjem (3.2), Krav-liste (3.4), Krav-detalj m/ tidslinje (3.3),
+«Legg til brev»-flyt med tekst-innliming (3.5), Meg (3.6). Gammel dashbord-/
+saksside-layout og passord-UI slettes når nye er i drift. **Kjør migrasjonene
+0007–0012 i Supabase som del av denne fasen**, og gjør den utsatte
+document_note-oppryddingen (valg 1 over).
