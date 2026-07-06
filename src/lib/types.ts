@@ -1,4 +1,4 @@
-// Domenetyper for Klarvei. Holdes i synk med supabase/migrations.
+// Domenetyper for Medhold. Holdes i synk med supabase/migrations.
 
 export const SAK_STATUSER = ["aktiv", "venter_pa_svar", "fullfort"] as const;
 export type SakStatus = (typeof SAK_STATUSER)[number];

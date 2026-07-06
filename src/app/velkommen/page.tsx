@@ -17,9 +17,9 @@ type Steg = { ikon: LucideIcon; tittel: string; tekst: string };
 const STEG: Steg[] = [
   {
     ikon: Compass,
-    tittel: "Velkommen til Klarvei",
+    tittel: "Velkommen til Medhold",
     tekst:
-      "Når livet blir vanskelig, drukner man fort i brev, frister og «hva må jeg gjøre nå». Klarvei hjelper deg å holde oversikt — én ting av gangen.",
+      "Når livet blir vanskelig, drukner man fort i brev, frister og «hva må jeg gjøre nå». Medhold hjelper deg å holde oversikt — én ting av gangen.",
   },
   {
     ikon: ListChecks,

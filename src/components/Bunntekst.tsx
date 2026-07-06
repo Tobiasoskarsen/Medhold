@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { APP_NAME } from "@/lib/brand";
 
 export default function Bunntekst() {
   return (
     <footer className="mt-auto border-t border-slate-200 bg-white">
       <div className="mx-auto w-full max-w-3xl px-6 py-6 text-center text-xs text-slate-400">
         <p>
-          Klarvei er et verktøy for å holde oversikt — ikke en offentlig
+          {APP_NAME} er et verktøy for å holde oversikt — ikke en offentlig
           tjeneste og ikke profesjonell rådgivning. Bekreft alltid viktige ting
           med rett instans.
         </p>

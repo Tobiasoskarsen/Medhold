@@ -1,8 +1,9 @@
 import Link from "next/link";
 import MalListe from "@/components/MalListe";
+import { APP_NAME } from "@/lib/brand";
 
 export const metadata = {
-  title: "Kom i gang med en mal — Klarvei",
+  title: `Kom i gang med en mal — ${APP_NAME}`,
 };
 
 export default function MalPage() {

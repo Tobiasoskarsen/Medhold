@@ -1,46 +1,44 @@
-export function Klarveimerke({ className }: { className?: string }) {
-  // Sol som står opp over en svingete vei — «klar vei». Bruker currentColor.
+import { APP_NAME } from "@/lib/brand";
+
+/**
+ * Medhold-merket: to hule «brev»-noder over en fylt grønn node med hake —
+ * saker som samles og lander på et medhold. Bruker faste merkevarefarger
+ * (ikke currentColor), slik at merket ser likt ut uansett tekstfarge.
+ */
+export function Medholdmerke({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden
-    >
-      <path d="M7 10.5 A5 5 0 0 1 17 10.5 Z" fill="currentColor" />
-      <path
-        d="M3.5 15.5 C8 13, 15 13.6, 20.5 12"
-        stroke="currentColor"
-        strokeWidth="1.9"
+    <svg viewBox="0 0 84 84" className={className} aria-hidden>
+      <line
+        x1="42"
+        y1="14"
+        x2="42"
+        y2="48"
+        stroke="#1C2B33"
+        strokeWidth="6"
         strokeLinecap="round"
+        opacity="0.4"
       />
+      <circle cx="42" cy="18" r="8" fill="#F7F7F5" stroke="#1C2B33" strokeWidth="6" />
+      <circle cx="42" cy="36" r="8" fill="#F7F7F5" stroke="#1C2B33" strokeWidth="6" />
+      <circle cx="42" cy="60" r="14" fill="#0E7C66" />
       <path
-        d="M6 18.6 C10 16.9, 14 17.3, 18.5 15.9"
-        stroke="currentColor"
-        strokeWidth="1.5"
+        d="M34 60 L40 66 L51 54"
+        fill="none"
+        stroke="#FFF"
+        strokeWidth="6"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
 }
 
-export default function Logo({
-  medUndertekst = false,
-}: {
-  medUndertekst?: boolean;
-}) {
+export default function Logo() {
   return (
-    <span className="flex items-center gap-2.5">
-      <Klarveimerke className="size-8 text-teal-600" />
-      <span className="flex flex-col leading-none">
-        <span className="text-lg font-semibold tracking-tight text-slate-900">
-          Klarvei
-        </span>
-        {medUndertekst && (
-          <span className="mt-1 text-xs text-slate-500">
-            Klar vei gjennom det vanskelige
-          </span>
-        )}
+    <span className="flex items-center gap-2">
+      <Medholdmerke className="size-[18px]" />
+      <span className="text-sm font-medium tracking-tight text-[color:var(--blekk)]">
+        {APP_NAME}
       </span>
     </span>
   );

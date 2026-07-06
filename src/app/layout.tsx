@@ -1,21 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { APP_NAME } from "@/lib/brand";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Klarvei",
+  title: APP_NAME,
   description:
-    "Hold oversikt over saker, frister og neste steg i en vanskelig periode.",
+    "Brev, frister og krav — samlet på ett sted, med hjelp til å svare riktig og i tide.",
 };
 
 export default function RootLayout({
@@ -26,9 +22,9 @@ export default function RootLayout({
   return (
     <html
       lang="nb"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
+      <body className="min-h-full flex flex-col bg-bakgrunn text-blekk">
         {children}
       </body>
     </html>

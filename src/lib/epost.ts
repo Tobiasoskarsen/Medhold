@@ -2,6 +2,7 @@
 // med fetch (ingen ekstra npm-pakke). Kalles kun server-side fra cron-jobben.
 
 import { fristNærhet, formaterDato } from "@/lib/dato";
+import { APP_NAME } from "@/lib/brand";
 
 export type FristVarsel = {
   tittel: string;
@@ -16,7 +17,7 @@ const RESEND_ENDEPUNKT = "https://api.resend.com/emails";
 // konto-e-post. Sett VARSEL_FRA_EPOST til en adresse på ditt eget domene når
 // det er verifisert.
 function fraAdresse(): string {
-  return process.env.VARSEL_FRA_EPOST || "Klarvei <onboarding@resend.dev>";
+  return process.env.VARSEL_FRA_EPOST || `${APP_NAME} <onboarding@resend.dev>`;
 }
 
 function appUrl(): string {
@@ -67,7 +68,7 @@ function byggHtml(frister: FristVarsel[]): string {
 <html lang="nb">
 <body style="margin:0;background:#f8fafc;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
   <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
-    <div style="font-size:18px;font-weight:700;color:#0d9488;margin-bottom:24px;">Klarvei</div>
+    <div style="font-size:18px;font-weight:700;color:#0E7C66;margin-bottom:24px;">${APP_NAME}</div>
     <h1 style="font-size:20px;margin:0 0 8px;">Du har frister som nærmer seg</h1>
     <p style="color:#475569;font-size:15px;line-height:1.5;margin:0 0 20px;">
       Her er en rolig påminnelse om det som ligger foran deg. Ta det steg for steg.
@@ -76,10 +77,10 @@ function byggHtml(frister: FristVarsel[]): string {
       ${rader}
     </table>
     <div style="margin:24px 0;">
-      <a href="${url}/saker" style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;">Åpne Klarvei</a>
+      <a href="${url}/saker" style="display:inline-block;background:#0E7C66;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;">Åpne ${APP_NAME}</a>
     </div>
     <p style="color:#94a3b8;font-size:12px;line-height:1.5;margin:24px 0 0;border-top:1px solid #e2e8f0;padding-top:16px;">
-      Klarvei er et organiseringsverktøy — ikke profesjonell rådgivning. Sjekk viktige ting med rett instans (NAV, lege, advokat, kommune).<br><br>
+      ${APP_NAME} er et organiseringsverktøy — ikke profesjonell rådgivning. Sjekk viktige ting med rett instans (NAV, lege, advokat, kommune).<br><br>
       Vil du ikke ha slike påminnelser? Skru dem av under <a href="${url}/konto" style="color:#64748b;">Min konto</a>.
     </p>
   </div>
@@ -101,9 +102,9 @@ function byggTekst(frister: FristVarsel[]): string {
 
 ${linjer}
 
-Åpne Klarvei: ${url}/saker
+Åpne ${APP_NAME}: ${url}/saker
 
-Klarvei er et organiseringsverktøy — ikke profesjonell rådgivning.
+${APP_NAME} er et organiseringsverktøy — ikke profesjonell rådgivning.
 Skru av påminnelser under Min konto: ${url}/konto`;
 }
 

@@ -5,9 +5,10 @@ import Topplinje from "@/components/Topplinje";
 import Bunntekst from "@/components/Bunntekst";
 import SlettKonto from "@/components/SlettKonto";
 import VarselInnstilling from "@/components/VarselInnstilling";
+import { APP_NAME } from "@/lib/brand";
 
 export const metadata = {
-  title: "Min konto — Klarvei",
+  title: `Min konto — ${APP_NAME}`,
 };
 
 export default async function KontoPage() {
