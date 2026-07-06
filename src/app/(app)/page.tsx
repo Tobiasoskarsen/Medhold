@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Logo from "@/components/Logo";
 import { Skjermramme, Kort, Primærknapp, Pill } from "@/components/ui";
 import { formaterKortDato, fristNærhet } from "@/lib/dato";
 import { formaterBelop } from "@/lib/format";
-import { handlingstittel, type Stadium } from "@/lib/gjeld";
+import { handlingstittel, stotterUtkast, type Stadium } from "@/lib/gjeld";
 
 type SakKobling = {
   id: string;
@@ -99,11 +100,28 @@ export default async function HjemPage() {
                 .filter(Boolean)
                 .join(" · ")}
             </p>
-            {topSak && (
-              <div className="mt-4">
-                <Primærknapp href={`/krav/${topSak.id}`}>Se saken</Primærknapp>
-              </div>
-            )}
+            {topSak &&
+              (stotterUtkast(topSak.stadium ?? null) ? (
+                <>
+                  <div className="mt-4">
+                    <Primærknapp href={`/krav/${topSak.id}/utkast`}>
+                      Lag utkast til svar
+                    </Primærknapp>
+                  </div>
+                  <p className="mt-3 text-center text-[13px] text-dempet">
+                    <Link
+                      href={`/krav/${topSak.id}`}
+                      className="transition hover:text-blekk"
+                    >
+                      Se hele saken
+                    </Link>
+                  </p>
+                </>
+              ) : (
+                <div className="mt-4">
+                  <Primærknapp href={`/krav/${topSak.id}`}>Se saken</Primærknapp>
+                </div>
+              ))}
           </Kort>
 
           {kommende.length > 0 && (

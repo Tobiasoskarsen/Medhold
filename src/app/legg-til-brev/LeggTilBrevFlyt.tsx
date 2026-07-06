@@ -6,13 +6,15 @@ import { X } from "lucide-react";
 import { Primærknapp } from "@/components/ui";
 import { BREVTYPER, STADIUM_ETIKETT, type BrevType } from "@/lib/gjeld";
 import { formaterKortDato } from "@/lib/dato";
-import type { BrevAnalyse, ForeslattFrist } from "@/lib/types";
+import type { FristForslag } from "@/lib/types";
 import {
   analyserBrevTekst,
   lagreBrev,
+  type AnalyseResultat,
   type LagreBrevInput,
 } from "./actions";
 
+type AnalyseData = Extract<AnalyseResultat, { ok: true }>["analyse"];
 type KravValg = { id: string; navn: string };
 
 function brevtypeEtikett(bt: BrevType): string {
@@ -32,18 +34,20 @@ export function LeggTilBrevFlyt({
   const [feil, setFeil] = useState<string | null>(null);
   const [lagrer, setLagrer] = useState(false);
 
-  const [analyse, setAnalyse] = useState<BrevAnalyse | null>(null);
+  const [analyse, setAnalyse] = useState<AnalyseData | null>(null);
   const [avsender, setAvsender] = useState("");
   const [brevtype, setBrevtype] = useState<BrevType | "">("");
   const [brevdato, setBrevdato] = useState("");
   const [belop, setBelop] = useState("");
+  const [saksnummer, setSaksnummer] = useState("");
   const [kravModus, setKravModus] = useState<"ny" | "eksisterende">(
     forvalgtKrav ? "eksisterende" : krav.length > 0 ? "eksisterende" : "ny",
   );
   const [valgtKrav, setValgtKrav] = useState<string>(
     forvalgtKrav ?? krav[0]?.id ?? "",
   );
-  const [avKryss, setAvKryss] = useState<Record<number, boolean>>({});
+  const [fristForslag, setFristForslag] = useState<FristForslag[]>([]);
+  const [fristAv, setFristAv] = useState<Record<number, boolean>>({});
   const [stegAv, setStegAv] = useState<Record<number, boolean>>({});
 
   async function lesBrevet() {
@@ -56,6 +60,31 @@ export function LeggTilBrevFlyt({
       return;
     }
     setAnalyse(r.analyse);
+    setAvsender(r.analyse.avsender);
+    setBrevtype(r.analyse.brevtype);
+    setBrevdato(r.analyse.brevdato);
+    setBelop(r.analyse.belop);
+    setSaksnummer(r.analyse.saksnummer);
+
+    // Eksisterende krav som matcher → forhåndsvelg.
+    if (r.matchetKravId) {
+      setKravModus("eksisterende");
+      setValgtKrav(r.matchetKravId);
+    }
+
+    // Frist-forslag: eksplisitte fra brevet + evt. beregnet fra kode.
+    const eksplisitte: FristForslag[] = r.analyse.foreslatte_frister.map((f) => ({
+      ...f,
+      kilde: "brev_eksplisitt" as const,
+    }));
+    const beregnede: FristForslag[] = r.beregnetFrist
+      ? [{ ...r.beregnetFrist, kilde: "beregnet" as const }]
+      : [];
+    const alle = [...eksplisitte, ...beregnede];
+    setFristForslag(alle);
+    setFristAv(
+      Object.fromEntries(alle.map((f, i) => [i, !!f.forfallsdato])),
+    );
     setSteg(3);
   }
 
@@ -64,12 +93,10 @@ export function LeggTilBrevFlyt({
     setLagrer(true);
     setFeil(null);
 
-    const valgteFrister: ForeslattFrist[] = analyse.foreslatte_frister.filter(
-      (f, i) => f.forfallsdato && avKryss[i] !== false,
+    const valgteFrister = fristForslag.filter(
+      (f, i) => f.forfallsdato && fristAv[i],
     );
-    const valgteSteg = analyse.foreslatte_steg.filter(
-      (_, i) => stegAv[i] !== false,
-    );
+    const valgteSteg = analyse.foreslatte_steg.filter((_, i) => stegAv[i] !== false);
     const belopTall = belop.trim() ? Number(belop.replace(/\s/g, "")) : null;
 
     const input: LagreBrevInput = {
@@ -81,6 +108,7 @@ export function LeggTilBrevFlyt({
       brevtype: brevtype || null,
       brevdato,
       belop: belopTall != null && !Number.isNaN(belopTall) ? belopTall : null,
+      saksnummer,
       original_tekst: tekst.trim(),
       forklaring: analyse.forklaring,
       foreslatte_steg: valgteSteg,
@@ -129,10 +157,7 @@ export function LeggTilBrevFlyt({
           />
           {feil && <p className="mt-3 text-[13px] text-red-700">{feil}</p>}
           <div className="mt-4 pb-8">
-            <Primærknapp
-              onClick={lesBrevet}
-              disabled={tekst.trim().length < 10}
-            >
+            <Primærknapp onClick={lesBrevet} disabled={tekst.trim().length < 10}>
               Les brevet
             </Primærknapp>
           </div>
@@ -203,12 +228,22 @@ export function LeggTilBrevFlyt({
                 className={feltKlasse}
               />
             </label>
-            <label className="col-span-2 block text-[13px] font-medium text-blekk">
+            <label className="block text-[13px] font-medium text-blekk">
               Brevdato
               <input
                 type="date"
                 value={brevdato}
                 onChange={(e) => setBrevdato(e.target.value)}
+                className={feltKlasse}
+              />
+            </label>
+            <label className="block text-[13px] font-medium text-blekk">
+              Saksnummer
+              <input
+                type="text"
+                value={saksnummer}
+                onChange={(e) => setSaksnummer(e.target.value)}
+                placeholder="Valgfritt"
                 className={feltKlasse}
               />
             </label>
@@ -255,13 +290,13 @@ export function LeggTilBrevFlyt({
             </div>
           </div>
 
-          {analyse.foreslatte_frister.length > 0 && (
+          {fristForslag.length > 0 && (
             <div className="mt-5">
               <p className="text-[13px] font-medium text-blekk">
                 Foreslåtte frister
               </p>
               <div className="mt-2 flex flex-col gap-2">
-                {analyse.foreslatte_frister.map((f, i) => (
+                {fristForslag.map((f, i) => (
                   <label
                     key={i}
                     className="flex items-center justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
@@ -270,22 +305,19 @@ export function LeggTilBrevFlyt({
                       <span className="block truncate text-sm text-blekk">
                         {f.tittel}
                       </span>
-                      {f.forfallsdato ? (
-                        <span className="text-xs text-dempet">
-                          {formaterKortDato(f.forfallsdato)}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-dempet">
-                          ingen dato i brevet
-                        </span>
-                      )}
+                      <span className="text-xs text-dempet">
+                        {f.forfallsdato
+                          ? formaterKortDato(f.forfallsdato)
+                          : "ingen dato i brevet"}
+                        {f.kilde === "beregnet" ? " · beregnet — sjekk brevet" : ""}
+                      </span>
                     </span>
                     <input
                       type="checkbox"
-                      checked={avKryss[i] !== false && !!f.forfallsdato}
+                      checked={!!fristAv[i] && !!f.forfallsdato}
                       disabled={!f.forfallsdato}
                       onChange={(e) =>
-                        setAvKryss((s) => ({ ...s, [i]: e.target.checked }))
+                        setFristAv((s) => ({ ...s, [i]: e.target.checked }))
                       }
                       className="size-4 accent-aksent disabled:opacity-40"
                     />

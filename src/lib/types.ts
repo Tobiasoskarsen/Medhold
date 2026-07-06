@@ -76,6 +76,10 @@ export type BrevAnalyse = {
   foreslatte_frister: ForeslattFrist[];
 };
 
+// En foreslått frist med kilde — brukes i «legg til brev»-flyten der både
+// eksplisitte (fra brevet) og beregnede frister vises som av/på-rader.
+export type FristForslag = ForeslattFrist & { kilde: FristKilde };
+
 // Utdatert fra Fase 1 — erstattes av Brev. Beholdes til de gamle skjermene
 // fjernes i Fase 2.
 export type DocumentNote = BrevAnalyse & {
@@ -133,6 +137,37 @@ export type Profil = {
   plan: Plan;
   opprettet: string;
   sist_endret: string;
+};
+
+// Utkasttyper (0013). Generert svarbrev brukeren redigerer og sender selv.
+export const UTKAST_TYPER = [
+  "innsigelse",
+  "betalingsutsettelse",
+  "klage",
+] as const;
+export type UtkastType = (typeof UTKAST_TYPER)[number];
+
+export const UTKAST_ETIKETT: Record<UtkastType, string> = {
+  innsigelse: "Innsigelse",
+  betalingsutsettelse: "Betalingsutsettelse",
+  klage: "Klage",
+};
+
+// Ledetekst for det korte skjemaet brukeren fyller ut per utkasttype.
+export const UTKAST_SPORSMAL: Record<UtkastType, string> = {
+  innsigelse: "Hva er du uenig i?",
+  betalingsutsettelse: "Hva kan du betale per måned?",
+  klage: "Hvorfor mener du vedtaket er feil?",
+};
+
+export type Utkast = {
+  id: string;
+  sak_id: string;
+  bruker_id: string;
+  brev_id: string | null;
+  type: UtkastType;
+  innhold: string;
+  opprettet: string;
 };
 
 export const STATUS_ETIKETT: Record<SakStatus, string> = {

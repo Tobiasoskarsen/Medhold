@@ -97,6 +97,19 @@ export function handlingstittel(stadium: Stadium | null): string {
   }
 }
 
+/**
+ * Om det gir mening å lage et svarutkast på dette stadiet (innsigelse/klage/
+ * betalingsutsettelse). Brukes til å velge verb på «det viktigste nå»-kortet.
+ */
+export function stotterUtkast(stadium: Stadium | null): boolean {
+  return (
+    stadium === "inkassovarsel" ||
+    stadium === "betalingsoppfordring" ||
+    stadium === "forliksrad" ||
+    stadium === "namsmann"
+  );
+}
+
 /** Legg til et antall dager på en ISO-dato (YYYY-MM-DD). UTC-trygt. */
 export function leggTilDager(isoDato: string, dager: number): string {
   const d = new Date(`${isoDato}T00:00:00Z`);

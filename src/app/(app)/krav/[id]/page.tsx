@@ -15,10 +15,11 @@ import {
   STADIUM_ETIKETT,
   nesteStadium,
   fylteSegmenter,
+  stotterUtkast,
   type Stadium,
   type BrevType,
 } from "@/lib/gjeld";
-import type { FristKilde } from "@/lib/types";
+import { UTKAST_ETIKETT, type FristKilde, type UtkastType } from "@/lib/types";
 import { KravMeny } from "./KravMeny";
 
 type BrevRad = {
@@ -70,21 +71,31 @@ export default async function KravDetaljPage({
 
   if (!sak) notFound();
 
-  const [{ data: brevData }, { data: fristData }] = await Promise.all([
-    supabase
-      .from("brev")
-      .select("id, brevdato, brevtype, avsender, opprettet")
-      .eq("sak_id", id)
-      .order("brevdato", { ascending: false, nullsFirst: false })
-      .order("opprettet", { ascending: false }),
-    supabase
-      .from("frister")
-      .select("id, tittel, forfallsdato, kilde, brev_id, fullfort")
-      .eq("sak_id", id),
-  ]);
+  const [{ data: brevData }, { data: fristData }, { data: utkastData }] =
+    await Promise.all([
+      supabase
+        .from("brev")
+        .select("id, brevdato, brevtype, avsender, opprettet")
+        .eq("sak_id", id)
+        .order("brevdato", { ascending: false, nullsFirst: false })
+        .order("opprettet", { ascending: false }),
+      supabase
+        .from("frister")
+        .select("id, tittel, forfallsdato, kilde, brev_id, fullfort")
+        .eq("sak_id", id),
+      supabase
+        .from("utkast")
+        .select("id, type, opprettet")
+        .eq("sak_id", id),
+    ]);
 
   const brevListe = (brevData ?? []) as BrevRad[];
   const frister = (fristData ?? []) as FristRad[];
+  const utkast = (utkastData ?? []) as {
+    id: string;
+    type: UtkastType;
+    opprettet: string;
+  }[];
   const aktiveFrister = frister.filter((f) => !f.fullfort);
 
   // Nærmeste aktive frist per brev (til pillen på brevkortet).
@@ -108,6 +119,7 @@ export default async function KravDetaljPage({
     tittel: string;
     fristPill?: string;
     fremhevet: boolean;
+    href?: string;
   };
 
   const brevItems: Item[] = brevListe.map((b) => {
@@ -119,6 +131,7 @@ export default async function KravDetaljPage({
       tittel: `${brevtypeEtikett(b.brevtype)} mottatt`,
       fristPill: frist ? fristPillTekst(frist) : undefined,
       fremhevet: !!frist,
+      href: `/krav/${id}/brev/${b.id}`,
     };
   });
 
@@ -132,7 +145,14 @@ export default async function KravDetaljPage({
       fremhevet: true,
     }));
 
-  const items = [...brevItems, ...løseFristItems].sort((a, b) =>
+  const utkastItems: Item[] = utkast.map((u) => ({
+    key: `utkast-${u.id}`,
+    datoISO: u.opprettet.slice(0, 10),
+    tittel: `Utkast: ${UTKAST_ETIKETT[u.type]}`,
+    fremhevet: false,
+  }));
+
+  const items = [...brevItems, ...løseFristItems, ...utkastItems].sort((a, b) =>
     a.datoISO < b.datoISO ? 1 : -1,
   );
   // Nyeste hendelse er alltid fremhevet.
@@ -188,6 +208,15 @@ export default async function KravDetaljPage({
         </div>
       )}
 
+      {stotterUtkast(stadium) && (
+        <Link
+          href={`/krav/${sak.id}/utkast`}
+          className="mt-4 inline-block text-[13px] font-medium text-aksent transition hover:opacity-80"
+        >
+          Lag utkast til svar →
+        </Link>
+      )}
+
       <div className="mt-6">
         {items.length === 0 ? (
           <p className="text-sm text-dempet">
@@ -195,29 +224,38 @@ export default async function KravDetaljPage({
           </p>
         ) : (
           <Tidslinje>
-            {items.map((item, i) => (
-              <TidslinjeHendelse
-                key={item.key}
-                dato={formaterKortDato(item.datoISO)}
-                fremhevet={item.fremhevet}
-                sisteHendelse={i === items.length - 1}
-              >
-                {item.fremhevet ? (
-                  <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
-                    <p className="text-sm font-medium text-blekk">
-                      {item.tittel}
-                    </p>
-                    {item.fristPill && (
-                      <span className="mt-1.5 inline-block rounded-full bg-varsel-bg px-2 py-1 text-[11px] font-medium text-varsel-tekst">
-                        {item.fristPill}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-blekk">{item.tittel}</p>
-                )}
-              </TidslinjeHendelse>
-            ))}
+            {items.map((item, i) => {
+              const innhold = item.fremhevet ? (
+                <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
+                  <p className="text-sm font-medium text-blekk">
+                    {item.tittel}
+                  </p>
+                  {item.fristPill && (
+                    <span className="mt-1.5 inline-block rounded-full bg-varsel-bg px-2 py-1 text-[11px] font-medium text-varsel-tekst">
+                      {item.fristPill}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-blekk">{item.tittel}</p>
+              );
+              return (
+                <TidslinjeHendelse
+                  key={item.key}
+                  dato={formaterKortDato(item.datoISO)}
+                  fremhevet={item.fremhevet}
+                  sisteHendelse={i === items.length - 1}
+                >
+                  {item.href ? (
+                    <Link href={item.href} className="block transition hover:opacity-80">
+                      {innhold}
+                    </Link>
+                  ) : (
+                    innhold
+                  )}
+                </TidslinjeHendelse>
+              );
+            })}
           </Tidslinje>
         )}
       </div>

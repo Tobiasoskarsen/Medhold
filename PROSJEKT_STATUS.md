@@ -10,7 +10,7 @@ etter hver fase.
 | 0 | Rebrand + designfundament | ✅ Ferdig |
 | 1 | Datamodell | ✅ Ferdig (migrasjoner ikke kjørt i Supabase ennå) |
 | 2 | Skjermene | ✅ Ferdig (krever at migrasjonene kjøres for å funke live) |
-| 3 | Saksbehandleren | ⬜ Ikke startet |
+| 3 | Saksbehandleren | ✅ Ferdig (migrasjoner 0013–0014 må kjøres) |
 | 4 | Inntak og posisjonering | ⬜ Ikke startet |
 | 5 | Ekte betaling | 🔒 Låst (krever egen beskjed) |
 
@@ -167,9 +167,57 @@ SQL Editor før du logger inn og tester.
 
 ---
 
+## Fase 3 — Saksbehandleren (ferdig)
+
+**5.1 Utvidet analyse + matching:** `SVAR_SKJEMA` utvidet med brevtype (enum),
+avsender, brevdato, belop, saksnummer — «kun eksplisitt»-regelen beholdt.
+Etter analyse i kode: `beregnFrist(brevtype, brevdato)` (inkassoloven §§ 9–10)
+kjøres, og brevet matches mot eksisterende krav (saksnummer → kreditor/avsender,
+case-insensitivt). «Legg til brev»-steg 3 forhåndsfyller feltene, forhåndsvelger
+matchet krav, og viser beregnet frist som egen av/på-rad («beregnet — sjekk
+brevet»). Frister lagres med riktig `kilde`; kravet oppdateres med stadium/beløp/
+saksnummer ved lagring.
+
+**5.3 Utkast + paywall + gating:** migrasjon `0013_utkast.sql` (utkast-tabell +
+RLS, `slett_egen_konto` utvidet). `lagUtkast(sakId, brevId, type, detaljer)`
+gated via `harPluss()`. Utkast-skjerm `/krav/[id]/utkast` (type-valg + kort
+skjema → generert, redigerbar tekst + «Kopier» + fast «send det selv til …»).
+Utkast lagres som tidslinjehendelse. Paywall `/pluss` (tre punkter + pris fra
+`PLUSS_PRIS`; i pilotmodus «Alt er gratis i pilotperioden»). Hjem-kortet viser
+nå «Lag utkast til svar» + «Se hele saken» når stadiet støtter utkast.
+
+**5.2 Sakskontekst i samtalen:** `api/brev-samtale` repekt til `brev`/`brev_id`
+med sakskontekst (kreditor, stadium, beløp, tidligere brev) hentet server-side
+under RLS og lagt i systemprompten. Ny brev-detaljskjerm
+`/krav/[id]/brev/[brevId]` (forklaring + original + strømmet samtale);
+tidslinjens brev-hendelser lenker hit. `0014_drop_document_note.sql` fullfører
+cutoveren (brev_id NOT NULL, dropper document_note + kolonnen), og fjerner
+document_note fra `slett_egen_konto`.
+
+`npm run build/lint/test` grønne.
+
+Valg / avvik:
+
+1. **Utkast lagres i egen `utkast`-tabell** (ikke gjenbruk av brev/steg) — reneste
+   tidslinjehendelse. Vises som stille hendelse på kravet.
+2. **Utkast-skjema = ett fritekstfelt** hvis ledetekst varierer med type
+   (uenig i / betale per måned / hvorfor feil), per 5.3. Tomt felt nevnes ikke.
+3. **Gating dobbelt:** både `lagUtkast` og `/krav/[id]/utkast`-siden sjekker
+   `harPluss()`. Pilotmodus (NEXT_PUBLIC_PILOT) → alltid tillatt nå.
+4. **Oversett-knappene** fra gamle DokumentNotat er ikke tatt med — ikke i
+   Medhold-spec. Samtalen støtter fortsatt «oversett til …» som vanlig spørsmål
+   (dir="auto" for RTL).
+5. **`document_note` droppes i 0014** — kjør den ETTER at Fase 3-koden er i drift
+   (koden bruker kun `brev` nå).
+
+⚠ **Migrasjonene 0007–0014 må kjøres i Supabase (i rekkefølge)** før authed-
+skjermene virker mot live-DB. 0013–0014 er nye i denne fasen.
+
+---
+
 ## Neste økt
 
-**Fase 3 — Saksbehandleren:** utvidet analyse + krav-matching (5.1), beregnede
-frister koblet i «legg til brev»-flyten, sakskontekst i samtalen (5.2),
-utkastgenerering (5.3) med gating via `harPluss()` + paywall-skjermen (seksjon
-6, pilotmodus). Gjør også den utsatte `document_note`-oppryddingen fra Fase 1.
+**Fase 4 — Inntak og posisjonering:** bildeinntak (5.4, foto/PDF → Claude
+vision, maks 2 bilder, lagre kun tekst), aktiver «Ta bilde»/«Last opp» i flyten,
+gjeld-først landingsside, komplett PWA-manifest. (Fase 5 = ekte betaling er
+låst til egen beskjed.)
