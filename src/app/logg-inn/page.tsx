@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Primærknapp } from "@/components/ui";
+import { beOmKode } from "./actions";
 
 export default function LoggInnPage() {
   return (
@@ -29,6 +30,7 @@ function LoggInn() {
 
   const [steg, setSteg] = useState<"epost" | "kode">("epost");
   const [epost, setEpost] = useState("");
+  const [kodeLengde, setKodeLengde] = useState(KODE_LENGDE);
   const [siffer, setSiffer] = useState<string[]>(Array(KODE_LENGDE).fill(""));
   const [laster, setLaster] = useState(false);
   const [feil, setFeil] = useState<string | null>(
@@ -52,18 +54,15 @@ function LoggInn() {
     setLaster(true);
     setFeil(null);
     setMelding(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email: epost.trim(),
-      options: { shouldCreateUser: true },
-    });
+    const r = await beOmKode(epost);
     setLaster(false);
-    if (error) {
-      setFeil("Kunne ikke sende kode. Sjekk e-postadressen og prøv igjen.");
+    if (!r.ok) {
+      setFeil(r.feil);
       return;
     }
+    setKodeLengde(r.lengde);
+    setSiffer(Array(r.lengde).fill(""));
     setSteg("kode");
-    setSiffer(Array(KODE_LENGDE).fill(""));
     setNedtelling(30);
     setTimeout(() => bokser.current[0]?.focus(), 50);
   }
@@ -80,7 +79,7 @@ function LoggInn() {
     if (error) {
       setLaster(false);
       setFeil("Koden stemmer ikke. Sjekk e-posten eller be om en ny.");
-      setSiffer(Array(KODE_LENGDE).fill(""));
+      setSiffer(Array(kodeLengde).fill(""));
       bokser.current[0]?.focus();
       return;
     }
@@ -94,13 +93,13 @@ function LoggInn() {
     const neste = [...siffer];
     // Lim inn hele koden hvis flere sifre limes i én boks.
     if (rene.length > 1) {
-      for (let k = 0; k < KODE_LENGDE - i; k++) neste[i + k] = rene[k] ?? "";
+      for (let k = 0; k < kodeLengde - i; k++) neste[i + k] = rene[k] ?? "";
     } else {
       neste[i] = rene;
     }
     setSiffer(neste);
     const nesteTom = neste.findIndex((s) => s === "");
-    const fokus = nesteTom === -1 ? KODE_LENGDE - 1 : nesteTom;
+    const fokus = nesteTom === -1 ? kodeLengde - 1 : nesteTom;
     bokser.current[fokus]?.focus();
     if (neste.every((s) => s !== "")) verifiser(neste.join(""));
   }
@@ -177,7 +176,7 @@ function LoggInn() {
           <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
             Vi sendte en kode til {epost}. Skriv den inn under.
           </p>
-          <div className="mt-6 flex justify-center gap-2">
+          <div className="mt-6 flex justify-center gap-1.5">
             {siffer.map((s, i) => (
               <input
                 key={i}
@@ -192,7 +191,7 @@ function LoggInn() {
                 onKeyDown={(e) => håndterTast(i, e)}
                 onPaste={håndterLim}
                 aria-label={`Siffer ${i + 1}`}
-                className={`h-[42px] w-9 rounded-lg border-[0.5px] text-center text-[17px] font-medium text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30 ${
+                className={`h-[42px] w-8 rounded-lg border-[0.5px] text-center text-[17px] font-medium text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30 ${
                   s ? "border-aksent" : "border-strek"
                 }`}
               />

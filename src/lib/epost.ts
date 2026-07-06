@@ -151,3 +151,65 @@ export async function sendFristPaaminnelse(
     return false;
   }
 }
+
+/**
+ * Sender en engangskode for innlogging. Vi sender den selv via Resend fremfor
+ * å stole på Supabase sin innebygde e-post (som er upålitelig/ratelimited).
+ * Returnerer true ved suksess.
+ *
+ * MERK: uten verifisert Resend-domene (avsender onboarding@resend.dev) leverer
+ * Resend kun til kontoens egen e-post. Verifiser et domene for å nå andre.
+ */
+export async function sendKodeEpost(
+  til: string,
+  kode: string,
+): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("[epost] RESEND_API_KEY mangler — kan ikke sende kode.");
+    return false;
+  }
+
+  const html = `<!doctype html>
+<html lang="nb">
+<body style="margin:0;background:#f7f7f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c2b33;">
+  <div style="max-width:480px;margin:0 auto;padding:32px 20px;">
+    <div style="font-size:18px;font-weight:700;color:#0E7C66;margin-bottom:24px;">${APP_NAME}</div>
+    <h1 style="font-size:18px;margin:0 0 8px;">Din engangskode</h1>
+    <p style="color:#5c6b73;font-size:15px;line-height:1.5;margin:0 0 20px;">Skriv inn denne koden i appen for å logge inn:</p>
+    <p style="font-size:32px;font-weight:700;letter-spacing:6px;color:#1c2b33;margin:0 0 20px;">${kode}</p>
+    <p style="color:#5c6b73;font-size:13px;line-height:1.5;margin:0;">Koden er gyldig i én time. Har du ikke bedt om den, kan du se bort fra denne e-posten.</p>
+  </div>
+</body>
+</html>`;
+  const text = `Din engangskode for ${APP_NAME}: ${kode}
+
+Skriv den inn i appen for å logge inn. Koden er gyldig i én time.
+Har du ikke bedt om den, kan du se bort fra denne e-posten.`;
+
+  try {
+    const res = await fetch(RESEND_ENDEPUNKT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fraAdresse(),
+        to: [til],
+        subject: `Din engangskode: ${kode}`,
+        html,
+        text,
+      }),
+    });
+    if (!res.ok) {
+      const detalj = await res.text().catch(() => "");
+      console.error(`[epost] Resend svarte ${res.status} (kode): ${detalj}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[epost] Uventet feil ved kode-utsending:", e);
+    return false;
+  }
+}
