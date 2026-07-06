@@ -9,7 +9,7 @@ etter hver fase.
 |---|---|---|
 | 0 | Rebrand + designfundament | ✅ Ferdig |
 | 1 | Datamodell | ✅ Ferdig (migrasjoner ikke kjørt i Supabase ennå) |
-| 2 | Skjermene | ⬜ Ikke startet |
+| 2 | Skjermene | ✅ Ferdig (krever at migrasjonene kjøres for å funke live) |
 | 3 | Saksbehandleren | ⬜ Ikke startet |
 | 4 | Inntak og posisjonering | ⬜ Ikke startet |
 | 5 | Ekte betaling | 🔒 Låst (krever egen beskjed) |
@@ -118,11 +118,58 @@ Valg tatt underveis:
 
 ---
 
+## Fase 2 — Skjermene (ferdig)
+
+Ny rutestruktur:
+- `(app)/` route group (auth-vakt + `BunnNav` + ansvarsfraskrivelse): `/` (Hjem),
+  `/krav` (liste), `/krav/[id]` (detalj m/ tidslinje), `/meg`.
+- Offentlig: `/velkommen` (3.7), `/logg-inn` (e-post-OTP), `/personvern`.
+- `/legg-til-brev` (fullskjerm flyt, utenfor (app) — ingen BunnNav).
+- Slettet: `/saker/*`, `/login`, `/konto/*` + ubrukte komponenter (AiBrevhjelp,
+  DokumentNotat, SakSkjema, Mal*, Merker, Topplinje, Bunntekst, LeggTilFrist/
+  Steg-skjema, AutoSubmitAvkryssing) og `lib/maler.ts`.
+
+Auth: middleware sender uinnlogget → `/velkommen`, innlogget bort fra
+velkomst/innlogging → `/`. Onboarding-redirect fjernet (onboarding = første
+brev). auth/confirm + signout retarget. Innlogging via `signInWithOtp`
+(engangskode, `shouldCreateUser: true`); passord-UI fjernet (Supabase-støtten
+urørt for eksisterende kontoer).
+
+Verifisert mot mockups (380px): `/velkommen` og `/logg-inn` live (matcher).
+Hjem-kortet og Krav-detalj-tidslinjen verifisert via en midlertidig
+mock-forhåndsvisning (fjernet igjen), siden live authed-skjermer krever at
+migrasjonene er kjørt + innlogging. `npm run build/lint/test` grønne.
+
+Valg / avvik tatt underveis:
+
+1. **Hjem-primærknapp = «Se saken»** (ikke «Lag utkast til svar»). Utkast er
+   Fase 3 og gated via `harPluss()`. Da byttes verbet og «Se hele saken»-lenka
+   kommer tilbake. Droppet den doble lenka nå.
+2. **«Legg til brev» bruker dagens analyse** (forklaring/steg/eksplisitte
+   frister). brevtype/avsender/beløp fylles manuelt i steg 3. Auto-uttrekk +
+   krav-matching (5.1) + **beregnede** frister kobles i **Fase 3**. Eksplisitte
+   frister lagres med `kilde='brev_eksplisitt'`.
+3. **«Ta bilde» / «Last opp»** vises ikke (Fase 4) — kun tekst-innliming.
+4. **Tidslinjen er presentasjonell** (brev-hendelser + frist-piller + løse
+   frister). «Trykk for å åpne brevets forklaring/samtale» er **Fase 3**
+   (sakskontekst i samtalen). `api/brev-samtale` og `document_note` er urørt
+   inntil da.
+5. **Krav-redigering/-sletting** bak `MoreVertical`: sletting implementert.
+   Egen «rediger krav»-skjerm finnes ikke i mockupene → utelatt.
+6. **«Logg ut» lagt til på Meg** — avvik fra «ingen andre elementer» i 3.6, men
+   nødvendig funksjon. Diskret, dempet. Flagges her.
+7. **`.next` måtte slettes** etter ruteomlegging (stale route-typer pekte på
+   `/saker`) — kjent gotcha.
+
+⚠ **Authed-skjermene feiler mot live-DB til migrasjonene 0007–0012 er kjørt**
+(de spør etter kreditor/stadium/brev som ikke finnes ennå). Kjør dem i Supabase
+SQL Editor før du logger inn og tester.
+
+---
+
 ## Neste økt
 
-**Fase 2 — Skjermene:** Velkomst + innlogging med engangskode (3.7),
-navigasjon (3.1), Hjem (3.2), Krav-liste (3.4), Krav-detalj m/ tidslinje (3.3),
-«Legg til brev»-flyt med tekst-innliming (3.5), Meg (3.6). Gammel dashbord-/
-saksside-layout og passord-UI slettes når nye er i drift. **Kjør migrasjonene
-0007–0012 i Supabase som del av denne fasen**, og gjør den utsatte
-document_note-oppryddingen (valg 1 over).
+**Fase 3 — Saksbehandleren:** utvidet analyse + krav-matching (5.1), beregnede
+frister koblet i «legg til brev»-flyten, sakskontekst i samtalen (5.2),
+utkastgenerering (5.3) med gating via `harPluss()` + paywall-skjermen (seksjon
+6, pilotmodus). Gjør også den utsatte `document_note`-oppryddingen fra Fase 1.

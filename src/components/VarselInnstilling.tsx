@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { settVarsler } from "@/app/konto/actions";
+import { settVarsler } from "@/app/(app)/meg/actions";
 
 export default function VarselInnstilling({ pa }: { pa: boolean }) {
   const [aktiv, setAktiv] = useState(pa);
@@ -22,15 +22,12 @@ export default function VarselInnstilling({ pa }: { pa: boolean }) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6">
-      <div className="flex items-start justify-between gap-4">
+    <div>
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">
-            E-postpåminnelser
-          </h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Få en rolig e-post når en frist nærmer seg — 7 dager før, 3 dager
-            før og dagen før. Du kan skru dette av når som helst.
+          <p className="text-sm font-medium text-blekk">E-postpåminnelser</p>
+          <p className="mt-0.5 text-[13px] leading-relaxed text-dempet">
+            Én rolig e-post når en frist nærmer seg — 7, 3 og 1 dag før.
           </p>
         </div>
         <button
@@ -40,8 +37,8 @@ export default function VarselInnstilling({ pa }: { pa: boolean }) {
           aria-label="Skru e-postpåminnelser av eller på"
           disabled={venter}
           onClick={veksle}
-          className={`relative mt-0.5 inline-flex h-6 w-11 flex-shrink-0 rounded-full transition disabled:opacity-50 ${
-            aktiv ? "bg-teal-600" : "bg-slate-300"
+          className={`relative mt-0.5 inline-flex h-6 w-11 flex-shrink-0 rounded-full transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent focus-visible:ring-offset-2 ${
+            aktiv ? "bg-aksent" : "bg-strek"
           }`}
         >
           <span
@@ -51,7 +48,7 @@ export default function VarselInnstilling({ pa }: { pa: boolean }) {
           />
         </button>
       </div>
-      {feil && <p className="mt-3 text-sm text-red-700">{feil}</p>}
+      {feil && <p className="mt-2 text-[13px] text-red-700">{feil}</p>}
     </div>
   );
 }

@@ -1,52 +1,59 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { slettKontoOgData } from "@/app/konto/actions";
+import { slettKontoOgData } from "@/app/(app)/meg/actions";
 
+/**
+ * Slett kontoen min — dempet rød, nederst på Meg. Krever ett bekreftelsessteg
+ * (handlingen er endelig).
+ */
 export default function SlettKonto() {
-  const [bekreft, setBekreft] = useState("");
+  const [bekreft, setBekreft] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
   const [venter, startTransition] = useTransition();
 
-  const kanSlette = bekreft.trim().toUpperCase() === "SLETT";
-
-  return (
-    <div className="rounded-2xl border border-red-200 bg-red-50/40 p-6">
-      <h2 className="text-base font-semibold text-red-800">
-        Slett all data og konto
-      </h2>
-      <p className="mt-2 text-sm text-slate-600">
-        Dette sletter alle sakene, fristene, stegene og forklaringene dine, og
-        selve kontoen. Handlingen er <strong>endelig og kan ikke angres</strong>.
-      </p>
-
-      <label className="mt-4 block text-sm text-slate-700">
-        Skriv <span className="font-mono font-semibold">SLETT</span> for å
-        bekrefte:
-        <input
-          value={bekreft}
-          onChange={(e) => setBekreft(e.target.value)}
-          className="mt-1 block w-40 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          placeholder="SLETT"
-        />
-      </label>
-
-      {feil && <p className="mt-3 text-sm text-red-700">{feil}</p>}
-
+  if (!bekreft) {
+    return (
       <button
         type="button"
-        disabled={!kanSlette || venter}
-        onClick={() =>
-          startTransition(async () => {
-            setFeil(null);
-            const r = await slettKontoOgData();
-            if (r?.feil) setFeil(r.feil);
-          })
-        }
-        className="mt-4 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+        onClick={() => setBekreft(true)}
+        className="text-[13px] text-red-700/80 transition hover:text-red-700"
       >
-        {venter ? "Sletter …" : "Slett alt for godt"}
+        Slett kontoen min
       </button>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-[13px] leading-relaxed text-dempet">
+        Dette sletter alle krav, brev, frister og selve kontoen.{" "}
+        <strong className="text-blekk">Kan ikke angres.</strong>
+      </p>
+      {feil && <p className="mt-2 text-[13px] text-red-700">{feil}</p>}
+      <div className="mt-3 flex items-center gap-4">
+        <button
+          type="button"
+          disabled={venter}
+          onClick={() =>
+            startTransition(async () => {
+              setFeil(null);
+              const r = await slettKontoOgData();
+              if (r?.feil) setFeil(r.feil);
+            })
+          }
+          className="rounded-[10px] bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-60"
+        >
+          {venter ? "Sletter …" : "Ja, slett alt"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setBekreft(false)}
+          className="text-[13px] text-dempet transition hover:text-blekk"
+        >
+          Avbryt
+        </button>
+      </div>
     </div>
   );
 }

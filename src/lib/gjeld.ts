@@ -72,6 +72,31 @@ export function foreslaStadium(brevtype: BrevType): Stadium | null {
   return brevtype === "annet" ? null : brevtype;
 }
 
+/**
+ * Kort handlingstittel til «det viktigste nå»-kortet, gitt sakens stadium.
+ * Ren tekst — ingen fakta finnes opp.
+ */
+export function handlingstittel(stadium: Stadium | null): string {
+  switch (stadium) {
+    case "inkassovarsel":
+      return "Svar på inkassovarselet";
+    case "betalingsoppfordring":
+      return "Svar på betalingsoppfordringen";
+    case "purring":
+      return "Følg opp purringen";
+    case "faktura":
+      return "Følg opp fakturaen";
+    case "forliksrad":
+      return "Følg opp forliksklagen";
+    case "namsmann":
+      return "Følg opp saken hos namsmannen";
+    case "nedbetaling":
+      return "Følg opp nedbetalingen";
+    default:
+      return "Følg opp saken";
+  }
+}
+
 /** Legg til et antall dager på en ISO-dato (YYYY-MM-DD). UTC-trygt. */
 export function leggTilDager(isoDato: string, dager: number): string {
   const d = new Date(`${isoDato}T00:00:00Z`);

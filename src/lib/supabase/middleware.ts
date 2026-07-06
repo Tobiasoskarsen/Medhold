@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Fornyer Supabase-sessionen på hver request og beskytter ruter.
- * Uinnloggede brukere sendes til /login (unntatt offentlige ruter).
+ * Uinnloggede brukere sendes til /velkommen (unntatt offentlige ruter).
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -36,18 +36,29 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isPublic =
-    path === "/" ||
-    path.startsWith("/login") ||
+    path.startsWith("/velkommen") ||
+    path.startsWith("/logg-inn") ||
     path.startsWith("/auth") ||
     path.startsWith("/personvern") ||
     // Cron-endepunktet har ingen innlogget bruker — det sikres av CRON_SECRET
     // i selve ruten. Uten dette unntaket ville proxy-en sendt Vercel Cron til
-    // /login, og jobben ville aldri kjørt.
+    // innlogging, og jobben ville aldri kjørt.
     path.startsWith("/api/cron");
 
+  // Uinnlogget på en beskyttet rute → velkomstskjermen (roten for uinnloggede).
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/velkommen";
+    return NextResponse.redirect(url);
+  }
+
+  // Innlogget bruker som treffer velkomst/innlogging → rett til Hjem.
+  if (
+    user &&
+    (path.startsWith("/velkommen") || path.startsWith("/logg-inn"))
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
