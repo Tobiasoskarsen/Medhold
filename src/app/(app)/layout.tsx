@@ -17,6 +17,8 @@ export default async function AppLayout({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/velkommen");
+  // Førstegangs-omvisning: vises én gang, til den er sett eller hoppet over.
+  if (!user.user_metadata?.sett_intro) redirect("/intro");
 
   return (
     <div className="flex min-h-screen flex-col pb-24">
