@@ -11,7 +11,7 @@ etter hver fase.
 | 1 | Datamodell | ✅ Ferdig (migrasjoner ikke kjørt i Supabase ennå) |
 | 2 | Skjermene | ✅ Ferdig (krever at migrasjonene kjøres for å funke live) |
 | 3 | Saksbehandleren | ✅ Ferdig (migrasjoner 0013–0014 må kjøres) |
-| 4 | Inntak og posisjonering | ⬜ Ikke startet |
+| 4 | Inntak og posisjonering | ✅ Ferdig |
 | 5 | Ekte betaling | 🔒 Låst (krever egen beskjed) |
 
 ---
@@ -215,9 +215,35 @@ skjermene virker mot live-DB. 0013–0014 er nye i denne fasen.
 
 ---
 
+## Fase 4 — Inntak og posisjonering (ferdig)
+
+- **Bildeinntak (5.4):** `analyserBrevBilder(bilder)` sender foto/PDF som base64
+  til Claude vision med samme skjema + `ekstrahert_tekst` (transkripsjon). Maks
+  2 filer. **Kun teksten lagres** (original_tekst = transkripsjonen), aldri
+  bildet. Deler etterbehandling (beregnet frist + krav-matching) med tekst-
+  analysen via `etterbehandle()`.
+- **«Ta bilde» / «Last opp fil» / «Lim inn tekst»** er nå tre valg i steg 1 av
+  flyten (kamera-input `capture=environment`, fil-input `image/*,application/pdf`).
+- **Gjeld-først velkomst:** «Fått inkassovarsel? Få oversikt, frister og et
+  ferdig utkast til svar — samlet på ett sted.»
+- **PWA-manifest:** `app/manifest.ts` (navn, ikoner 192/512 + maskable, farger,
+  standalone, nb). Lagt til i proxy-matcher-unntaket så den er offentlig.
+
+`npm run build/lint/test` grønne. Verifisert velkomst + manifest live.
+
+Valg:
+1. Bildeinntak støtter `image/*` og `application/pdf` (document-blokk for PDF).
+2. Landingssiden er velkomst-skjermen med gjeld-først-tekst (ikke en egen
+   marketing-side) — holder 3.7 minimal, men med riktig vinkling.
+
+---
+
+## Deploy
+
+Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**
+i Vercel-env, ellers gater `harPluss` utkast/bilde bak paywall.
+
 ## Neste økt
 
-**Fase 4 — Inntak og posisjonering:** bildeinntak (5.4, foto/PDF → Claude
-vision, maks 2 bilder, lagre kun tekst), aktiver «Ta bilde»/«Last opp» i flyten,
-gjeld-først landingsside, komplett PWA-manifest. (Fase 5 = ekte betaling er
-låst til egen beskjed.)
+**Fase 5 — Ekte betaling (LÅST):** ikke start uten egen beskjed. Stripe
+Checkout + kundeportal koblet inn i `harPluss()`-punktet, pilotflagg av.

@@ -107,12 +107,49 @@ export type AnalyseResultat =
   | {
       ok: true;
       analyse: Analyse;
+      /** Teksten som lagres som original_tekst (innlimt eller ekstrahert). */
+      original_tekst: string;
       /** Frist beregnet deterministisk av kode (kilde='beregnet'), om noen. */
       beregnetFrist: { tittel: string; forfallsdato: string } | null;
       /** Eksisterende krav som brevet trolig hører til (saksnummer/kreditor). */
       matchetKravId: string | null;
     }
   | { ok: false; feil: string };
+
+// Kode beslutter: beregn frist av regel + match mot eksisterende krav. Deles
+// mellom tekst- og bildeanalysen.
+async function etterbehandle(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  analyse: Analyse,
+): Promise<{
+  beregnetFrist: { tittel: string; forfallsdato: string } | null;
+  matchetKravId: string | null;
+}> {
+  const beregnet =
+    analyse.brevdato && analyse.brevtype
+      ? beregnFrist(analyse.brevtype, analyse.brevdato)
+      : null;
+  const beregnetFrist = beregnet
+    ? { tittel: beregnet.tittel, forfallsdato: beregnet.forfallsdato }
+    : null;
+
+  const { data: saker } = await supabase
+    .from("saker")
+    .select("id, kreditor, saksnummer");
+  const norm = (s: string | null) => (s ?? "").trim().toLowerCase();
+  const liste = saker ?? [];
+  let matchetKravId: string | null = null;
+  if (analyse.saksnummer) {
+    matchetKravId =
+      liste.find((s) => norm(s.saksnummer) === norm(analyse.saksnummer))?.id ??
+      null;
+  }
+  if (!matchetKravId && analyse.avsender) {
+    matchetKravId =
+      liste.find((s) => norm(s.kreditor) === norm(analyse.avsender))?.id ?? null;
+  }
+  return { beregnetFrist, matchetKravId };
+}
 
 export async function analyserBrevTekst(
   tekst: string,
@@ -157,33 +194,100 @@ export async function analyserBrevTekst(
     return { ok: false, feil: "Noe gikk galt under analysen. Prøv igjen om litt." };
   }
 
-  // Kode beslutter: beregn frist som følger av regel (inkassoloven §§ 9–10).
-  const beregnet =
-    analyse.brevdato && analyse.brevtype
-      ? beregnFrist(analyse.brevtype, analyse.brevdato)
-      : null;
-  const beregnetFrist = beregnet
-    ? { tittel: beregnet.tittel, forfallsdato: beregnet.forfallsdato }
-    : null;
+  const { beregnetFrist, matchetKravId } = await etterbehandle(supabase, analyse);
+  return { ok: true, analyse, original_tekst: rensket, beregnetFrist, matchetKravId };
+}
 
-  // Match mot eksisterende krav: saksnummer først, så kreditor/avsender.
-  const { data: saker } = await supabase
-    .from("saker")
-    .select("id, kreditor, saksnummer");
-  const norm = (s: string | null) => (s ?? "").trim().toLowerCase();
-  let matchetKravId: string | null = null;
-  const liste = saker ?? [];
-  if (analyse.saksnummer) {
-    matchetKravId =
-      liste.find((s) => norm(s.saksnummer) === norm(analyse.saksnummer))?.id ??
-      null;
-  }
-  if (!matchetKravId && analyse.avsender) {
-    matchetKravId =
-      liste.find((s) => norm(s.kreditor) === norm(analyse.avsender))?.id ?? null;
+export type Bilde = { media_type: string; data: string };
+
+// Vision-skjema: samme som tekst, men modellen transkriberer også brevet slik
+// at vi kan lagre teksten (ikke bildet). Maks 2 bilder per brev.
+const VISJON_SKJEMA = {
+  ...SVAR_SKJEMA,
+  properties: {
+    ...SVAR_SKJEMA.properties,
+    ekstrahert_tekst: {
+      type: "string",
+      description: "Ordrett transkripsjon av all tekst i brevet.",
+    },
+  },
+  required: [...SVAR_SKJEMA.required, "ekstrahert_tekst"],
+} as const;
+
+export async function analyserBrevBilder(
+  bilder: Bilde[],
+): Promise<AnalyseResultat> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  if (bilder.length === 0)
+    return { ok: false, feil: "Legg til minst ett bilde av brevet." };
+  if (bilder.length > 2)
+    return { ok: false, feil: "Maks to bilder per brev." };
+  if (!process.env.ANTHROPIC_API_KEY)
+    return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
+
+  const idag = new Date().toLocaleDateString("nb-NO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const innhold: Anthropic.ContentBlockParam[] = bilder.map((b) =>
+    b.media_type === "application/pdf"
+      ? {
+          type: "document",
+          source: { type: "base64", media_type: "application/pdf", data: b.data },
+        }
+      : {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: b.media_type as
+              | "image/jpeg"
+              | "image/png"
+              | "image/webp"
+              | "image/gif",
+            data: b.data,
+          },
+        },
+  );
+  innhold.push({
+    type: "text",
+    text: "Her er brevet som bilde(r). Transkriber teksten og analyser det etter reglene.",
+  });
+
+  let analyse: Analyse & { ekstrahert_tekst: string };
+  try {
+    const anthropic = new Anthropic();
+    const svar = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 3000,
+      thinking: { type: "disabled" },
+      system: systemprompt(idag),
+      output_config: { format: { type: "json_schema", schema: VISJON_SKJEMA } },
+      messages: [{ role: "user", content: innhold }],
+    });
+    const blokk = svar.content.find((b) => b.type === "text");
+    if (!blokk || blokk.type !== "text")
+      return { ok: false, feil: "Fikk ikke et brukbart svar. Prøv igjen." };
+    analyse = JSON.parse(blokk.text) as Analyse & { ekstrahert_tekst: string };
+  } catch {
+    return { ok: false, feil: "Kunne ikke lese bildet. Prøv et tydeligere bilde." };
   }
 
-  return { ok: true, analyse, beregnetFrist, matchetKravId };
+  const { ekstrahert_tekst, ...rest } = analyse;
+  const { beregnetFrist, matchetKravId } = await etterbehandle(supabase, rest);
+  return {
+    ok: true,
+    analyse: rest,
+    original_tekst: ekstrahert_tekst,
+    beregnetFrist,
+    matchetKravId,
+  };
 }
 
 export type LagreBrevInput = {

@@ -17,8 +17,8 @@ export default function VelkommenPage() {
           {APP_NAME}
         </p>
         <p className="mt-2.5 text-sm leading-[1.55] text-dempet">
-          Brev, frister og krav — samlet på ett sted, med hjelp til å svare
-          riktig og i tide.
+          Fått inkassovarsel? Få oversikt, frister og et ferdig utkast til svar
+          — samlet på ett sted.
         </p>
       </div>
 
