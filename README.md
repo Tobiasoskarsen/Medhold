@@ -1,4 +1,4 @@
-# Klarvei
+# Medhold
 
 Et verktøy for å holde oversikt over saker, frister og neste steg i en vanskelig
 periode — og for å forstå og oversette offentlige brev. Web-app bygget med

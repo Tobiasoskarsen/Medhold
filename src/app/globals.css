@@ -1,33 +1,77 @@
 @import "tailwindcss";
 
 /*
- * Varm nøytral palett. Vi remapper hele `slate`-skalaen (som appen bruker
- * overalt) fra kald blågrå til en rolig, varm sand/stein-tone. Da får hele
- * appen et varmere, mer menneskelig uttrykk uten å endre klasser i hver fil.
- * Teal beholdes som merkevarefarge (sol-over-vei). Verdiene er lånt av en
- * dempet sand-rampe — bevisst lav metning så det føles rolig, ikke leker.
+ * Medhold designsystem.
+ *
+ * Nye skjermer bruker token-variablene under (--bakgrunn, --blekk, --aksent …)
+ * via Tailwind-utilities som `bg-bakgrunn`, `text-blekk`, `border-strek`.
+ *
+ * Den gamle slate-remappingen beholdes inntil videre fordi de eksisterende
+ * skjermene (dashbord, saksside) fortsatt bruker slate-/teal-klasser. Den
+ * fjernes når disse skjermene erstattes i Fase 2.
  */
-@theme {
-  --color-slate-50: #f7f4ee; /* sidebakgrunn – varmt papir */
-  --color-slate-100: #f0ebe1;
-  --color-slate-200: #e6dfcd; /* hårfine linjer */
-  --color-slate-300: #d8cfbd;
-  --color-slate-400: #aba290; /* dempede ikoner/hint */
-  --color-slate-500: #837b6b;
-  --color-slate-600: #635c4e; /* sekundærtekst */
-  --color-slate-700: #4b453a;
-  --color-slate-800: #332f27;
-  --color-slate-900: #26221c; /* primærtekst – varm nær-svart */
-
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
 :root {
-  --background: #f7f4ee;
-  --foreground: #26221c;
+  /* Designtokens (seksjon 2.1) */
+  --bakgrunn: #f7f7f5; /* app-bakgrunn */
+  --flate: #ffffff; /* kort, bunn-nav */
+  --blekk: #1c2b33; /* primærtekst */
+  --dempet: #5c6b73; /* sekundærtekst */
+  --strek: #e4e4df; /* kanter, delelinjer */
+  --aksent: #0e7c66; /* primærknapp, aktiv nav, tidslinje */
+  --aksent-lys: #17a085; /* logo-grønn på mørk flate */
+  --varsel-bg: #f6e7de; /* frist-pill bakgrunn */
+  --varsel-tekst: #8a3f20; /* frist-pill tekst */
+
+  --background: var(--bakgrunn);
+  --foreground: var(--blekk);
+}
+
+@theme inline {
+  /* Gjør tokens tilgjengelige som Tailwind-farger (bg-*, text-*, border-*). */
+  --color-bakgrunn: var(--bakgrunn);
+  --color-flate: var(--flate);
+  --color-blekk: var(--blekk);
+  --color-dempet: var(--dempet);
+  --color-strek: var(--strek);
+  --color-aksent: var(--aksent);
+  --color-aksent-lys: var(--aksent-lys);
+  --color-varsel-bg: var(--varsel-bg);
+  --color-varsel-tekst: var(--varsel-tekst);
+
+  --font-sans: var(--font-inter);
+}
+
+/*
+ * Varm nøytral palett for eldre skjermer. Vi remapper hele `slate`-skalaen
+ * fra kald blågrå til en rolig, varm sand/stein-tone. Fjernes i Fase 2.
+ */
+@theme {
+  --color-slate-50: #f7f4ee;
+  --color-slate-100: #f0ebe1;
+  --color-slate-200: #e6dfcd;
+  --color-slate-300: #d8cfbd;
+  --color-slate-400: #aba290;
+  --color-slate-500: #837b6b;
+  --color-slate-600: #635c4e;
+  --color-slate-700: #4b453a;
+  --color-slate-800: #332f27;
+  --color-slate-900: #26221c;
 }
 
 body {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  background: var(--bakgrunn);
+  color: var(--blekk);
+}
+
+/* Ingen dekorativ animasjon — respekter brukerens valg. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

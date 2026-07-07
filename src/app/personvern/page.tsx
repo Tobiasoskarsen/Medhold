@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { APP_NAME } from "@/lib/brand";
 
 export const metadata = {
-  title: "Personvern — Klarvei",
+  title: `Personvern — ${APP_NAME}`,
 };
 
 export default function PersonvernPage() {
@@ -66,7 +67,7 @@ export default function PersonvernPage() {
         <section className="rounded-xl bg-amber-50 px-4 py-3 text-amber-900">
           <h2 className="mb-1 font-semibold">Ikke profesjonell rådgivning</h2>
           <p>
-            Klarvei hjelper deg å holde oversikt. Det er ikke en
+            {APP_NAME} hjelper deg å holde oversikt. Det er ikke en
             offentlig tjeneste og ikke juridisk, medisinsk eller økonomisk
             rådgivning. Bekreft alltid viktige ting med rett instans (NAV, lege,
             advokat, kommune).

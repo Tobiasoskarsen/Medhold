@@ -1,0 +1,99 @@
+"use server";
+
+import Anthropic from "@anthropic-ai/sdk";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { harPluss } from "@/lib/plan";
+import { type UtkastType } from "@/lib/types";
+
+export type UtkastResultat =
+  | { ok: true; innhold: string }
+  | { ok: false; feil?: string; paywall?: boolean };
+
+const FORMÅL: Record<UtkastType, string> = {
+  innsigelse:
+    "en innsigelse der personen bestrider kravet helt eller delvis",
+  betalingsutsettelse:
+    "en anmodning om betalingsutsettelse eller en nedbetalingsavtale",
+  klage: "en klage på vedtaket/kravet",
+};
+
+export async function lagUtkast(
+  sakId: string,
+  brevId: string | null,
+  type: UtkastType,
+  detaljer: string,
+): Promise<UtkastResultat> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  // Gating: utkastgenerering krever Pluss (i pilotmodus alltid tillatt).
+  if (!(await harPluss(user.id))) return { ok: false, paywall: true };
+
+  if (!process.env.ANTHROPIC_API_KEY)
+    return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
+
+  // Hent brevet det svares på (RLS sikrer eierskap).
+  let original = "";
+  if (brevId) {
+    const { data: brev } = await supabase
+      .from("brev")
+      .select("original_tekst")
+      .eq("id", brevId)
+      .maybeSingle();
+    original = brev?.original_tekst ?? "";
+  }
+
+  const detalj = detaljer.trim();
+  const system = `Du skriver et utkast til ${FORMÅL[type]} på vegne av en privatperson som har fått et brev om gjeld/inkasso.
+
+Ufravikelige regler:
+- Skriv et ferdig, høflig og saklig brev på norsk (bokmål), klart til å sendes.
+- Bruk KUN fakta fra brevet og det personen selv oppgir. Finn ALDRI opp beløp, datoer, paragrafer eller omstendigheter.
+- Nevn ikke forhold personen ikke har oppgitt. Er noe uklart, hold det generelt fremfor å gjette.
+- Ikke gi garantier om utfallet. Ikke lat som du er advokat.
+- Skriv kun selve brevteksten (ingen forklaring rundt, ingen «her er utkastet»).`;
+
+  const bruker = [
+    original ? `Brevet det svares på:\n\n${original}` : null,
+    detalj
+      ? `Det personen selv oppgir: ${detalj}`
+      : "Personen har ikke oppgitt utfyllende detaljer.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  let innhold: string;
+  try {
+    const anthropic = new Anthropic();
+    const svar = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1500,
+      thinking: { type: "disabled" },
+      system,
+      messages: [{ role: "user", content: bruker }],
+    });
+    const blokk = svar.content.find((b) => b.type === "text");
+    if (!blokk || blokk.type !== "text")
+      return { ok: false, feil: "Fikk ikke et brukbart utkast. Prøv igjen." };
+    innhold = blokk.text.trim();
+  } catch {
+    return { ok: false, feil: "Noe gikk galt. Prøv igjen om litt." };
+  }
+
+  // Lagre som tidslinjehendelse på kravet.
+  await supabase.from("utkast").insert({
+    sak_id: sakId,
+    bruker_id: user.id,
+    brev_id: brevId,
+    type,
+    innhold,
+  });
+
+  revalidatePath(`/krav/${sakId}`);
+  return { ok: true, innhold };
+}
