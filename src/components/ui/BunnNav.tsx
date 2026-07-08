@@ -9,17 +9,24 @@ import { haptikk } from "@/lib/haptikk";
  *  navigasjon → ren fade, ikke dybde-glid (faner er søsken). */
 export const FANE_NAV_NOKKEL = "medhold-fane-nav";
 
-type NavPunkt = { href: string; etikett: string; ikon: LucideIcon };
+type NavPunkt = {
+  href: string;
+  etikett: string;
+  ikon: LucideIcon;
+  /** Ekstra sti-prefikser som også markerer punktet som aktivt. */
+  ekstra?: string[];
+};
 
 const PUNKTER: NavPunkt[] = [
   { href: "/", etikett: "Hjem", ikon: Home },
-  { href: "/krav", etikett: "Krav", ikon: Folder },
+  { href: "/krav", etikett: "Krav", ikon: Folder, ekstra: ["/brev"] },
   { href: "/meg", etikett: "Meg", ikon: User },
 ];
 
-function erAktiv(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
+function erAktiv(pathname: string, p: NavPunkt): boolean {
+  if (p.href === "/") return pathname === "/";
+  const treff = (h: string) => pathname === h || pathname.startsWith(`${h}/`);
+  return treff(p.href) || (p.ekstra?.some(treff) ?? false);
 }
 
 /**
@@ -30,8 +37,9 @@ export function BunnNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t-[0.5px] border-strek bg-flate">
       <div className="mx-auto flex w-full max-w-[640px]">
-        {PUNKTER.map(({ href, etikett, ikon: Ikon }) => {
-          const aktiv = erAktiv(pathname, href);
+        {PUNKTER.map((punkt) => {
+          const { href, etikett, ikon: Ikon } = punkt;
+          const aktiv = erAktiv(pathname, punkt);
           return (
             <Link
               key={href}

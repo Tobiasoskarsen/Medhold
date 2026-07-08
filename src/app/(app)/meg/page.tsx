@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ChevronRight, LogOut } from "lucide-react";
+import { ChevronRight, LogOut, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme } from "@/components/ui";
 import SlettKonto from "@/components/SlettKonto";
 import VarselInnstilling from "@/components/VarselInnstilling";
 import { Fornavn } from "./Fornavn";
 import { TemaVelger } from "./Tema";
-import { APP_NAME } from "@/lib/brand";
+import { APP_NAME, SUPPORT_EPOST } from "@/lib/brand";
 
 export const metadata = {
   title: `Meg — ${APP_NAME}`,
@@ -67,7 +67,19 @@ export default async function MegPage() {
         </div>
       </Gruppe>
 
-      <Gruppe tittel={`Om ${APP_NAME}`}>
+      <Gruppe tittel="Hjelp og info">
+        <a
+          href={`mailto:${SUPPORT_EPOST}?subject=${encodeURIComponent(
+            "Hjelp med Medhold",
+          )}`}
+          className="trykk flex items-center justify-between px-[18px] py-4 text-sm text-blekk"
+        >
+          <span className="flex items-center gap-2.5">
+            <Mail className="size-4 shrink-0 text-dempet" aria-hidden />
+            Kontakt support
+          </span>
+          <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
+        </a>
         <Link
           href="/personvern"
           className="trykk flex items-center justify-between px-[18px] py-4 text-sm text-blekk"

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp } from "@/components/ui";
+import { KravBrevFaner } from "@/components/KravBrevFaner";
 import { formaterKortDato } from "@/lib/dato";
 import { formaterBelop } from "@/lib/format";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
@@ -49,9 +50,7 @@ export default async function KravListePage() {
 
   return (
     <Skjermramme className="pt-6">
-      <h1 className="mb-4 text-[21px] font-medium tracking-[-0.3px] text-blekk">
-        Krav
-      </h1>
+      <KravBrevFaner aktiv="krav" />
 
       {sortert.length === 0 ? (
         <Kort>

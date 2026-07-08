@@ -15,6 +15,7 @@ etter hver fase.
 | 5 | Ekte betaling | 🔒 Låst (krever egen beskjed) |
 | Motion | Bevegelsesspråk (egen ordre) | ✅ Ferdig |
 | Tillegg | Mørk modus + fyldigere Meg (på forespørsel) | ✅ Ferdig |
+| Tillegg | Brevarkiv + kontakt support (på forespørsel) | ✅ Ferdig |
 
 ---
 
@@ -33,6 +34,18 @@ etter hver fase.
   (følger tema) og den døde `/konto`-lenka rettet til `/meg`.
 - Verifisert i preview (380px): Meg i lys + mørk, tema-veksling uten FOUC/
   hydreringsfeil. Build/lint/test grønne.
+
+## Tillegg — brevarkiv + kontakt support (på brukerens forespørsel)
+
+- **Brevarkiv:** ny rute `/brev` som lister ALLE brev på tvers av krav (nyeste
+  først: brevtype · avsender · dato · kravnavn), hver lenker til brev-detaljen.
+  Nås via en segmentert veksler [Krav | Brev] (`KravBrevFaner`) øverst på både
+  `/krav` og `/brev`. BunnNav-«Krav» er aktiv for begge (ingen 4. fane).
+  Egen `loading.tsx`-skjelett.
+- **Kontakt support:** rad «Kontakt support» på Meg (gruppe «Hjelp og info») —
+  `mailto:` til `SUPPORT_EPOST` (ny konstant i `brand.ts`, satt til brukerens
+  e-post inntil en dedikert adresse finnes).
+- Verifisert: `/brev` = 200 med veksler + tom-tilstand. Build/lint/test grønne.
 
 ## Motion — bevegelsesspråk (ferdig)
 
