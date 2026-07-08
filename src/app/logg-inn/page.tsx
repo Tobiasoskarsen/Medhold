@@ -122,7 +122,7 @@ function LoggInn() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col px-6 pt-6">
+    <main className="inntoning mx-auto flex min-h-screen w-full max-w-[420px] flex-col px-6 pt-6">
       <button
         type="button"
         onClick={() => (steg === "kode" ? setSteg("epost") : router.push("/velkommen"))}

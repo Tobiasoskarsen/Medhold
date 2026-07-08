@@ -76,7 +76,7 @@ export default async function KravListePage() {
             return (
               <li key={sak.id}>
                 <Link href={`/krav/${sak.id}`} className="block">
-                  <Kort className="transition hover:border-dempet/40">
+                  <Kort klikkbar className="hover:border-dempet/40">
                     <div className="flex items-start justify-between gap-3">
                       <span className="text-sm font-medium text-blekk">
                         {sak.kreditor ?? sak.tittel}

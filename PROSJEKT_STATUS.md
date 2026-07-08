@@ -13,8 +13,52 @@ etter hver fase.
 | 3 | Saksbehandleren | ✅ Ferdig (migrasjoner 0013–0014 må kjøres) |
 | 4 | Inntak og posisjonering | ✅ Ferdig |
 | 5 | Ekte betaling | 🔒 Låst (krever egen beskjed) |
+| Motion | Bevegelsesspråk (egen ordre) | ✅ Ferdig |
 
 ---
+
+## Motion — bevegelsesspråk (ferdig)
+
+Implementert etter `MEDHOLD_MOTION_ARBEIDSORDRE.md`.
+
+- **Fundament:** `motion`-pakken (v12). Tokens i `src/lib/bevegelse.ts`
+  (VARIGHET/EASING/FJAER/INNTREDEN/STIGRING) + CSS-speiling i `globals.css`
+  (`--bevegelse-*`, `.trykk`, `.inntoning`, `.skjelett`). `src/lib/haptikk.ts`
+  (navigator.vibrate; byttes til Capacitor i fase 6). Felles
+  `Bevegelsesramme` (MotionConfig `reducedMotion="user"` + LazyMotion) i
+  (app)-layout og legg-til-brev.
+- **Trykk-tilstander:** `.trykk` (skala 0.98 via CSS `:active`) på Primærknapp,
+  Pillknapp, Kort (`klikkbar`), BunnNav og tidslinjelenker. Haptikk: primærknapp
+  + BunnNav (`lett`); lagret brev, generert utkast, løst sak (`suksess`).
+- **Skjerminntreden:** Skjermramme `animerInn` (stagger, maks 8 barn) på alle
+  (app)-skjermer. Velkomst/innlogging bruker CSS-`.inntoning` (se valg 1).
+- **Ruteoverganger:** `(app)/template.tsx` — dybde-glid fra høyre; fane-bytte
+  (BunnNav-flagg i sessionStorage) → ren fade. Legg-til-brev glir opp fra bunn.
+- **Levende detaljer:** `Belop` teller opp (imperativt `animate()`, textContent
+  — ingen state per frame); StadiumIndikator fyller sist-fylte segment (scaleX);
+  Tidslinje toner inn sekvensielt + linjesegmenter «tegnes» (scaleY).
+- **Løst sak-seremoni:** grønn sluttnode (scale 0.6→1) + hake (pathLength 0→1) +
+  haptikk. Utløses av «Marker som løst» i KravMeny; roligere variant første
+  gang en løst sak åpnes i økten (sessionStorage per sak-id).
+- **Skeletons:** `Skjelett` + `loading.tsx` for Hjem, /krav, /krav/[id].
+- `prefers-reduced-motion` respekteres (MotionConfig + CSS-media). Build/lint/
+  test grønne. Verifisert i preview: velkomst/innlogging + Hjem uten
+  konsollfeil, innhold interaktivt fra første frame.
+
+Valg tatt underveis:
+
+1. **Velkomst/innlogging bruker CSS-`.inntoning`** (én rolig fade+løft) i stedet
+   for Skjermramme-stagger, siden de er bespoke fullskjermskjermer uten
+   Skjermramme. Enkleste tolkning som oppfyller «innhold toner inn ved mount».
+2. **«Marker som løst»** fantes ikke som handling — la til et minimalt punkt i
+   KravMeny (setter status='fullfort') så seremonien har en utløser. En «Sak
+   løst»-hendelse legges øverst på tidslinjen.
+3. **Bundle:** full `motion`-komponent ga en motion-tung chunk >35 kB gzip, så
+   byttet til `LazyMotion` + `domAnimation` + `m`-komponenter (verifisert: ingen
+   layout/drag/projection-kode bundlet). Måling er upresis fordi app-kode ligger
+   i samme chunk; motion-andelen er lavere enn råtallet.
+4. **`(app)/loading.tsx`** (Hjem-skjelett) dekker også /meg og /pluss kort ved
+   navigasjon (Next scoper loading per segment). Akseptert — vises sjelden/kort.
 
 ## Fase 0 — Rebrand + designfundament (ferdig)
 

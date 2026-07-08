@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Folder, User, type LucideIcon } from "lucide-react";
+import { haptikk } from "@/lib/haptikk";
+
+/** Flagg som forteller ruteovergangen (template.tsx) at byttet er en fane-
+ *  navigasjon → ren fade, ikke dybde-glid (faner er søsken). */
+export const FANE_NAV_NOKKEL = "medhold-fane-nav";
 
 type NavPunkt = { href: string; etikett: string; ikon: LucideIcon };
 
@@ -32,7 +37,17 @@ export function BunnNav() {
               key={href}
               href={href}
               aria-current={aktiv ? "page" : undefined}
-              className={`flex flex-1 flex-col items-center gap-0.5 px-0 pb-4 pt-3 transition ${
+              onPointerDown={() => {
+                haptikk("lett");
+                if (!aktiv) {
+                  try {
+                    sessionStorage.setItem(FANE_NAV_NOKKEL, "1");
+                  } catch {
+                    /* privat modus e.l. — ignorer */
+                  }
+                }
+              }}
+              className={`trykk flex flex-1 flex-col items-center gap-0.5 px-0 pb-4 pt-3 ${
                 aktiv ? "text-aksent" : "text-dempet"
               }`}
             >
