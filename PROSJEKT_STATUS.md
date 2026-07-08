@@ -47,6 +47,16 @@ etter hver fase.
   e-post inntil en dedikert adresse finnes).
 - Verifisert: `/brev` = 200 med veksler + tom-tilstand. Build/lint/test grønne.
 
+## Tillegg — telefonnummer (på brukerens forespørsel)
+
+- **Telefon som valgfritt profilfelt** på Meg (Konto-gruppa), lagret i
+  `user_metadata.telefon`, normalisert til E.164 (norsk 8-sifret → +47…).
+  `lagreTelefon`-action + `Telefon.tsx` (speiler Fornavn-mønsteret).
+- **Bevisst valg (brukeren valgte interim):** innlogging forblir e-post. Ekte
+  SMS-innlogging krever en betalt SMS-leverandør (Twilio e.l.) i Supabase —
+  bygges når leverandør er valgt. Feltet gjør profilen SMS-klar (påminnelser +
+  login) uten kostnad nå.
+
 ## Motion — bevegelsesspråk (ferdig)
 
 Implementert etter `MEDHOLD_MOTION_ARBEIDSORDRE.md`.

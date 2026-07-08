@@ -6,6 +6,7 @@ import { Skjermramme } from "@/components/ui";
 import SlettKonto from "@/components/SlettKonto";
 import VarselInnstilling from "@/components/VarselInnstilling";
 import { Fornavn } from "./Fornavn";
+import { Telefon } from "./Telefon";
 import { TemaVelger } from "./Tema";
 import { APP_NAME, SUPPORT_EPOST } from "@/lib/brand";
 
@@ -33,6 +34,7 @@ export default async function MegPage() {
   } = await supabase.auth.getUser();
 
   const fornavn = (user?.user_metadata?.fornavn as string | undefined) ?? "";
+  const telefon = (user?.user_metadata?.telefon as string | undefined) ?? "";
   const varslerPa = user?.user_metadata?.varsler_paa !== false;
 
   return (
@@ -48,6 +50,9 @@ export default async function MegPage() {
         <div className="px-[18px] py-4">
           <p className="text-sm font-medium text-blekk">E-post</p>
           <p className="mt-0.5 text-[13px] text-dempet">{user?.email}</p>
+        </div>
+        <div className="px-[18px] py-4">
+          <Telefon start={telefon} />
         </div>
       </Gruppe>
 

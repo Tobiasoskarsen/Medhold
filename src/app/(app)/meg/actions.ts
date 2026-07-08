@@ -18,6 +18,33 @@ export async function lagreFornavn(
   if (error) return { feil: "Kunne ikke lagre. Prøv igjen." };
 }
 
+export async function lagreTelefon(
+  raw: string,
+): Promise<{ feil: string } | void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  // Lagres som valgfritt kontaktfelt nå (SMS-innlogging kobles på senere når
+  // en SMS-leverandør er satt opp). Normaliseres til E.164 der det er mulig.
+  const rensket = raw.replace(/[\s-]/g, "");
+  let telefon: string | null = null;
+  if (rensket) {
+    let n = rensket;
+    if (n.startsWith("0047")) n = `+${n.slice(2)}`;
+    if (/^\d{8}$/.test(n)) n = `+47${n}`; // norsk 8-sifret uten landkode
+    if (!/^\+\d{8,15}$/.test(n)) {
+      return { feil: "Skriv et gyldig telefonnummer, f.eks. 412 34 567." };
+    }
+    telefon = n;
+  }
+
+  const { error } = await supabase.auth.updateUser({ data: { telefon } });
+  if (error) return { feil: "Kunne ikke lagre. Prøv igjen." };
+}
+
 export async function settVarsler(
   pa: boolean,
 ): Promise<{ feil: string } | void> {
