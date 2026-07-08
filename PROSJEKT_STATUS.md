@@ -52,10 +52,21 @@ etter hver fase.
 - **Telefon som valgfritt profilfelt** på Meg (Konto-gruppa), lagret i
   `user_metadata.telefon`, normalisert til E.164 (norsk 8-sifret → +47…).
   `lagreTelefon`-action + `Telefon.tsx` (speiler Fornavn-mønsteret).
-- **Bevisst valg (brukeren valgte interim):** innlogging forblir e-post. Ekte
-  SMS-innlogging krever en betalt SMS-leverandør (Twilio e.l.) i Supabase —
-  bygges når leverandør er valgt. Feltet gjør profilen SMS-klar (påminnelser +
-  login) uten kostnad nå.
+
+## Tillegg — telefon-innlogging (bygget, flagg-gated)
+
+- **Innloggingssiden** har nå en E-post/Telefon-veksler. Telefon-stien bruker
+  Supabase `signInWithOtp({ phone })` + samme 6-boks kode-UI (`verifyOtp` type
+  `sms`). Delt normalisering i `src/lib/telefon.ts`.
+- **Gated bak `NEXT_PUBLIC_TELEFON_LOGIN`** (`telefonLoginPa()`). Vises kun når
+  flagget = `"true"`. **Ingen falsk/bypass-kode** — ekte SMS krever en
+  SMS-leverandør (Twilio e.l.) i Supabase. Uten provider feiler «Send kode»
+  pent («Kunne ikke sende SMS-kode nå … bruk e-post»); e-post virker alltid.
+- **For å skru på ekte SMS senere:** (1) sett opp SMS-provider i Supabase →
+  Auth → Providers → Phone, (2) `NEXT_PUBLIC_TELEFON_LOGIN=true` i Vercel. Da
+  virker telefon-login uten mer kodejobb. **Gjenstår (når SMS er live):** koble
+  begge identiteter på én konto (updateUser({phone}) + verifisering i Meg) for
+  «registrer med begge og velg innlogging».
 
 ## Motion — bevegelsesspråk (ferdig)
 
