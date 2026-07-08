@@ -14,8 +14,25 @@ etter hver fase.
 | 4 | Inntak og posisjonering | ✅ Ferdig |
 | 5 | Ekte betaling | 🔒 Låst (krever egen beskjed) |
 | Motion | Bevegelsesspråk (egen ordre) | ✅ Ferdig |
+| Tillegg | Mørk modus + fyldigere Meg (på forespørsel) | ✅ Ferdig |
 
 ---
+
+## Tillegg — mørk modus + Meg-side (på brukerens forespørsel)
+
+- **Lys/mørk/system-tema:** `.mork`-token-overstyringer i `globals.css`
+  (kun variabler → hele appen følger med). Ingen-FOUC-skript i `layout.tsx`
+  setter `.mork` på `<html>` før paint (+ `suppressHydrationWarning`).
+  Tema-velger `src/app/(app)/meg/Tema.tsx` (Lys/Mørk/System, lagres i
+  localStorage, følger OS ved «system»). `color-scheme` satt for native
+  kontroller. Medhold-merket bruker nå token-farger (følger tema).
+- **Meg-side utvidet:** grupperte innstillinger (Konto, Utseende, Varsling,
+  Om Medhold) i kort-seksjoner + Logg ut + Slett kontoen min. Erstatter den
+  tynne flate lista.
+- **Bonus:** `personvern`-siden ryddet fra gammel `slate`-palett til tokens
+  (følger tema) og den døde `/konto`-lenka rettet til `/meg`.
+- Verifisert i preview (380px): Meg i lys + mørk, tema-veksling uten FOUC/
+  hydreringsfeil. Build/lint/test grønne.
 
 ## Motion — bevegelsesspråk (ferdig)
 

@@ -25,6 +25,27 @@
 
   --background: var(--bakgrunn);
   --foreground: var(--blekk);
+
+  color-scheme: light;
+}
+
+/*
+ * Mørkt tema. Klassen `.mork` settes på <html> av tema-skriptet i layout
+ * (før paint, ingen FOUC) og av tema-velgeren på Meg. Kun tokens overstyres —
+ * alle skjermer bruker disse variablene, så hele appen følger med.
+ */
+.mork {
+  --bakgrunn: #121a1b;
+  --flate: #1b2527;
+  --blekk: #eceeed;
+  --dempet: #94a2a1;
+  --strek: #2a3639;
+  --aksent: #19a88b;
+  --aksent-lys: #19a88b;
+  --varsel-bg: #382a21;
+  --varsel-tekst: #e8bda4;
+
+  color-scheme: dark;
 }
 
 @theme inline {
