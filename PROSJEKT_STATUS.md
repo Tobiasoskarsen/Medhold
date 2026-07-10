@@ -13,8 +13,103 @@ etter hver fase.
 | 3 | Saksbehandleren | ✅ Ferdig (migrasjoner 0013–0014 må kjøres) |
 | 4 | Inntak og posisjonering | ✅ Ferdig |
 | 5 | Ekte betaling | 🔒 Låst (krever egen beskjed) |
+| Motion | Bevegelsesspråk (egen ordre) | ✅ Ferdig |
+| Tillegg | Mørk modus + fyldigere Meg (på forespørsel) | ✅ Ferdig |
+| Tillegg | Brevarkiv + kontakt support (på forespørsel) | ✅ Ferdig |
 
 ---
+
+## Tillegg — mørk modus + Meg-side (på brukerens forespørsel)
+
+- **Lys/mørk/system-tema:** `.mork`-token-overstyringer i `globals.css`
+  (kun variabler → hele appen følger med). Ingen-FOUC-skript i `layout.tsx`
+  setter `.mork` på `<html>` før paint (+ `suppressHydrationWarning`).
+  Tema-velger `src/app/(app)/meg/Tema.tsx` (Lys/Mørk/System, lagres i
+  localStorage, følger OS ved «system»). `color-scheme` satt for native
+  kontroller. Medhold-merket bruker nå token-farger (følger tema).
+- **Meg-side utvidet:** grupperte innstillinger (Konto, Utseende, Varsling,
+  Om Medhold) i kort-seksjoner + Logg ut + Slett kontoen min. Erstatter den
+  tynne flate lista.
+- **Bonus:** `personvern`-siden ryddet fra gammel `slate`-palett til tokens
+  (følger tema) og den døde `/konto`-lenka rettet til `/meg`.
+- Verifisert i preview (380px): Meg i lys + mørk, tema-veksling uten FOUC/
+  hydreringsfeil. Build/lint/test grønne.
+
+## Tillegg — brevarkiv + kontakt support (på brukerens forespørsel)
+
+- **Brevarkiv:** ny rute `/brev` som lister ALLE brev på tvers av krav (nyeste
+  først: brevtype · avsender · dato · kravnavn), hver lenker til brev-detaljen.
+  Nås via en segmentert veksler [Krav | Brev] (`KravBrevFaner`) øverst på både
+  `/krav` og `/brev`. BunnNav-«Krav» er aktiv for begge (ingen 4. fane).
+  Egen `loading.tsx`-skjelett.
+- **Kontakt support:** rad «Kontakt support» på Meg (gruppe «Hjelp og info») —
+  `mailto:` til `SUPPORT_EPOST` (ny konstant i `brand.ts`, satt til brukerens
+  e-post inntil en dedikert adresse finnes).
+- Verifisert: `/brev` = 200 med veksler + tom-tilstand. Build/lint/test grønne.
+
+## Tillegg — telefonnummer (på brukerens forespørsel)
+
+- **Telefon som valgfritt profilfelt** på Meg (Konto-gruppa), lagret i
+  `user_metadata.telefon`, normalisert til E.164 (norsk 8-sifret → +47…).
+  `lagreTelefon`-action + `Telefon.tsx` (speiler Fornavn-mønsteret).
+
+## Tillegg — telefon-innlogging (bygget, flagg-gated)
+
+- **Innloggingssiden** har nå en E-post/Telefon-veksler. Telefon-stien bruker
+  Supabase `signInWithOtp({ phone })` + samme 6-boks kode-UI (`verifyOtp` type
+  `sms`). Delt normalisering i `src/lib/telefon.ts`.
+- **Gated bak `NEXT_PUBLIC_TELEFON_LOGIN`** (`telefonLoginPa()`). Vises kun når
+  flagget = `"true"`. **Ingen falsk/bypass-kode** — ekte SMS krever en
+  SMS-leverandør (Twilio e.l.) i Supabase. Uten provider feiler «Send kode»
+  pent («Kunne ikke sende SMS-kode nå … bruk e-post»); e-post virker alltid.
+- **For å skru på ekte SMS senere:** (1) sett opp SMS-provider i Supabase →
+  Auth → Providers → Phone, (2) `NEXT_PUBLIC_TELEFON_LOGIN=true` i Vercel. Da
+  virker telefon-login uten mer kodejobb. **Gjenstår (når SMS er live):** koble
+  begge identiteter på én konto (updateUser({phone}) + verifisering i Meg) for
+  «registrer med begge og velg innlogging».
+
+## Motion — bevegelsesspråk (ferdig)
+
+Implementert etter `MEDHOLD_MOTION_ARBEIDSORDRE.md`.
+
+- **Fundament:** `motion`-pakken (v12). Tokens i `src/lib/bevegelse.ts`
+  (VARIGHET/EASING/FJAER/INNTREDEN/STIGRING) + CSS-speiling i `globals.css`
+  (`--bevegelse-*`, `.trykk`, `.inntoning`, `.skjelett`). `src/lib/haptikk.ts`
+  (navigator.vibrate; byttes til Capacitor i fase 6). Felles
+  `Bevegelsesramme` (MotionConfig `reducedMotion="user"` + LazyMotion) i
+  (app)-layout og legg-til-brev.
+- **Trykk-tilstander:** `.trykk` (skala 0.98 via CSS `:active`) på Primærknapp,
+  Pillknapp, Kort (`klikkbar`), BunnNav og tidslinjelenker. Haptikk: primærknapp
+  + BunnNav (`lett`); lagret brev, generert utkast, løst sak (`suksess`).
+- **Skjerminntreden:** Skjermramme `animerInn` (stagger, maks 8 barn) på alle
+  (app)-skjermer. Velkomst/innlogging bruker CSS-`.inntoning` (se valg 1).
+- **Ruteoverganger:** `(app)/template.tsx` — dybde-glid fra høyre; fane-bytte
+  (BunnNav-flagg i sessionStorage) → ren fade. Legg-til-brev glir opp fra bunn.
+- **Levende detaljer:** `Belop` teller opp (imperativt `animate()`, textContent
+  — ingen state per frame); StadiumIndikator fyller sist-fylte segment (scaleX);
+  Tidslinje toner inn sekvensielt + linjesegmenter «tegnes» (scaleY).
+- **Løst sak-seremoni:** grønn sluttnode (scale 0.6→1) + hake (pathLength 0→1) +
+  haptikk. Utløses av «Marker som løst» i KravMeny; roligere variant første
+  gang en løst sak åpnes i økten (sessionStorage per sak-id).
+- **Skeletons:** `Skjelett` + `loading.tsx` for Hjem, /krav, /krav/[id].
+- `prefers-reduced-motion` respekteres (MotionConfig + CSS-media). Build/lint/
+  test grønne. Verifisert i preview: velkomst/innlogging + Hjem uten
+  konsollfeil, innhold interaktivt fra første frame.
+
+Valg tatt underveis:
+
+1. **Velkomst/innlogging bruker CSS-`.inntoning`** (én rolig fade+løft) i stedet
+   for Skjermramme-stagger, siden de er bespoke fullskjermskjermer uten
+   Skjermramme. Enkleste tolkning som oppfyller «innhold toner inn ved mount».
+2. **«Marker som løst»** fantes ikke som handling — la til et minimalt punkt i
+   KravMeny (setter status='fullfort') så seremonien har en utløser. En «Sak
+   løst»-hendelse legges øverst på tidslinjen.
+3. **Bundle:** full `motion`-komponent ga en motion-tung chunk >35 kB gzip, så
+   byttet til `LazyMotion` + `domAnimation` + `m`-komponenter (verifisert: ingen
+   layout/drag/projection-kode bundlet). Måling er upresis fordi app-kode ligger
+   i samme chunk; motion-andelen er lavere enn råtallet.
+4. **`(app)/loading.tsx`** (Hjem-skjelett) dekker også /meg og /pluss kort ved
+   navigasjon (Next scoper loading per segment). Akseptert — vises sjelden/kort.
 
 ## Fase 0 — Rebrand + designfundament (ferdig)
 

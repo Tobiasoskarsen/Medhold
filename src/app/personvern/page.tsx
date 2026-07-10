@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { APP_NAME } from "@/lib/brand";
 
 export const metadata = {
@@ -7,36 +8,36 @@ export const metadata = {
 
 export default function PersonvernPage() {
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-12">
+    <main className="mx-auto w-full max-w-2xl px-6 py-10">
       <Link
-        href="/saker"
-        className="text-sm text-slate-500 transition hover:text-slate-800"
+        href="/meg"
+        className="flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
       >
-        ← Tilbake
+        <ChevronLeft className="size-5" aria-hidden />
+        Tilbake
       </Link>
 
-      <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">
+      <h1 className="mt-4 text-[21px] font-medium tracking-[-0.3px] text-blekk">
         Personvern
       </h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-1.5 text-[13px] text-dempet">
         Kort og ærlig om hvordan dataene dine behandles.
       </p>
 
-      <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-slate-700">
+      <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-blekk">
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">
-            Hva vi lagrer
-          </h2>
-          <p>
-            Vi lagrer det du selv legger inn: saker, frister, neste steg og
-            tekst du limer inn for forklaring. Vi samler ikke inn noe utover
-            dette, og vi selger eller deler ikke dataene dine.
+          <h2 className="mb-1 font-medium text-blekk">Hva vi lagrer</h2>
+          <p className="text-dempet">
+            Vi lagrer det du selv legger inn: krav, brev, frister og steg, samt
+            teksten du limer inn eller fotograferer for forklaring. Vi samler
+            ikke inn noe utover dette, og vi selger eller deler ikke dataene
+            dine.
           </p>
         </section>
 
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">Hvor det lagres</h2>
-          <p>
+          <h2 className="mb-1 font-medium text-blekk">Hvor det lagres</h2>
+          <p className="text-dempet">
             Dataene lagres hos vår databaseleverandør (Supabase) i EU. Hver
             bruker har kun tilgang til sine egne data, håndhevet på
             databasenivå.
@@ -44,33 +45,36 @@ export default function PersonvernPage() {
         </section>
 
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">AI-forklaringer</h2>
-          <p>
-            Når du ber om å få et brev forklart, sendes <em>kun</em> teksten du
-            limer inn til vår AI-leverandør (Anthropic) for å lage forklaringen.
-            Vi sender aldri hele saksbildet ditt automatisk. Resten av appen er
-            uten AI.
+          <h2 className="mb-1 font-medium text-blekk">AI-forklaringer</h2>
+          <p className="text-dempet">
+            Når du ber om å få et brev forklart eller lage et utkast, sendes{" "}
+            <em>kun</em> teksten du selv legger inn til vår AI-leverandør
+            (Anthropic). Vi sender aldri hele saksbildet ditt automatisk, og
+            bilder lagres ikke — kun teksten som trekkes ut.
           </p>
         </section>
 
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">Slette dataene</h2>
-          <p>
+          <h2 className="mb-1 font-medium text-blekk">Slette dataene</h2>
+          <p className="text-dempet">
             Du kan når som helst slette all data og hele kontoen din under{" "}
-            <Link href="/konto" className="underline hover:text-slate-900">
-              Min konto
+            <Link
+              href="/meg"
+              className="text-blekk underline decoration-strek underline-offset-2 hover:decoration-dempet"
+            >
+              Meg
             </Link>
             . Det er endelig og kan ikke angres.
           </p>
         </section>
 
-        <section className="rounded-xl bg-amber-50 px-4 py-3 text-amber-900">
-          <h2 className="mb-1 font-semibold">Ikke profesjonell rådgivning</h2>
+        <section className="rounded-xl bg-varsel-bg px-4 py-3 text-varsel-tekst">
+          <h2 className="mb-1 font-medium">Ikke profesjonell rådgivning</h2>
           <p>
-            {APP_NAME} hjelper deg å holde oversikt. Det er ikke en
-            offentlig tjeneste og ikke juridisk, medisinsk eller økonomisk
-            rådgivning. Bekreft alltid viktige ting med rett instans (NAV, lege,
-            advokat, kommune).
+            {APP_NAME} hjelper deg å holde oversikt. Det er ikke en offentlig
+            tjeneste og ikke juridisk eller økonomisk rådgivning. Bekreft alltid
+            viktige ting med rett instans (namsmann, inkassobyrå, advokat,
+            kommune).
           </p>
         </section>
       </div>

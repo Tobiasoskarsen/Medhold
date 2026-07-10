@@ -25,6 +25,27 @@
 
   --background: var(--bakgrunn);
   --foreground: var(--blekk);
+
+  color-scheme: light;
+}
+
+/*
+ * Mørkt tema. Klassen `.mork` settes på <html> av tema-skriptet i layout
+ * (før paint, ingen FOUC) og av tema-velgeren på Meg. Kun tokens overstyres —
+ * alle skjermer bruker disse variablene, så hele appen følger med.
+ */
+.mork {
+  --bakgrunn: #121a1b;
+  --flate: #1b2527;
+  --blekk: #eceeed;
+  --dempet: #94a2a1;
+  --strek: #2a3639;
+  --aksent: #19a88b;
+  --aksent-lys: #19a88b;
+  --varsel-bg: #382a21;
+  --varsel-tekst: #e8bda4;
+
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -65,6 +86,61 @@ body {
   color: var(--blekk);
 }
 
+/*
+ * Bevegelses-tokens for CSS-transitions (speiler src/lib/bevegelse.ts).
+ * Komponenter refererer disse variablene / .trykk-klassen — ingen hardkoding.
+ */
+:root {
+  --bevegelse-hurtig: 150ms;
+  --bevegelse-normal: 200ms;
+  --bevegelse-rolig: 250ms;
+  --bevegelse-easing: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Trykk-respons: skalér flaten svakt ved aktivt trykk. Kun visuelt. */
+.trykk {
+  transition:
+    transform var(--bevegelse-hurtig) var(--bevegelse-easing),
+    opacity var(--bevegelse-hurtig) var(--bevegelse-easing);
+}
+.trykk:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/*
+ * Enkel inntoning for bespoke fullskjermskjermer (velkomst, innlogging) som
+ * ikke bruker Skjermramme. Én rolig fade + løft, ikke per-barn-stagger.
+ */
+.inntoning {
+  animation: inntoning var(--bevegelse-normal) var(--bevegelse-easing);
+}
+@keyframes inntoning {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Skeleton-flate med rolig opasitetspuls. */
+.skjelett {
+  background: var(--strek);
+  border-radius: 12px;
+  animation: skjelett-puls 1.6s ease-in-out infinite;
+}
+@keyframes skjelett-puls {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 /* Ingen dekorativ animasjon — respekter brukerens valg. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -73,5 +149,14 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  /* Forflytning/skalering → opasitetsfade (prinsipp 1.6). */
+  .trykk:active:not(:disabled) {
+    transform: none;
+    opacity: 0.75;
+  }
+  /* Skeleton står stille ved redusert bevegelse. */
+  .skjelett {
+    animation: none;
   }
 }

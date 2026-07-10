@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { normaliserTelefon } from "@/lib/telefon";
 
 export async function lagreFornavn(
   navn: string,
@@ -15,6 +16,29 @@ export async function lagreFornavn(
   const { error } = await supabase.auth.updateUser({
     data: { fornavn: navn.trim() || null },
   });
+  if (error) return { feil: "Kunne ikke lagre. Prøv igjen." };
+}
+
+export async function lagreTelefon(
+  raw: string,
+): Promise<{ feil: string } | void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  // Lagres som valgfritt kontaktfelt nå (SMS-innlogging kobles på senere når
+  // en SMS-leverandør er satt opp). Normaliseres til E.164 der det er mulig.
+  let telefon: string | null = null;
+  if (raw.trim()) {
+    telefon = normaliserTelefon(raw);
+    if (!telefon) {
+      return { feil: "Skriv et gyldig telefonnummer, f.eks. 412 34 567." };
+    }
+  }
+
+  const { error } = await supabase.auth.updateUser({ data: { telefon } });
   if (error) return { feil: "Kunne ikke lagre. Prøv igjen." };
 }
 

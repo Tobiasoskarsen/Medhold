@@ -8,9 +8,9 @@ import {
   StadiumIndikator,
   Tidslinje,
   TidslinjeHendelse,
+  Belop,
 } from "@/components/ui";
 import { formaterKortDato } from "@/lib/dato";
-import { formaterBelop } from "@/lib/format";
 import {
   STADIUM_ETIKETT,
   nesteStadium,
@@ -21,6 +21,7 @@ import {
 } from "@/lib/gjeld";
 import { UTKAST_ETIKETT, type FristKilde, type UtkastType } from "@/lib/types";
 import { KravMeny } from "./KravMeny";
+import { LostNode } from "./LostNode";
 
 type BrevRad = {
   id: string;
@@ -64,12 +65,15 @@ export default async function KravDetaljPage({
   const { data: sak } = await supabase
     .from("saker")
     .select(
-      "id, kreditor, tittel, opprinnelig_kreditor, saksnummer, belop_totalt, stadium",
+      "id, kreditor, tittel, opprinnelig_kreditor, saksnummer, belop_totalt, stadium, status, sist_endret",
     )
     .eq("id", id)
     .maybeSingle();
 
   if (!sak) notFound();
+
+  const lost = sak.status === "fullfort";
+  const lostDato = (sak.sist_endret as string | null)?.slice(0, 10);
 
   const [{ data: brevData }, { data: fristData }, { data: utkastData }] =
     await Promise.all([
@@ -111,7 +115,6 @@ export default async function KravDetaljPage({
 
   const sisteBrev = brevListe[0];
   const sisteBrevDato = sisteBrev?.brevdato ?? sisteBrev?.opprettet.slice(0, 10);
-  const belop = formaterBelop(sak.belop_totalt);
 
   type Item = {
     key: string;
@@ -175,7 +178,7 @@ export default async function KravDetaljPage({
           <ChevronLeft className="size-5" aria-hidden />
           Krav
         </Link>
-        <KravMeny kravId={sak.id} />
+        <KravMeny kravId={sak.id} lost={lost} />
       </div>
 
       <h1 className="text-[21px] font-medium tracking-[-0.3px] text-blekk">
@@ -185,11 +188,12 @@ export default async function KravDetaljPage({
         <p className="mt-0.5 text-[13px] text-dempet">{underlinje}</p>
       )}
 
-      {belop && (
+      {sak.belop_totalt != null && (
         <div className="mt-3.5 flex items-baseline gap-2">
-          <span className="text-[26px] font-medium tracking-[-0.5px] text-blekk">
-            {belop} kr
-          </span>
+          <Belop
+            verdi={sak.belop_totalt}
+            className="text-[26px] font-medium tracking-[-0.5px] text-blekk"
+          />
           {sisteBrevDato && (
             <span className="text-xs text-dempet">
               totalt per {formaterKortDato(sisteBrevDato)}
@@ -218,12 +222,21 @@ export default async function KravDetaljPage({
       )}
 
       <div className="mt-6">
-        {items.length === 0 ? (
+        {items.length === 0 && !lost ? (
           <p className="text-sm text-dempet">
             Ingen hendelser ennå. Legg til det første brevet.
           </p>
         ) : (
           <Tidslinje>
+            {lost && (
+              <TidslinjeHendelse
+                dato={lostDato ? formaterKortDato(lostDato) : ""}
+                node={<LostNode sakId={sak.id} />}
+                sisteHendelse={items.length === 0}
+              >
+                <p className="text-sm font-medium text-blekk">Sak løst</p>
+              </TidslinjeHendelse>
+            )}
             {items.map((item, i) => {
               const innhold = item.fremhevet ? (
                 <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
@@ -247,7 +260,7 @@ export default async function KravDetaljPage({
                   sisteHendelse={i === items.length - 1}
                 >
                   {item.href ? (
-                    <Link href={item.href} className="block transition hover:opacity-80">
+                    <Link href={item.href} className="trykk block hover:opacity-80">
                       {innhold}
                     </Link>
                   ) : (

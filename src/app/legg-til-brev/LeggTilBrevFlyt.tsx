@@ -2,8 +2,12 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { m } from "motion/react";
 import { X, Camera, Upload, Type, Trash2 } from "lucide-react";
 import { Primærknapp } from "@/components/ui";
+import { Bevegelsesramme } from "@/components/Bevegelsesramme";
+import { VARIGHET, EASING } from "@/lib/bevegelse";
+import { haptikk } from "@/lib/haptikk";
 import { BREVTYPER, STADIUM_ETIKETT, type BrevType } from "@/lib/gjeld";
 import { formaterKortDato } from "@/lib/dato";
 import type { FristForslag } from "@/lib/types";
@@ -170,6 +174,7 @@ export function LeggTilBrevFlyt({
       setLagrer(false);
       return;
     }
+    haptikk("suksess");
     router.push(`/krav/${r.sakId}`);
     router.refresh();
   }
@@ -178,7 +183,12 @@ export function LeggTilBrevFlyt({
     "mt-1.5 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[640px] flex-col px-5 pt-4">
+    <Bevegelsesramme>
+    <m.main
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: VARIGHET.rolig, ease: EASING }}
+      className="mx-auto flex min-h-screen w-full max-w-[640px] flex-col px-5 pt-4">
       <button
         type="button"
         aria-label="Avbryt"
@@ -505,7 +515,8 @@ export function LeggTilBrevFlyt({
           </div>
         </div>
       )}
-    </main>
+    </m.main>
+    </Bevegelsesramme>
   );
 }
 

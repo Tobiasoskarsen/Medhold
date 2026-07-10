@@ -1,9 +1,9 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Logo from "@/components/Logo";
-import { Skjermramme, Kort, Primærknapp, Pill } from "@/components/ui";
+import { Skjermramme, Kort, Primærknapp, Pill, Belop } from "@/components/ui";
 import { formaterKortDato, fristNærhet } from "@/lib/dato";
-import { formaterBelop } from "@/lib/format";
 import { handlingstittel, stotterUtkast, type Stadium } from "@/lib/gjeld";
 
 type SakKobling = {
@@ -90,15 +90,21 @@ export default async function HjemPage() {
               {handlingstittel(topSak?.stadium ?? null)}
             </p>
             <p className="mt-0.5 text-[13px] text-dempet">
-              {[
-                topSak?.kreditor ?? topSak?.tittel,
-                topSak?.belop_totalt != null
-                  ? `${formaterBelop(topSak.belop_totalt)} kr`
-                  : null,
-                topFrist ? `frist ${formaterKortDato(topFrist.forfallsdato)}` : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
+              {(() => {
+                const deler: ReactNode[] = [];
+                const navn = topSak?.kreditor ?? topSak?.tittel;
+                if (navn) deler.push(navn);
+                if (topSak?.belop_totalt != null)
+                  deler.push(<Belop key="b" verdi={topSak.belop_totalt} />);
+                if (topFrist)
+                  deler.push(`frist ${formaterKortDato(topFrist.forfallsdato)}`);
+                return deler.map((d, i) => (
+                  <span key={i}>
+                    {i > 0 ? " · " : ""}
+                    {d}
+                  </span>
+                ));
+              })()}
             </p>
             {topSak &&
               (stotterUtkast(topSak.stadium ?? null) ? (

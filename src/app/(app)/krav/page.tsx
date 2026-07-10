@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp } from "@/components/ui";
+import { KravBrevFaner } from "@/components/KravBrevFaner";
 import { formaterKortDato } from "@/lib/dato";
 import { formaterBelop } from "@/lib/format";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
@@ -49,9 +50,7 @@ export default async function KravListePage() {
 
   return (
     <Skjermramme className="pt-6">
-      <h1 className="mb-4 text-[21px] font-medium tracking-[-0.3px] text-blekk">
-        Krav
-      </h1>
+      <KravBrevFaner aktiv="krav" />
 
       {sortert.length === 0 ? (
         <Kort>
@@ -76,7 +75,7 @@ export default async function KravListePage() {
             return (
               <li key={sak.id}>
                 <Link href={`/krav/${sak.id}`} className="block">
-                  <Kort className="transition hover:border-dempet/40">
+                  <Kort klikkbar className="hover:border-dempet/40">
                     <div className="flex items-start justify-between gap-3">
                       <span className="text-sm font-medium text-blekk">
                         {sak.kreditor ?? sak.tittel}

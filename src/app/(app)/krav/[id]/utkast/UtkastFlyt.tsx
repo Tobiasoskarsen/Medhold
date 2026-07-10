@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Check } from "lucide-react";
 import { Primærknapp } from "@/components/ui";
+import { haptikk } from "@/lib/haptikk";
 import {
   UTKAST_TYPER,
   UTKAST_ETIKETT,
@@ -44,6 +45,7 @@ export function UtkastFlyt({
       setFeil(r.feil ?? "Noe gikk galt. Prøv igjen.");
       return;
     }
+    haptikk("suksess");
     setInnhold(r.innhold);
   }
 

@@ -1,9 +1,12 @@
+"use client";
+
+import { m } from "motion/react";
+import { VARIGHET, EASING } from "@/lib/bevegelse";
+
 /**
- * StadiumIndikator — 5 avrundede striper som viser hvor langt et gjeldskrav
- * har eskalert. `fylt` segmenter tegnes i aksentfarge, resten i strek.
- *
- * Rent presentasjonelt: mapping fra stadium → antall fylte segmenter og
- * neste-stadium-tekst gjøres i `src/lib/gjeld.ts` (Fase 1) og sendes hit.
+ * StadiumIndikator — 5 avrundede striper. `fylt` segmenter i aksentfarge.
+ * Ved mount fylles KUN det sist fylte segmentet (scaleX 0 → 1); tidligere
+ * segmenter står ferdig fylt. Presentasjonelt for øvrig.
  */
 export function StadiumIndikator({
   fylt,
@@ -19,14 +22,32 @@ export function StadiumIndikator({
   return (
     <div>
       <div className="flex gap-1">
-        {Array.from({ length: total }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-1 flex-1 rounded-sm ${
-              i < fylt ? "bg-aksent" : "bg-strek"
-            }`}
-          />
-        ))}
+        {Array.from({ length: total }).map((_, i) => {
+          const erFylt = i < fylt;
+          const sistFylte = i === fylt - 1;
+          if (erFylt && sistFylte) {
+            return (
+              <div
+                key={i}
+                className="h-1 flex-1 overflow-hidden rounded-sm bg-strek"
+              >
+                <m.div
+                  className="h-full w-full rounded-sm bg-aksent"
+                  style={{ transformOrigin: "left" }}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: VARIGHET.normal, ease: EASING }}
+                />
+              </div>
+            );
+          }
+          return (
+            <div
+              key={i}
+              className={`h-1 flex-1 rounded-sm ${erFylt ? "bg-aksent" : "bg-strek"}`}
+            />
+          );
+        })}
       </div>
       {stadium && (
         <p className="mt-1.5 text-xs text-dempet">

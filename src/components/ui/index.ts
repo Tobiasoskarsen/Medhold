@@ -2,6 +2,8 @@
 // ad-hoc-varianter. Se MEDHOLD_ARBEIDSORDRE.md seksjon 2.3.
 export { Skjermramme } from "./Skjermramme";
 export { Kort } from "./Kort";
+export { Belop } from "./Belop";
+export { Skjelett } from "./Skjelett";
 export { Primærknapp } from "./Primaerknapp";
 export { Pillknapp } from "./Pillknapp";
 export { Pill } from "./Pill";

@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function VelkommenPage() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col px-6">
+    <main className="inntoning mx-auto flex min-h-screen w-full max-w-[420px] flex-col px-6">
       <div className="flex flex-1 flex-col items-center justify-center text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-ikon.svg" alt="" width={56} height={56} aria-hidden />

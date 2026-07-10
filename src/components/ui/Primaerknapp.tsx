@@ -1,12 +1,15 @@
+"use client";
+
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import Link from "next/link";
+import { haptikk } from "@/lib/haptikk";
 
 const basis =
-  "block w-full rounded-[10px] bg-aksent px-3 py-3 text-center text-sm font-medium text-white transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent focus-visible:ring-offset-2 disabled:opacity-60";
+  "trykk block w-full rounded-[10px] bg-aksent px-3 py-3 text-center text-sm font-medium text-white hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent focus-visible:ring-offset-2 disabled:opacity-60";
 
 /**
  * Primærknapp — full bredde, aksentfarge, hvit tekst. Maks én per skjerm.
- * Render som lenke ved `href`, ellers som knapp.
+ * Render som lenke ved `href`, ellers som knapp. Lett haptikk ved trykk.
  */
 export function Primærknapp({
   children,
@@ -20,13 +23,23 @@ export function Primærknapp({
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   if (href) {
     return (
-      <Link href={href} className={`${basis} ${className}`}>
+      <Link
+        href={href}
+        className={`${basis} ${className}`}
+        onPointerDown={() => haptikk("lett")}
+      >
         {children}
       </Link>
     );
   }
   return (
-    <button className={`${basis} ${className}`} {...knappProps}>
+    <button
+      className={`${basis} ${className}`}
+      onPointerDown={(e) => {
+        if (!e.currentTarget.disabled) haptikk("lett");
+      }}
+      {...knappProps}
+    >
       {children}
     </button>
   );
