@@ -9,7 +9,11 @@ export function normaliserTelefon(raw: string): string | null {
   return /^\+\d{8,15}$/.test(n) ? n : null;
 }
 
-/** Om telefon-innlogging er skrudd på (krever konfigurert SMS-leverandør). */
+/**
+ * Om telefon-innlogging er skrudd på. På som standard nå som SMS-leverandøren
+ * (Twilio) er konfigurert i Supabase. Kan slås av ved å sette
+ * NEXT_PUBLIC_TELEFON_LOGIN="false".
+ */
 export function telefonLoginPa(): boolean {
-  return process.env.NEXT_PUBLIC_TELEFON_LOGIN === "true";
+  return process.env.NEXT_PUBLIC_TELEFON_LOGIN !== "false";
 }
