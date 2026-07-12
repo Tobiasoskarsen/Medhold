@@ -5,6 +5,7 @@ import { KravBrevFaner } from "@/components/KravBrevFaner";
 import { formaterKortDato } from "@/lib/dato";
 import { formaterBelop } from "@/lib/format";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
+import { STATUS_ETIKETT, STATUS_STIL, type SakStatus } from "@/lib/types";
 
 type SakRad = {
   id: string;
@@ -12,6 +13,7 @@ type SakRad = {
   tittel: string;
   belop_totalt: number | null;
   stadium: Stadium | null;
+  status: SakStatus;
 };
 
 export default async function KravListePage() {
@@ -20,7 +22,7 @@ export default async function KravListePage() {
   const [{ data: sakData }, { data: fristData }] = await Promise.all([
     supabase
       .from("saker")
-      .select("id, kreditor, tittel, belop_totalt, stadium, sist_endret")
+      .select("id, kreditor, tittel, belop_totalt, stadium, status, sist_endret")
       .order("sist_endret", { ascending: false }),
     supabase
       .from("frister")
@@ -88,6 +90,13 @@ export default async function KravListePage() {
                     </div>
                     {underlinje && (
                       <p className="mt-1 text-xs text-dempet">{underlinje}</p>
+                    )}
+                    {sak.status === "venter_pa_svar" && (
+                      <span
+                        className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
+                      >
+                        {STATUS_ETIKETT.venter_pa_svar}
+                      </span>
                     )}
                   </Kort>
                 </Link>

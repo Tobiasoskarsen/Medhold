@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Mail } from "lucide-react";
 import { Primærknapp } from "@/components/ui";
 import { haptikk } from "@/lib/haptikk";
 import {
@@ -11,17 +11,23 @@ import {
   UTKAST_SPORSMAL,
   type UtkastType,
 } from "@/lib/types";
-import { lagUtkast } from "./actions";
+import { lagUtkast, markerUtkastSendt } from "./actions";
 
 export function UtkastFlyt({
   sakId,
   brevId,
   avsender,
+  avsenderEpost,
+  kreditor,
+  saksnummer,
   starttype,
 }: {
   sakId: string;
   brevId: string | null;
   avsender: string | null;
+  avsenderEpost: string | null;
+  kreditor: string;
+  saksnummer: string | null;
   starttype: UtkastType;
 }) {
   const router = useRouter();
@@ -29,8 +35,10 @@ export function UtkastFlyt({
   const [detaljer, setDetaljer] = useState("");
   const [genererer, setGenererer] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
+  const [utkastId, setUtkastId] = useState<string | null>(null);
   const [innhold, setInnhold] = useState<string | null>(null);
   const [kopiert, setKopiert] = useState(false);
+  const [sender, startSending] = useTransition();
 
   async function generer() {
     setGenererer(true);
@@ -46,6 +54,7 @@ export function UtkastFlyt({
       return;
     }
     haptikk("suksess");
+    setUtkastId(r.id);
     setInnhold(r.innhold);
   }
 
@@ -58,6 +67,30 @@ export function UtkastFlyt({
     } catch {
       /* ignorer — brukeren kan markere og kopiere manuelt */
     }
+  }
+
+  // Sending skjer i brukerens egen e-postklient — appen sender aldri selv.
+  function byggMailto(): string {
+    const emne = saksnummer
+      ? `${UTKAST_ETIKETT[type]} – saksnummer ${saksnummer}`
+      : `${UTKAST_ETIKETT[type]} – ${kreditor}`;
+    return `mailto:${avsenderEpost ?? ""}?subject=${encodeURIComponent(
+      emne,
+    )}&body=${encodeURIComponent(innhold ?? "")}`;
+  }
+
+  function jegHarSendtDet() {
+    if (!utkastId) return;
+    startSending(async () => {
+      const r = await markerUtkastSendt(utkastId);
+      if (!r.ok) {
+        setFeil(r.feil);
+        return;
+      }
+      haptikk("suksess");
+      router.push(`/krav/${r.sakId}`);
+      router.refresh();
+    });
   }
 
   return (
@@ -114,21 +147,54 @@ export function UtkastFlyt({
             className="w-full resize-none rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
           />
           <p className="mt-3 text-[13px] leading-relaxed text-dempet">
-            Les gjennom, endre det som trengs, og send det selv
+            Les gjennom og endre det som trengs — så sender du det selv
             {avsender ? ` til ${avsender}` : ""}.
           </p>
-          <button
-            type="button"
-            onClick={kopier}
-            className="mt-4 inline-flex items-center gap-2 rounded-[10px] border-[0.5px] border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk transition hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
-          >
-            {kopiert ? (
-              <Check className="size-4 text-aksent" aria-hidden />
-            ) : (
-              <Copy className="size-4" aria-hidden />
-            )}
-            {kopiert ? "Kopiert" : "Kopier"}
-          </button>
+
+          <div className="mt-4">
+            <Primærknapp href={byggMailto()}>
+              <span className="inline-flex items-center gap-2">
+                <Mail className="size-4" aria-hidden />
+                Åpne i e-post
+              </span>
+            </Primærknapp>
+          </div>
+
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={kopier}
+              className="trykk inline-flex items-center gap-2 rounded-[10px] border-[0.5px] border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+            >
+              {kopiert ? (
+                <Check className="size-4 text-aksent" aria-hidden />
+              ) : (
+                <Copy className="size-4" aria-hidden />
+              )}
+              {kopiert ? "Kopiert" : "Kopier"}
+            </button>
+            <p className="text-xs leading-relaxed text-dempet">
+              Ble ikke hele brevet med? Bruk Kopier og lim inn.
+            </p>
+          </div>
+
+          {feil && <p className="mt-3 text-[13px] text-red-700">{feil}</p>}
+
+          <div className="mt-6 border-t-[0.5px] border-strek pt-4">
+            <button
+              type="button"
+              onClick={jegHarSendtDet}
+              disabled={sender}
+              className="trykk inline-flex items-center gap-2 rounded-[10px] border-[0.5px] border-aksent/40 px-4 py-2.5 text-sm font-medium text-aksent hover:bg-aksent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent disabled:opacity-50"
+            >
+              <Check className="size-4" aria-hidden />
+              {sender ? "Lagrer …" : "Jeg har sendt det"}
+            </button>
+            <p className="mt-2 text-xs leading-relaxed text-dempet">
+              Da settes saken til «Venter på svar», og vi følger opp om det
+              drøyer.
+            </p>
+          </div>
         </>
       )}
     </div>

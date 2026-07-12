@@ -28,6 +28,11 @@ const SVAR_SKJEMA = {
       type: "string",
       description: "Hvem brevet er fra (inkassoselskap/kreditor). Tom hvis uklart.",
     },
+    avsender_epost: {
+      type: "string",
+      description:
+        "E-postadressen til avsenderen slik den står trykket i brevet. KUN hvis den står eksplisitt. Ellers tom streng.",
+    },
     brevdato: {
       type: "string",
       description:
@@ -69,6 +74,7 @@ const SVAR_SKJEMA = {
     "forklaring",
     "brevtype",
     "avsender",
+    "avsender_epost",
     "brevdato",
     "belop",
     "saksnummer",
@@ -86,7 +92,7 @@ Ufravikelige regler:
 - Svar på enkelt, varmt og rolig norsk (bokmål). Unngå byråkratspråk.
 - Du FORKLARER og FORESLÅR. Du gir ALDRI juridiske eller økonomiske vedtak, konklusjoner eller garantier.
 - Finn ALDRI opp frister, beløp, datoer, saksnummer, paragrafer eller fakta som ikke står i teksten. Er noe uklart, la feltet stå tomt.
-- Oppgi brevdato, beløp og saksnummer KUN når de står eksplisitt i brevet. Ellers tom streng.
+- Oppgi brevdato, beløp, saksnummer og avsenderens e-postadresse KUN når de står eksplisitt i brevet. Ellers tom streng.
 - Foreslå kun frister som er eksplisitt nevnt i brevet, med dato kun når en konkret dato er oppgitt.
 - I dag er ${idag}. Bruk dette bare til å forstå teksten – ikke til å regne ut frister som ikke står der.
 - Avslutt alltid "forklaring" med én kort setning: at dette er hjelp til å få oversikt, ikke profesjonell rådgivning, og at viktige ting bør bekreftes med rett instans.`;
@@ -96,6 +102,7 @@ type Analyse = {
   forklaring: string;
   brevtype: BrevType;
   avsender: string;
+  avsender_epost: string;
   brevdato: string;
   belop: string;
   saksnummer: string;
@@ -295,6 +302,7 @@ export type LagreBrevInput = {
     | { modus: "ny"; kreditor: string }
     | { modus: "eksisterende"; sakId: string };
   avsender: string;
+  avsender_epost: string;
   brevtype: BrevType | null;
   brevdato: string; // "" hvis ukjent
   belop: number | null;
@@ -360,6 +368,7 @@ export async function lagreBrev(
       bruker_id: user.id,
       brevdato: input.brevdato || null,
       avsender: input.avsender.trim() || null,
+      avsender_epost: input.avsender_epost.trim() || null,
       brevtype: input.brevtype,
       belop: input.belop,
       original_tekst: input.original_tekst,
