@@ -65,6 +65,7 @@ export function LeggTilBrevFlyt({
   const [analyse, setAnalyse] = useState<AnalyseData | null>(null);
   const [originalTekst, setOriginalTekst] = useState("");
   const [avsender, setAvsender] = useState("");
+  const [avsenderEpost, setAvsenderEpost] = useState("");
   const [brevtype, setBrevtype] = useState<BrevType | "">("");
   const [brevdato, setBrevdato] = useState("");
   const [belop, setBelop] = useState("");
@@ -83,6 +84,7 @@ export function LeggTilBrevFlyt({
     setAnalyse(r.analyse);
     setOriginalTekst(r.original_tekst);
     setAvsender(r.analyse.avsender);
+    setAvsenderEpost(r.analyse.avsender_epost);
     setBrevtype(r.analyse.brevtype);
     setBrevdato(r.analyse.brevdato);
     setBelop(r.analyse.belop);
@@ -158,6 +160,7 @@ export function LeggTilBrevFlyt({
           ? { modus: "eksisterende", sakId: valgtKrav }
           : { modus: "ny", kreditor: avsender },
       avsender,
+      avsender_epost: avsenderEpost,
       brevtype: brevtype || null,
       brevdato,
       belop: belopTall != null && !Number.isNaN(belopTall) ? belopTall : null,
@@ -352,6 +355,17 @@ export function LeggTilBrevFlyt({
                 value={avsender}
                 onChange={(e) => setAvsender(e.target.value)}
                 placeholder="F.eks. Kredinor"
+                className={feltKlasse}
+              />
+            </label>
+            <label className="col-span-2 block text-[13px] font-medium text-blekk">
+              E-post til avsender
+              <input
+                type="email"
+                inputMode="email"
+                value={avsenderEpost}
+                onChange={(e) => setAvsenderEpost(e.target.value)}
+                placeholder="Slik den står i brevet — valgfritt"
                 className={feltKlasse}
               />
             </label>

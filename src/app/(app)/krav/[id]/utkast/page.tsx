@@ -32,7 +32,7 @@ export default async function UtkastPage({
 
   const { data: sak } = await supabase
     .from("saker")
-    .select("id, kreditor, tittel")
+    .select("id, kreditor, tittel, saksnummer")
     .eq("id", id)
     .maybeSingle();
   if (!sak) notFound();
@@ -40,7 +40,7 @@ export default async function UtkastPage({
   // Nyeste brev på kravet (grunnlag for utkastet), evt. det oppgitte.
   const { data: brevListe } = await supabase
     .from("brev")
-    .select("id, avsender, brevdato, opprettet")
+    .select("id, avsender, avsender_epost, brevdato, opprettet")
     .eq("sak_id", id)
     .order("brevdato", { ascending: false, nullsFirst: false })
     .order("opprettet", { ascending: false });
@@ -75,6 +75,9 @@ export default async function UtkastPage({
           sakId={sak.id}
           brevId={brev?.id ?? null}
           avsender={brev?.avsender ?? null}
+          avsenderEpost={brev?.avsender_epost ?? null}
+          kreditor={sak.kreditor ?? sak.tittel}
+          saksnummer={sak.saksnummer ?? null}
           starttype={starttype}
         />
       </div>

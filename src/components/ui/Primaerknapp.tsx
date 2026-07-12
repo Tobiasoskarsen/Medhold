@@ -22,6 +22,18 @@ export function Primærknapp({
   className?: string;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   if (href) {
+    // Eksterne skjemaer (mailto:) skal ikke gjennom next/link-ruteren.
+    if (href.startsWith("mailto:")) {
+      return (
+        <a
+          href={href}
+          className={`${basis} ${className}`}
+          onPointerDown={() => haptikk("lett")}
+        >
+          {children}
+        </a>
+      );
+    }
     return (
       <Link
         href={href}

@@ -333,6 +333,40 @@ Valg:
 
 ---
 
+## Lukke løkka — Fase A: Sendingen (ferdig)
+
+Fra «her er et utkast» → «sendt, venter på svar». Appen sender ALDRI selv —
+sending skjer via brukerens egen e-postklient (`mailto:`).
+
+- **Migrasjon `0015_sending.sql`** (additiv): `brev.avsender_epost`,
+  `utkast.sendt_at`. `slett_egen_konto()` uendret (kolonnene ligger i tabeller
+  som allerede slettes eksplisitt i 0014 — verifisert).
+- **Uttrekk:** `SVAR_SKJEMA`/`VISJON_SKJEMA` utvidet med `avsender_epost` (KUN
+  hvis eksplisitt). Redigerbart felt i steg 3, lagres på `brev`.
+- **Utkast-skjerm:** «Åpne i e-post» bygger `mailto:` (mottaker = avsenders
+  e-post, emne = «{type} – saksnummer {nr}» / «… – {kreditor}», body =
+  redigert tekst). «Kopier» beholdt + hjelpetekst om body-lengde.
+  `Primærknapp` støtter nå `mailto:` (vanlig `<a>`, ikke next/link).
+- **«Jeg har sendt det»** → `markerUtkastSendt`: `utkast.sendt_at=now()`, sak
+  `aktiv → venter_pa_svar` (kun hvis aktiv), haptikk suksess. Finnes også som
+  stille rad under usendte utkast på tidslinjen (`MarkerSendtKnapp`).
+- **UI:** sendte utkast = tidslinjehendelse «{type} sendt» på sendt-dato;
+  status-etikett «Venter på svar» på krav-detalj + i kravlisten; Hjem-kortet
+  for `venter_pa_svar`-saker: «Venter på svar fra {kreditor}» + «Fått svar?
+  Legg til brevet».
+
+Valg tatt underveis:
+1. `markerUtkastSendt` bruker `.eq("status","aktiv")` i update-en så
+   ventende/løste saker ikke røres (enkleste «kun hvis aktiv»).
+2. Hjem-«venter»-varianten vises kun når saken ikke også har en presserende
+   åpen frist (frist vinner — konkret handling foran venting).
+
+⚠ **Migrasjon 0015 må kjøres i Supabase** før flyten virker live (avsender_epost
++ sendt_at). `build`/`lint`/`test` grønne. Live-preview av hele send-flyten
+avventer at migrasjonen kjøres (krever innlogging + generert utkast).
+
+---
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**

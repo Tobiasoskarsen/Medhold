@@ -5,6 +5,7 @@ import Logo from "@/components/Logo";
 import { Skjermramme, Kort, Primærknapp, Pill, Belop } from "@/components/ui";
 import { formaterKortDato, fristNærhet } from "@/lib/dato";
 import { handlingstittel, stotterUtkast, type Stadium } from "@/lib/gjeld";
+import type { SakStatus } from "@/lib/types";
 
 type SakKobling = {
   id: string;
@@ -12,6 +13,7 @@ type SakKobling = {
   tittel: string;
   belop_totalt: number | null;
   stadium: Stadium | null;
+  status: SakStatus;
 };
 
 type AapenFrist = {
@@ -31,11 +33,11 @@ export default async function HjemPage() {
   const [{ data: sakData }, { data: fristData }] = await Promise.all([
     supabase
       .from("saker")
-      .select("id, kreditor, tittel, belop_totalt, stadium, sist_endret")
+      .select("id, kreditor, tittel, belop_totalt, stadium, status, sist_endret")
       .order("sist_endret", { ascending: false }),
     supabase
       .from("frister")
-      .select("id, sak_id, tittel, forfallsdato, saker(id, kreditor, tittel, belop_totalt, stadium)")
+      .select("id, sak_id, tittel, forfallsdato, saker(id, kreditor, tittel, belop_totalt, stadium, status)")
       .eq("fullfort", false),
   ]);
 
@@ -57,6 +59,8 @@ export default async function HjemPage() {
   const topFrist = frister[0] ?? null;
   const topSak = topFrist?.saker ?? saker[0] ?? null;
   const kommende = frister.slice(topFrist ? 1 : 0, topFrist ? 4 : 3);
+  // Ingen presserende frist, men saken venter på svar → «venter»-varianten.
+  const venter = !!topSak && topSak.status === "venter_pa_svar" && !topFrist;
 
   return (
     <Skjermramme className="pt-6">
@@ -81,39 +85,22 @@ export default async function HjemPage() {
       ) : (
         <>
           <Kort className="mt-4">
-            {topFrist && (
-              <Pill variant="varsel">
-                Frist {fristNærhet(topFrist.forfallsdato).toLowerCase()}
-              </Pill>
-            )}
-            <p className="mt-3 text-[17px] font-medium text-blekk">
-              {handlingstittel(topSak?.stadium ?? null)}
-            </p>
-            <p className="mt-0.5 text-[13px] text-dempet">
-              {(() => {
-                const deler: ReactNode[] = [];
-                const navn = topSak?.kreditor ?? topSak?.tittel;
-                if (navn) deler.push(navn);
-                if (topSak?.belop_totalt != null)
-                  deler.push(<Belop key="b" verdi={topSak.belop_totalt} />);
-                if (topFrist)
-                  deler.push(`frist ${formaterKortDato(topFrist.forfallsdato)}`);
-                return deler.map((d, i) => (
-                  <span key={i}>
-                    {i > 0 ? " · " : ""}
-                    {d}
-                  </span>
-                ));
-              })()}
-            </p>
-            {topSak &&
-              (stotterUtkast(topSak.stadium ?? null) ? (
-                <>
-                  <div className="mt-4">
-                    <Primærknapp href={`/krav/${topSak.id}/utkast`}>
-                      Lag utkast til svar
-                    </Primærknapp>
-                  </div>
+            {venter ? (
+              <>
+                <p className="text-[17px] font-medium text-blekk">
+                  Venter på svar
+                  {topSak?.kreditor ? ` fra ${topSak.kreditor}` : ""}
+                </p>
+                <p className="mt-0.5 text-[13px] text-dempet">
+                  Vi følger opp om det drøyer. Ta vare på kvitteringen på at du
+                  sendte det.
+                </p>
+                <div className="mt-4">
+                  <Primærknapp href="/legg-til-brev">
+                    Fått svar? Legg til brevet
+                  </Primærknapp>
+                </div>
+                {topSak && (
                   <p className="mt-3 text-center text-[13px] text-dempet">
                     <Link
                       href={`/krav/${topSak.id}`}
@@ -122,12 +109,63 @@ export default async function HjemPage() {
                       Se hele saken
                     </Link>
                   </p>
-                </>
-              ) : (
-                <div className="mt-4">
-                  <Primærknapp href={`/krav/${topSak.id}`}>Se saken</Primærknapp>
-                </div>
-              ))}
+                )}
+              </>
+            ) : (
+              <>
+                {topFrist && (
+                  <Pill variant="varsel">
+                    Frist {fristNærhet(topFrist.forfallsdato).toLowerCase()}
+                  </Pill>
+                )}
+                <p className="mt-3 text-[17px] font-medium text-blekk">
+                  {handlingstittel(topSak?.stadium ?? null)}
+                </p>
+                <p className="mt-0.5 text-[13px] text-dempet">
+                  {(() => {
+                    const deler: ReactNode[] = [];
+                    const navn = topSak?.kreditor ?? topSak?.tittel;
+                    if (navn) deler.push(navn);
+                    if (topSak?.belop_totalt != null)
+                      deler.push(<Belop key="b" verdi={topSak.belop_totalt} />);
+                    if (topFrist)
+                      deler.push(
+                        `frist ${formaterKortDato(topFrist.forfallsdato)}`,
+                      );
+                    return deler.map((d, i) => (
+                      <span key={i}>
+                        {i > 0 ? " · " : ""}
+                        {d}
+                      </span>
+                    ));
+                  })()}
+                </p>
+                {topSak &&
+                  (stotterUtkast(topSak.stadium ?? null) ? (
+                    <>
+                      <div className="mt-4">
+                        <Primærknapp href={`/krav/${topSak.id}/utkast`}>
+                          Lag utkast til svar
+                        </Primærknapp>
+                      </div>
+                      <p className="mt-3 text-center text-[13px] text-dempet">
+                        <Link
+                          href={`/krav/${topSak.id}`}
+                          className="transition hover:text-blekk"
+                        >
+                          Se hele saken
+                        </Link>
+                      </p>
+                    </>
+                  ) : (
+                    <div className="mt-4">
+                      <Primærknapp href={`/krav/${topSak.id}`}>
+                        Se saken
+                      </Primærknapp>
+                    </div>
+                  ))}
+              </>
+            )}
           </Kort>
 
           {kommende.length > 0 && (

@@ -8,7 +8,7 @@ import { harPluss } from "@/lib/plan";
 import { type UtkastType } from "@/lib/types";
 
 export type UtkastResultat =
-  | { ok: true; innhold: string }
+  | { ok: true; id: string; innhold: string }
   | { ok: false; feil?: string; paywall?: boolean };
 
 const FORMÅL: Record<UtkastType, string> = {
@@ -86,14 +86,63 @@ Ufravikelige regler:
   }
 
   // Lagre som tidslinjehendelse på kravet.
-  await supabase.from("utkast").insert({
-    sak_id: sakId,
-    bruker_id: user.id,
-    brev_id: brevId,
-    type,
-    innhold,
-  });
+  const { data: lagret, error: lagreFeil } = await supabase
+    .from("utkast")
+    .insert({
+      sak_id: sakId,
+      bruker_id: user.id,
+      brev_id: brevId,
+      type,
+      innhold,
+    })
+    .select("id")
+    .single();
+  if (lagreFeil || !lagret)
+    return { ok: false, feil: "Kunne ikke lagre utkastet. Prøv igjen." };
 
   revalidatePath(`/krav/${sakId}`);
-  return { ok: true, innhold };
+  return { ok: true, id: lagret.id, innhold };
+}
+
+/**
+ * Brukeren bekrefter selv at utkastet er sendt (via egen e-postklient eller
+ * utenfor appen — appen sender ALDRI noe til kreditor). Setter sendt_at og
+ * flytter saken til 'venter_pa_svar' hvis den er aktiv. Kode beslutter.
+ */
+export async function markerUtkastSendt(
+  utkastId: string,
+): Promise<{ ok: true; sakId: string } | { ok: false; feil: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  // RLS sikrer at man kun når sitt eget utkast.
+  const { data: utkast } = await supabase
+    .from("utkast")
+    .select("id, sak_id, sendt_at")
+    .eq("id", utkastId)
+    .maybeSingle();
+  if (!utkast) return { ok: false, feil: "Fant ikke utkastet." };
+
+  if (!utkast.sendt_at) {
+    const { error } = await supabase
+      .from("utkast")
+      .update({ sendt_at: new Date().toISOString() })
+      .eq("id", utkastId);
+    if (error) return { ok: false, feil: "Kunne ikke lagre. Prøv igjen." };
+  }
+
+  // Kun aktiv → venter_pa_svar; fullførte/ventende saker røres ikke.
+  await supabase
+    .from("saker")
+    .update({ status: "venter_pa_svar" })
+    .eq("id", utkast.sak_id)
+    .eq("status", "aktiv");
+
+  revalidatePath("/");
+  revalidatePath("/krav");
+  revalidatePath(`/krav/${utkast.sak_id}`);
+  return { ok: true, sakId: utkast.sak_id };
 }

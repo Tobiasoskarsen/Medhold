@@ -19,9 +19,17 @@ import {
   type Stadium,
   type BrevType,
 } from "@/lib/gjeld";
-import { UTKAST_ETIKETT, type FristKilde, type UtkastType } from "@/lib/types";
+import {
+  UTKAST_ETIKETT,
+  STATUS_ETIKETT,
+  STATUS_STIL,
+  type FristKilde,
+  type UtkastType,
+} from "@/lib/types";
+import type { ReactNode } from "react";
 import { KravMeny } from "./KravMeny";
 import { LostNode } from "./LostNode";
+import { MarkerSendtKnapp } from "./MarkerSendtKnapp";
 
 type BrevRad = {
   id: string;
@@ -89,7 +97,7 @@ export default async function KravDetaljPage({
         .eq("sak_id", id),
       supabase
         .from("utkast")
-        .select("id, type, opprettet")
+        .select("id, type, opprettet, sendt_at")
         .eq("sak_id", id),
     ]);
 
@@ -99,6 +107,7 @@ export default async function KravDetaljPage({
     id: string;
     type: UtkastType;
     opprettet: string;
+    sendt_at: string | null;
   }[];
   const aktiveFrister = frister.filter((f) => !f.fullfort);
 
@@ -123,6 +132,8 @@ export default async function KravDetaljPage({
     fristPill?: string;
     fremhevet: boolean;
     href?: string;
+    /** Ekstra innhold under hendelsen (f.eks. «Jeg har sendt det»-knapp). */
+    ekstra?: ReactNode;
   };
 
   const brevItems: Item[] = brevListe.map((b) => {
@@ -148,12 +159,24 @@ export default async function KravDetaljPage({
       fremhevet: true,
     }));
 
-  const utkastItems: Item[] = utkast.map((u) => ({
-    key: `utkast-${u.id}`,
-    datoISO: u.opprettet.slice(0, 10),
-    tittel: `Utkast: ${UTKAST_ETIKETT[u.type]}`,
-    fremhevet: false,
-  }));
+  // Sendte utkast er egne hendelser på sendt-datoen; usendte vises som i dag
+  // med en stille «Jeg har sendt det»-rad for bekreftelse i etterkant.
+  const utkastItems: Item[] = utkast.map((u) =>
+    u.sendt_at
+      ? {
+          key: `utkast-${u.id}`,
+          datoISO: u.sendt_at.slice(0, 10),
+          tittel: `${UTKAST_ETIKETT[u.type]} sendt`,
+          fremhevet: false,
+        }
+      : {
+          key: `utkast-${u.id}`,
+          datoISO: u.opprettet.slice(0, 10),
+          tittel: `Utkast: ${UTKAST_ETIKETT[u.type]}`,
+          fremhevet: false,
+          ekstra: !lost ? <MarkerSendtKnapp utkastId={u.id} /> : undefined,
+        },
+  );
 
   const items = [...brevItems, ...løseFristItems, ...utkastItems].sort((a, b) =>
     a.datoISO < b.datoISO ? 1 : -1,
@@ -186,6 +209,13 @@ export default async function KravDetaljPage({
       </h1>
       {underlinje && (
         <p className="mt-0.5 text-[13px] text-dempet">{underlinje}</p>
+      )}
+      {sak.status === "venter_pa_svar" && (
+        <span
+          className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
+        >
+          {STATUS_ETIKETT.venter_pa_svar}
+        </span>
       )}
 
       {sak.belop_totalt != null && (
@@ -266,6 +296,7 @@ export default async function KravDetaljPage({
                   ) : (
                     innhold
                   )}
+                  {item.ekstra}
                 </TidslinjeHendelse>
               );
             })}
