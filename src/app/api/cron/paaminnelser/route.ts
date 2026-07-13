@@ -1,6 +1,11 @@
 import { type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendFristPaaminnelse, type FristVarsel } from "@/lib/epost";
+import {
+  sendFristPaaminnelse,
+  sendOppfolging,
+  type FristVarsel,
+} from "@/lib/epost";
+import { oppfolgingsKandidater, type VenterSak } from "@/lib/oppfolging";
 
 // Kjøres av Vercel Cron én gang i døgnet (se vercel.json). Kan ta litt tid hvis
 // mange e-poster skal ut — gi den rom slik at den ikke kuttes av timeouten.
@@ -39,6 +44,108 @@ type FristRad = {
 function sakTittel(saker: FristRad["saker"]): string | null {
   if (!saker) return null;
   return Array.isArray(saker) ? (saker[0]?.tittel ?? null) : saker.tittel;
+}
+
+type OppfolgingResultat = {
+  kandidater: number;
+  sendt: number;
+  avmeldt: number;
+};
+
+/**
+ * Fase B: én rolig oppfølging for saker som har stått i «venter på svar» ≥ 14
+ * dager uten aktivitet, og ikke er fulgt opp før. Respekterer samme av/på-bryter
+ * som fristpåminnelsene. Én e-post per sak (per kreditor).
+ */
+async function kjorOppfolging(
+  supabase: ReturnType<typeof createAdminClient>,
+  dryRun: boolean,
+): Promise<OppfolgingResultat> {
+  const tom: OppfolgingResultat = { kandidater: 0, sendt: 0, avmeldt: 0 };
+
+  const { data: venter } = await supabase
+    .from("saker")
+    .select("id, bruker_id, kreditor")
+    .eq("status", "venter_pa_svar");
+  if (!venter || venter.length === 0) return tom;
+
+  const sakIds = venter.map((s) => s.id as string);
+
+  // Nyeste aktivitet per sak = seneste av (utkast.sendt_at, brev.opprettet).
+  const [{ data: utkast }, { data: brev }, { data: alt }] = await Promise.all([
+    supabase
+      .from("utkast")
+      .select("sak_id, sendt_at")
+      .in("sak_id", sakIds)
+      .not("sendt_at", "is", null),
+    supabase.from("brev").select("sak_id, opprettet").in("sak_id", sakIds),
+    supabase
+      .from("sendte_oppfolginger")
+      .select("sak_id")
+      .in("sak_id", sakIds),
+  ]);
+
+  const sisteAktivitet = new Map<string, string>();
+  const oppdater = (id: string, ts: string | null) => {
+    if (!ts) return;
+    const na = sisteAktivitet.get(id);
+    if (!na || ts > na) sisteAktivitet.set(id, ts);
+  };
+  for (const u of utkast ?? []) oppdater(u.sak_id as string, u.sendt_at as string);
+  for (const b of brev ?? []) oppdater(b.sak_id as string, b.opprettet as string);
+
+  const alleredeSendt = new Set((alt ?? []).map((r) => r.sak_id as string));
+
+  const venterSaker: VenterSak[] = venter
+    .filter((s) => sisteAktivitet.has(s.id as string))
+    .map((s) => ({
+      sakId: s.id as string,
+      brukerId: s.bruker_id as string,
+      kreditor: (s.kreditor as string | null) ?? null,
+      sisteAktivitet: sisteAktivitet.get(s.id as string)!,
+    }));
+
+  const kandidater = oppfolgingsKandidater(venterSaker, alleredeSendt, new Date());
+  if (kandidater.length === 0) return tom;
+
+  // Cache bruker-oppslag (e-post + varsel-preferanse).
+  const brukerCache = new Map<
+    string,
+    { epost: string; varslerPaa: boolean } | null
+  >();
+  async function hentBruker(id: string) {
+    if (brukerCache.has(id)) return brukerCache.get(id)!;
+    const { data } = await supabase.auth.admin.getUserById(id);
+    const u = data?.user;
+    const res = u?.email
+      ? { epost: u.email, varslerPaa: u.user_metadata?.varsler_paa !== false }
+      : null;
+    brukerCache.set(id, res);
+    return res;
+  }
+
+  let sendt = 0;
+  let avmeldt = 0;
+  for (const k of kandidater) {
+    const bruker = await hentBruker(k.brukerId);
+    if (!bruker) continue;
+    if (!bruker.varslerPaa) {
+      avmeldt++;
+      continue;
+    }
+    if (dryRun) {
+      sendt++;
+      continue;
+    }
+    const ok = await sendOppfolging(bruker.epost, k.kreditor);
+    if (!ok) continue;
+    sendt++;
+    await supabase
+      .from("sendte_oppfolginger")
+      .upsert({ sak_id: k.sakId, bruker_id: k.brukerId }, { onConflict: "sak_id", ignoreDuplicates: true });
+  }
+
+  return { kandidater: kandidater.length, sendt, avmeldt };
 }
 
 export async function GET(req: NextRequest) {
@@ -80,7 +187,8 @@ export async function GET(req: NextRequest) {
     .filter((f) => (TERSKLER as readonly number[]).includes(f.terskel));
 
   if (kandidater.length === 0) {
-    return Response.json({ dato: idag, kandidater: 0, sendt: 0 });
+    const oppfolging = await kjorOppfolging(supabase, dryRun);
+    return Response.json({ dato: idag, kandidater: 0, sendt: 0, oppfolging });
   }
 
   // Hvilke (frist, terskel) har vi allerede varslet om?
@@ -151,12 +259,15 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const oppfolging = await kjorOppfolging(supabase, dryRun);
+
   return Response.json({
     dato: idag,
     kandidater: kandidater.length,
     nye: nye.length,
     sendt,
     hoppetAvmeldt,
+    oppfolging,
     dryRun,
   });
 }

@@ -77,11 +77,11 @@ function byggHtml(frister: FristVarsel[]): string {
       ${rader}
     </table>
     <div style="margin:24px 0;">
-      <a href="${url}/saker" style="display:inline-block;background:#0E7C66;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;">Åpne ${APP_NAME}</a>
+      <a href="${url}/" style="display:inline-block;background:#0E7C66;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;">Åpne ${APP_NAME}</a>
     </div>
     <p style="color:#94a3b8;font-size:12px;line-height:1.5;margin:24px 0 0;border-top:1px solid #e2e8f0;padding-top:16px;">
       ${APP_NAME} er et organiseringsverktøy — ikke profesjonell rådgivning. Sjekk viktige ting med rett instans (NAV, lege, advokat, kommune).<br><br>
-      Vil du ikke ha slike påminnelser? Skru dem av under <a href="${url}/konto" style="color:#64748b;">Min konto</a>.
+      Vil du ikke ha slike påminnelser? Skru dem av under <a href="${url}/meg" style="color:#64748b;">Meg</a>.
     </p>
   </div>
 </body>
@@ -102,10 +102,97 @@ function byggTekst(frister: FristVarsel[]): string {
 
 ${linjer}
 
-Åpne ${APP_NAME}: ${url}/saker
+Åpne ${APP_NAME}: ${url}/
 
 ${APP_NAME} er et organiseringsverktøy — ikke profesjonell rådgivning.
-Skru av påminnelser under Min konto: ${url}/konto`;
+Skru av påminnelser under Meg: ${url}/meg`;
+}
+
+/**
+ * Rolig oppfølging for en sak som har stått en stund i «venter på svar».
+ * To tydelige stier: (1) fått svar → legg inn brevet, (2) ikke hørt noe → det er
+ * normalt, du trenger ikke gjøre noe. Ingen skremsler, ingen oppdiktede frister.
+ */
+export async function sendOppfolging(
+  til: string,
+  kreditor: string | null,
+): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("[epost] RESEND_API_KEY mangler — hopper over oppfølging.");
+    return false;
+  }
+  const url = appUrl();
+  const emne = kreditor
+    ? `Har du hørt fra ${kreditor}?`
+    : "Har du hørt noe om kravet ditt?";
+  const hvem = kreditor ? escapeHtml(kreditor) : "kreditor";
+
+  const html = `<!doctype html>
+<html lang="nb">
+<body style="margin:0;background:#f7f7f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c2b33;">
+  <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
+    <div style="font-size:18px;font-weight:700;color:#0E7C66;margin-bottom:24px;">${APP_NAME}</div>
+    <h1 style="font-size:20px;margin:0 0 12px;">Har du hørt fra ${hvem}?</h1>
+    <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 12px;">
+      Det er en stund siden du sendte svaret ditt. To ting det kan være verdt å vite:
+    </p>
+    <p style="color:#1c2b33;font-size:15px;line-height:1.6;margin:0 0 8px;font-weight:600;">Har du fått svar?</p>
+    <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
+      Legg inn brevet i ${APP_NAME}, så hjelper vi deg å forstå hva det betyr.
+    </p>
+    <div style="margin:0 0 20px;">
+      <a href="${url}/legg-til-brev" style="display:inline-block;background:#0E7C66;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;">Legg til brevet</a>
+    </div>
+    <p style="color:#1c2b33;font-size:15px;line-height:1.6;margin:0 0 8px;font-weight:600;">Ikke hørt noe?</p>
+    <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 20px;">
+      Det er vanlig at det tar tid. Du trenger ikke gjøre noe nå — men ta vare på kvitteringen på at du sendte det.
+    </p>
+    <p style="color:#94a3b8;font-size:12px;line-height:1.5;margin:24px 0 0;border-top:1px solid #e2e8f0;padding-top:16px;">
+      ${APP_NAME} er et organiseringsverktøy — ikke profesjonell rådgivning.<br><br>
+      Vil du ikke ha slike e-poster? Skru dem av under <a href="${url}/meg" style="color:#64748b;">Meg</a>.
+    </p>
+  </div>
+</body>
+</html>`;
+
+  const text = `Har du hørt fra ${kreditor ?? "kreditor"}?
+
+Det er en stund siden du sendte svaret ditt.
+
+Har du fått svar? Legg inn brevet i ${APP_NAME}, så hjelper vi deg å forstå det:
+${url}/legg-til-brev
+
+Ikke hørt noe? Det er vanlig at det tar tid. Du trenger ikke gjøre noe nå — men ta vare på kvitteringen på at du sendte det.
+
+${APP_NAME} er et organiseringsverktøy — ikke profesjonell rådgivning.
+Skru av slike e-poster under Meg: ${url}/meg`;
+
+  try {
+    const res = await fetch(RESEND_ENDEPUNKT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fraAdresse(),
+        to: [til],
+        subject: emne,
+        html,
+        text,
+      }),
+    });
+    if (!res.ok) {
+      const detalj = await res.text().catch(() => "");
+      console.error(`[epost] Resend svarte ${res.status} (oppfølging): ${detalj}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[epost] Uventet feil ved oppfølging:", e);
+    return false;
+  }
 }
 
 /**
