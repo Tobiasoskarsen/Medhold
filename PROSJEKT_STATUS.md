@@ -365,6 +365,31 @@ Valg tatt underveis:
 + sendt_at). `build`/`lint`/`test` grønne. Live-preview av hele send-flyten
 avventer at migrasjonen kjøres (krever innlogging + generert utkast).
 
+## Lukke løkka — Fase B: Ventetiden (ferdig)
+
+- **Migrasjon `0016_oppfolging.sql`** (additiv): `sendte_oppfolginger`
+  (`unique(sak_id)` = dedup, maks én oppfølging per sak) + RLS. `slett_egen_konto()`
+  utvidet med eksplisitt delete.
+- **`src/lib/oppfolging.ts`** — ren `oppfolgingsKandidater(saker, alleredeSendt,
+  naa, dager=14)`. 5 enhetstester i `oppfolging.test.ts` (kjøres via `npm test`).
+- **`sendOppfolging`** i `lib/epost.ts`: emne «Har du hørt fra {kreditor}?», to
+  rolige stier (fått svar → legg inn brevet / ikke hørt noe → det er normalt).
+  Fikset også to døde lenker i frist-e-posten (`/saker`→`/`, `/konto`→`/meg`).
+- **Cron** (`api/cron/paaminnelser`): ny `kjorOppfolging()` etter fristvarslene,
+  kalt i begge retur-stier. Finner venter_pa_svar-saker der siste aktivitet
+  (nyeste av utkast.sendt_at / brev.opprettet) er ≥ 14 dager gammel og ikke
+  fulgt opp før; respekterer samme `varsler_paa`-bryter; `dryRun` støttes;
+  logger i `sendte_oppfolginger`.
+
+Valg tatt underveis:
+1. Én e-post per kandidat-sak (ikke samlet per bruker som fristvarslene), siden
+   emnet refererer kreditoren. `unique(sak_id)` sikrer maks én per sak totalt.
+2. Saker uten noen aktivitetsdato (verken sendt utkast eller brev) hoppes over
+   (skal normalt ikke forekomme i venter_pa_svar).
+
+⚠ **Migrasjon 0016 må kjøres i Supabase.** `build`/`lint`/`test` grønne (14
+tester). Verifiser i prod med `?dryRun=1` + Bearer CRON_SECRET.
+
 ---
 
 ## Deploy
