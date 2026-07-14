@@ -4,8 +4,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { FristForslag } from "@/lib/types";
+import type { FristForslag, SakUtfall } from "@/lib/types";
 import { beregnFrist, foreslaStadium, BREVTYPER, type BrevType } from "@/lib/gjeld";
+import { utfallOvergang } from "@/lib/utfall";
 
 // Strukturert utdata. «AI tolker, kode beslutter»: modellen trekker KUN ut det
 // som eksplisitt står i brevet. Beregnede frister lages i kode, ikke her.
@@ -47,6 +48,18 @@ const SVAR_SKJEMA = {
       type: "string",
       description: "Saks-/referansenummer. KUN hvis det står i brevet. Ellers tom streng.",
     },
+    svar_utfall: {
+      type: "string",
+      enum: [
+        "medhold",
+        "delvis_medhold",
+        "avvist",
+        "nedbetalingstilbud",
+        "uklart",
+      ],
+      description:
+        "Hvis brevet er et SVAR på en innsigelse/klage/anmodning fra mottakeren: hva svaret innebærer. KUN når det fremgår eksplisitt. Ellers 'uklart'.",
+    },
     foreslatte_steg: {
       type: "array",
       description: "Konkrete neste steg utledet KUN fra brevets innhold.",
@@ -78,6 +91,7 @@ const SVAR_SKJEMA = {
     "brevdato",
     "belop",
     "saksnummer",
+    "svar_utfall",
     "foreslatte_steg",
     "foreslatte_frister",
   ],
@@ -106,6 +120,12 @@ type Analyse = {
   brevdato: string;
   belop: string;
   saksnummer: string;
+  svar_utfall:
+    | "medhold"
+    | "delvis_medhold"
+    | "avvist"
+    | "nedbetalingstilbud"
+    | "uklart";
   foreslatte_steg: string[];
   foreslatte_frister: { tittel: string; forfallsdato: string }[];
 };
@@ -302,15 +322,17 @@ export type LagreBrevInput = {
     | { modus: "ny"; kreditor: string }
     | { modus: "eksisterende"; sakId: string };
   avsender: string;
-  avsender_epost: string;
   brevtype: BrevType | null;
   brevdato: string; // "" hvis ukjent
   belop: number | null;
   saksnummer: string;
+  avsender_epost: string;
   original_tekst: string;
   forklaring: string;
   foreslatte_steg: string[]; // valgte steg
   valgteFrister: FristForslag[]; // valgte frister med kilde
+  /** Bekreftet utfall når brevet er et svar på en sak i venter_pa_svar. */
+  utfall: SakUtfall | null;
 };
 
 export type LagreBrevResultat =
@@ -336,6 +358,13 @@ export async function lagreBrev(
     if (stadium) oppdatering.stadium = stadium;
     if (input.belop != null) oppdatering.belop_totalt = input.belop;
     if (input.saksnummer.trim()) oppdatering.saksnummer = input.saksnummer.trim();
+    // Bekreftet utfall (kode beslutter) overstyrer status/stadium.
+    if (input.utfall) {
+      const o = utfallOvergang(input.utfall);
+      oppdatering.utfall = o.utfall;
+      oppdatering.status = o.status;
+      if (o.stadium) oppdatering.stadium = o.stadium;
+    }
     if (Object.keys(oppdatering).length > 0) {
       await supabase.from("saker").update(oppdatering).eq("id", sakId);
     }

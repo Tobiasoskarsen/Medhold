@@ -170,6 +170,29 @@ export type Utkast = {
   opprettet: string;
 };
 
+// Utfall for en sak (0017). Settes aldri automatisk — brukeren bekrefter.
+export const SAK_UTFALL = [
+  "medhold",
+  "delvis_medhold",
+  "avvist",
+  "nedbetalingsavtale",
+] as const;
+export type SakUtfall = (typeof SAK_UTFALL)[number];
+
+export const UTFALL_ETIKETT: Record<SakUtfall, string> = {
+  medhold: "Medhold",
+  delvis_medhold: "Delvis medhold",
+  avvist: "Avvist",
+  nedbetalingsavtale: "Nedbetalingsavtale",
+};
+
+export const UTFALL_STIL: Record<SakUtfall, string> = {
+  medhold: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  delvis_medhold: "bg-teal-50 text-teal-700 ring-teal-200",
+  avvist: "bg-slate-100 text-slate-600 ring-slate-200",
+  nedbetalingsavtale: "bg-violet-50 text-violet-700 ring-violet-200",
+};
+
 export const STATUS_ETIKETT: Record<SakStatus, string> = {
   aktiv: "Aktiv",
   venter_pa_svar: "Venter på svar",

@@ -16,12 +16,13 @@ export default async function LeggTilBrevPage({
 
   const { data } = await supabase
     .from("saker")
-    .select("id, kreditor, tittel")
+    .select("id, kreditor, tittel, status")
     .order("sist_endret", { ascending: false });
 
   const krav = (data ?? []).map((s) => ({
     id: s.id as string,
     navn: (s.kreditor as string | null) ?? (s.tittel as string),
+    venter: s.status === "venter_pa_svar",
   }));
 
   return (
