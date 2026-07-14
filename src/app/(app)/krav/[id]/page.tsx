@@ -23,8 +23,11 @@ import {
   UTKAST_ETIKETT,
   STATUS_ETIKETT,
   STATUS_STIL,
+  UTFALL_ETIKETT,
+  UTFALL_STIL,
   type FristKilde,
   type UtkastType,
+  type SakUtfall,
 } from "@/lib/types";
 import type { ReactNode } from "react";
 import { KravMeny } from "./KravMeny";
@@ -73,7 +76,7 @@ export default async function KravDetaljPage({
   const { data: sak } = await supabase
     .from("saker")
     .select(
-      "id, kreditor, tittel, opprinnelig_kreditor, saksnummer, belop_totalt, stadium, status, sist_endret",
+      "id, kreditor, tittel, opprinnelig_kreditor, saksnummer, belop_totalt, stadium, status, utfall, sist_endret",
     )
     .eq("id", id)
     .maybeSingle();
@@ -82,6 +85,7 @@ export default async function KravDetaljPage({
 
   const lost = sak.status === "fullfort";
   const lostDato = (sak.sist_endret as string | null)?.slice(0, 10);
+  const utfall = sak.utfall as SakUtfall | null;
 
   const [{ data: brevData }, { data: fristData }, { data: utkastData }] =
     await Promise.all([
@@ -217,6 +221,13 @@ export default async function KravDetaljPage({
           {STATUS_ETIKETT.venter_pa_svar}
         </span>
       )}
+      {utfall && (
+        <span
+          className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
+        >
+          {UTFALL_ETIKETT[utfall]}
+        </span>
+      )}
 
       {sak.belop_totalt != null && (
         <div className="mt-3.5 flex items-baseline gap-2">
@@ -264,7 +275,11 @@ export default async function KravDetaljPage({
                 node={<LostNode sakId={sak.id} />}
                 sisteHendelse={items.length === 0}
               >
-                <p className="text-sm font-medium text-blekk">Sak løst</p>
+                <p className="text-sm font-medium text-blekk">
+                  {utfall === "medhold"
+                    ? "Medhold — kravet er frafalt"
+                    : "Sak løst"}
+                </p>
               </TidslinjeHendelse>
             )}
             {items.map((item, i) => {

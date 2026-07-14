@@ -390,6 +390,39 @@ Valg tatt underveis:
 ⚠ **Migrasjon 0016 må kjøres i Supabase.** `build`/`lint`/`test` grønne (14
 tester). Verifiser i prod med `?dryRun=1` + Bearer CRON_SECRET.
 
+## Lukke løkka — Fase C: Utfallet (ferdig)
+
+- **Migrasjon `0017_utfall.sql`** (additiv): `saker.utfall` (check: medhold/
+  delvis_medhold/avvist/nedbetalingsavtale). slett_egen_konto uendret (kolonne
+  på saker).
+- **`types.ts`:** `SAK_UTFALL` + `UTFALL_ETIKETT` + `UTFALL_STIL` (medhold =
+  emerald).
+- **`SVAR_SKJEMA`:** nytt `svar_utfall` (medhold/delvis_medhold/avvist/
+  nedbetalingstilbud/uklart), KUN når det fremgår eksplisitt.
+- **`src/lib/utfall.ts`** (ren, testet): `utfallOvergang()` (kode beslutter
+  status/stadium) + `svarUtfallTilSak()` (mapper AI-forslag → sak-utfall,
+  `uklart`/`nedbetalingstilbud` håndtert). 4 enhetstester.
+- **Steg 3:** «Hva betyr svaret?»-rad vises KUN når valgt eksisterende krav er
+  `venter_pa_svar`; forhåndsvalgt fra AI (ikke ved `uklart`); «Vet ikke / la stå
+  tomt» nullstiller. `lagreBrev` bruker `utfallOvergang` i eksisterende-krav-
+  grenen. Medhold setter seremoni-flagget før navigasjon.
+- **Krav-detalj:** utfall-pill under headeren; løst-hendelsen heter «Medhold —
+  kravet er frafalt» ved `utfall='medhold'`, ellers «Sak løst».
+- **KravMeny:** «Marker som løst» → utfallsvalg (4 + «Annet / vet ikke»);
+  `markerLost(id, utfall?)` lagrer valgfritt utfall.
+
+Valg tatt underveis:
+1. Manuell «marker som løst» setter alltid `status='fullfort'` (brukeren lukker
+   saken selv) og lagrer utfall som metadata — bruker IKKE `utfallOvergang`
+   (som ville holdt delvis/avvist «aktiv»). Overgangslogikken gjelder svar-
+   flyten der koden avgjør.
+2. Utfall-pill vises for alle utfall (også delvis/avvist/nedbetaling som blir
+   værende aktive), så fanget utfall er synlig.
+
+⚠ **Migrasjonene 0015, 0016, 0017 MÅ kjøres i Supabase FØR deploy** — krav-
+detaljen selecter nye kolonner (`utfall`, `sendt_at`, `avsender_epost`); uten
+dem feiler spørringen og siden 404-er. `build`/`lint`/`test` grønne (18 tester).
+
 ---
 
 ## Deploy

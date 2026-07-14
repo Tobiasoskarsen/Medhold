@@ -10,7 +10,13 @@ import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
 import { BREVTYPER, STADIUM_ETIKETT, type BrevType } from "@/lib/gjeld";
 import { formaterKortDato } from "@/lib/dato";
-import type { FristForslag } from "@/lib/types";
+import {
+  SAK_UTFALL,
+  UTFALL_ETIKETT,
+  type FristForslag,
+  type SakUtfall,
+} from "@/lib/types";
+import { svarUtfallTilSak } from "@/lib/utfall";
 import {
   analyserBrevTekst,
   analyserBrevBilder,
@@ -21,7 +27,7 @@ import {
 } from "./actions";
 
 type AnalyseData = Extract<AnalyseResultat, { ok: true }>["analyse"];
-type KravValg = { id: string; navn: string };
+type KravValg = { id: string; navn: string; venter: boolean };
 type Inntak = "valg" | "tekst" | "bilde";
 type ValgtBilde = Bilde & { navn: string };
 
@@ -79,6 +85,12 @@ export function LeggTilBrevFlyt({
   const [fristForslag, setFristForslag] = useState<FristForslag[]>([]);
   const [fristAv, setFristAv] = useState<Record<number, boolean>>({});
   const [stegAv, setStegAv] = useState<Record<number, boolean>>({});
+  const [utfall, setUtfall] = useState<SakUtfall | "">("");
+
+  // Utfallsraden vises kun når svaret matches mot en sak i «venter på svar».
+  const valgtKravVenter =
+    kravModus === "eksisterende" &&
+    krav.find((k) => k.id === valgtKrav)?.venter === true;
 
   function anvendAnalyse(r: Extract<AnalyseResultat, { ok: true }>) {
     setAnalyse(r.analyse);
@@ -103,6 +115,8 @@ export function LeggTilBrevFlyt({
     const alle = [...eksplisitte, ...beregnede];
     setFristForslag(alle);
     setFristAv(Object.fromEntries(alle.map((f, i) => [i, !!f.forfallsdato])));
+    // Forhåndsvalgt utfall fra AI (null ved «uklart» → ingen forhåndsvalg).
+    setUtfall(svarUtfallTilSak(r.analyse.svar_utfall) ?? "");
     setSteg(3);
   }
 
@@ -169,6 +183,7 @@ export function LeggTilBrevFlyt({
       forklaring: analyse.forklaring,
       foreslatte_steg: valgteSteg,
       valgteFrister,
+      utfall: valgtKravVenter && utfall ? utfall : null,
     };
 
     const r = await lagreBrev(input);
@@ -178,6 +193,14 @@ export function LeggTilBrevFlyt({
       return;
     }
     haptikk("suksess");
+    // Medhold utløser løst-seremonien på krav-detaljen.
+    if (valgtKravVenter && utfall === "medhold") {
+      try {
+        sessionStorage.setItem(`medhold-lost-nettopp-${r.sakId}`, "1");
+      } catch {
+        /* ignorer */
+      }
+    }
     router.push(`/krav/${r.sakId}`);
     router.refresh();
   }
@@ -456,6 +479,45 @@ export function LeggTilBrevFlyt({
               </label>
             </div>
           </div>
+
+          {valgtKravVenter && (
+            <div className="mt-5">
+              <p className="text-[13px] font-medium text-blekk">
+                Hva betyr svaret?
+              </p>
+              <p className="mt-0.5 text-[13px] text-dempet">
+                Er dette svaret på det du sendte? Bekreft utfallet.
+              </p>
+              <div className="mt-2 flex flex-col gap-2">
+                {SAK_UTFALL.map((u) => (
+                  <label
+                    key={u}
+                    className={`flex items-center gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm transition ${
+                      utfall === u
+                        ? "border-aksent bg-aksent/5 text-blekk"
+                        : "border-strek text-blekk"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="utfall"
+                      checked={utfall === u}
+                      onChange={() => setUtfall(u)}
+                      className="accent-aksent"
+                    />
+                    {UTFALL_ETIKETT[u]}
+                  </label>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setUtfall("")}
+                  className="mt-1 self-start text-[13px] text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk"
+                >
+                  Vet ikke / la stå tomt
+                </button>
+              </div>
+            </div>
+          )}
 
           {fristForslag.length > 0 && (
             <div className="mt-5">
