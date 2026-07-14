@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { lagreFornavn } from "./actions";
 
 /** Valgfritt fornavn — brukes i hilsenen på Hjem. Lagres når feltet forlates. */
@@ -9,6 +9,13 @@ export function Fornavn({ start }: { start: string }) {
   const [lagret, setLagret] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
   const [venter, startTransition] = useTransition();
+
+  // «Lagret» forsvinner av seg selv, så den ikke blir stående som stale state.
+  useEffect(() => {
+    if (!lagret) return;
+    const t = setTimeout(() => setLagret(false), 2500);
+    return () => clearTimeout(t);
+  }, [lagret]);
 
   function lagre() {
     if (navn.trim() === start.trim()) return;
