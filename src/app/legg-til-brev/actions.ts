@@ -8,6 +8,7 @@ import type { FristForslag, SakUtfall } from "@/lib/types";
 import { beregnFrist, foreslaStadium, BREVTYPER, type BrevType } from "@/lib/gjeld";
 import { utfallOvergang } from "@/lib/utfall";
 import { AI_MODELL } from "@/lib/ai";
+import { maskerFodselsnummer } from "@/lib/maskering";
 import {
   sjekkKostnader,
   KOSTNADSTYPER,
@@ -291,7 +292,9 @@ export async function analyserBrevTekst(
   return {
     ok: true,
     analyse,
-    original_tekst: rensket,
+    // Masker fødselsnumre før teksten lagres/vises videre (AI-kallet over kjørte
+    // på originalen — det er den uunngåelige første sendingen).
+    original_tekst: maskerFodselsnummer(rensket),
     beregnetFrist,
     matchetKravId,
     gebyrsjekk,
@@ -387,7 +390,7 @@ export async function analyserBrevBilder(
   return {
     ok: true,
     analyse: rest,
-    original_tekst: ekstrahert_tekst,
+    original_tekst: maskerFodselsnummer(ekstrahert_tekst),
     beregnetFrist,
     matchetKravId,
     gebyrsjekk,

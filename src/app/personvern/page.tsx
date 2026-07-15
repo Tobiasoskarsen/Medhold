@@ -28,10 +28,10 @@ export default function PersonvernPage() {
         <section>
           <h2 className="mb-1 font-medium text-blekk">Hva vi lagrer</h2>
           <p className="text-dempet">
-            Vi lagrer det du selv legger inn: krav, brev, frister og steg, samt
-            teksten du limer inn eller fotograferer for forklaring. Vi samler
-            ikke inn noe utover dette, og vi selger eller deler ikke dataene
-            dine.
+            Vi lagrer det du selv legger inn i gjelds- og inkassosakene dine:
+            krav, brev, frister, steg og utkast, samt teksten du limer inn eller
+            fotograferer for forklaring. Vi samler ikke inn noe utover dette, og
+            vi selger eller deler ikke dataene dine.
           </p>
         </section>
 
@@ -47,10 +47,26 @@ export default function PersonvernPage() {
         <section>
           <h2 className="mb-1 font-medium text-blekk">AI-forklaringer</h2>
           <p className="text-dempet">
-            Når du ber om å få et brev forklart eller lage et utkast, sendes{" "}
-            <em>kun</em> teksten du selv legger inn til vår AI-leverandør
-            (Anthropic). Vi sender aldri hele saksbildet ditt automatisk, og
-            bilder lagres ikke — kun teksten som trekkes ut.
+            Når du ber om å få et brev forklart eller lage et utkast, sendes
+            teksten du limer inn — eller bildet/PDF-en du laster opp — til vår
+            AI-leverandør (Anthropic) for forklaring og transkripsjon. Ved
+            bildeinntak lagrer vi ikke selve bildet, kun den transkriberte
+            teksten. Vi sender aldri hele saksbildet ditt automatisk.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-1 font-medium text-blekk">
+            Fødselsnummer og sensitive opplysninger
+          </h2>
+          <p className="text-dempet">
+            Gjeldsbrev inneholder ofte fødselsnummer. Før vi lagrer den innlimte
+            eller transkriberte teksten, fjerner vi automatisk gjenkjente norske
+            fødselsnumre (erstattet med «[fødselsnummer skjult]»). Vær likevel
+            oppmerksom: ved bildeinntak er selve bildet allerede sendt til
+            AI-leverandøren for transkripsjon <em>før</em> maskeringen skjer. Ta
+            bare med det du trenger, og sladd gjerne fødselsnummer selv før du
+            fotograferer.
           </p>
         </section>
 
