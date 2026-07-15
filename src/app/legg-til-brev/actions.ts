@@ -51,6 +51,11 @@ const SVAR_SKJEMA = {
       description:
         "Totalt utestående beløp i kroner, kun sifre. KUN hvis det står eksplisitt. Ellers tom streng.",
     },
+    hovedstol: {
+      type: "string",
+      description:
+        "Opprinnelig hovedstol/hovedkrav — selve gjelden FØR gebyrer, renter og salær — i kroner, kun sifre. KUN hvis den står eksplisitt i brevet (ofte som «hovedstol», «hovedkrav» eller «opprinnelig beløp»). Ellers tom streng.",
+    },
     saksnummer: {
       type: "string",
       description: "Saks-/referansenummer. KUN hvis det står i brevet. Ellers tom streng.",
@@ -123,6 +128,7 @@ const SVAR_SKJEMA = {
     "avsender_epost",
     "brevdato",
     "belop",
+    "hovedstol",
     "saksnummer",
     "svar_utfall",
     "foreslatte_steg",
@@ -141,6 +147,7 @@ Ufravikelige regler:
 - Du FORKLARER og FORESLÅR. Du gir ALDRI juridiske eller økonomiske vedtak, konklusjoner eller garantier.
 - Finn ALDRI opp frister, beløp, datoer, saksnummer, paragrafer eller fakta som ikke står i teksten. Er noe uklart, la feltet stå tomt.
 - Oppgi brevdato, beløp, saksnummer og avsenderens e-postadresse KUN når de står eksplisitt i brevet. Ellers tom streng.
+- Skill mellom totalt utestående beløp (belop) og opprinnelig hovedstol (hovedstol = selve gjelden før gebyrer, renter og salær). Oppgi hovedstol kun når den står eksplisitt; ellers tom streng.
 - Foreslå kun frister som er eksplisitt nevnt i brevet, med dato kun når en konkret dato er oppgitt.
 - Trekk ut kostnadslinjer (gebyrer, salær, renter, rettsgebyr) KUN slik de står oppført i brevet, hver som egen linje med sitt beløp. Summer aldri, utled aldri, og ta ALDRI med hovedstolen/selve hovedkravet som en kostnadslinje. Er typen uklar, bruk 'annet'.
 - I dag er ${idag}. Bruk dette bare til å forstå teksten – ikke til å regne ut frister som ikke står der.
@@ -154,6 +161,7 @@ type Analyse = {
   avsender_epost: string;
   brevdato: string;
   belop: string;
+  hovedstol: string;
   saksnummer: string;
   svar_utfall:
     | "medhold"
@@ -181,6 +189,13 @@ export type AnalyseResultat =
     }
   | { ok: false; feil: string };
 
+/** Tolker et beløp fra AI/skjema (kun sifre + evt. mellomrom) til tall. */
+function tolkBelop(s: string | null | undefined): number | null {
+  if (!s || !s.trim()) return null;
+  const n = Number(s.replace(/\s/g, ""));
+  return Number.isNaN(n) ? null : n;
+}
+
 // Kode beslutter: beregn frist av regel + match mot eksisterende krav. Deles
 // mellom tekst- og bildeanalysen.
 async function etterbehandle(
@@ -199,13 +214,10 @@ async function etterbehandle(
     ? { tittel: beregnet.tittel, forfallsdato: beregnet.forfallsdato }
     : null;
 
-  // Gebyrsjekk (kode beslutter). Hovedstol utledes av det totale beløpet AI-en
-  // fant — appen har ikke et eget hovedstol-felt; dette er konservativt (et
-  // høyere beløp gir aldri et lavere salærtrinn). Se PROSJEKT_STATUS.
-  const hovedstol =
-    analyse.belop && !Number.isNaN(Number(analyse.belop))
-      ? Number(analyse.belop)
-      : null;
+  // Gebyrsjekk (kode beslutter). Salærtrinnene defineres av opprinnelig
+  // hovedstol; bruk den når AI-en fant den eksplisitt, og fall tilbake til
+  // totalbeløpet (konservativt) når hovedstol mangler.
+  const hovedstol = tolkBelop(analyse.hovedstol) ?? tolkBelop(analyse.belop);
   const gebyrsjekk =
     analyse.kostnadslinjer.length > 0
       ? sjekkKostnader(analyse.kostnadslinjer, hovedstol, analyse.brevdato || null)
@@ -400,8 +412,8 @@ export type LagreBrevInput = {
   utfall: SakUtfall | null;
   /** Kostnadslinjene AI-en fant (rådata). Null/tom når ingen. */
   kostnadslinjer: Kostnadslinje[] | null;
-  /** Beregnet gebyrsjekk lagres som sannhet for visning (rekalkuleres aldri). */
-  gebyrsjekk: GebyrsjekkResultat | null;
+  /** Opprinnelig hovedstol (salærgrunnlag). Null → totalbeløp brukes. */
+  hovedstol: number | null;
 };
 
 export type LagreBrevResultat =
@@ -418,6 +430,15 @@ export async function lagreBrev(
   if (!user) redirect("/velkommen");
 
   const stadium = foreslaStadium(input.brevtype ?? "annet");
+
+  // Rekalkuler gebyrsjekken fra de endelige verdiene brukeren bekreftet (kode
+  // beslutter). Retter brukeren et feillest beløp, følger vurderingen med.
+  // Lagret jsonb er sannheten for visning senere — ikke rekalkuler ved lesing.
+  const linjer = input.kostnadslinjer ?? [];
+  const gebyrsjekk =
+    linjer.length > 0
+      ? sjekkKostnader(linjer, input.hovedstol ?? input.belop, input.brevdato || null)
+      : null;
 
   // 1) Finn eller opprett kravet (saken), og hold nøkkelfeltene oppdatert.
   let sakId: string;
@@ -473,14 +494,8 @@ export async function lagreBrev(
       forklaring: input.forklaring,
       foreslatte_steg: input.foreslatte_steg,
       foreslatte_frister: input.valgteFrister,
-      kostnadslinjer:
-        input.kostnadslinjer && input.kostnadslinjer.length > 0
-          ? input.kostnadslinjer
-          : null,
-      gebyrsjekk:
-        input.gebyrsjekk && input.gebyrsjekk.linjer.length > 0
-          ? input.gebyrsjekk
-          : null,
+      kostnadslinjer: linjer.length > 0 ? linjer : null,
+      gebyrsjekk: gebyrsjekk && gebyrsjekk.linjer.length > 0 ? gebyrsjekk : null,
     })
     .select("id")
     .single();

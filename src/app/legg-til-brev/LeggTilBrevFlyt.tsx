@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { m } from "motion/react";
 import { X, Camera, Upload, Type, Trash2 } from "lucide-react";
@@ -18,7 +18,7 @@ import {
 } from "@/lib/types";
 import { svarUtfallTilSak } from "@/lib/utfall";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
-import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import { sjekkKostnader } from "@/lib/gebyr";
 import {
   analyserBrevTekst,
   analyserBrevBilder,
@@ -35,6 +35,13 @@ type ValgtBilde = Bilde & { navn: string };
 
 function brevtypeEtikett(bt: BrevType): string {
   return bt === "annet" ? "Annet" : STADIUM_ETIKETT[bt];
+}
+
+/** Beløpstekst (sifre + evt. mellomrom) → tall, ellers null. */
+function tolkTall(s: string): number | null {
+  if (!s.trim()) return null;
+  const n = Number(s.replace(/\s/g, ""));
+  return Number.isNaN(n) ? null : n;
 }
 
 function lesFilSomBase64(fil: File): Promise<ValgtBilde> {
@@ -88,7 +95,16 @@ export function LeggTilBrevFlyt({
   const [fristAv, setFristAv] = useState<Record<number, boolean>>({});
   const [stegAv, setStegAv] = useState<Record<number, boolean>>({});
   const [utfall, setUtfall] = useState<SakUtfall | "">("");
-  const [gebyrsjekk, setGebyrsjekk] = useState<GebyrsjekkResultat | null>(null);
+
+  // Gebyrsjekken beregnes reaktivt fra kostnadslinjene AI-en fant og de
+  // (redigerbare) verdiene i steg 3 — retter du beløpet, følger panelet med.
+  // Salærgrunnlaget er hovedstol når den finnes, ellers totalbeløpet.
+  const gebyrsjekk = useMemo(() => {
+    const linjer = analyse?.kostnadslinjer ?? [];
+    if (linjer.length === 0) return null;
+    const grunnlag = tolkTall(analyse?.hovedstol ?? "") ?? tolkTall(belop);
+    return sjekkKostnader(linjer, grunnlag, brevdato || null);
+  }, [analyse, belop, brevdato]);
 
   // Utfallsraden vises kun når svaret matches mot en sak i «venter på svar».
   const valgtKravVenter =
@@ -120,7 +136,6 @@ export function LeggTilBrevFlyt({
     setFristAv(Object.fromEntries(alle.map((f, i) => [i, !!f.forfallsdato])));
     // Forhåndsvalgt utfall fra AI (null ved «uklart» → ingen forhåndsvalg).
     setUtfall(svarUtfallTilSak(r.analyse.svar_utfall) ?? "");
-    setGebyrsjekk(r.gebyrsjekk);
     setSteg(3);
   }
 
@@ -189,7 +204,7 @@ export function LeggTilBrevFlyt({
       valgteFrister,
       utfall: valgtKravVenter && utfall ? utfall : null,
       kostnadslinjer: analyse.kostnadslinjer,
-      gebyrsjekk,
+      hovedstol: tolkTall(analyse.hovedstol),
     };
 
     const r = await lagreBrev(input);

@@ -102,6 +102,15 @@ test("salær uten hovedstol → ukjent", () => {
   assert.equal(r.vurdering, "ukjent");
 });
 
+test("hovedstol 2400 + salær 800 → over (ikke nedgrader ekte brudd)", () => {
+  // Trinn t.o.m. 2500 → tungB 750. 800 > 750 → over. Ville blitt kun mulig_over
+  // om man feilaktig brukte totalbeløpet (~3200 → 10000-trinnet, maks 1500).
+  const r = vurder({ type: "salaer", belop: 800, tekst: "" }, 2400);
+  assert.equal(r.vurdering, "over");
+  assert.equal(r.maksHoy, 750);
+  assert.equal(r.differanse, 50);
+});
+
 // --- Alltid-ukjent-typer -------------------------------------------------
 
 test("forsinkelsesrente, rettsgebyr, annet → alltid ukjent", () => {
