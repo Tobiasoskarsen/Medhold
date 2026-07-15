@@ -6,6 +6,7 @@ import { Skjermramme, Kort, Primærknapp, Pill, Belop } from "@/components/ui";
 import { formaterKortDato, fristNærhet } from "@/lib/dato";
 import { handlingstittel, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus } from "@/lib/types";
+import type { GebyrsjekkResultat } from "@/lib/gebyr";
 
 type SakKobling = {
   id: string;
@@ -61,6 +62,23 @@ export default async function HjemPage() {
   const kommende = frister.slice(topFrist ? 1 : 0, topFrist ? 4 : 3);
   // Ingen presserende frist, men saken venter på svar → «venter»-varianten.
   const venter = !!topSak && topSak.status === "venter_pa_svar" && !topFrist;
+
+  // Gebyrsjekk: nevn i handlingskortet når nyeste brev på handlingssaken har
+  // et beløp over maksimalsats OG stadiet støtter utkast (konservativt: kun
+  // «over», aldri mulig_over).
+  let hjemHarOverGebyr = false;
+  if (topSak && stotterUtkast(topSak.stadium ?? null)) {
+    const { data: nyesteBrev } = await supabase
+      .from("brev")
+      .select("gebyrsjekk")
+      .eq("sak_id", topSak.id)
+      .order("brevdato", { ascending: false, nullsFirst: false })
+      .order("opprettet", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    hjemHarOverGebyr =
+      ((nyesteBrev?.gebyrsjekk as GebyrsjekkResultat | null)?.antallOver ?? 0) > 0;
+  }
 
   return (
     <Skjermramme className="pt-6">
@@ -140,6 +158,12 @@ export default async function HjemPage() {
                     ));
                   })()}
                 </p>
+                {hjemHarOverGebyr && (
+                  <p className="mt-1.5 text-[13px] text-dempet">
+                    Gebyrsjekken fant et beløp over maksimalsats — god grunn til
+                    å svare.
+                  </p>
+                )}
                 {topSak &&
                   (stotterUtkast(topSak.stadium ?? null) ? (
                     <>

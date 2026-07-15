@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { harPluss } from "@/lib/plan";
 import { type UtkastType } from "@/lib/types";
+import { gebyrFunnTekst, type GebyrsjekkResultat } from "@/lib/gebyr";
 
 export type UtkastResultat =
   | { ok: true; id: string; innhold: string }
@@ -39,27 +40,37 @@ export async function lagUtkast(
 
   // Hent brevet det svares på (RLS sikrer eierskap).
   let original = "";
+  let gebyrFakta = "";
   if (brevId) {
     const { data: brev } = await supabase
       .from("brev")
-      .select("original_tekst")
+      .select("original_tekst, gebyrsjekk")
       .eq("id", brevId)
       .maybeSingle();
     original = brev?.original_tekst ?? "";
+    // Kun «over»-funn sendes til prompten (kode beslutter, ikke AI). mulig_over
+    // og ukjent holdes utenfor — konservativt.
+    const gs = (brev?.gebyrsjekk as GebyrsjekkResultat | null) ?? null;
+    if (gs && gs.antallOver > 0) gebyrFakta = gebyrFunnTekst(gs);
   }
 
   const detalj = detaljer.trim();
+  const gebyrRegel = gebyrFakta
+    ? `
+- Appen har gjort en automatisk kontroll mot inkassoforskriftens maksimalsatser (se «Fakta fra Medhold» under). Du KAN vise til at det aktuelle beløpet overstiger den lovlige maksimalsatsen etter inkassoforskriften, men oppgi ALDRI paragrafnummer, og hold tonen rolig og saklig — ikke skjerp den.`
+    : "";
   const system = `Du skriver et utkast til ${FORMÅL[type]} på vegne av en privatperson som har fått et brev om gjeld/inkasso.
 
 Ufravikelige regler:
 - Skriv et ferdig, høflig og saklig brev på norsk (bokmål), klart til å sendes.
-- Bruk KUN fakta fra brevet og det personen selv oppgir. Finn ALDRI opp beløp, datoer, paragrafer eller omstendigheter.
+- Bruk KUN fakta fra brevet, det personen selv oppgir, og fakta fra Medhold når det er oppgitt. Finn ALDRI opp beløp, datoer, paragrafer eller omstendigheter.
 - Nevn ikke forhold personen ikke har oppgitt. Er noe uklart, hold det generelt fremfor å gjette.
-- Ikke gi garantier om utfallet. Ikke lat som du er advokat.
+- Ikke gi garantier om utfallet. Ikke lat som du er advokat.${gebyrRegel}
 - Skriv kun selve brevteksten (ingen forklaring rundt, ingen «her er utkastet»).`;
 
   const bruker = [
     original ? `Brevet det svares på:\n\n${original}` : null,
+    gebyrFakta ? `Fakta fra Medhold: ${gebyrFakta}` : null,
     detalj
       ? `Det personen selv oppgir: ${detalj}`
       : "Personen har ikke oppgitt utfyllende detaljer.",

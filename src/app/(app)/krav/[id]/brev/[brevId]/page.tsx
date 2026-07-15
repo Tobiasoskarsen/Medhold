@@ -3,8 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort } from "@/components/ui";
+import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { formaterKortDato } from "@/lib/dato";
 import { STADIUM_ETIKETT, type BrevType } from "@/lib/gjeld";
+import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { BrevSamtale } from "./BrevSamtale";
 
 type Melding = { rolle: "bruker" | "assistent"; innhold: string };
@@ -29,7 +31,9 @@ export default async function BrevPage({
 
   const { data: brev } = await supabase
     .from("brev")
-    .select("id, sak_id, avsender, brevtype, brevdato, forklaring, original_tekst")
+    .select(
+      "id, sak_id, avsender, brevtype, brevdato, forklaring, original_tekst, gebyrsjekk",
+    )
     .eq("id", brevId)
     .maybeSingle();
   if (!brev || brev.sak_id !== id) notFound();
@@ -67,6 +71,11 @@ export default async function BrevPage({
           {brev.forklaring}
         </p>
       </Kort>
+
+      <Gebyrsjekk
+        resultat={(brev.gebyrsjekk as GebyrsjekkResultat | null) ?? null}
+        className="mt-3"
+      />
 
       <details className="mt-3">
         <summary className="cursor-pointer text-[13px] text-dempet transition hover:text-blekk">

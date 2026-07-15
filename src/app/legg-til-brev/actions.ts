@@ -7,6 +7,12 @@ import { createClient } from "@/lib/supabase/server";
 import type { FristForslag, SakUtfall } from "@/lib/types";
 import { beregnFrist, foreslaStadium, BREVTYPER, type BrevType } from "@/lib/gjeld";
 import { utfallOvergang } from "@/lib/utfall";
+import {
+  sjekkKostnader,
+  KOSTNADSTYPER,
+  type Kostnadslinje,
+  type GebyrsjekkResultat,
+} from "@/lib/gebyr";
 
 // Strukturert utdata. «AI tolker, kode beslutter»: modellen trekker KUN ut det
 // som eksplisitt står i brevet. Beregnede frister lages i kode, ikke her.
@@ -82,6 +88,32 @@ const SVAR_SKJEMA = {
         required: ["tittel", "forfallsdato"],
       },
     },
+    kostnadslinjer: {
+      type: "array",
+      description:
+        "Kostnadslinjer som STÅR EKSPLISITT oppført i brevet (gebyrer, salær, renter, rettsgebyr). Tom hvis ingen. Summer aldri linjer sammen, og ta ALDRI med hovedstolen/selve hovedkravet her. Er typen uklar, bruk 'annet'.",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          type: {
+            type: "string",
+            enum: [...KOSTNADSTYPER],
+            description:
+              "Type kostnad. Bruk 'annet' hvis den ikke passer en av de andre typene.",
+          },
+          belop: {
+            type: "number",
+            description: "Beløpet for denne linjen i kroner, slik det står i brevet.",
+          },
+          tekst: {
+            type: "string",
+            description: "Linjen slik den står i brevet. Maks 120 tegn.",
+          },
+        },
+        required: ["type", "belop", "tekst"],
+      },
+    },
   },
   required: [
     "forklaring",
@@ -94,6 +126,7 @@ const SVAR_SKJEMA = {
     "svar_utfall",
     "foreslatte_steg",
     "foreslatte_frister",
+    "kostnadslinjer",
   ],
 } as const;
 
@@ -108,6 +141,7 @@ Ufravikelige regler:
 - Finn ALDRI opp frister, beløp, datoer, saksnummer, paragrafer eller fakta som ikke står i teksten. Er noe uklart, la feltet stå tomt.
 - Oppgi brevdato, beløp, saksnummer og avsenderens e-postadresse KUN når de står eksplisitt i brevet. Ellers tom streng.
 - Foreslå kun frister som er eksplisitt nevnt i brevet, med dato kun når en konkret dato er oppgitt.
+- Trekk ut kostnadslinjer (gebyrer, salær, renter, rettsgebyr) KUN slik de står oppført i brevet, hver som egen linje med sitt beløp. Summer aldri, utled aldri, og ta ALDRI med hovedstolen/selve hovedkravet som en kostnadslinje. Er typen uklar, bruk 'annet'.
 - I dag er ${idag}. Bruk dette bare til å forstå teksten – ikke til å regne ut frister som ikke står der.
 - Avslutt alltid "forklaring" med én kort setning: at dette er hjelp til å få oversikt, ikke profesjonell rådgivning, og at viktige ting bør bekreftes med rett instans.`;
 }
@@ -128,6 +162,7 @@ type Analyse = {
     | "uklart";
   foreslatte_steg: string[];
   foreslatte_frister: { tittel: string; forfallsdato: string }[];
+  kostnadslinjer: Kostnadslinje[];
 };
 
 export type AnalyseResultat =
@@ -140,6 +175,8 @@ export type AnalyseResultat =
       beregnetFrist: { tittel: string; forfallsdato: string } | null;
       /** Eksisterende krav som brevet trolig hører til (saksnummer/kreditor). */
       matchetKravId: string | null;
+      /** Deterministisk gebyrsjekk (kode beslutter). Null når ingen kostnadslinjer. */
+      gebyrsjekk: GebyrsjekkResultat | null;
     }
   | { ok: false; feil: string };
 
@@ -151,6 +188,7 @@ async function etterbehandle(
 ): Promise<{
   beregnetFrist: { tittel: string; forfallsdato: string } | null;
   matchetKravId: string | null;
+  gebyrsjekk: GebyrsjekkResultat | null;
 }> {
   const beregnet =
     analyse.brevdato && analyse.brevtype
@@ -159,6 +197,18 @@ async function etterbehandle(
   const beregnetFrist = beregnet
     ? { tittel: beregnet.tittel, forfallsdato: beregnet.forfallsdato }
     : null;
+
+  // Gebyrsjekk (kode beslutter). Hovedstol utledes av det totale beløpet AI-en
+  // fant — appen har ikke et eget hovedstol-felt; dette er konservativt (et
+  // høyere beløp gir aldri et lavere salærtrinn). Se PROSJEKT_STATUS.
+  const hovedstol =
+    analyse.belop && !Number.isNaN(Number(analyse.belop))
+      ? Number(analyse.belop)
+      : null;
+  const gebyrsjekk =
+    analyse.kostnadslinjer.length > 0
+      ? sjekkKostnader(analyse.kostnadslinjer, hovedstol, analyse.brevdato || null)
+      : null;
 
   const { data: saker } = await supabase
     .from("saker")
@@ -175,7 +225,7 @@ async function etterbehandle(
     matchetKravId =
       liste.find((s) => norm(s.kreditor) === norm(analyse.avsender))?.id ?? null;
   }
-  return { beregnetFrist, matchetKravId };
+  return { beregnetFrist, matchetKravId, gebyrsjekk };
 }
 
 export async function analyserBrevTekst(
@@ -221,8 +271,18 @@ export async function analyserBrevTekst(
     return { ok: false, feil: "Noe gikk galt under analysen. Prøv igjen om litt." };
   }
 
-  const { beregnetFrist, matchetKravId } = await etterbehandle(supabase, analyse);
-  return { ok: true, analyse, original_tekst: rensket, beregnetFrist, matchetKravId };
+  const { beregnetFrist, matchetKravId, gebyrsjekk } = await etterbehandle(
+    supabase,
+    analyse,
+  );
+  return {
+    ok: true,
+    analyse,
+    original_tekst: rensket,
+    beregnetFrist,
+    matchetKravId,
+    gebyrsjekk,
+  };
 }
 
 export type Bilde = { media_type: string; data: string };
@@ -307,13 +367,17 @@ export async function analyserBrevBilder(
   }
 
   const { ekstrahert_tekst, ...rest } = analyse;
-  const { beregnetFrist, matchetKravId } = await etterbehandle(supabase, rest);
+  const { beregnetFrist, matchetKravId, gebyrsjekk } = await etterbehandle(
+    supabase,
+    rest,
+  );
   return {
     ok: true,
     analyse: rest,
     original_tekst: ekstrahert_tekst,
     beregnetFrist,
     matchetKravId,
+    gebyrsjekk,
   };
 }
 
@@ -333,6 +397,10 @@ export type LagreBrevInput = {
   valgteFrister: FristForslag[]; // valgte frister med kilde
   /** Bekreftet utfall når brevet er et svar på en sak i venter_pa_svar. */
   utfall: SakUtfall | null;
+  /** Kostnadslinjene AI-en fant (rådata). Null/tom når ingen. */
+  kostnadslinjer: Kostnadslinje[] | null;
+  /** Beregnet gebyrsjekk lagres som sannhet for visning (rekalkuleres aldri). */
+  gebyrsjekk: GebyrsjekkResultat | null;
 };
 
 export type LagreBrevResultat =
@@ -404,6 +472,14 @@ export async function lagreBrev(
       forklaring: input.forklaring,
       foreslatte_steg: input.foreslatte_steg,
       foreslatte_frister: input.valgteFrister,
+      kostnadslinjer:
+        input.kostnadslinjer && input.kostnadslinjer.length > 0
+          ? input.kostnadslinjer
+          : null,
+      gebyrsjekk:
+        input.gebyrsjekk && input.gebyrsjekk.linjer.length > 0
+          ? input.gebyrsjekk
+          : null,
     })
     .select("id")
     .single();

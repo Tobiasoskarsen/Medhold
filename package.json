@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test src/lib/gjeld.test.ts src/lib/oppfolging.test.ts src/lib/utfall.test.ts"
+    "test": "node --test src/lib/gjeld.test.ts src/lib/oppfolging.test.ts src/lib/utfall.test.ts src/lib/gebyr.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",

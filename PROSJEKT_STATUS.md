@@ -425,6 +425,57 @@ dem feiler spørringen og siden 404-er. `build`/`lint`/`test` grønne (18 tester
 
 ---
 
+## Gebyrsjekk (MEDHOLD_GEBYRSJEKK_ARBEIDSORDRE, ferdig i kode)
+
+Deterministisk gebyrsjekk-motor: «AI tolker (trekker ut kostnadslinjer), kode
+beslutter (vurderer mot maksimalsatser)».
+
+- **`src/lib/gebyr.ts`** (ren, testet, ingen sideeffekter): versjonert
+  `SATSVERSJONER` (2026) + `satserForDato()`, `sjekkKostnader()` (innenfor/
+  mulig_over/over/ukjent med 1 kr slingring), `gebyrFunnTekst()` (kun
+  «over»-funn). **16 enhetstester** i `gebyr.test.ts` (totalt 34 i suiten).
+- **Satsene verifisert mot Finanstilsynet 2026-07-15** — identiske med ordrens
+  §3 (750/38/38/113/1345 + begge salærtabellene). Ingen avvik.
+- **Migrasjon `0018_gebyrsjekk.sql`** (additiv): `brev.kostnadslinjer jsonb` +
+  `brev.gebyrsjekk jsonb`. `slett_egen_konto()` uendret (kolonner på `brev`,
+  som allerede slettes eksplisitt i 0012 — verifisert). RLS urørt.
+- **Brevanalysen:** `SVAR_SKJEMA`/`VISJON_SKJEMA` utvidet med `kostnadslinjer`
+  (type/belop/tekst); systemprompt-regel «kun det som står eksplisitt, aldri
+  summér, hovedstol er ikke en kostnadslinje». `etterbehandle()` kaller
+  `sjekkKostnader` og legger resultatet ved analysen + lagring.
+- **`Gebyrsjekk.tsx`** (ny komponent, gjenbruker `Kort`/`Pill`): vises i steg 3
+  (under beløpsfeltene) og på brev-detaljen (fra lagret jsonb, rekalkuleres
+  aldri). Ingen kostnadslinjer → panelet vises ikke.
+- **`Pill` utvidet** med `suksess` (aksent-token) + `feil` (appens etablerte
+  `red-*`-feilfarge). Krav-detalj: diskret rød pill «Mulig ulovlig gebyr» kun
+  ved `over` på nyeste brev. Hjem: undertittel-linje når `over` + stadiet
+  støtter utkast.
+- **Utkast-kobling:** `lagUtkast` legger `gebyrFunnTekst` inn i prompten som
+  «Fakta fra Medhold» + regel (kan vise til beløpet over maksimalsats, uten
+  paragrafnummer, uten å skjerpe tonen). Kun `over` sendes. Info-rad på
+  typevalget når `over`.
+
+Valg tatt underveis:
+1. **Hovedstol = totalt beløp.** Appen har ikke et eget hovedstol-felt; §5s
+   `belop_hovedstol` mates med det totale beløpet AI-en fant. Konservativt: et
+   høyere beløp gir aldri et lavere salærtrinn → mindre sjanse for falsk «over».
+2. **Rød farge = `red-*` (rå Tailwind), ikke et nytt token.** Dette er appens
+   allerede etablerte feilfarge (samme som `HASTEGRAD_STIL.overtid` og alle
+   feilmeldinger). Grønn = eksisterende `aksent`-token, gul = `varsel`-token.
+   Ingen nye farger utenfor det etablerte mønsteret.
+3. **Gebyrfunn i utkast for alle utkasttyper** (ikke bare innsigelse) når det
+   finnes en `over`-linje — ordrens §8-brødtekst gater på funn, ikke type;
+   prompten er permissiv («kan vise til»), så modellen bruker det passende.
+4. **Lagret gebyrsjekk beregnes ved analysetidspunktet** (AI-ens beløp/dato).
+   Redigering av beløp i steg 3 rekalkulerer ikke — i tråd med §9.6 (lagret
+   jsonb er sannheten for visning).
+
+⚠ **Migrasjon `0018_gebyrsjekk.sql` MÅ kjøres i Supabase FØR deploy** — brev-
+detaljen, krav-detaljen, Hjem og utkast-siden selecter `brev.gebyrsjekk`; uten
+kolonnen feiler spørringene. `build`/`lint`/`test` grønne (34 tester).
+
+---
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**

@@ -21,6 +21,7 @@ export function UtkastFlyt({
   kreditor,
   saksnummer,
   starttype,
+  harOverGebyr,
 }: {
   sakId: string;
   brevId: string | null;
@@ -29,6 +30,7 @@ export function UtkastFlyt({
   kreditor: string;
   saksnummer: string | null;
   starttype: UtkastType;
+  harOverGebyr: boolean;
 }) {
   const router = useRouter();
   const [type, setType] = useState<UtkastType>(starttype);
@@ -97,6 +99,12 @@ export function UtkastFlyt({
     <div>
       {!innhold ? (
         <>
+          {harOverGebyr && (
+            <p className="mb-3 rounded-xl bg-red-50 px-3.5 py-2.5 text-[13px] leading-relaxed text-red-700">
+              Gebyrsjekken fant et beløp over maksimalsats — dette tas med i
+              utkastet.
+            </p>
+          )}
           <div className="flex flex-col gap-2">
             {UTKAST_TYPER.map((t) => (
               <label

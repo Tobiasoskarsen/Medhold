@@ -29,6 +29,7 @@ import {
   type UtkastType,
   type SakUtfall,
 } from "@/lib/types";
+import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import type { ReactNode } from "react";
 import { KravMeny } from "./KravMeny";
 import { LostNode } from "./LostNode";
@@ -40,6 +41,7 @@ type BrevRad = {
   brevtype: BrevType | null;
   avsender: string | null;
   opprettet: string;
+  gebyrsjekk: GebyrsjekkResultat | null;
 };
 
 type FristRad = {
@@ -91,7 +93,7 @@ export default async function KravDetaljPage({
     await Promise.all([
       supabase
         .from("brev")
-        .select("id, brevdato, brevtype, avsender, opprettet")
+        .select("id, brevdato, brevtype, avsender, opprettet, gebyrsjekk")
         .eq("sak_id", id)
         .order("brevdato", { ascending: false, nullsFirst: false })
         .order("opprettet", { ascending: false }),
@@ -128,6 +130,8 @@ export default async function KravDetaljPage({
 
   const sisteBrev = brevListe[0];
   const sisteBrevDato = sisteBrev?.brevdato ?? sisteBrev?.opprettet.slice(0, 10);
+  // Konservativt: pillen vises kun ved «over» på nyeste brev, aldri mulig_over.
+  const harOverGebyr = (sisteBrev?.gebyrsjekk?.antallOver ?? 0) > 0;
 
   type Item = {
     key: string;
@@ -226,6 +230,11 @@ export default async function KravDetaljPage({
           className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
         >
           {UTFALL_ETIKETT[utfall]}
+        </span>
+      )}
+      {harOverGebyr && (
+        <span className="mt-2 ml-2 inline-block rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 ring-1 ring-inset ring-red-200">
+          Mulig ulovlig gebyr
         </span>
       )}
 

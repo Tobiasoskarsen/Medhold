@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Skjermramme } from "@/components/ui";
 import { harPluss } from "@/lib/plan";
 import { UTKAST_TYPER, type UtkastType } from "@/lib/types";
+import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { UtkastFlyt } from "./UtkastFlyt";
 
 function erUtkastType(v: string | undefined): v is UtkastType {
@@ -40,7 +41,7 @@ export default async function UtkastPage({
   // Nyeste brev på kravet (grunnlag for utkastet), evt. det oppgitte.
   const { data: brevListe } = await supabase
     .from("brev")
-    .select("id, avsender, avsender_epost, brevdato, opprettet")
+    .select("id, avsender, avsender_epost, brevdato, opprettet, gebyrsjekk")
     .eq("sak_id", id)
     .order("brevdato", { ascending: false, nullsFirst: false })
     .order("opprettet", { ascending: false });
@@ -49,6 +50,9 @@ export default async function UtkastPage({
     (brevParam && brevListe?.find((b) => b.id === brevParam)) ||
     brevListe?.[0] ||
     null;
+
+  const harOverGebyr =
+    ((brev?.gebyrsjekk as GebyrsjekkResultat | null)?.antallOver ?? 0) > 0;
 
   const starttype = erUtkastType(type) ? type : "innsigelse";
 
@@ -79,6 +83,7 @@ export default async function UtkastPage({
           kreditor={sak.kreditor ?? sak.tittel}
           saksnummer={sak.saksnummer ?? null}
           starttype={starttype}
+          harOverGebyr={harOverGebyr}
         />
       </div>
     </Skjermramme>

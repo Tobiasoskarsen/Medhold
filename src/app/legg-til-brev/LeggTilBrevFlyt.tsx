@@ -17,6 +17,8 @@ import {
   type SakUtfall,
 } from "@/lib/types";
 import { svarUtfallTilSak } from "@/lib/utfall";
+import { Gebyrsjekk } from "@/components/Gebyrsjekk";
+import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import {
   analyserBrevTekst,
   analyserBrevBilder,
@@ -86,6 +88,7 @@ export function LeggTilBrevFlyt({
   const [fristAv, setFristAv] = useState<Record<number, boolean>>({});
   const [stegAv, setStegAv] = useState<Record<number, boolean>>({});
   const [utfall, setUtfall] = useState<SakUtfall | "">("");
+  const [gebyrsjekk, setGebyrsjekk] = useState<GebyrsjekkResultat | null>(null);
 
   // Utfallsraden vises kun når svaret matches mot en sak i «venter på svar».
   const valgtKravVenter =
@@ -117,6 +120,7 @@ export function LeggTilBrevFlyt({
     setFristAv(Object.fromEntries(alle.map((f, i) => [i, !!f.forfallsdato])));
     // Forhåndsvalgt utfall fra AI (null ved «uklart» → ingen forhåndsvalg).
     setUtfall(svarUtfallTilSak(r.analyse.svar_utfall) ?? "");
+    setGebyrsjekk(r.gebyrsjekk);
     setSteg(3);
   }
 
@@ -184,6 +188,8 @@ export function LeggTilBrevFlyt({
       foreslatte_steg: valgteSteg,
       valgteFrister,
       utfall: valgtKravVenter && utfall ? utfall : null,
+      kostnadslinjer: analyse.kostnadslinjer,
+      gebyrsjekk,
     };
 
     const r = await lagreBrev(input);
@@ -438,6 +444,8 @@ export function LeggTilBrevFlyt({
               />
             </label>
           </div>
+
+          <Gebyrsjekk resultat={gebyrsjekk} className="mt-5" />
 
           <div className="mt-5">
             <p className="text-[13px] font-medium text-blekk">Hører til</p>
