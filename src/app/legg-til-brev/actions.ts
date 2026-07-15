@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { FristForslag, SakUtfall } from "@/lib/types";
 import { beregnFrist, foreslaStadium, BREVTYPER, type BrevType } from "@/lib/gjeld";
 import { utfallOvergang } from "@/lib/utfall";
+import { AI_MODELL } from "@/lib/ai";
 import {
   sjekkKostnader,
   KOSTNADSTYPER,
@@ -255,7 +256,7 @@ export async function analyserBrevTekst(
   try {
     const anthropic = new Anthropic();
     const svar = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: AI_MODELL,
       max_tokens: 2000,
       thinking: { type: "disabled" },
       system: systemprompt(idag),
@@ -351,7 +352,7 @@ export async function analyserBrevBilder(
   try {
     const anthropic = new Anthropic();
     const svar = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: AI_MODELL,
       max_tokens: 3000,
       thinking: { type: "disabled" },
       system: systemprompt(idag),

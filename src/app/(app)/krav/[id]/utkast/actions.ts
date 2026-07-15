@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { harPluss } from "@/lib/plan";
 import { type UtkastType } from "@/lib/types";
 import { gebyrFunnTekst, type GebyrsjekkResultat } from "@/lib/gebyr";
+import { AI_MODELL } from "@/lib/ai";
 
 export type UtkastResultat =
   | { ok: true; id: string; innhold: string }
@@ -82,7 +83,7 @@ Ufravikelige regler:
   try {
     const anthropic = new Anthropic();
     const svar = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: AI_MODELL,
       max_tokens: 1500,
       thinking: { type: "disabled" },
       system,

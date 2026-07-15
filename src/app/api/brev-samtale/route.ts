@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
 import { formaterKortDato } from "@/lib/dato";
+import { AI_MODELL } from "@/lib/ai";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel.
 export const maxDuration = 60;
@@ -115,7 +116,7 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       try {
         const claudeStream = anthropic.messages.stream({
-          model: "claude-sonnet-4-6",
+          model: AI_MODELL,
           max_tokens: 4000,
           thinking: { type: "disabled" },
           system,
@@ -130,7 +131,8 @@ export async function POST(req: NextRequest) {
             controller.enqueue(encoder.encode(event.delta.text));
           }
         }
-      } catch {
+      } catch (feil) {
+        console.error("brev-samtale: strøm feilet", feil);
         controller.enqueue(
           encoder.encode("\n\n[Beklager, noe gikk galt. Prøv igjen.]"),
         );
