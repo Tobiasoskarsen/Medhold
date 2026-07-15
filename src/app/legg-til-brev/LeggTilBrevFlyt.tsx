@@ -424,7 +424,7 @@ export function LeggTilBrevFlyt({
                 className={feltKlasse}
               />
             </label>
-            <label className="block text-[13px] font-medium text-blekk">
+            <label className="col-span-2 block text-[13px] font-medium text-blekk">
               Brevdato
               <input
                 type="date"
@@ -433,7 +433,7 @@ export function LeggTilBrevFlyt({
                 className={feltKlasse}
               />
             </label>
-            <label className="block text-[13px] font-medium text-blekk">
+            <label className="col-span-2 block text-[13px] font-medium text-blekk">
               Saksnummer
               <input
                 type="text"
