@@ -72,13 +72,36 @@ export function UtkastFlyt({
   }
 
   // Sending skjer i brukerens egen e-postklient — appen sender aldri selv.
-  function byggMailto(): string {
+  function byggMailto(body: string): string {
     const emne = saksnummer
       ? `${UTKAST_ETIKETT[type]} – saksnummer ${saksnummer}`
       : `${UTKAST_ETIKETT[type]} – ${kreditor}`;
     return `mailto:${avsenderEpost ?? ""}?subject=${encodeURIComponent(
       emne,
-    )}&body=${encodeURIComponent(innhold ?? "")}`;
+    )}&body=${encodeURIComponent(body)}`;
+  }
+
+  // mailto-URL-er har praktiske lengdegrenser (Outlook/Windows kutter rundt
+  // 2 000 tegn) — et helt innsigelsesbrev sprenger det lett, og da sendes et
+  // avkuttet brev. Over terskel: kopier teksten og åpne en tom e-post med
+  // placeholder i stedet. Deterministisk, ingen tapt tekst.
+  const fullMailto = byggMailto(innhold ?? "");
+  const forLangtForMailto = fullMailto.length > 1900;
+  const mailtoHref = forLangtForMailto
+    ? byggMailto("(Lim inn brevteksten her — den er kopiert til utklippstavlen.)")
+    : fullMailto;
+
+  async function apneEpost() {
+    if (forLangtForMailto && innhold) {
+      try {
+        await navigator.clipboard.writeText(innhold);
+        setKopiert(true);
+        setTimeout(() => setKopiert(false), 2000);
+      } catch {
+        /* ignorer — brukeren kan bruke Kopier-knappen manuelt */
+      }
+    }
+    window.location.href = mailtoHref;
   }
 
   function jegHarSendtDet() {
@@ -160,12 +183,27 @@ export function UtkastFlyt({
           </p>
 
           <div className="mt-4">
-            <Primærknapp href={byggMailto()}>
-              <span className="inline-flex items-center gap-2">
-                <Mail className="size-4" aria-hidden />
-                Åpne i e-post
-              </span>
-            </Primærknapp>
+            {forLangtForMailto ? (
+              <Primærknapp onClick={apneEpost}>
+                <span className="inline-flex items-center gap-2">
+                  <Mail className="size-4" aria-hidden />
+                  Kopier og åpne i e-post
+                </span>
+              </Primærknapp>
+            ) : (
+              <Primærknapp href={mailtoHref}>
+                <span className="inline-flex items-center gap-2">
+                  <Mail className="size-4" aria-hidden />
+                  Åpne i e-post
+                </span>
+              </Primærknapp>
+            )}
+            {forLangtForMailto && (
+              <p className="mt-2 text-xs leading-relaxed text-dempet">
+                Brevet er for langt for e-postfeltet — vi kopierer teksten og
+                åpner en tom e-post du limer den inn i (Ctrl/Cmd+V).
+              </p>
+            )}
           </div>
 
           <div className="mt-3 flex items-center gap-3">
