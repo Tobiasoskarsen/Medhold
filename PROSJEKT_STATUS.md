@@ -476,6 +476,54 @@ kolonnen feiler spørringene. `build`/`lint`/`test` grønne (34 tester).
 
 ---
 
+## Google-innlogging + Meg-redesign (MEDHOLD_MEG_OG_GOOGLE_ARBEIDSORDRE, ferdig i kode)
+
+**Del 1 — Google (Supabase OAuth, PKCE):**
+- `src/app/auth/callback/route.ts`: bytter `code` → session, beriker `fornavn`
+  fra Google (given_name/full_name/name, aldri overskriv), feiler pent til
+  `/logg-inn?feil=google`. Kun relative `next`-mål (ingen åpen redirect).
+- `src/app/logg-inn/GoogleKnapp.tsx`: `signInWithOAuth({provider:"google"})`,
+  `redirectTo` = `location.origin/auth/callback?next=/` (aldri hardkodet).
+  Nøytral hvit knapp, inline 4-farge Google-G, laste-tilstand.
+- `logg-inn/page.tsx`: Google øverst → «eller»-delelinje → uendret e-postflyt.
+  Ny feilkode `?feil=google`. **Verifisert i preview** (offentlig side).
+- Ingen env-sjekker i koden; nøklene bor i Supabase. Kontosammenslåing skjer
+  automatisk på lik verifisert e-post (ingen manuell koble-UI i v1).
+
+**Del 2 — Meg-siden (profil, ikke skjema):**
+- Nye byggeklosser i `meg/`: `Gruppe.tsx`, `Rad.tsx` (ikon+etikett+verdi+chevron;
+  href/onClick/ren visning), `Utvidbar.tsx` (progressive disclosure, motion
+  height/opacity, chevron roterer), `TemaRad.tsx`, `ProfilKort.tsx`.
+- Struktur: profilhode (initial-sirkel) → «Rediger profil»-utvidelse (Fornavn+
+  Telefon, delt state med Telefon-raden = to innganger) → Konto (Telefon,
+  Innlogging fra `user.identities`) → Innstillinger (Tema-utvidbar, E-post-
+  påminnelser-toggle i rad) → Hjelp (support, personvern) → Logg ut som rad →
+  bunntekst (`{APP_NAME} {APP_VERSJON} · Ikke profesjonell rådgivning` + Slett
+  konto). `APP_VERSJON="1.0"` i brand.ts.
+- Gjenbruk uendret: `Fornavn`, `Telefon`, `TemaVelger`, `SlettKonto`, alle
+  server actions, `/auth/signout`.
+
+Valg tatt underveis:
+1. **VarselInnstilling** gjort kompakt (kun bryteren; etikett/beskrivelse flyttet
+   til raden). Funksjonelt uendret (samme `settVarsler`, optimistisk +
+   rulle-tilbake) — kun innpakning, som 2.5 tillater.
+2. **TemaVelger** fikk en valgfri `onEndring`-callback (og `NOKKEL`/`Tema`
+   eksporteres) så Tema-raden kan vise nåværende valg live. Eksisterende
+   oppførsel uendret.
+3. Meg-«h1» beholdt som `sr-only` (mockupen har ingen sidetittel, men skjermleser
+   trenger en overskrift).
+4. Meg-siden er authed → kunne ikke browser-verifiseres herfra; bygget grønt,
+   `/logg-inn` verifisert i preview.
+
+⚠ **Del 0 (manuelt, Tobias) MÅ gjøres før Google virker:** Google Cloud OAuth-
+klient (scopes openid/email/profile) + Supabase → Auth → Providers → Google
+(Client ID/Secret) + URL Configuration: Site URL og Redirect URLs må inkludere
+`https://<prod>/auth/callback` og `http://localhost:3000/auth/callback`. Uten
+oppsettet feiler Google-knappen pent til `?feil=google`; e-post/SMS uendret.
+`build`/`lint`/`test` grønne (42 tester).
+
+---
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**

@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Sun, Moon, Monitor, type LucideIcon } from "lucide-react";
 import { haptikk } from "@/lib/haptikk";
 
-type Tema = "lys" | "mork" | "system";
-const NOKKEL = "medhold-tema";
+export type Tema = "lys" | "mork" | "system";
+export const NOKKEL = "medhold-tema";
 
 function bruk(t: Tema) {
   const mork =
@@ -21,7 +21,11 @@ const VALG: { verdi: Tema; etikett: string; Ikon: LucideIcon }[] = [
   { verdi: "system", etikett: "System", Ikon: Monitor },
 ];
 
-export function TemaVelger() {
+export function TemaVelger({
+  onEndring,
+}: {
+  onEndring?: (t: Tema) => void;
+}) {
   const [tema, setTema] = useState<Tema>("system");
 
   // Les lagret valg først på klienten (localStorage finnes ikke ved SSR).
@@ -45,6 +49,7 @@ export function TemaVelger() {
 
   function velg(t: Tema) {
     setTema(t);
+    onEndring?.(t);
     try {
       localStorage.setItem(NOKKEL, t);
     } catch {
