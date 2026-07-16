@@ -175,6 +175,17 @@ type Analyse = {
   kostnadslinjer: Kostnadslinje[];
 };
 
+/**
+ * Et eksisterende krav brevet KAN høre til — et forslag brukeren bekrefter,
+ * ikke en automatisk sammenslåing. `grunn` sier hvor sikkert treffet er:
+ * "saksnummer" (sterkt) eller "avsender" (svakt).
+ */
+export type KravForslag = {
+  id: string;
+  navn: string;
+  grunn: "saksnummer" | "avsender";
+};
+
 export type AnalyseResultat =
   | {
       ok: true;
@@ -183,8 +194,8 @@ export type AnalyseResultat =
       original_tekst: string;
       /** Frist beregnet deterministisk av kode (kilde='beregnet'), om noen. */
       beregnetFrist: { tittel: string; forfallsdato: string } | null;
-      /** Eksisterende krav som brevet trolig hører til (saksnummer/kreditor). */
-      matchetKravId: string | null;
+      /** Mulig eksisterende krav (forslag, ikke automatisk valgt). */
+      kravForslag: KravForslag | null;
       /** Deterministisk gebyrsjekk (kode beslutter). Null når ingen kostnadslinjer. */
       gebyrsjekk: GebyrsjekkResultat | null;
     }
@@ -204,7 +215,7 @@ async function etterbehandle(
   analyse: Analyse,
 ): Promise<{
   beregnetFrist: { tittel: string; forfallsdato: string } | null;
-  matchetKravId: string | null;
+  kravForslag: KravForslag | null;
   gebyrsjekk: GebyrsjekkResultat | null;
 }> {
   const beregnet =
@@ -224,22 +235,28 @@ async function etterbehandle(
       ? sjekkKostnader(analyse.kostnadslinjer, hovedstol, analyse.brevdato || null)
       : null;
 
+  // Match mot eksisterende krav er et FORSLAG brukeren bekrefter — aldri en
+  // automatisk sammenslåing. Saksnummer er et sterkt treff; avsender alene er
+  // svakt (to ulike gjeld fra samme inkassoselskap ville ellers slått seg
+  // sammen). Brukeren avgjør i steg 3.
   const { data: saker } = await supabase
     .from("saker")
-    .select("id, kreditor, saksnummer");
+    .select("id, kreditor, tittel, saksnummer");
   const norm = (s: string | null) => (s ?? "").trim().toLowerCase();
   const liste = saker ?? [];
-  let matchetKravId: string | null = null;
+  const navn = (s: { kreditor: string | null; tittel: string }) =>
+    s.kreditor ?? s.tittel;
+
+  let kravForslag: KravForslag | null = null;
   if (analyse.saksnummer) {
-    matchetKravId =
-      liste.find((s) => norm(s.saksnummer) === norm(analyse.saksnummer))?.id ??
-      null;
+    const t = liste.find((s) => norm(s.saksnummer) === norm(analyse.saksnummer));
+    if (t) kravForslag = { id: t.id, navn: navn(t), grunn: "saksnummer" };
   }
-  if (!matchetKravId && analyse.avsender) {
-    matchetKravId =
-      liste.find((s) => norm(s.kreditor) === norm(analyse.avsender))?.id ?? null;
+  if (!kravForslag && analyse.avsender) {
+    const t = liste.find((s) => norm(s.kreditor) === norm(analyse.avsender));
+    if (t) kravForslag = { id: t.id, navn: navn(t), grunn: "avsender" };
   }
-  return { beregnetFrist, matchetKravId, gebyrsjekk };
+  return { beregnetFrist, kravForslag, gebyrsjekk };
 }
 
 export async function analyserBrevTekst(
@@ -285,7 +302,7 @@ export async function analyserBrevTekst(
     return { ok: false, feil: "Noe gikk galt under analysen. Prøv igjen om litt." };
   }
 
-  const { beregnetFrist, matchetKravId, gebyrsjekk } = await etterbehandle(
+  const { beregnetFrist, kravForslag, gebyrsjekk } = await etterbehandle(
     supabase,
     analyse,
   );
@@ -296,7 +313,7 @@ export async function analyserBrevTekst(
     // på originalen — det er den uunngåelige første sendingen).
     original_tekst: maskerFodselsnummer(rensket),
     beregnetFrist,
-    matchetKravId,
+    kravForslag,
     gebyrsjekk,
   };
 }
@@ -383,7 +400,7 @@ export async function analyserBrevBilder(
   }
 
   const { ekstrahert_tekst, ...rest } = analyse;
-  const { beregnetFrist, matchetKravId, gebyrsjekk } = await etterbehandle(
+  const { beregnetFrist, kravForslag, gebyrsjekk } = await etterbehandle(
     supabase,
     rest,
   );
@@ -392,7 +409,7 @@ export async function analyserBrevBilder(
     analyse: rest,
     original_tekst: maskerFodselsnummer(ekstrahert_tekst),
     beregnetFrist,
-    matchetKravId,
+    kravForslag,
     gebyrsjekk,
   };
 }

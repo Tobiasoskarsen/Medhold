@@ -25,6 +25,7 @@ import {
   lagreBrev,
   type AnalyseResultat,
   type LagreBrevInput,
+  type KravForslag,
   type Bilde,
 } from "./actions";
 
@@ -85,12 +86,15 @@ export function LeggTilBrevFlyt({
   const [brevdato, setBrevdato] = useState("");
   const [belop, setBelop] = useState("");
   const [saksnummer, setSaksnummer] = useState("");
+  // Standard er «nytt krav» — aldri stille sammenslåing. Kun når brukeren kom
+  // hit fra et bestemt krav (forvalgtKrav) er «eksisterende» forhåndsvalgt.
   const [kravModus, setKravModus] = useState<"ny" | "eksisterende">(
-    forvalgtKrav ? "eksisterende" : krav.length > 0 ? "eksisterende" : "ny",
+    forvalgtKrav ? "eksisterende" : "ny",
   );
   const [valgtKrav, setValgtKrav] = useState<string>(
     forvalgtKrav ?? krav[0]?.id ?? "",
   );
+  const [kravForslag, setKravForslag] = useState<KravForslag | null>(null);
   const [fristForslag, setFristForslag] = useState<FristForslag[]>([]);
   const [fristAv, setFristAv] = useState<Record<number, boolean>>({});
   const [stegAv, setStegAv] = useState<Record<number, boolean>>({});
@@ -120,10 +124,9 @@ export function LeggTilBrevFlyt({
     setBrevdato(r.analyse.brevdato);
     setBelop(r.analyse.belop);
     setSaksnummer(r.analyse.saksnummer);
-    if (r.matchetKravId) {
-      setKravModus("eksisterende");
-      setValgtKrav(r.matchetKravId);
-    }
+    // Forslag om eksisterende krav — aldri auto-valgt. Vises kun når vi ikke
+    // allerede er på et bestemt krav (forvalgtKrav). Brukeren bekrefter selv.
+    setKravForslag(forvalgtKrav ? null : r.kravForslag);
     const eksplisitte: FristForslag[] = r.analyse.foreslatte_frister.map((f) => ({
       ...f,
       kilde: "brev_eksplisitt" as const,
@@ -464,6 +467,28 @@ export function LeggTilBrevFlyt({
 
           <div className="mt-5">
             <p className="text-[13px] font-medium text-blekk">Hører til</p>
+            {kravForslag && kravModus === "ny" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setKravModus("eksisterende");
+                  setValgtKrav(kravForslag.id);
+                  haptikk("lett");
+                }}
+                className="trykk mt-2 flex w-full items-center justify-between gap-3 rounded-xl border-[0.5px] border-aksent/40 bg-aksent/5 px-3.5 py-3 text-left"
+              >
+                <span className="text-[13px] text-blekk">
+                  Ligner kravet «{kravForslag.navn}» —{" "}
+                  {kravForslag.grunn === "saksnummer"
+                    ? "samme saksnummer"
+                    : "samme avsender"}
+                  . Er det samme sak?
+                </span>
+                <span className="shrink-0 text-[13px] font-medium text-aksent">
+                  Ja, legg til der
+                </span>
+              </button>
+            )}
             <div className="mt-2 flex flex-col gap-2">
               {krav.length > 0 && (
                 <label className="flex items-center gap-2.5 text-sm text-blekk">
