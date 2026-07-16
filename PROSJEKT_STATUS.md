@@ -524,6 +524,50 @@ oppsettet feiler Google-knappen pent til `?feil=google`; e-post/SMS uendret.
 
 ---
 
+## Designretning «juridisk tyngde med temperament» (MEDHOLD_DESIGN_ARBEIDSORDRE)
+
+Evolusjon av tokens/komponenter — ingen ny navigasjon eller bevegelsesregler.
+
+- **Fundament:** Newsreader via next/font (`--font-newsreader` → `font-serif`),
+  serif kun til overskrifter/beløp/Dom/seier/profilhode (serif-regelen).
+  Nye tokens (begge temaer): `dom-rod`/`dom-rod-bg`, `gull`/`gull-bg`,
+  `aksent-dyp`. `.eyebrow`-klasse i globals.css.
+- **Komponenter:** `Dom`/`DomMini` (signaturen ved over-funn, §-motiv), `Trapp`
+  (StadiumIndikator restylet til 4 søyler + etiketter, `kompakt`-variant),
+  `Nedtelling` (fristkort, rødt tall ≤10 dager). Gebyrsjekk-panelet viser nå
+  full `Dom` øverst ved funn; øvrige linjer som piller under.
+- **Skjermer:** Hjem (eyebrow-dato, deterministisk serif-H1, serif-beløp +
+  kompakt Trapp i kortet, seier-kort ved medhold), krav-detalj (eyebrow, serif
+  H1/beløp, rød beløpsnote, Trapp, Nedtelling, DomMini, «Skriv innsigelsen»-CTA,
+  restylet tidslinje m/ funn-noder + venter-chip), brev-detalj/steg 3 (Dom),
+  Meg (serif navn/initial/kolofon, eyebrow-gruppetitler), velkomst + logg inn
+  (serif-H1). Serif-H1 påført øvrige sidetitler (utkast, nytt krav, personvern,
+  pluss, intro, legg-til-brev).
+
+Valg tatt underveis:
+1. **`aksent-dyp` lagt til som token** (begge temaer) — mockupene bruker den til
+   serif-kursiv og nåværende trapptrinn, men §1.2 listet den ikke. Lys #0a5c4c,
+   mørk #4fc4a8 (WCAG AA verifisert).
+2. **Trapp-mapping** (faktura/purring/inkassovarsel→trinn 1, oppfordring→2,
+   forliksråd→3, namsmann/nedbetaling/avsluttet→4) ligger i `Trapp.tsx`
+   (presentasjon); `fylteSegmenter` + testene er urørt (guardrail 7).
+3. **Krav-detalj H1 = opprinnelig kreditor** (hovedkravet), eyebrow «… · sak hos
+   {kreditor}» (inkassoselskapet) — følger mockupen; §3.2 skrev «H1: kreditor».
+4. **DomMini-ord er typebevisst** (ett funn → typenavn, flere → «beløp») i stedet
+   for hardkodet «salær», så teksten stemmer for purregebyr o.l.
+5. **Beløp uten øre-splitt** (appen lagrer hele kroner) — serif + tabular-nums.
+6. **Hjem:** logo/hilsen fjernet fra toppen (mockupen starter med eyebrow-dato).
+   H1 pluraliserer frist-leddet («{N} frister.») ved flere enn én.
+7. **Velkomst-fotlinjen** «Gratis å forstå brevet ditt · Norskutviklet» er en
+   markedsføringspåstand → hører i advokatgjennomgangen (sann i pilot).
+
+⚠ **Gjenstår (verifiseringsrunde):** eksplisitt mørk modus-gjennomgang skjerm for
+skjerm, kontrastsjekk i praksis, full §3.7-konsistenspass (alle dialoger/
+tomtilstander/skeletons) og evt. fjerning av den gamle slate-remap-blokken i
+globals.css. `build`/`lint`/`test` grønne.
+
+---
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**

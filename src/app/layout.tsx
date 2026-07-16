@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Newsreader } from "next/font/google";
 import "./globals.css";
 import { APP_NAME } from "@/lib/brand";
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+});
+
+// Serif kun til overskrifter, beløp, Dommen, seier og profilhode (se serif-
+// regelen i designordren). Variabel font → opsz-aksen aktiv; italic inkludert.
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -26,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="nb"
-      className={`${inter.variable} h-full antialiased`}
+      className={`${inter.variable} ${newsreader.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-bakgrunn text-blekk">

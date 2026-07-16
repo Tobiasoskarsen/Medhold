@@ -20,8 +20,16 @@
   --strek: #e4e4df; /* kanter, delelinjer */
   --aksent: #0e7c66; /* primærknapp, aktiv nav, tidslinje */
   --aksent-lys: #17a085; /* logo-grønn på mørk flate */
+  --aksent-dyp: #0a5c4c; /* serif-kursiv i overskrifter, nåværende trapptrinn */
   --varsel-bg: #f6e7de; /* frist-pill bakgrunn */
   --varsel-tekst: #8a3f20; /* frist-pill tekst */
+
+  /* Saksinnhold-farger (designordre §1.2). KUN gebyrfunn, hastende frister
+     (≤10 dager) og medhold/seier — aldri på verktøysider. */
+  --dom-rod: #8a2b1d;
+  --dom-rod-bg: #f7e9e5;
+  --gull: #a8781c;
+  --gull-bg: #f6efdd;
 
   --background: var(--bakgrunn);
   --foreground: var(--blekk);
@@ -42,8 +50,14 @@
   --strek: #2a3639;
   --aksent: #19a88b;
   --aksent-lys: #19a88b;
+  --aksent-dyp: #4fc4a8;
   --varsel-bg: #382a21;
   --varsel-tekst: #e8bda4;
+
+  --dom-rod: #e08a76;
+  --dom-rod-bg: #3a2420;
+  --gull: #d9b25e;
+  --gull-bg: #35301f;
 
   color-scheme: dark;
 }
@@ -57,10 +71,16 @@
   --color-strek: var(--strek);
   --color-aksent: var(--aksent);
   --color-aksent-lys: var(--aksent-lys);
+  --color-aksent-dyp: var(--aksent-dyp);
   --color-varsel-bg: var(--varsel-bg);
   --color-varsel-tekst: var(--varsel-tekst);
+  --color-dom-rod: var(--dom-rod);
+  --color-dom-rod-bg: var(--dom-rod-bg);
+  --color-gull: var(--gull);
+  --color-gull-bg: var(--gull-bg);
 
   --font-sans: var(--font-inter);
+  --font-serif: var(--font-newsreader);
 }
 
 /*
@@ -84,6 +104,18 @@ body {
   font-family: var(--font-inter), system-ui, sans-serif;
   background: var(--bakgrunn);
   color: var(--blekk);
+}
+
+/*
+ * Eyebrow — liten, sperret, uppercase, dempet etikett (datolinje på Hjem,
+ * sakskontekst på krav-siden, gruppetitler på Meg). Designordre §1.1.
+ */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dempet);
 }
 
 /*

@@ -63,7 +63,7 @@ export function Intro() {
         <span className="flex size-14 items-center justify-center rounded-2xl bg-aksent/10 text-aksent">
           <Ikon className="size-7" aria-hidden />
         </span>
-        <h1 className="mt-6 text-[21px] font-medium tracking-[-0.3px] text-blekk">
+        <h1 className="mt-6 font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
           {steg.tittel}
         </h1>
         <p className="mt-2.5 text-sm leading-[1.55] text-dempet">{steg.tekst}</p>

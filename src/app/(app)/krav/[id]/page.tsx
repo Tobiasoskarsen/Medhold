@@ -5,16 +5,17 @@ import { createClient } from "@/lib/supabase/server";
 import {
   Skjermramme,
   Pillknapp,
-  StadiumIndikator,
+  Primærknapp,
+  Trapp,
+  Nedtelling,
   Tidslinje,
   TidslinjeHendelse,
   Belop,
 } from "@/components/ui";
+import { DomMini } from "@/components/Dom";
 import { formaterKortDato } from "@/lib/dato";
 import {
   STADIUM_ETIKETT,
-  nesteStadium,
-  fylteSegmenter,
   stotterUtkast,
   type Stadium,
   type BrevType,
@@ -30,6 +31,7 @@ import {
   type SakUtfall,
 } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import type { HendelseVariant } from "@/components/ui/Tidslinje";
 import type { ReactNode } from "react";
 import { KravMeny } from "./KravMeny";
 import { LostNode } from "./LostNode";
@@ -67,6 +69,18 @@ function fristPillTekst(f: FristRad): string {
   return f.kilde === "beregnet" ? `${base} · beregnet — sjekk brevet` : base;
 }
 
+/** Total differanse over lovlig sats i et lagret gebyrsjekk-resultat. */
+function overTotal(g: GebyrsjekkResultat | null): number {
+  if (!g) return 0;
+  return g.linjer
+    .filter((l) => l.vurdering === "over")
+    .reduce((sum, l) => sum + (l.differanse ?? 0), 0);
+}
+
+function kr(n: number): string {
+  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+}
+
 export default async function KravDetaljPage({
   params,
 }: {
@@ -74,6 +88,10 @@ export default async function KravDetaljPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const varslerPa = user?.user_metadata?.varsler_paa !== false;
 
   const { data: sak } = await supabase
     .from("saker")
@@ -125,22 +143,38 @@ export default async function KravDetaljPage({
     if (!cur || f.forfallsdato < cur.forfallsdato) fristForBrev.set(f.brev_id, f);
   }
 
+  // Nærmeste aktive frist totalt (til Nedtelling-kortet).
+  const nesteFrist = [...aktiveFrister].sort((a, b) =>
+    a.forfallsdato < b.forfallsdato ? -1 : 1,
+  )[0];
+
   const stadium = sak.stadium as Stadium | null;
-  const neste = stadium ? nesteStadium(stadium) : null;
 
   const sisteBrev = brevListe[0];
-  const sisteBrevDato = sisteBrev?.brevdato ?? sisteBrev?.opprettet.slice(0, 10);
-  // Konservativt: pillen vises kun ved «over» på nyeste brev, aldri mulig_over.
-  const harOverGebyr = (sisteBrev?.gebyrsjekk?.antallOver ?? 0) > 0;
+  const overDiff = overTotal(sisteBrev?.gebyrsjekk ?? null);
+  const harOverGebyr = overDiff > 0;
+
+  // Navn: hovedkravet i overskriften, inkassoselskapet i eyebrow-en (når det
+  // finnes en opprinnelig kreditor, er `kreditor` selve inkassoselskapet).
+  const hovednavn = sak.opprinnelig_kreditor ?? sak.kreditor ?? sak.tittel;
+  const inkassoselskap = sak.opprinnelig_kreditor ? sak.kreditor : null;
+  const eyebrow = [
+    stadium ? stor(STADIUM_ETIKETT[stadium]) : null,
+    inkassoselskap ? `sak hos ${inkassoselskap}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   type Item = {
     key: string;
     datoISO: string;
-    tittel: string;
+    tittel: ReactNode;
+    tekst?: string;
     fristPill?: string;
     fremhevet: boolean;
+    variant?: HendelseVariant;
     href?: string;
-    /** Ekstra innhold under hendelsen (f.eks. «Jeg har sendt det»-knapp). */
+    chip?: string;
     ekstra?: ReactNode;
   };
 
@@ -157,6 +191,22 @@ export default async function KravDetaljPage({
     };
   });
 
+  // Funn-hendelser: ett per brev med lagret «over»-funn (dom-rød node).
+  const funnItems: Item[] = brevListe
+    .filter((b) => overTotal(b.gebyrsjekk) > 0)
+    .map((b) => ({
+      key: `funn-${b.id}`,
+      datoISO: b.brevdato ?? b.opprettet.slice(0, 10),
+      tittel: (
+        <>
+          <span className="text-dom-rod">Funn:</span> gebyr over lovlig sats
+        </>
+      ),
+      tekst: `${kr(overTotal(b.gebyrsjekk))} kr over forskriftens maksimum.`,
+      fremhevet: false,
+      variant: "funn" as const,
+    }));
+
   const løseFristItems: Item[] = aktiveFrister
     .filter((f) => !f.brev_id)
     .map((f) => ({
@@ -167,8 +217,6 @@ export default async function KravDetaljPage({
       fremhevet: true,
     }));
 
-  // Sendte utkast er egne hendelser på sendt-datoen; usendte vises som i dag
-  // med en stille «Jeg har sendt det»-rad for bekreftelse i etterkant.
   const utkastItems: Item[] = utkast.map((u) =>
     u.sendt_at
       ? {
@@ -176,6 +224,9 @@ export default async function KravDetaljPage({
           datoISO: u.sendt_at.slice(0, 10),
           tittel: `${UTKAST_ETIKETT[u.type]} sendt`,
           fremhevet: false,
+          chip: varslerPa
+            ? "Medhold purrer for deg etter 14 dager"
+            : "Husk å følge opp om 14 dager",
         }
       : {
           key: `utkast-${u.id}`,
@@ -186,22 +237,17 @@ export default async function KravDetaljPage({
         },
   );
 
-  const items = [...brevItems, ...løseFristItems, ...utkastItems].sort((a, b) =>
-    a.datoISO < b.datoISO ? 1 : -1,
-  );
-  // Nyeste hendelse er alltid fremhevet.
-  if (items[0]) items[0].fremhevet = true;
-
-  const underlinje = [
-    sak.opprinnelig_kreditor ? `for ${sak.opprinnelig_kreditor}` : null,
-    sak.saksnummer ? `sak ${sak.saksnummer}` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const items = [
+    ...brevItems,
+    ...funnItems,
+    ...løseFristItems,
+    ...utkastItems,
+  ].sort((a, b) => (a.datoISO < b.datoISO ? 1 : -1));
+  if (items[0]) items[0].fremhevet = items[0].variant ? false : true;
 
   return (
     <Skjermramme className="pt-5">
-      <div className="mb-3.5 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <Link
           href="/krav"
           className="flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
@@ -212,66 +258,75 @@ export default async function KravDetaljPage({
         <KravMeny kravId={sak.id} lost={lost} />
       </div>
 
-      <h1 className="text-[21px] font-medium tracking-[-0.3px] text-blekk">
-        {sak.kreditor ?? sak.tittel}
+      {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
+      <h1 className="font-serif text-[26px] font-medium tracking-[-0.01em] text-blekk">
+        {hovednavn}
       </h1>
-      {underlinje && (
-        <p className="mt-0.5 text-[13px] text-dempet">{underlinje}</p>
-      )}
-      {sak.status === "venter_pa_svar" && (
-        <span
-          className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
-        >
-          {STATUS_ETIKETT.venter_pa_svar}
-        </span>
-      )}
-      {utfall && (
-        <span
-          className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
-        >
-          {UTFALL_ETIKETT[utfall]}
-        </span>
-      )}
-      {harOverGebyr && (
-        <span className="mt-2 ml-2 inline-block rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 ring-1 ring-inset ring-red-200">
-          Mulig ulovlig gebyr
-        </span>
-      )}
 
       {sak.belop_totalt != null && (
-        <div className="mt-3.5 flex items-baseline gap-2">
+        <p className="mt-2">
           <Belop
             verdi={sak.belop_totalt}
-            className="text-[26px] font-medium tracking-[-0.5px] text-blekk"
+            className="font-serif text-[38px] font-medium tracking-[-0.02em] tabular-nums text-blekk"
           />
-          {sisteBrevDato && (
-            <span className="text-xs text-dempet">
-              totalt per {formaterKortDato(sisteBrevDato)}
-            </span>
-          )}
-        </div>
+        </p>
       )}
+      {harOverGebyr && (
+        <p className="mt-1 text-[12.5px] font-semibold text-dom-rod">
+          {kr(overDiff)} kr av dette er over lovlig sats.
+        </p>
+      )}
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {sak.status === "venter_pa_svar" && (
+          <span
+            className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
+          >
+            {STATUS_ETIKETT.venter_pa_svar}
+          </span>
+        )}
+        {utfall && (
+          <span
+            className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
+          >
+            {UTFALL_ETIKETT[utfall]}
+          </span>
+        )}
+      </div>
 
       {stadium && (
-        <div className="mt-4">
-          <StadiumIndikator
-            fylt={fylteSegmenter(stadium)}
-            stadium={STADIUM_ETIKETT[stadium]}
-            neste={neste ? STADIUM_ETIKETT[neste] : undefined}
-          />
+        <div className="mt-5">
+          <Trapp stadium={stadium} />
         </div>
       )}
 
-      {stotterUtkast(stadium) && (
-        <Link
-          href={`/krav/${sak.id}/utkast`}
-          className="mt-4 inline-block text-[13px] font-medium text-aksent transition hover:opacity-80"
-        >
-          Lag utkast til svar →
-        </Link>
+      {nesteFrist && (
+        <Nedtelling
+          forfallsdato={nesteFrist.forfallsdato}
+          tittel={nesteFrist.tittel}
+          className="mt-4"
+        />
       )}
 
-      <div className="mt-6">
+      {harOverGebyr && sisteBrev?.gebyrsjekk && (
+        <DomMini resultat={sisteBrev.gebyrsjekk} className="mt-4" />
+      )}
+
+      {stotterUtkast(stadium) && !lost && (
+        <div className="mt-5">
+          <Primærknapp href={`/krav/${sak.id}/utkast?type=innsigelse`}>
+            Skriv innsigelsen
+          </Primærknapp>
+          <p className="mt-1.5 text-center text-[12px] text-dempet">
+            Tar bare noen minutter.
+          </p>
+        </div>
+      )}
+
+      <h2 className="mb-4 mt-8 font-serif text-[19px] font-semibold text-blekk">
+        Sakens gang
+      </h2>
+      <div>
         {items.length === 0 && !lost ? (
           <p className="text-sm text-dempet">
             Ingen hendelser ennå. Legg til det første brevet.
@@ -292,25 +347,41 @@ export default async function KravDetaljPage({
               </TidslinjeHendelse>
             )}
             {items.map((item, i) => {
-              const innhold = item.fremhevet ? (
-                <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
-                  <p className="text-sm font-medium text-blekk">
+              const kjerne = (
+                <>
+                  <p className="text-[14.5px] font-semibold text-blekk">
                     {item.tittel}
                   </p>
+                  {item.tekst && (
+                    <p className="mt-0.5 text-[13px] leading-snug text-dempet">
+                      {item.tekst}
+                    </p>
+                  )}
                   {item.fristPill && (
                     <span className="mt-1.5 inline-block rounded-full bg-varsel-bg px-2 py-1 text-[11px] font-medium text-varsel-tekst">
                       {item.fristPill}
                     </span>
                   )}
+                  {item.chip && (
+                    <span className="mt-1.5 inline-block rounded-full bg-aksent/10 px-3 py-1 text-[12px] font-semibold text-aksent-dyp">
+                      {item.chip}
+                    </span>
+                  )}
+                </>
+              );
+              const innhold = item.fremhevet ? (
+                <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
+                  {kjerne}
                 </div>
               ) : (
-                <p className="text-sm text-blekk">{item.tittel}</p>
+                kjerne
               );
               return (
                 <TidslinjeHendelse
                   key={item.key}
                   dato={formaterKortDato(item.datoISO)}
                   fremhevet={item.fremhevet}
+                  variant={item.variant}
                   sisteHendelse={i === items.length - 1}
                 >
                   {item.href ? (
@@ -328,7 +399,7 @@ export default async function KravDetaljPage({
         )}
       </div>
 
-      <div className="my-5 flex justify-center">
+      <div className="my-6 flex justify-center">
         <Pillknapp href={`/legg-til-brev?krav=${sak.id}`}>
           <Plus className="size-4" aria-hidden />
           Legg til brev

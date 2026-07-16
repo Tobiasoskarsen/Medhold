@@ -9,4 +9,6 @@ export { Pillknapp } from "./Pillknapp";
 export { Pill } from "./Pill";
 export { BunnNav } from "./BunnNav";
 export { StadiumIndikator } from "./StadiumIndikator";
+export { Trapp } from "./Trapp";
+export { Nedtelling } from "./Nedtelling";
 export { Tidslinje, TidslinjeHendelse } from "./Tidslinje";

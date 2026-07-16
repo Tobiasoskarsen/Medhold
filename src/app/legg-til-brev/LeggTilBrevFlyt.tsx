@@ -268,7 +268,7 @@ export function LeggTilBrevFlyt({
 
       {steg === 1 && (
         <div className="flex flex-1 flex-col">
-          <h1 className="text-[21px] font-medium tracking-[-0.3px] text-blekk">
+          <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
             Legg til brev
           </h1>
 
@@ -384,7 +384,7 @@ export function LeggTilBrevFlyt({
 
       {steg === 3 && analyse && (
         <div className="flex flex-1 flex-col pb-8">
-          <h1 className="text-[21px] font-medium tracking-[-0.3px] text-blekk">
+          <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
             Slik forstår vi brevet
           </h1>
 

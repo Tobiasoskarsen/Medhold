@@ -31,11 +31,13 @@ export function ProfilKort({
   return (
     <div>
       <div className="flex flex-col items-center pb-5 pt-3">
-        <div className="flex size-16 items-center justify-center rounded-full bg-aksent/10 text-2xl font-medium text-aksent">
+        <div className="flex size-16 items-center justify-center rounded-full bg-aksent/10 font-serif text-[27px] font-semibold text-aksent-dyp">
           {initial}
         </div>
         {fornavn.trim() && (
-          <p className="mt-3 text-[17px] font-medium text-blekk">{fornavn}</p>
+          <p className="mt-2.5 font-serif text-[22px] font-medium text-blekk">
+            {fornavn}
+          </p>
         )}
         <p className="mt-0.5 text-[13px] text-dempet">{epost}</p>
         <button

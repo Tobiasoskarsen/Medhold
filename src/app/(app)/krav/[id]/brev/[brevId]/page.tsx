@@ -5,7 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort } from "@/components/ui";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { formaterKortDato } from "@/lib/dato";
-import { STADIUM_ETIKETT, type BrevType } from "@/lib/gjeld";
+import {
+  STADIUM_ETIKETT,
+  stotterUtkast,
+  type BrevType,
+  type Stadium,
+} from "@/lib/gjeld";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { BrevSamtale } from "./BrevSamtale";
 
@@ -38,14 +43,22 @@ export default async function BrevPage({
     .maybeSingle();
   if (!brev || brev.sak_id !== id) notFound();
 
-  const { data: samtaleData } = await supabase
-    .from("brev_samtale")
-    .select("rolle, innhold")
-    .eq("brev_id", brevId)
-    .order("opprettet", { ascending: true });
+  const [{ data: samtaleData }, { data: sak }] = await Promise.all([
+    supabase
+      .from("brev_samtale")
+      .select("rolle, innhold")
+      .eq("brev_id", brevId)
+      .order("opprettet", { ascending: true }),
+    supabase.from("saker").select("stadium").eq("id", id).maybeSingle(),
+  ]);
 
   const samtale = (samtaleData ?? []) as Melding[];
   const tittel = brevtypeEtikett(brev.brevtype as BrevType | null);
+  const stadium = (sak?.stadium as Stadium | null) ?? null;
+  // «Bruk funnet i innsigelsen» vises kun når stadiet støtter utkast.
+  const utkastHref = stotterUtkast(stadium)
+    ? `/krav/${id}/utkast?type=innsigelse&brev=${brevId}`
+    : undefined;
 
   return (
     <Skjermramme className="pt-5">
@@ -57,7 +70,7 @@ export default async function BrevPage({
         Tilbake
       </Link>
 
-      <h1 className="text-[21px] font-medium tracking-[-0.3px] text-blekk">
+      <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
         {tittel}
       </h1>
       <p className="mt-0.5 text-[13px] text-dempet">
@@ -74,6 +87,7 @@ export default async function BrevPage({
 
       <Gebyrsjekk
         resultat={(brev.gebyrsjekk as GebyrsjekkResultat | null) ?? null}
+        utkastHref={utkastHref}
         className="mt-3"
       />
 

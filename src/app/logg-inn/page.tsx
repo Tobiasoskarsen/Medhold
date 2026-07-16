@@ -185,8 +185,8 @@ function LoggInn() {
         <ChevronLeft className="size-5" aria-hidden />
       </button>
 
-      <h1 className="text-[21px] font-medium tracking-[-0.3px] text-blekk">
-        Logg inn
+      <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+        Logg inn i Medhold
       </h1>
 
       {steg === "inntast" ? (

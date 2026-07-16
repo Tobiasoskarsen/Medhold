@@ -83,10 +83,11 @@ export default async function MegPage() {
         </form>
       </Gruppe>
 
-      <div className="mt-[18px] flex flex-col items-center gap-1.5">
-        <p className="text-center text-[12px] text-dempet">
-          {APP_NAME} {APP_VERSJON} · Ikke profesjonell rådgivning
+      <div className="mt-[18px] flex flex-col items-center gap-1.5 text-center">
+        <p className="font-serif text-[13px] italic text-dempet">
+          {APP_NAME} {APP_VERSJON}
         </p>
+        <p className="text-[11px] text-dempet">Ikke profesjonell rådgivning</p>
         <SlettKonto />
       </div>
     </Skjermramme>
