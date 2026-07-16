@@ -13,6 +13,7 @@ import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Primærknapp } from "@/components/ui";
 import { normaliserTelefon, telefonLoginPa } from "@/lib/telefon";
+import { GoogleKnapp } from "./GoogleKnapp";
 import { beOmKode } from "./actions";
 
 export default function LoggInnPage() {
@@ -39,10 +40,13 @@ function LoggInn() {
   const [kodeLengde, setKodeLengde] = useState(KODE_LENGDE);
   const [siffer, setSiffer] = useState<string[]>(Array(KODE_LENGDE).fill(""));
   const [laster, setLaster] = useState(false);
+  const feilParam = params.get("feil");
   const [feil, setFeil] = useState<string | null>(
-    params.get("feil") === "bekreftelse"
+    feilParam === "bekreftelse"
       ? "Innloggingslenken var ugyldig eller utløpt. Prøv igjen."
-      : null,
+      : feilParam === "google"
+        ? "Innlogging med Google feilet. Prøv igjen, eller bruk e-postkode."
+        : null,
   );
   const [melding, setMelding] = useState<string | null>(
     params.get("slettet") ? "Kontoen din og all data er slettet." : null,
@@ -187,6 +191,15 @@ function LoggInn() {
 
       {steg === "inntast" ? (
         <>
+          <div className="mt-5">
+            <GoogleKnapp />
+          </div>
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-strek" />
+            <span className="text-[12px] text-dempet">eller</span>
+            <span className="h-px flex-1 bg-strek" />
+          </div>
+
           {telefonPa && (
             <div className="mt-4 inline-flex self-start rounded-[10px] border-[0.5px] border-strek bg-flate p-0.5">
               {(["epost", "telefon"] as const).map((m) => (
