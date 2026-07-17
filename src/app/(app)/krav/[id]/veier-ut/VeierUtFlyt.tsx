@@ -204,7 +204,7 @@ export function VeierUtFlyt({
       <p className="mt-2 text-center text-[12px] leading-relaxed text-dempet">
         Trenger du hjelp med helheten i økonomien?{" "}
         <a
-          href="https://www.nav.no/okonomi-og-gjeldsradgivning"
+          href="https://www.nav.no/okonomi-gjeld"
           target="_blank"
           rel="noopener noreferrer"
           className="text-aksent underline decoration-strek underline-offset-2 hover:decoration-aksent"

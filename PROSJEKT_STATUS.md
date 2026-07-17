@@ -599,8 +599,8 @@ Valg tatt underveis:
    («saken har en slutt»). `utfall.ts` + testen oppdatert.
 2. **Oppfølgings-e-posten var allerede typenøytral** («svaret ditt», «kravet
    ditt») — ingen endring nødvendig.
-3. **NAV-lenke:** `https://www.nav.no/okonomi-og-gjeldsradgivning` (eneste
-   eksterne lenke i sporet — verifiser at slug er riktig ved deploy).
+3. **NAV-lenke:** `https://www.nav.no/okonomi-gjeld` (eneste eksterne lenke i
+   sporet — slug verifisert 2026-07-17; tidligere feil slug rettet).
 4. Kvalitativ kostnadssetning på avtale-kortet (guardrail 4), ingen satser i v1.
 
 ⚠ **Migrasjonene `0019_plan_b.sql` OG `0020_utkast_nedbetalingsavtale.sql` MÅ
