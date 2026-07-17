@@ -603,9 +603,12 @@ Valg tatt underveis:
    eksterne lenke i sporet — verifiser at slug er riktig ved deploy).
 4. Kvalitativ kostnadssetning på avtale-kortet (guardrail 4), ingen satser i v1.
 
-⚠ **Migrasjon `0019_plan_b.sql` MÅ kjøres i Supabase FØR deploy** — krav-detalj/
-KravMeny selecter/skriver `utfall='oppgjort'`; uten constraint-utvidelsen feiler
-oppdateringen. `build`/`lint`/`test` grønne (51 tester).
+⚠ **Migrasjonene `0019_plan_b.sql` OG `0020_utkast_nedbetalingsavtale.sql` MÅ
+kjøres i Supabase** — 0019 utvider `saker.utfall` med `oppgjort`; 0020 utvider
+`utkast.type`-constrainten med `nedbetalingsavtale` (glemt i Plan B — uten den
+feiler nedbetalingsavtale-utkast med «Kunne ikke lagre utkastet»). Begge er
+additive/idempotente; koden er uendret (ingen redeploy for 0020).
+`build`/`lint`/`test` grønne (51 tester).
 
 ## Tekster til advokatgjennomgang
 
