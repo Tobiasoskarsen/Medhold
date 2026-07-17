@@ -115,7 +115,8 @@ Ufravikelige regler:
     if (!blokk || blokk.type !== "text")
       return { ok: false, feil: "Fikk ikke et brukbart utkast. Prøv igjen." };
     innhold = blokk.text.trim();
-  } catch {
+  } catch (e) {
+    console.error("[lagUtkast] AI-generering feilet:", e);
     return { ok: false, feil: "Noe gikk galt. Prøv igjen om litt." };
   }
 
@@ -131,8 +132,13 @@ Ufravikelige regler:
     })
     .select("id")
     .single();
-  if (lagreFeil || !lagret)
+  if (lagreFeil || !lagret) {
+    console.error(
+      `[lagUtkast] Innsetting feilet (type=${type}, brev_id=${brevId}):`,
+      lagreFeil,
+    );
     return { ok: false, feil: "Kunne ikke lagre utkastet. Prøv igjen." };
+  }
 
   revalidatePath(`/krav/${sakId}`);
   return { ok: true, id: lagret.id, innhold };
