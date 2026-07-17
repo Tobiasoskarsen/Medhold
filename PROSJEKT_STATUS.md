@@ -568,6 +568,60 @@ globals.css. `build`/`lint`/`test` grønne.
 
 ---
 
+## Plan B — «Kravet stemmer»-sporet (MEDHOLD_PLAN_B_ARBEIDSORDRE, ferdig i kode)
+
+En likeverdig dør for den som skylder riktig beløp. Gjenbruker hele løkka
+(utkast → send → venter → oppfølging → utfall → seremoni).
+
+- **`src/lib/avdrag.ts`** (ren, testet, 8 tester): `beregnAvdrag(total, manedsbelop)`
+  → månedsbeløp/antall/siste avdrag, med clamp (1 kr … total).
+- **Migrasjon `0019_plan_b.sql`** (additiv/idempotent): utvider `saker_utfall_check`
+  fra 0017 med `oppgjort`. `slett_egen_konto()` uendret.
+- **Utfall `oppgjort`** (types.ts): etikett «Oppgjort», nøytral token-stil.
+  Settes KUN via «Jeg har betalt». `UTFALL_VALGBARE` (uten oppgjort) brukes i
+  KravMeny + steg 3 «Hva betyr svaret?».
+- **Utkasttyper splittet:** `betalingsutsettelse` = kun utsettelse;
+  ny `nedbetalingsavtale` med egen prompt (bruk avdragstall ordrett, be om
+  skriftlig bekreftelse + bero, verdig tone). Én-linjes forklaringer i typevalg.
+- **`/krav/[id]/veier-ut`** + `VeierUtFlyt`: tre kort (Betal alt nå «Billigst» +
+  «Jeg har betalt»-bekreftelse → utfall oppgjort; Nedbetalingsavtale +
+  avdragshjelper-UI; Betalingsutsettelse) + NAV-lenke.
+- **Dørvalget:** krav-detalj viser to likeverdige dører når det IKKE er
+  gebyrfunn og stadiet ≥ betalingsoppfordring; ellers CTA + sekundærlenke.
+  Steg 3 avsluttes med «Hva vil du gjøre?» (to dører + «Bestem senere»).
+- **Seremoni-varianter** (samme komponent/animasjon): nedbetalingsavtale →
+  grønn «Avtale på plass.», oppgjort → nøytral «Saken er ute av verden.»,
+  medhold → uendret gull.
+
+Valg tatt underveis:
+1. **`nedbetalingsavtale` gir nå `status='fullfort'`** (+ stadium nedbetaling).
+   Avvik fra Fase C (0017), der den var `aktiv` — §5 ber eksplisitt om fullført
+   («saken har en slutt»). `utfall.ts` + testen oppdatert.
+2. **Oppfølgings-e-posten var allerede typenøytral** («svaret ditt», «kravet
+   ditt») — ingen endring nødvendig.
+3. **NAV-lenke:** `https://www.nav.no/okonomi-og-gjeldsradgivning` (eneste
+   eksterne lenke i sporet — verifiser at slug er riktig ved deploy).
+4. Kvalitativ kostnadssetning på avtale-kortet (guardrail 4), ingen satser i v1.
+
+⚠ **Migrasjon `0019_plan_b.sql` MÅ kjøres i Supabase FØR deploy** — krav-detalj/
+KravMeny selecter/skriver `utfall='oppgjort'`; uten constraint-utvidelsen feiler
+oppdateringen. `build`/`lint`/`test` grønne (51 tester).
+
+## Tekster til advokatgjennomgang
+
+Samlet liste over påstander/tekster som bør sees av advokat før bred lansering:
+- **Velkomst-fotlinjen:** «Gratis å forstå brevet ditt · Norskutviklet»
+  (markedsføringspåstand; sann i pilot).
+- **Veier ut → Betal alt nå:** «ingen betalingsanmerkning registreres for dette
+  kravet» + «Billigst»-pillen (objektiv, men bør kvalitetssikres).
+- **Veier ut → Nedbetalingsavtale:** «En avdragsordning kan gi noe ekstra
+  omkostninger og renter frem til alt er betalt.»
+- **Seremoni-tekstene:** «Avtale på plass. / Du har en plan — og saken har en
+  slutt.» og «Saken er ute av verden. / Betalt og avsluttet.»
+- **Gebyrsjekk/Dom-tekstene** (fra gebyrsjekk-ordren) — allerede juridiske i natur.
+
+---
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**

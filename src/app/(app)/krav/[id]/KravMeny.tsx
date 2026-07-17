@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { MoreVertical, Check } from "lucide-react";
 import { markerLost, slettKrav } from "../actions";
-import { SAK_UTFALL, UTFALL_ETIKETT, type SakUtfall } from "@/lib/types";
+import { UTFALL_VALGBARE, UTFALL_ETIKETT, type SakUtfall } from "@/lib/types";
 
 /** Meny oppe til høyre på kravsiden: marker som løst (med valgfritt utfall) +
  *  sletting, bak et MoreVertical-ikon. */
@@ -80,7 +80,7 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
               <p className="px-4 py-2 text-xs text-dempet">
                 Hvordan endte saken?
               </p>
-              {SAK_UTFALL.map((u) => (
+              {UTFALL_VALGBARE.map((u) => (
                 <button
                   key={u}
                   type="button"

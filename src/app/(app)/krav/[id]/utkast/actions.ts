@@ -7,7 +7,12 @@ import { createClient } from "@/lib/supabase/server";
 import { harPluss } from "@/lib/plan";
 import { type UtkastType } from "@/lib/types";
 import { gebyrFunnTekst, type GebyrsjekkResultat } from "@/lib/gebyr";
+import type { AvdragsForslag } from "@/lib/avdrag";
 import { AI_MODELL } from "@/lib/ai";
+
+function kr(n: number): string {
+  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
+}
 
 export type UtkastResultat =
   | { ok: true; id: string; innhold: string }
@@ -17,7 +22,9 @@ const FORMÅL: Record<UtkastType, string> = {
   innsigelse:
     "en innsigelse der personen bestrider kravet helt eller delvis",
   betalingsutsettelse:
-    "en anmodning om betalingsutsettelse eller en nedbetalingsavtale",
+    "en høflig anmodning om betalingsutsettelse til en konkret dato, uten å bestride kravet",
+  nedbetalingsavtale:
+    "et forslag om nedbetalingsavtale med konkret månedsbeløp og varighet, uten å bestride kravet",
   klage: "en klage på vedtaket/kravet",
 };
 
@@ -26,6 +33,7 @@ export async function lagUtkast(
   brevId: string | null,
   type: UtkastType,
   detaljer: string,
+  avdrag?: AvdragsForslag | null,
 ): Promise<UtkastResultat> {
   const supabase = await createClient();
   const {
@@ -60,18 +68,32 @@ export async function lagUtkast(
     ? `
 - Appen har gjort en automatisk kontroll mot inkassoforskriftens maksimalsatser (se «Fakta fra Medhold» under). Du KAN vise til at det aktuelle beløpet overstiger den lovlige maksimalsatsen etter inkassoforskriften, men oppgi ALDRI paragrafnummer, og hold tonen rolig og saklig — ikke skjerp den.`
     : "";
+
+  // Avdragsforslag fra koden (Veier ut → avdragshjelperen). Kun for
+  // nedbetalingsavtale, og kun tallene — ingen begrunnelse legges til.
+  const avdragFakta =
+    type === "nedbetalingsavtale" && avdrag && avdrag.antallMandeder > 0
+      ? `Nedbetalingsforslag: ${kr(avdrag.manedsbelop)} kr per måned i ${avdrag.antallMandeder} måneder (siste avdrag ${kr(avdrag.sisteAvdrag)} kr).`
+      : "";
+  const avtaleRegel =
+    type === "nedbetalingsavtale"
+      ? `
+- Dette er et FORSLAG om nedbetalingsavtale, ikke en bestridelse av kravet. Bruk avdragsforslaget fra «Fakta fra Medhold» ORDRETT (nøyaktig månedsbeløp, antall måneder og siste avdrag). Be om SKRIFTLIG bekreftelse på avtalen, og be om at videre inndriving stilles i bero mens forslaget vurderes. Hold en verdig, saklig tone — ingen bønnfallelse, og ikke oppgi grunner personen ikke selv har skrevet.`
+      : "";
+
   const system = `Du skriver et utkast til ${FORMÅL[type]} på vegne av en privatperson som har fått et brev om gjeld/inkasso.
 
 Ufravikelige regler:
 - Skriv et ferdig, høflig og saklig brev på norsk (bokmål), klart til å sendes.
 - Bruk KUN fakta fra brevet, det personen selv oppgir, og fakta fra Medhold når det er oppgitt. Finn ALDRI opp beløp, datoer, paragrafer eller omstendigheter.
 - Nevn ikke forhold personen ikke har oppgitt. Er noe uklart, hold det generelt fremfor å gjette.
-- Ikke gi garantier om utfallet. Ikke lat som du er advokat.${gebyrRegel}
+- Ikke gi garantier om utfallet. Ikke lat som du er advokat.${gebyrRegel}${avtaleRegel}
 - Skriv kun selve brevteksten (ingen forklaring rundt, ingen «her er utkastet»).`;
 
   const bruker = [
     original ? `Brevet det svares på:\n\n${original}` : null,
     gebyrFakta ? `Fakta fra Medhold: ${gebyrFakta}` : null,
+    avdragFakta ? `Fakta fra Medhold: ${avdragFakta}` : null,
     detalj
       ? `Det personen selv oppgir: ${detalj}`
       : "Personen har ikke oppgitt utfyllende detaljer.",

@@ -12,16 +12,18 @@ export type UtfallOvergang = {
 
 /**
  * Hva et bekreftet utfall gjør med saken:
- * - medhold → løst (fullført).
+ * - medhold / oppgjort → løst (fullført).
+ * - nedbetalingsavtale → fullført, stadium settes til nedbetaling (Plan B §5:
+ *   avtalen er «saken har en slutt»; avvik fra Fase C der den var aktiv).
  * - delvis_medhold / avvist → fortsatt aktiv (brukeren trenger ny handling).
- * - nedbetalingsavtale → aktiv, stadium settes til nedbetaling.
  */
 export function utfallOvergang(utfall: SakUtfall): UtfallOvergang {
   switch (utfall) {
     case "medhold":
+    case "oppgjort":
       return { utfall, status: "fullfort" };
     case "nedbetalingsavtale":
-      return { utfall, status: "aktiv", stadium: "nedbetaling" };
+      return { utfall, status: "fullfort", stadium: "nedbetaling" };
     case "delvis_medhold":
     case "avvist":
       return { utfall, status: "aktiv" };

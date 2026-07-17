@@ -6,6 +6,7 @@ import { Skjermramme } from "@/components/ui";
 import { harPluss } from "@/lib/plan";
 import { UTKAST_TYPER, type UtkastType } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import { beregnAvdrag, type AvdragsForslag } from "@/lib/avdrag";
 import { UtkastFlyt } from "./UtkastFlyt";
 
 function erUtkastType(v: string | undefined): v is UtkastType {
@@ -17,10 +18,10 @@ export default async function UtkastPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ type?: string; brev?: string }>;
+  searchParams: Promise<{ type?: string; brev?: string; manedsbelop?: string }>;
 }) {
   const { id } = await params;
-  const { type, brev: brevParam } = await searchParams;
+  const { type, brev: brevParam, manedsbelop } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -33,7 +34,7 @@ export default async function UtkastPage({
 
   const { data: sak } = await supabase
     .from("saker")
-    .select("id, kreditor, tittel, saksnummer")
+    .select("id, kreditor, tittel, saksnummer, belop_totalt")
     .eq("id", id)
     .maybeSingle();
   if (!sak) notFound();
@@ -55,6 +56,17 @@ export default async function UtkastPage({
     ((brev?.gebyrsjekk as GebyrsjekkResultat | null)?.antallOver ?? 0) > 0;
 
   const starttype = erUtkastType(type) ? type : "innsigelse";
+
+  // Avdragsforslag fra Veier ut (kun for nedbetalingsavtale, med totalbeløp).
+  const manedTall = manedsbelop ? Number(manedsbelop) : NaN;
+  const avdrag: AvdragsForslag | null =
+    starttype === "nedbetalingsavtale" &&
+    sak.belop_totalt != null &&
+    sak.belop_totalt > 0 &&
+    !Number.isNaN(manedTall) &&
+    manedTall >= 1
+      ? beregnAvdrag(sak.belop_totalt, manedTall)
+      : null;
 
   return (
     <Skjermramme className="pt-5">
@@ -84,6 +96,7 @@ export default async function UtkastPage({
           saksnummer={sak.saksnummer ?? null}
           starttype={starttype}
           harOverGebyr={harOverGebyr}
+          avdrag={avdrag}
         />
       </div>
     </Skjermramme>

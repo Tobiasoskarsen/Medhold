@@ -4,6 +4,16 @@ import { useEffect, useState } from "react";
 import { m, useReducedMotion } from "motion/react";
 import { FJAER, VARIGHET } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
+import type { SakUtfall } from "@/lib/types";
+
+// Nodefarge per utfall (samme animasjon). Gull er eksklusivt for medhold
+// (fargeregelen); avtale = trygt-grønn, oppgjort = nøytral, ellers handling.
+function nodeFarge(utfall?: SakUtfall | null): string {
+  if (utfall === "medhold" || utfall === "delvis_medhold") return "bg-gull";
+  if (utfall === "nedbetalingsavtale") return "bg-trygg";
+  if (utfall === "oppgjort") return "bg-dempet";
+  return "bg-aksent";
+}
 
 /**
  * Løst sak-seremonien (MEDHOLD_MOTION_ARBEIDSORDRE seksjon 7). Grønn sluttnode
@@ -11,7 +21,13 @@ import { haptikk } from "@/lib/haptikk";
  * streken er ferdig. «full» rett etter «marker som løst»; «rolig» (uten
  * haptikk) første gang en allerede løst sak åpnes i økten; ellers ferdig.
  */
-export function LostNode({ sakId }: { sakId: string }) {
+export function LostNode({
+  sakId,
+  utfall,
+}: {
+  sakId: string;
+  utfall?: SakUtfall | null;
+}) {
   const redusert = useReducedMotion();
 
   const [modus] = useState<"full" | "rolig" | "ferdig">(() => {
@@ -44,7 +60,7 @@ export function LostNode({ sakId }: { sakId: string }) {
 
   return (
     <m.span
-      className="flex size-4 items-center justify-center rounded-full bg-aksent"
+      className={`flex size-4 items-center justify-center rounded-full ${nodeFarge(utfall)}`}
       initial={animer ? { scale: 0.6 } : false}
       animate={{ scale: 1 }}
       transition={FJAER}

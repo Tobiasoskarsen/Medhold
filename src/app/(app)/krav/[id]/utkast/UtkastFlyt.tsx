@@ -9,8 +9,10 @@ import {
   UTKAST_TYPER,
   UTKAST_ETIKETT,
   UTKAST_SPORSMAL,
+  UTKAST_UNDERTEKST,
   type UtkastType,
 } from "@/lib/types";
+import type { AvdragsForslag } from "@/lib/avdrag";
 import { lagUtkast, markerUtkastSendt } from "./actions";
 
 export function UtkastFlyt({
@@ -22,6 +24,7 @@ export function UtkastFlyt({
   saksnummer,
   starttype,
   harOverGebyr,
+  avdrag,
 }: {
   sakId: string;
   brevId: string | null;
@@ -31,6 +34,7 @@ export function UtkastFlyt({
   saksnummer: string | null;
   starttype: UtkastType;
   harOverGebyr: boolean;
+  avdrag?: AvdragsForslag | null;
 }) {
   const router = useRouter();
   const [type, setType] = useState<UtkastType>(starttype);
@@ -45,7 +49,14 @@ export function UtkastFlyt({
   async function generer() {
     setGenererer(true);
     setFeil(null);
-    const r = await lagUtkast(sakId, brevId, type, detaljer);
+    // Avdragsforslaget gjelder kun nedbetalingsavtale-typen.
+    const r = await lagUtkast(
+      sakId,
+      brevId,
+      type,
+      detaljer,
+      type === "nedbetalingsavtale" ? avdrag : null,
+    );
     setGenererer(false);
     if (!r.ok) {
       if (r.paywall) {
@@ -132,7 +143,7 @@ export function UtkastFlyt({
             {UTKAST_TYPER.map((t) => (
               <label
                 key={t}
-                className={`flex items-center gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm transition ${
+                className={`flex items-start gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm transition ${
                   type === t
                     ? "border-aksent bg-aksent/5 text-blekk"
                     : "border-strek text-blekk"
@@ -143,9 +154,16 @@ export function UtkastFlyt({
                   name="utkasttype"
                   checked={type === t}
                   onChange={() => setType(t)}
-                  className="accent-aksent"
+                  className="mt-0.5 accent-aksent"
                 />
-                {UTKAST_ETIKETT[t]}
+                <span>
+                  <span className="block font-medium text-blekk">
+                    {UTKAST_ETIKETT[t]}
+                  </span>
+                  <span className="block text-[12px] text-dempet">
+                    {UTKAST_UNDERTEKST[t]}
+                  </span>
+                </span>
               </label>
             ))}
           </div>

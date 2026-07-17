@@ -10,11 +10,18 @@ test("medhold → fullført, ingen stadium-endring", () => {
   });
 });
 
-test("nedbetalingsavtale → aktiv + stadium nedbetaling", () => {
+test("nedbetalingsavtale → fullført + stadium nedbetaling (Plan B §5)", () => {
   assert.deepEqual(utfallOvergang("nedbetalingsavtale"), {
     utfall: "nedbetalingsavtale",
-    status: "aktiv",
+    status: "fullfort",
     stadium: "nedbetaling",
+  });
+});
+
+test("oppgjort → fullført", () => {
+  assert.deepEqual(utfallOvergang("oppgjort"), {
+    utfall: "oppgjort",
+    status: "fullfort",
   });
 });
 

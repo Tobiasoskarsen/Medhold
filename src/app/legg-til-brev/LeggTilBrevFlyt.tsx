@@ -11,7 +11,7 @@ import { haptikk } from "@/lib/haptikk";
 import { BREVTYPER, STADIUM_ETIKETT, type BrevType } from "@/lib/gjeld";
 import { formaterKortDato } from "@/lib/dato";
 import {
-  SAK_UTFALL,
+  UTFALL_VALGBARE,
   UTFALL_ETIKETT,
   type FristForslag,
   type SakUtfall,
@@ -181,7 +181,7 @@ export function LeggTilBrevFlyt({
     setInntak("bilde");
   }
 
-  async function lagre() {
+  async function lagre(destinasjon: "innsigelse" | "veier-ut" | "krav") {
     if (!analyse) return;
     setLagrer(true);
     setFeil(null);
@@ -225,7 +225,13 @@ export function LeggTilBrevFlyt({
         /* ignorer */
       }
     }
-    router.push(`/krav/${r.sakId}`);
+    const mål =
+      destinasjon === "innsigelse"
+        ? `/krav/${r.sakId}/utkast?type=innsigelse`
+        : destinasjon === "veier-ut"
+          ? `/krav/${r.sakId}/veier-ut`
+          : `/krav/${r.sakId}`;
+    router.push(mål);
     router.refresh();
   }
 
@@ -537,7 +543,7 @@ export function LeggTilBrevFlyt({
                 Er dette svaret på det du sendte? Bekreft utfallet.
               </p>
               <div className="mt-2 flex flex-col gap-2">
-                {SAK_UTFALL.map((u) => (
+                {UTFALL_VALGBARE.map((u) => (
                   <label
                     key={u}
                     className={`flex items-center gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm transition ${
@@ -633,9 +639,43 @@ export function LeggTilBrevFlyt({
           {feil && <p className="mt-4 text-[13px] text-red-700">{feil}</p>}
 
           <div className="mt-6">
-            <Primærknapp onClick={lagre} disabled={lagrer}>
-              {lagrer ? "Lagrer …" : "Lagre i tidslinjen"}
-            </Primærknapp>
+            <p className="text-[13px] font-medium text-blekk">Hva vil du gjøre?</p>
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                disabled={lagrer}
+                onClick={() => lagre("innsigelse")}
+                className="trykk flex flex-col rounded-2xl border-[0.5px] border-aksent/40 bg-aksent/5 px-4 py-4 text-left disabled:opacity-60"
+              >
+                <span className="text-sm font-semibold text-blekk">
+                  Jeg er uenig i kravet
+                </span>
+                <span className="mt-0.5 text-[12px] text-dempet">
+                  Skriv en innsigelse
+                </span>
+              </button>
+              <button
+                type="button"
+                disabled={lagrer}
+                onClick={() => lagre("veier-ut")}
+                className="trykk flex flex-col rounded-2xl border-[0.5px] border-trygg/40 bg-trygg/5 px-4 py-4 text-left disabled:opacity-60"
+              >
+                <span className="text-sm font-semibold text-blekk">
+                  Kravet stemmer
+                </span>
+                <span className="mt-0.5 text-[12px] text-dempet">
+                  Se veiene ut
+                </span>
+              </button>
+            </div>
+            <button
+              type="button"
+              disabled={lagrer}
+              onClick={() => lagre("krav")}
+              className="mt-3 block w-full text-center text-[13px] text-dempet transition hover:text-blekk disabled:opacity-60"
+            >
+              {lagrer ? "Lagrer …" : "Bestem senere — bare lagre i tidslinjen"}
+            </button>
           </div>
         </div>
       )}

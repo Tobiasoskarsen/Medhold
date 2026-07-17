@@ -139,10 +139,13 @@ export type Profil = {
   sist_endret: string;
 };
 
-// Utkasttyper (0013). Generert svarbrev brukeren redigerer og sender selv.
+// Utkasttyper (0013 + Plan B-splitten). Generert svarbrev brukeren redigerer og
+// sender selv. `betalingsutsettelse` er nå KUN utsettelse (ikke lenger slått
+// sammen med avdrag); `nedbetalingsavtale` er den nye avdrags-typen.
 export const UTKAST_TYPER = [
   "innsigelse",
   "betalingsutsettelse",
+  "nedbetalingsavtale",
   "klage",
 ] as const;
 export type UtkastType = (typeof UTKAST_TYPER)[number];
@@ -150,14 +153,24 @@ export type UtkastType = (typeof UTKAST_TYPER)[number];
 export const UTKAST_ETIKETT: Record<UtkastType, string> = {
   innsigelse: "Innsigelse",
   betalingsutsettelse: "Betalingsutsettelse",
+  nedbetalingsavtale: "Nedbetalingsavtale",
   klage: "Klage",
 };
 
 // Ledetekst for det korte skjemaet brukeren fyller ut per utkasttype.
 export const UTKAST_SPORSMAL: Record<UtkastType, string> = {
   innsigelse: "Hva er du uenig i?",
-  betalingsutsettelse: "Hva kan du betale per måned?",
+  betalingsutsettelse: "Til hvilken dato trenger du utsettelse?",
+  nedbetalingsavtale: "Noe du vil legge til? (valgfritt)",
   klage: "Hvorfor mener du vedtaket er feil?",
+};
+
+// Én-linjes forklaring i typevalget i utkastflyten.
+export const UTKAST_UNDERTEKST: Record<UtkastType, string> = {
+  innsigelse: "Du bestrider kravet helt eller delvis.",
+  betalingsutsettelse: "Du ber om mer tid — beløpet er det samme.",
+  nedbetalingsavtale: "Du foreslår å betale i avdrag over tid.",
+  klage: "Du klager på et vedtak.",
 };
 
 export type Utkast = {
@@ -170,20 +183,29 @@ export type Utkast = {
   opprettet: string;
 };
 
-// Utfall for en sak (0017). Settes aldri automatisk — brukeren bekrefter.
+// Utfall for en sak (0017 + 0019). Settes aldri automatisk — brukeren bekrefter.
+// `oppgjort` settes KUN via «Jeg har betalt» på Veier ut-skjermen.
 export const SAK_UTFALL = [
   "medhold",
   "delvis_medhold",
   "avvist",
   "nedbetalingsavtale",
+  "oppgjort",
 ] as const;
 export type SakUtfall = (typeof SAK_UTFALL)[number];
+
+// Utfall brukeren kan velge i vanlig utfallsregistrering (svar fra kreditor /
+// «marker som løst»). `oppgjort` settes KUN via «Jeg har betalt» på Veier ut.
+export const UTFALL_VALGBARE: SakUtfall[] = SAK_UTFALL.filter(
+  (u) => u !== "oppgjort",
+);
 
 export const UTFALL_ETIKETT: Record<SakUtfall, string> = {
   medhold: "Medhold",
   delvis_medhold: "Delvis medhold",
   avvist: "Avvist",
   nedbetalingsavtale: "Nedbetalingsavtale",
+  oppgjort: "Oppgjort",
 };
 
 export const UTFALL_STIL: Record<SakUtfall, string> = {
@@ -191,6 +213,8 @@ export const UTFALL_STIL: Record<SakUtfall, string> = {
   delvis_medhold: "bg-teal-50 text-teal-700 ring-teal-200",
   avvist: "bg-slate-100 text-slate-600 ring-slate-200",
   nedbetalingsavtale: "bg-violet-50 text-violet-700 ring-violet-200",
+  // Nøytral og verdig — ikke gull, ikke grønn suksess (token-basert).
+  oppgjort: "bg-strek text-blekk ring-strek",
 };
 
 export const STATUS_ETIKETT: Record<SakStatus, string> = {
