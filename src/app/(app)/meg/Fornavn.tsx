@@ -56,7 +56,7 @@ export function Fornavn({ start }: { start: string }) {
         <p className="mt-1.5 text-[13px] text-red-700">{feil}</p>
       ) : (
         lagret && !venter && (
-          <p className="mt-1.5 text-[13px] text-aksent">Lagret</p>
+          <p className="mt-1.5 text-[13px] text-trygg">Lagret</p>
         )
       )}
     </div>

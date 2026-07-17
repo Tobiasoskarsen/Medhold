@@ -213,7 +213,7 @@ export function UtkastFlyt({
               className="trykk inline-flex items-center gap-2 rounded-[10px] border-[0.5px] border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
             >
               {kopiert ? (
-                <Check className="size-4 text-aksent" aria-hidden />
+                <Check className="size-4 text-trygg" aria-hidden />
               ) : (
                 <Copy className="size-4" aria-hidden />
               )}

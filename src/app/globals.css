@@ -18,9 +18,10 @@
   --blekk: #1c2b33; /* primærtekst */
   --dempet: #5c6b73; /* sekundærtekst */
   --strek: #e4e4df; /* kanter, delelinjer */
-  --aksent: #0e7c66; /* primærknapp, aktiv nav, tidslinje */
-  --aksent-lys: #17a085; /* logo-grønn på mørk flate */
-  --aksent-dyp: #0a5c4c; /* serif-kursiv i overskrifter, nåværende trapptrinn */
+  --aksent: #21456e; /* HANDLING: primærknapp, aktiv nav, lenker, tidslinje */
+  --aksent-lys: #17a085; /* (ubrukt token, beholdt) */
+  --aksent-dyp: #16324f; /* serif-kursiv i overskrifter, nåværende trapptrinn */
+  --trygg: #0e7c66; /* TRYGT/INNENFOR: suksess-piller, «lagret»-bekreftelser */
   --varsel-bg: #f6e7de; /* frist-pill bakgrunn */
   --varsel-tekst: #8a3f20; /* frist-pill tekst */
 
@@ -48,9 +49,10 @@
   --blekk: #eceeed;
   --dempet: #94a2a1;
   --strek: #2a3639;
-  --aksent: #19a88b;
+  --aksent: #4a7fb5;
   --aksent-lys: #19a88b;
-  --aksent-dyp: #4fc4a8;
+  --aksent-dyp: #7ab0e0;
+  --trygg: #19a88b;
   --varsel-bg: #382a21;
   --varsel-tekst: #e8bda4;
 
@@ -72,6 +74,7 @@
   --color-aksent: var(--aksent);
   --color-aksent-lys: var(--aksent-lys);
   --color-aksent-dyp: var(--aksent-dyp);
+  --color-trygg: var(--trygg);
   --color-varsel-bg: var(--varsel-bg);
   --color-varsel-tekst: var(--varsel-tekst);
   --color-dom-rod: var(--dom-rod);

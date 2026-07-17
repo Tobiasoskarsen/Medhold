@@ -5,9 +5,9 @@ type Variant = "noytral" | "varsel" | "suksess" | "feil";
 const varianter: Record<Variant, string> = {
   noytral: "bg-strek text-dempet",
   varsel: "bg-varsel-bg text-varsel-tekst",
-  // Grønn = aksent-token (følger tema). Rød = appens etablerte feilfarge
-  // (samme som HASTEGRAD_STIL.overtid), lys pill lesbar i begge tema.
-  suksess: "bg-aksent/10 text-aksent",
+  // Grønn = «trygt/innenfor»-token (rollesplitt: aksent er nå handling/blå).
+  // Rød = appens etablerte feilfarge (samme som HASTEGRAD_STIL.overtid).
+  suksess: "bg-trygg/10 text-trygg",
   feil: "bg-red-50 text-red-700",
 };
 
