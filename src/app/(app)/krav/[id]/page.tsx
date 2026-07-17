@@ -355,14 +355,12 @@ export default async function KravDetaljPage({
             <p className="mt-1.5 text-center text-[12px] text-dempet">
               Tar bare noen minutter.
             </p>
-            <p className="mt-3 text-center">
-              <Link
-                href={`/krav/${sak.id}/veier-ut`}
-                className="text-[13px] text-dempet transition hover:text-blekk"
-              >
-                Enig i kravet? Se veiene ut
-              </Link>
-            </p>
+            <Link
+              href={`/krav/${sak.id}/veier-ut`}
+              className="trykk mt-3 flex w-full items-center justify-center rounded-[10px] border-[0.5px] border-trygg/40 bg-trygg/5 px-3 py-3 text-sm font-medium text-blekk transition hover:border-trygg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trygg"
+            >
+              Kravet stemmer — se veiene ut
+            </Link>
           </div>
         ))}
 
