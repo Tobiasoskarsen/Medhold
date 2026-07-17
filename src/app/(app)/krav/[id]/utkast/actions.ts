@@ -14,6 +14,18 @@ function kr(n: number): string {
   return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
 }
 
+/**
+ * Sikkerhetsnett mot markdown i et brev som limes inn som ren tekst. Fjerner
+ * stjerne-punktlister i linjestart og alle gjenværende stjerner (fet/kursiv).
+ * Brev på norsk inneholder praktisk talt aldri legitime stjerner.
+ */
+function fjernStjerner(tekst: string): string {
+  return tekst
+    .replace(/^[ \t]*\*[ \t]+/gm, "")
+    .replace(/\*/g, "")
+    .trim();
+}
+
 export type UtkastResultat =
   | { ok: true; id: string; innhold: string }
   | { ok: false; feil?: string; paywall?: boolean };
@@ -84,7 +96,8 @@ export async function lagUtkast(
   const system = `Du skriver et utkast til ${FORMÅL[type]} på vegne av en privatperson som har fått et brev om gjeld/inkasso.
 
 Ufravikelige regler:
-- Skriv et ferdig, høflig og saklig brev på norsk (bokmål), klart til å sendes.
+- Skriv KUN ren tekst, klar til å limes rett inn i en e-post. INGEN markdown: ingen stjerner (*), ingen fet skrift, ingen overskrifter (#), ingen punktlister med symboler. Det skal se ut som et helt vanlig brev.
+- Skriv naturlig og nøkternt, slik et vanlig voksent menneske skriver — kort, klart og konkret. Unngå svulstige innledninger, overdreven høflighet, floskler og stivt kansellispråk. Kom til poenget, og hold det til noen få korte avsnitt.
 - Bruk KUN fakta fra brevet, det personen selv oppgir, og fakta fra Medhold når det er oppgitt. Finn ALDRI opp beløp, datoer, paragrafer eller omstendigheter.
 - Nevn ikke forhold personen ikke har oppgitt. Er noe uklart, hold det generelt fremfor å gjette.
 - Ikke gi garantier om utfallet. Ikke lat som du er advokat.${gebyrRegel}${avtaleRegel}
@@ -114,7 +127,7 @@ Ufravikelige regler:
     const blokk = svar.content.find((b) => b.type === "text");
     if (!blokk || blokk.type !== "text")
       return { ok: false, feil: "Fikk ikke et brukbart utkast. Prøv igjen." };
-    innhold = blokk.text.trim();
+    innhold = fjernStjerner(blokk.text);
   } catch (e) {
     console.error("[lagUtkast] AI-generering feilet:", e);
     return { ok: false, feil: "Noe gikk galt. Prøv igjen om litt." };
