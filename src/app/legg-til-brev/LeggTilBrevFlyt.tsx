@@ -672,9 +672,9 @@ export function LeggTilBrevFlyt({
               type="button"
               disabled={lagrer}
               onClick={() => lagre("krav")}
-              className="mt-3 block w-full text-center text-[13px] text-dempet transition hover:text-blekk disabled:opacity-60"
+              className="trykk mt-3 flex w-full items-center justify-center rounded-[10px] border-[0.5px] border-strek bg-flate px-3 py-3 text-sm font-medium text-blekk transition hover:border-dempet/40 disabled:opacity-60"
             >
-              {lagrer ? "Lagrer …" : "Bestem senere — bare lagre i tidslinjen"}
+              {lagrer ? "Lagrer …" : "Bestem senere — lagre i tidslinjen"}
             </button>
           </div>
         </div>
