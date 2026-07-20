@@ -18,6 +18,7 @@ import {
 } from "@/lib/types";
 import { svarUtfallTilSak } from "@/lib/utfall";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
+import { LeserBrev } from "./LeserBrev";
 import { sjekkKostnader } from "@/lib/gebyr";
 import {
   analyserBrevTekst,
@@ -373,20 +374,7 @@ export function LeggTilBrevFlyt({
         </div>
       )}
 
-      {steg === 2 && (
-        <div className="flex flex-1 flex-col items-center justify-center pb-16 text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-ikon.svg"
-            alt=""
-            width={48}
-            height={48}
-            className="animate-pulse"
-            aria-hidden
-          />
-          <p className="mt-4 text-sm text-dempet">Leser brevet</p>
-        </div>
-      )}
+      {steg === 2 && <LeserBrev />}
 
       {steg === 3 && analyse && (
         <div className="flex flex-1 flex-col pb-8">
