@@ -1,43 +1,23 @@
 import { APP_NAME } from "@/lib/brand";
 
 /**
- * Medhold-merket: to hule «brev»-noder over en fylt grønn node med hake —
- * saker som samles og lander på et medhold. Bruker token-fargene (--blekk,
- * --bakgrunn, --aksent) slik at merket følger lyst/mørkt tema.
+ * Medhold-merket: trappen som stiger, siste trinn i gull, med haken hvilende
+ * på toppen — reisen ender i et bekreftet resultat. Selvstendig marine-brikke
+ * med appens egne farger (marine/gull), lik i lyst og mørkt tema (som et
+ * app-ikon).
  */
 export function Medholdmerke({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 84 84" className={className} aria-hidden>
-      <line
-        x1="42"
-        y1="14"
-        x2="42"
-        y2="48"
-        style={{ stroke: "var(--blekk)" }}
-        strokeWidth="6"
-        strokeLinecap="round"
-        opacity="0.4"
-      />
-      <circle
-        cx="42"
-        cy="18"
-        r="8"
-        style={{ fill: "var(--bakgrunn)", stroke: "var(--blekk)" }}
-        strokeWidth="6"
-      />
-      <circle
-        cx="42"
-        cy="36"
-        r="8"
-        style={{ fill: "var(--bakgrunn)", stroke: "var(--blekk)" }}
-        strokeWidth="6"
-      />
-      <circle cx="42" cy="60" r="14" style={{ fill: "var(--aksent)" }} />
+      <rect x="2" y="2" width="80" height="80" rx="20" fill="#21456E" />
+      <rect x="16" y="50" width="12" height="16" rx="3" fill="#F7F6F2" opacity="0.55" />
+      <rect x="34" y="38" width="12" height="28" rx="3" fill="#F7F6F2" opacity="0.8" />
+      <rect x="52" y="24" width="12" height="42" rx="3" fill="#D9B25E" />
       <path
-        d="M34 60 L40 66 L51 54"
+        d="M52.5 16.5 L57 21 L66 12"
         fill="none"
-        stroke="#FFF"
-        strokeWidth="6"
+        stroke="#F7F6F2"
+        strokeWidth="5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -48,7 +28,7 @@ export function Medholdmerke({ className }: { className?: string }) {
 export default function Logo() {
   return (
     <span className="flex items-center gap-2">
-      <Medholdmerke className="size-[18px]" />
+      <Medholdmerke className="size-[22px]" />
       <span className="text-sm font-medium tracking-tight text-[color:var(--blekk)]">
         {APP_NAME}
       </span>
