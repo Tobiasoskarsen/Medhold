@@ -90,7 +90,7 @@ export async function lagUtkast(
   const avtaleRegel =
     type === "nedbetalingsavtale"
       ? `
-- Dette er et FORSLAG om nedbetalingsavtale, ikke en bestridelse av kravet. Bruk avdragsforslaget fra «Fakta fra Medhold» ORDRETT (nøyaktig månedsbeløp, antall måneder og siste avdrag). Be om SKRIFTLIG bekreftelse på avtalen, og be om at videre inndriving stilles i bero mens forslaget vurderes. Hold en verdig, saklig tone — ingen bønnfallelse, og ikke oppgi grunner personen ikke selv har skrevet.`
+- Dette er et FORSLAG om nedbetalingsavtale, ikke en bestridelse av kravet. Bruk avdragsforslaget fra «Fakta fra Medhold» ORDRETT (nøyaktig månedsbeløp, antall måneder og siste avdrag). Be om skriftlig bekreftelse på avtalen, og be høflig om at videre inndriving og nye omkostninger settes på vent mens forslaget vurderes. Skriv i vanlig, naturlig språk — unngå byråkratiske ord som «bero» og «anmodning». Hold en verdig, saklig tone — ingen bønnfallelse, og ikke oppgi grunner personen ikke selv har skrevet.`
       : "";
 
   const system = `Du skriver et utkast til ${FORMÅL[type]} på vegne av en privatperson som har fått et brev om gjeld/inkasso.
