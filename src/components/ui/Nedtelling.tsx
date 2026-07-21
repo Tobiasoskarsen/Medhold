@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "motion/react";
-import { dagerTil } from "@/lib/dato";
+import { dagerTil, erHastende } from "@/lib/frist";
 import { tellOpp } from "@/lib/tell";
 
 /** «24. juli» — dag + full måned, uten år (som i mockupen). */
@@ -28,7 +28,7 @@ export function Nedtelling({
   className?: string;
 }) {
   const d = dagerTil(forfallsdato);
-  const rod = d <= 10; // ≤10 dager igjen, i dag, eller utløpt
+  const rod = erHastende(d);
   const tallFarge = rod ? "text-dom-rod" : "text-blekk";
   const ref = useRef<HTMLSpanElement>(null);
   const redusert = useReducedMotion();

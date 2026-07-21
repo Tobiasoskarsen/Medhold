@@ -1,13 +1,13 @@
 import { NavLenke as Link } from "@/components/NavLenke";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Kort, Primærknapp } from "@/components/ui";
-import { KravBrevFaner } from "@/components/KravBrevFaner";
+import { Skjermramme, Kort, Primærknapp, Trapp } from "@/components/ui";
 import { Kravkort } from "./Kravkort";
-import { formaterKortDato } from "@/lib/dato";
-import { formaterBelop } from "@/lib/format";
+import { AvsluttedeListe } from "./AvsluttedeListe";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
-import type { SakStatus } from "@/lib/types";
+import { formaterBelop } from "@/lib/format";
+import type { SakStatus, SakUtfall } from "@/lib/types";
+import type { GebyrsjekkResultat } from "@/lib/gebyr";
 
 type SakRad = {
   id: string;
@@ -17,36 +17,72 @@ type SakRad = {
   belop_totalt: number | null;
   stadium: Stadium | null;
   status: SakStatus;
+  utfall: SakUtfall | null;
+  sist_endret: string;
 };
+
+/** «{N} aktive · {M} venter på svar · {K} avsluttet» — ledd med 0 utelates. */
+function oversiktsstripe(saker: SakRad[]): string {
+  const aktiv = saker.filter((s) => s.status === "aktiv").length;
+  const venter = saker.filter((s) => s.status === "venter_pa_svar").length;
+  const avsluttet = saker.filter((s) => s.status === "fullfort").length;
+  return [
+    aktiv > 0 ? `${aktiv} aktive` : null,
+    venter > 0 ? `${venter} venter på svar` : null,
+    avsluttet > 0 ? `${avsluttet} avsluttet` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 export default async function KravListePage() {
   const supabase = await createClient();
 
-  const [{ data: sakData }, { data: fristData }] = await Promise.all([
-    supabase
-      .from("saker")
-      .select(
-        "id, kreditor, tittel, opprinnelig_kreditor, belop_totalt, stadium, status, sist_endret",
-      )
-      .order("sist_endret", { ascending: false }),
-    supabase
-      .from("frister")
-      .select("sak_id, forfallsdato")
-      .eq("fullfort", false),
-  ]);
+  const [{ data: sakData }, { data: fristData }, { data: brevData }] =
+    await Promise.all([
+      supabase
+        .from("saker")
+        .select(
+          "id, kreditor, tittel, opprinnelig_kreditor, belop_totalt, stadium, status, utfall, sist_endret",
+        )
+        .order("sist_endret", { ascending: false }),
+      supabase
+        .from("frister")
+        .select("sak_id, forfallsdato")
+        .eq("fullfort", false),
+      // Nyeste brev per sak (kun for funn-markøren) — ÉN spørring, ingen N+1.
+      supabase
+        .from("brev")
+        .select("sak_id, opprettet, gebyrsjekk")
+        .order("opprettet", { ascending: false }),
+    ]);
 
-  const saker = (sakData ?? []) as (SakRad & { sist_endret: string })[];
+  const saker = (sakData ?? []) as SakRad[];
   const frister = (fristData ?? []) as { sak_id: string; forfallsdato: string }[];
 
-  // Nærmeste åpne frist per krav.
   const nesteFrist = new Map<string, string>();
   for (const f of frister) {
     const nå = nesteFrist.get(f.sak_id);
     if (!nå || f.forfallsdato < nå) nesteFrist.set(f.sak_id, f.forfallsdato);
   }
 
-  // Sorter på nærmeste frist; krav uten frist havner sist.
-  const sortert = [...saker].sort((a, b) => {
+  // Nyeste brev er først (DB-sortert) → første treff per sak_id holdes.
+  const harFunnPerSak = new Map<string, boolean>();
+  for (const b of brevData ?? []) {
+    if (harFunnPerSak.has(b.sak_id)) continue;
+    const gs = b.gebyrsjekk as GebyrsjekkResultat | null;
+    harFunnPerSak.set(
+      b.sak_id,
+      !!gs?.linjer.some((l) => l.vurdering === "over"),
+    );
+  }
+
+  const aktive = saker.filter((s) => s.status !== "fullfort");
+  const avsluttede = saker.filter((s) => s.status === "fullfort");
+
+  // Nærmeste åpne frist først; saker uten frist etter, sortert på sist_endret
+  // (stabil sort — aktive er allerede i sist_endret-rekkefølge fra spørringen).
+  const aktiveSortert = [...aktive].sort((a, b) => {
     const fa = nesteFrist.get(a.id);
     const fb = nesteFrist.get(b.id);
     if (fa && fb) return fa < fb ? -1 : 1;
@@ -55,14 +91,33 @@ export default async function KravListePage() {
     return 0;
   });
 
+  function kortData(sak: SakRad) {
+    return {
+      id: sak.id,
+      navn: sak.kreditor ?? sak.tittel,
+      delNavn: !sak.opprinnelig_kreditor,
+      belop: formaterBelop(sak.belop_totalt),
+      stadiumEtikett: sak.stadium ? STADIUM_ETIKETT[sak.stadium] : null,
+      frist: nesteFrist.get(sak.id) ?? null,
+      status: sak.status,
+      utfall: sak.utfall,
+      harFunn: harFunnPerSak.get(sak.id) ?? false,
+    };
+  }
+
+  const stripe = oversiktsstripe(saker);
+
   return (
     <Skjermramme className="pt-6">
-      <KravBrevFaner aktiv="krav" />
+      <h1 className="font-serif text-[26px] font-medium tracking-[-0.01em] text-blekk">
+        Sakene dine
+      </h1>
+      {stripe && <p className="eyebrow mt-1.5">{stripe}</p>}
 
-      <div className="mt-5">
-      {sortert.length === 0 ? (
-        <Kort>
-          <p className="text-[15px] leading-relaxed text-blekk">
+      {saker.length === 0 ? (
+        <Kort className="mt-6">
+          <Trapp stadium="faktura" kompakt />
+          <p className="mt-4 text-[15px] leading-relaxed text-blekk">
             Legg inn ditt første brev, så holder Medhold oversikten.
           </p>
           <div className="mt-4">
@@ -70,32 +125,30 @@ export default async function KravListePage() {
           </div>
         </Kort>
       ) : (
-        <ul className="flex flex-col gap-2.5">
-          {sortert.map((sak) => {
-            const frist = nesteFrist.get(sak.id);
-            const belop = formaterBelop(sak.belop_totalt);
-            const underlinje = [
-              sak.stadium ? STADIUM_ETIKETT[sak.stadium] : null,
-              frist ? `neste frist ${formaterKortDato(frist)}` : null,
-            ]
-              .filter(Boolean)
-              .join(" · ");
-            return (
-              <li key={sak.id}>
-                <Kravkort
-                  id={sak.id}
-                  navn={sak.kreditor ?? sak.tittel}
-                  delNavn={!sak.opprinnelig_kreditor}
-                  belop={belop}
-                  underlinje={underlinje}
-                  status={sak.status}
-                />
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          {aktive.length > 0 && (
+            <div className="mt-6">
+              {avsluttede.length > 0 && (
+                <p className="eyebrow mb-2">Aktive</p>
+              )}
+              <ul className="flex flex-col gap-2.5">
+                {aktiveSortert.map((sak) => (
+                  <li key={sak.id}>
+                    <Kravkort {...kortData(sak)} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {avsluttede.length > 0 && (
+            <div className="mt-8">
+              <p className="eyebrow mb-2">Avsluttet</p>
+              <AvsluttedeListe saker={avsluttede.map(kortData)} />
+            </div>
+          )}
+        </>
       )}
-      </div>
 
       <Link
         href="/krav/ny"

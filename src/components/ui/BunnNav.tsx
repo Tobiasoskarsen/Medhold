@@ -19,7 +19,7 @@ type NavPunkt = {
 
 const PUNKTER: NavPunkt[] = [
   { href: "/", etikett: "Hjem", ikon: Home },
-  { href: "/krav", etikett: "Krav", ikon: Folder, ekstra: ["/brev"] },
+  { href: "/krav", etikett: "Saker", ikon: Folder },
   { href: "/meg", etikett: "Meg", ikon: User },
 ];
 

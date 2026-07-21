@@ -684,6 +684,52 @@ men gjorde ingenting). Bygget om til **native View Transitions**
 
 ---
 
+## Sakslisten (MEDHOLD_SAKSLISTE_ARBEIDSORDRE, ferdig i kode)
+
+Saksliste som forteller hele historien på ett blikk; navigasjon matcher
+brukerens hode («sakene mine», ikke «brevene mine»).
+
+- **`src/lib/frist.ts`:** delt `erHastende`/`fristChipTekst` (samme ≤10-dagers-
+  terskel og tekstformat «8 dager igjen»/«I dag»/«Frist utløpt» som
+  `Nedtelling`, som nå selv bruker denne). Reeksporterer `dagerTil`.
+- **`Kravkort` utvidet:** underlinje er nå kun stadium-etikett; nedtellingschip
+  (dom-rod ≤10 dager/utløpt, ellers dempet) erstatter «neste frist …»-teksten;
+  liten `§`-markør (dom-rod, `role="img"` + aria-label) ved siden av beløpet
+  når nyeste brev har et lagret `over`-funn. Ny avsluttet-variant: `opacity-70`,
+  ingen hover, beløp i dempet farge, utfallspill (`UTFALL_ETIKETT`/`UTFALL_STIL`)
+  i stedet for venter/frist. View Transitions-logikken (§ guardrail 2) urørt.
+- **`/krav`:** ny H1 «Sakene dine» + oversiktsstripe («N aktive · M venter på
+  svar · K avsluttet», nulledd utelatt). Gruppert i Aktive (nærmeste frist
+  først, ellers sist_endret) og Avsluttet (sist_endret, «Vis alle (K)» over 5
+  via ny klientkomponent `AvsluttedeListe.tsx`, ingen paginering). Tomtilstand
+  fikk kompakt `Trapp` (stadium `faktura` valgt som nøytral illustrasjon).
+  Datahenting: `utfall` lagt til i `saker`-select; funn-markøren løst med ÉN
+  ekstra spørring (`brev(sak_id, opprettet, gebyrsjekk)`, nyeste per sak_id
+  holdt i minnet via at spørringen allerede er sortert — ingen N+1, ingen ny
+  DB-kolonne).
+- **Navigasjon:** `KravBrevFaner.tsx` slettet. BunnNav «Krav» → **«Saker»**,
+  `ekstra: ["/brev"]` fjernet. `/brev` nås nå fra **Meg → Hjelp → «Alle brev»**
+  (ikon `FileText`, over «Kontakt support»); fikk tilbakelenke til Meg + H1
+  serif «Alle brev». Ingen redirect — direkte-lenker til `/brev` virker fortsatt.
+- **`/brev`:** brev gruppert per sak (eyebrow-overskrift «{navn} · {N} brev»),
+  gruppene ordnet på nyeste brev via ett lineært gjennomløp av den allerede
+  sorterte listen (ingen egen sorteringsrunde). Samme `§`-markør som i
+  kravlisten når brevets `gebyrsjekk` har et `over`-funn.
+
+Valg tatt underveis:
+1. Tomtilstandens `Trapp`-illustrasjon bruker stadium `"faktura"` (laveste
+   trinn) — ordren spesifiserte ikke hvilket stadium, og «ingen aktive saker
+   ennå» er nærmest et blankt utgangspunkt.
+2. Funn-markøren i kravlisten vises KUN på aktive kort (avsluttede kort viser
+   utfallspillen i stedet, som er mer informativ enn et gebyrfunn-hint på en
+   allerede lukket sak) — konsistent med at `Kravkort` selv undertrykker
+   markøren når `status==='fullfort'`.
+
+`build`/`lint`/`test` grønne (51 tester — ingen nye, ren UI/gruppering).
+Ingen migrasjon, ingen endring i datamodell/RLS.
+
+---
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**
