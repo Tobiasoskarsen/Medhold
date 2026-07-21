@@ -3,7 +3,6 @@ import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp } from "@/components/ui";
 import { KravBrevFaner } from "@/components/KravBrevFaner";
-import { DeltOvergangsRamme } from "@/components/DeltOvergangsRamme";
 import { Kravkort } from "./Kravkort";
 import { formaterKortDato } from "@/lib/dato";
 import { formaterBelop } from "@/lib/format";
@@ -57,7 +56,6 @@ export default async function KravListePage() {
   });
 
   return (
-    <DeltOvergangsRamme>
     <Skjermramme className="pt-6">
       <KravBrevFaner aktiv="krav" />
 
@@ -107,6 +105,5 @@ export default async function KravListePage() {
         Opprett nytt krav
       </Link>
     </Skjermramme>
-    </DeltOvergangsRamme>
   );
 }

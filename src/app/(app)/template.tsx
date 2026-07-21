@@ -9,7 +9,7 @@ import { FANE_NAV_NOKKEL } from "@/components/ui/BunnNav";
  * Ruteovergang for de innloggede skjermene. Template re-mountes ved hver
  * navigasjon → gir konsistent inntreden. Kun inntreden, ingen exit (bevisst).
  * - Dybde-navigasjon (åpne et krav e.l.): fade + lite glid (GLID_DYBDE) fra
- *   høyre — bevisst kort slik at delte layoutId-overganger (Motion2 §1)
+ *   høyre — bevisst kort slik at delte View-Transition-overganger (Motion2 §1)
  *   dominerer i stedet for å konkurrere med sideglidet.
  * - Fane-bytte via BunnNav (søsken): ren fade, ingen sideveis glid.
  * MotionConfig i (app)/layout gjør at redusert bevegelse → ren opasitetsfade.

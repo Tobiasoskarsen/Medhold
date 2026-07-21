@@ -143,6 +143,18 @@ body {
 }
 
 /*
+ * Delte elementoverganger på tvers av ruter (Motion2 §1, ViewOvergang.tsx) —
+ * navngitte view-transition-name-par morfes automatisk av nettleseren; her
+ * settes kun varighet/kurve til appens egne tokens (samme mønster som .trykk).
+ * Rot-kryssfaden (hele siden ellers) bruker samme varighet så den ikke skiller
+ * seg ut fra morfingen.
+ */
+::view-transition-group(*) {
+  animation-duration: var(--bevegelse-normal);
+  animation-timing-function: var(--bevegelse-easing);
+}
+
+/*
  * Enkel inntoning for bespoke fullskjermskjermer (velkomst, innlogging) som
  * ikke bruker Skjermramme. Én rolig fade + løft, ikke per-barn-stagger.
  */
@@ -193,5 +205,13 @@ body {
   /* Skeleton står stille ved redusert bevegelse. */
   .skjelett {
     animation: none;
+  }
+  /* ViewOvergang.tsx dropper allerede View Transitions ved redusert bevegelse
+     (matchMedia-sjekk) — dette er kun et forsvar i dybden, siden
+     ::view-transition-*-pseudoelementer ikke treffes av * over. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

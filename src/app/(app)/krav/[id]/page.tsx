@@ -12,7 +12,6 @@ import {
   TidslinjeHendelse,
 } from "@/components/ui";
 import { DomMini } from "@/components/Dom";
-import { DeltOvergangsRamme } from "@/components/DeltOvergangsRamme";
 import { KravNavn, KravBelop } from "./KravHeader";
 import { formaterKortDato } from "@/lib/dato";
 import {
@@ -257,7 +256,6 @@ export default async function KravDetaljPage({
   if (items[0]) items[0].fremhevet = items[0].variant ? false : true;
 
   return (
-    <DeltOvergangsRamme>
     <Skjermramme className="pt-5">
       <div className="mb-4 flex items-center justify-between">
         <Link
@@ -475,6 +473,5 @@ export default async function KravDetaljPage({
         </Pillknapp>
       </div>
     </Skjermramme>
-    </DeltOvergangsRamme>
   );
 }

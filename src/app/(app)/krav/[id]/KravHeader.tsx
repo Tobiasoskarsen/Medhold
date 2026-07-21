@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { m } from "motion/react";
 import { Belop } from "@/components/ui";
 import { DELT_OVERGANG_NOKKEL } from "@/lib/bevegelse";
 
 /**
  * Leser (og fjerner) det delte-overgang-flagget ÉN gang ved mount. Sant →
- * navigasjonen kom fra et kravkort via en delt layoutId-overgang, så beløpet
- * er allerede kjent og skal ikke telle opp på nytt (Motion2 §1). Direkte-
- * lenke/refresh mangler flagget → teller som vanlig.
+ * navigasjonen kom fra et kravkort via en View-Transition, så beløpet er
+ * allerede synlig (morfes fra kortet) og skal ikke telle opp på nytt
+ * (Motion2 §1). Direkte-lenke/refresh mangler flagget → teller som vanlig.
  */
 function brukteDeltOvergang(): boolean {
   if (typeof window === "undefined") return false;
@@ -25,9 +24,9 @@ function brukteDeltOvergang(): boolean {
 }
 
 /**
- * Krav-detaljens navn (H1) — deler layoutId med kravkortet KUN når `delNavn`
- * (samme betingelse som listen: ingen opprinnelig_kreditor, så tekstene er
- * garantert like). Reduced motion håndteres av MotionConfig i (app)-layout.
+ * Krav-detaljens navn (H1) — deler view-transition-name med kravkortet KUN når
+ * `delNavn` (samme betingelse som listen: ingen opprinnelig_kreditor, så
+ * tekstene er garantert like). Detaljen har bare ett slikt element → unikt navn.
  */
 export function KravNavn({
   navn,
@@ -38,20 +37,21 @@ export function KravNavn({
   delId: string;
   delNavn: boolean;
 }) {
-  const felles =
-    "font-serif text-[26px] font-medium tracking-[-0.01em] text-blekk";
-  if (!delNavn) return <h1 className={felles}>{navn}</h1>;
   return (
-    <m.h1 layoutId={`sak-navn-${delId}`} className={felles}>
+    <h1
+      className="font-serif text-[26px] font-medium tracking-[-0.01em] text-blekk"
+      style={
+        delNavn ? { viewTransitionName: `sak-navn-${delId}` } : undefined
+      }
+    >
       {navn}
-    </m.h1>
+    </h1>
   );
 }
 
 /**
- * Krav-detaljens beløp — deler layoutId med kravkortet. Wrapper `Belop` og slår
- * av opptellingen når vi kom via delt overgang (tallet er allerede synlig fra
- * kortet). Delt-flagget leses her, i det samme mount-øyeblikket beløpet vises.
+ * Krav-detaljens beløp — deler view-transition-name med kravkortet, og slår av
+ * opptellingen når vi kom via delt overgang (tallet morfes allerede fra kortet).
  */
 export function KravBelop({
   verdi,
@@ -64,8 +64,11 @@ export function KravBelop({
 }) {
   const [delt] = useState(brukteDeltOvergang);
   return (
-    <m.span layoutId={`sak-belop-${delId}`} className="inline-block">
+    <span
+      className="inline-block"
+      style={{ viewTransitionName: `sak-belop-${delId}` }}
+    >
       <Belop verdi={verdi} tellOpp={!delt} className={className} />
-    </m.span>
+    </span>
   );
 }
