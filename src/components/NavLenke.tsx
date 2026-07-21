@@ -3,17 +3,24 @@
 import Link, { useLinkStatus } from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { PENDING_OPASITET } from "@/lib/bevegelse";
+import { useTrykkFeedback } from "@/lib/useTrykkFeedback";
 
 /**
- * Demper innholdet mens navigasjonen er pending. Må rendres som etterkommer
- * av `Link` (useLinkStatus-kravet) — se NavLenke under.
+ * Demper innholdet mens navigasjonen er pending — ELLER i et garantert
+ * minimumsvindu fra selve trykket (useTrykkFeedback), siden `useLinkStatus`
+ * ofte aldri blir pending når destinasjonen er forhåndshentet (navigasjonen
+ * er ferdig før React rekker å markere den) — da ville ingenting dempes.
+ * Må rendres som etterkommer av `Link` (useLinkStatus-kravet).
  */
 function PendingInnhold({ children }: { children: ReactNode }) {
   const { pending } = useLinkStatus();
+  const { aktiv, start } = useTrykkFeedback();
+  const demp = pending || aktiv;
   return (
     <span
+      onPointerDown={start}
       style={{
-        opacity: pending ? PENDING_OPASITET : 1,
+        opacity: demp ? PENDING_OPASITET : 1,
         transitionProperty: "opacity",
         transitionDuration: "var(--bevegelse-hurtig)",
         transitionTimingFunction: "var(--bevegelse-easing)",

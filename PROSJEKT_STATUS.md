@@ -625,6 +625,65 @@ Samlet liste over påstander/tekster som bør sees av advokat før bred lanserin
 
 ---
 
+## Motion2 (MEDHOLD_MOTION2_ARBEIDSORDRE, ferdig i kode)
+
+Kontinuitet: elementer blir til hverandre i stedet for å byttes ut, og hvert
+trykk gir umiddelbar respons. Bygger på eksisterende `bevegelse.ts`.
+
+- **`bevegelse.ts`-tillegg:** `VARIGHET.stempel` (Dommens inntreden),
+  `GLID_DYBDE` (8px — redusert ruteglid der delte overganger finnes),
+  `PENDING_OPASITET` (nav-feedback), `DELT_OVERGANG_NOKKEL` (sessionStorage-
+  flagg, samme mønster som `FANE_NAV_NOKKEL`).
+- **`src/lib/tell.ts`:** delt `tellOpp(el, til, formater)`-motor; `Belop` og
+  `Nedtelling` (dagtallet ruller nå) bruker begge denne — ingen adferdsendring
+  for Belop utover ny `tellOpp`-prop (default true).
+- **Navigasjonsfeedback:** `src/components/NavLenke.tsx` — drop-in for
+  `next/link`s `Link` via `useLinkStatus` (verifisert tilgjengelig i Next
+  16.2.9), demper lenkeinnhold til ny rute er montert. Byttet inn i ALLE 16
+  filer som brukte `next/link` (aliasert import, ingen JSX-endring i de
+  fleste). Server actions hadde allerede spinnere (uendret).
+- **`Trapp`:** søylene vokser inn (`scaleY` 0→1 fra bunn) med stagger, etiketter
+  fader inn etter. **`Dom` (full):** stempler seg på (`scale`/`rotate`→0) én
+  gang ved mount via statisk `initial`/`animate` (ingen ref-guard — ga
+  `react-hooks/refs`-lint-feil; motion re-triggerer uansett ikke ved re-render
+  med statiske props). `DomMini` uendret (ikke et stempel-øyeblikk).
+- **§6 (skeleton→innhold):** vurdert og bevisst IKKE bygget som egen mekanikk —
+  `Skjermramme` toner allerede inn barna sine (stagger), så innhold «popper»
+  ikke hardt over skeletonen. En ekte kryssfade over Next sin Suspense-grense
+  ble vurdert for skjørt/dyrt for gevinsten. Notert avvik.
+
+**Delte overganger — VIKTIG rettelse underveis:** første forsøk brukte framer
+sin `layoutId` (som §1 foreslo), men `layoutId` virker KUN innenfor ett montert
+motion-tre — det krysser ikke Next App Router-rutegrenser (gammel side
+avmonteres før ny monteres), så effekten var usynlig i praksis (deployet,
+men gjorde ingenting). Bygget om til **native View Transitions**
+(`document.startViewTransition`, browser-API, ingen ny avhengighet):
+- `src/components/ViewOvergang.tsx`: provider i `(app)/layout.tsx` (remountes
+  ikke ved navigasjon). `start(navigate)` kjører navigasjonen inni en
+  transition og fullfører når ny rute faktisk er montert (lyttes via
+  `usePathname`-effekt) — 600ms sikkerhetsnett hvis effekten ikke fyrer.
+  Reduced motion → hopper rett til `navigate()`.
+- `Kravkort.tsx`: egen klikk-handler (ikke `Link`) setter
+  `style.viewTransitionName` KUN på det klikkede kortets navn/beløp rett før
+  navigasjonen (så bare ETT kort morfer, ikke alle i listen), setter
+  `DELT_OVERGANG_NOKKEL`, kaller `start(() => router.push(href))`.
+- `KravHeader.tsx` (`KravNavn`/`KravBelop`): statiske `viewTransitionName` på
+  H1/beløp (unikt per side — ingen kollisjon). `KravBelop` slår av
+  `Belop`s telling når `DELT_OVERGANG_NOKKEL` er satt.
+- `globals.css`: `::view-transition-group(*)` bruker `--bevegelse-normal`/
+  `--bevegelse-easing` (samme mønster som `.trykk`); eksplisitt reduced-motion-
+  forsvar i `@media`-blokken (universalselektoren `*` treffer IKKE
+  `::view-transition-*`-pseudoelementer — egen regel nødvendig).
+- Fjernet `DeltOvergangsRamme.tsx` (framer `domMax`-scoping) — ikke lenger
+  nødvendig, `domAnimation` holder for resten av appen.
+- Next sitt `viewTransition`-configflagg gjelder Reacts eksperimentelle
+  `<ViewTransition>`-komponent, IKKE denne rå browser-API-en — ingen
+  config-endring trengtes.
+
+`build`/`lint`/`test` grønne (51 tester). Ingen migrasjon.
+
+---
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**

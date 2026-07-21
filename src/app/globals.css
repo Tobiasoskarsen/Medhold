@@ -129,6 +129,7 @@ body {
   --bevegelse-hurtig: 150ms;
   --bevegelse-normal: 200ms;
   --bevegelse-rolig: 250ms;
+  --bevegelse-morf: 380ms;
   --bevegelse-easing: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -150,7 +151,7 @@ body {
  * seg ut fra morfingen.
  */
 ::view-transition-group(*) {
-  animation-duration: var(--bevegelse-normal);
+  animation-duration: var(--bevegelse-morf);
   animation-timing-function: var(--bevegelse-easing);
 }
 

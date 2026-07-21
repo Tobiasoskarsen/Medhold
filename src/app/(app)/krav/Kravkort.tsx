@@ -4,8 +4,9 @@ import { useRef, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Kort } from "@/components/ui";
 import { STATUS_ETIKETT, STATUS_STIL, type SakStatus } from "@/lib/types";
-import { DELT_OVERGANG_NOKKEL } from "@/lib/bevegelse";
+import { DELT_OVERGANG_NOKKEL, PENDING_OPASITET } from "@/lib/bevegelse";
 import { useViewOvergang } from "@/components/ViewOvergang";
+import { useTrykkFeedback } from "@/lib/useTrykkFeedback";
 
 /**
  * Ett kort i kravlisten. Ved trykk settes `view-transition-name` på nettopp
@@ -35,6 +36,7 @@ export function Kravkort({
 }) {
   const router = useRouter();
   const { start } = useViewOvergang();
+  const { aktiv, start: startTrykk } = useTrykkFeedback();
   const navnRef = useRef<HTMLSpanElement>(null);
   const belopRef = useRef<HTMLSpanElement>(null);
   const href = `/krav/${id}`;
@@ -61,7 +63,18 @@ export function Kravkort({
   }
 
   return (
-    <a href={href} onClick={klikk} className="block">
+    <a
+      href={href}
+      onClick={klikk}
+      onPointerDown={startTrykk}
+      className="block"
+      style={{
+        opacity: aktiv ? PENDING_OPASITET : 1,
+        transitionProperty: "opacity",
+        transitionDuration: "var(--bevegelse-hurtig)",
+        transitionTimingFunction: "var(--bevegelse-easing)",
+      }}
+    >
       <Kort klikkbar className="hover:border-dempet/40">
         <div className="flex items-start justify-between gap-3">
           <span ref={navnRef} className="text-sm font-medium text-blekk">

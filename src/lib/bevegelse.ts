@@ -9,7 +9,15 @@ export const VARIGHET = {
   rolig: 0.25, // bunnark, større flater
   seremoni: 0.6, // KUN løst sak-haken
   stempel: 0.35, // Dommens inntreden — kjøres én gang ved mount (Motion2 §4)
+  morf: 0.38, // Delt View-Transition kort→detalj (Motion2 §1) — bevisst lenger
+  // enn normal, siden dette er ett øyeblikk per navigasjon, ikke gjentatt.
+  trapp: 0.3, // Trappens søyler (Motion2 §3) — litt lenger enn normal, så
+  // veksten faktisk er synlig, ikke bare et hakk.
 } as const;
+
+// Stagger mellom Trappens fire søyler — større enn den vanlige STIGRING
+// (brukt til lister) slik at trinnene tydelig kommer ett etter ett.
+export const TRAPP_STIGRING = 0.09;
 
 // Glid-avstand (px) for ruteoverganger der delte elementer (view-transition-
 // name) finnes — redusert fra standard 12px slik at morfingen dominerer i

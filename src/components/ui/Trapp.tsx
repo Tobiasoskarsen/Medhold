@@ -2,7 +2,7 @@
 
 import { m } from "motion/react";
 import type { Stadium } from "@/lib/gjeld";
-import { EASING, VARIGHET, STIGRING } from "@/lib/bevegelse";
+import { EASING, VARIGHET, TRAPP_STIGRING } from "@/lib/bevegelse";
 
 /**
  * Trapp — appens identitetsmotiv: fire stigende søyler for inkasso-
@@ -63,9 +63,9 @@ export function Trapp({
               initial={{ scaleY: 0 }}
               animate={{ scaleY: 1 }}
               transition={{
-                duration: VARIGHET.normal,
+                duration: VARIGHET.trapp,
                 ease: EASING,
-                delay: i * STIGRING,
+                delay: i * TRAPP_STIGRING,
               }}
             />
           );
@@ -79,7 +79,7 @@ export function Trapp({
           transition={{
             duration: VARIGHET.normal,
             ease: EASING,
-            delay: ETIKETTER.length * STIGRING,
+            delay: ETIKETTER.length * TRAPP_STIGRING,
           }}
         >
           {ETIKETTER.map((etikett, i) => (
