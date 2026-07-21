@@ -1,17 +1,20 @@
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp } from "@/components/ui";
 import { KravBrevFaner } from "@/components/KravBrevFaner";
+import { DeltOvergangsRamme } from "@/components/DeltOvergangsRamme";
+import { Kravkort } from "./Kravkort";
 import { formaterKortDato } from "@/lib/dato";
 import { formaterBelop } from "@/lib/format";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
-import { STATUS_ETIKETT, STATUS_STIL, type SakStatus } from "@/lib/types";
+import type { SakStatus } from "@/lib/types";
 
 type SakRad = {
   id: string;
   kreditor: string | null;
   tittel: string;
+  opprinnelig_kreditor: string | null;
   belop_totalt: number | null;
   stadium: Stadium | null;
   status: SakStatus;
@@ -23,7 +26,9 @@ export default async function KravListePage() {
   const [{ data: sakData }, { data: fristData }] = await Promise.all([
     supabase
       .from("saker")
-      .select("id, kreditor, tittel, belop_totalt, stadium, status, sist_endret")
+      .select(
+        "id, kreditor, tittel, opprinnelig_kreditor, belop_totalt, stadium, status, sist_endret",
+      )
       .order("sist_endret", { ascending: false }),
     supabase
       .from("frister")
@@ -52,6 +57,7 @@ export default async function KravListePage() {
   });
 
   return (
+    <DeltOvergangsRamme>
     <Skjermramme className="pt-6">
       <KravBrevFaner aktiv="krav" />
 
@@ -78,30 +84,14 @@ export default async function KravListePage() {
               .join(" · ");
             return (
               <li key={sak.id}>
-                <Link href={`/krav/${sak.id}`} className="block">
-                  <Kort klikkbar className="hover:border-dempet/40">
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="text-sm font-medium text-blekk">
-                        {sak.kreditor ?? sak.tittel}
-                      </span>
-                      {belop && (
-                        <span className="shrink-0 text-sm font-medium text-blekk">
-                          {belop} kr
-                        </span>
-                      )}
-                    </div>
-                    {underlinje && (
-                      <p className="mt-1 text-xs text-dempet">{underlinje}</p>
-                    )}
-                    {sak.status === "venter_pa_svar" && (
-                      <span
-                        className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
-                      >
-                        {STATUS_ETIKETT.venter_pa_svar}
-                      </span>
-                    )}
-                  </Kort>
-                </Link>
+                <Kravkort
+                  id={sak.id}
+                  navn={sak.kreditor ?? sak.tittel}
+                  delNavn={!sak.opprinnelig_kreditor}
+                  belop={belop}
+                  underlinje={underlinje}
+                  status={sak.status}
+                />
               </li>
             );
           })}
@@ -117,5 +107,6 @@ export default async function KravListePage() {
         Opprett nytt krav
       </Link>
     </Skjermramme>
+    </DeltOvergangsRamme>
   );
 }

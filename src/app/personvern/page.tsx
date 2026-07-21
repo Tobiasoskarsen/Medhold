@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { ChevronLeft } from "lucide-react";
 import { APP_NAME } from "@/lib/brand";
 

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 
 /**
  * Segmentert veksler mellom kravlisten og brevarkivet. Begge bor under

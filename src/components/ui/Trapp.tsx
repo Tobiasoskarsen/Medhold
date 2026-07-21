@@ -1,10 +1,18 @@
+"use client";
+
+import { m } from "motion/react";
 import type { Stadium } from "@/lib/gjeld";
+import { EASING, VARIGHET, STIGRING } from "@/lib/bevegelse";
 
 /**
  * Trapp — appens identitetsmotiv: fire stigende søyler for inkasso-
  * eskaleringen (Varsel → Oppfordring → Forliksråd → Namsmann). Passerte trinn
  * i lys aksent, nåværende i full aksent, kommende i strek. `kompakt` (uten
  * etiketter) brukes på sakskortene på Hjem.
+ *
+ * Søylene vokser inn (scaleY 0→1 fra bunnlinjen) med stagger, én gang ved
+ * mount (Motion2 §3); etikettene fader inn etter siste søyle. Reduced motion
+ * (MotionConfig i (app)-layout) → vises ferdig uten animasjon.
  *
  * Presentasjon — endrer ikke gjeld-logikken (fylteSegmenter står urørt).
  */
@@ -49,15 +57,31 @@ export function Trapp({
           const farge =
             nr < naa ? "bg-aksent/30" : nr === naa ? "bg-aksent" : "bg-strek";
           return (
-            <span
+            <m.span
               key={i}
-              className={`flex-1 rounded-[3px] ${hoyder[i]} ${farge}`}
+              className={`flex-1 origin-bottom rounded-[3px] ${hoyder[i]} ${farge}`}
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{
+                duration: VARIGHET.normal,
+                ease: EASING,
+                delay: i * STIGRING,
+              }}
             />
           );
         })}
       </div>
       {!kompakt && (
-        <div className="mt-1.5 flex justify-between text-[10.5px] text-dempet">
+        <m.div
+          className="mt-1.5 flex justify-between text-[10.5px] text-dempet"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            duration: VARIGHET.normal,
+            ease: EASING,
+            delay: ETIKETTER.length * STIGRING,
+          }}
+        >
           {ETIKETTER.map((etikett, i) => (
             <span
               key={etikett}
@@ -66,7 +90,7 @@ export function Trapp({
               {etikett}
             </span>
           ))}
-        </div>
+        </m.div>
       )}
     </div>
   );

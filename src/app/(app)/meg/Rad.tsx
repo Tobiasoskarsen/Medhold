@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 

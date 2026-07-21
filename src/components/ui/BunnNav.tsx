@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { usePathname } from "next/navigation";
 import { Home, Folder, User, type LucideIcon } from "lucide-react";
 import { haptikk } from "@/lib/haptikk";

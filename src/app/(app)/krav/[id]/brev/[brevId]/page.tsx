@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";

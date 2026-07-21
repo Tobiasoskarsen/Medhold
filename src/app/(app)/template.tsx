@@ -2,13 +2,15 @@
 
 import { useState, type ReactNode } from "react";
 import { m } from "motion/react";
-import { VARIGHET, FJAER } from "@/lib/bevegelse";
+import { VARIGHET, FJAER, GLID_DYBDE } from "@/lib/bevegelse";
 import { FANE_NAV_NOKKEL } from "@/components/ui/BunnNav";
 
 /**
  * Ruteovergang for de innloggede skjermene. Template re-mountes ved hver
  * navigasjon → gir konsistent inntreden. Kun inntreden, ingen exit (bevisst).
- * - Dybde-navigasjon (åpne et krav e.l.): fade + 12px glid fra høyre.
+ * - Dybde-navigasjon (åpne et krav e.l.): fade + lite glid (GLID_DYBDE) fra
+ *   høyre — bevisst kort slik at delte layoutId-overganger (Motion2 §1)
+ *   dominerer i stedet for å konkurrere med sideglidet.
  * - Fane-bytte via BunnNav (søsken): ren fade, ingen sideveis glid.
  * MotionConfig i (app)/layout gjør at redusert bevegelse → ren opasitetsfade.
  */
@@ -38,7 +40,7 @@ export default function Template({ children }: { children: ReactNode }) {
 
   return (
     <m.div
-      initial={{ opacity: 0, x: 12 }}
+      initial={{ opacity: 0, x: GLID_DYBDE }}
       animate={{ opacity: 1, x: 0 }}
       transition={FJAER}
     >

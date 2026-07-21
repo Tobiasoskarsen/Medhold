@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp, Pill, Belop, Trapp } from "@/components/ui";
 import { formaterKortDato, fristNærhet } from "@/lib/dato";

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp } from "@/components/ui";

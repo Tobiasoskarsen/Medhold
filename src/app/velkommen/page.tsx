@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { Primærknapp } from "@/components/ui";
 import { APP_NAME } from "@/lib/brand";
 

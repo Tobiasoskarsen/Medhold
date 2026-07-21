@@ -1,7 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { haptikk } from "@/lib/haptikk";
 
 const basis =

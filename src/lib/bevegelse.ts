@@ -8,7 +8,24 @@ export const VARIGHET = {
   normal: 0.2, // inntreden av elementer, ruteovergang
   rolig: 0.25, // bunnark, større flater
   seremoni: 0.6, // KUN løst sak-haken
+  stempel: 0.35, // Dommens inntreden — kjøres én gang ved mount (Motion2 §4)
 } as const;
+
+// Glid-avstand (px) for ruteoverganger der delte elementer (layoutId) finnes
+// — redusert fra standard 12px slik at layout-animasjonen dominerer i stedet
+// for å konkurrere med sideglidet (Motion2 §1).
+export const GLID_DYBDE = 8;
+
+// Opasitet på lenkeinnhold mens navigasjonen er pending (Motion2 §2) — umiddel-
+// bar respons ved trykk, beholdes til ny rute er montert.
+export const PENDING_OPASITET = 0.6;
+
+// sessionStorage-flagg satt av kravkortet rett før trykk (Motion2 §1), lest og
+// fjernet av krav-detaljens beløp ved mount: forteller at beløpet allerede er
+// kjent (kom via delt layoutId-overgang) — ingen ny telling. Direktevisninger/
+// refresh mangler flagget og teller opp som før. Samme mønster som
+// FANE_NAV_NOKKEL i BunnNav.tsx.
+export const DELT_OVERGANG_NOKKEL = "medhold-delt-overgang";
 
 // Easing for CSS-transitions (speiles av --bevegelse-easing i globals.css).
 export const EASING_CSS = "cubic-bezier(0.32, 0.72, 0, 1)";

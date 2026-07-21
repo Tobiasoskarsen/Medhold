@@ -1,8 +1,12 @@
+"use client";
+
 // Dommen — signaturøyeblikket ved et gebyrfunn (designordre §2.1). Ren
 // presentasjon av det lagrede gebyrsjekk-resultatet; ingen vurderingslogikk her.
-import Link from "next/link";
+import { m } from "motion/react";
+import { NavLenke as Link } from "@/components/NavLenke";
 import type { GebyrsjekkResultat, Kostnadstype, LinjeResultat } from "@/lib/gebyr";
 import { formaterDato } from "@/lib/dato";
+import { FJAER } from "@/lib/bevegelse";
 
 const TYPE_ORD: Record<Kostnadstype, string> = {
   purregebyr: "purregebyr",
@@ -49,8 +53,13 @@ export function Dom({
   if (linjer.length === 0) return null;
   const total = totalOver(linjer);
 
+  // Stempelet: én gang ved mount. Statisk animate → motion re-trigger ikke ved
+  // re-render (Motion2 §4). Reduced motion → kun opasitet (MotionConfig).
   return (
-    <div
+    <m.div
+      initial={{ scale: 1.04, rotate: -0.6, opacity: 0 }}
+      animate={{ scale: 1, rotate: 0, opacity: 1 }}
+      transition={FJAER}
       className={`relative overflow-hidden rounded-2xl border-[1.5px] border-dom-rod bg-flate p-[18px] ${className}`}
     >
       <span
@@ -88,7 +97,7 @@ export function Dom({
           Bruk funnet i innsigelsen
         </Link>
       )}
-    </div>
+    </m.div>
   );
 }
 

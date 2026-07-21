@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { notFound } from "next/navigation";
 import { ChevronLeft, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -10,9 +10,10 @@ import {
   Nedtelling,
   Tidslinje,
   TidslinjeHendelse,
-  Belop,
 } from "@/components/ui";
 import { DomMini } from "@/components/Dom";
+import { DeltOvergangsRamme } from "@/components/DeltOvergangsRamme";
+import { KravNavn, KravBelop } from "./KravHeader";
 import { formaterKortDato } from "@/lib/dato";
 import {
   STADIER,
@@ -256,6 +257,7 @@ export default async function KravDetaljPage({
   if (items[0]) items[0].fremhevet = items[0].variant ? false : true;
 
   return (
+    <DeltOvergangsRamme>
     <Skjermramme className="pt-5">
       <div className="mb-4 flex items-center justify-between">
         <Link
@@ -269,14 +271,17 @@ export default async function KravDetaljPage({
       </div>
 
       {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
-      <h1 className="font-serif text-[26px] font-medium tracking-[-0.01em] text-blekk">
-        {hovednavn}
-      </h1>
+      <KravNavn
+        navn={hovednavn}
+        delId={sak.id}
+        delNavn={!sak.opprinnelig_kreditor}
+      />
 
       {sak.belop_totalt != null && (
         <p className="mt-2">
-          <Belop
+          <KravBelop
             verdi={sak.belop_totalt}
+            delId={sak.id}
             className="font-serif text-[38px] font-medium tracking-[-0.02em] tabular-nums text-blekk"
           />
         </p>
@@ -470,5 +475,6 @@ export default async function KravDetaljPage({
         </Pillknapp>
       </div>
     </Skjermramme>
+    </DeltOvergangsRamme>
   );
 }

@@ -1,21 +1,25 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { animate, useReducedMotion } from "motion/react";
-import { FJAER } from "@/lib/bevegelse";
+import { useReducedMotion } from "motion/react";
+import { tellOpp } from "@/lib/tell";
 import { formaterBelop } from "@/lib/format";
 
 /**
- * Beløp som teller opp fra 0 til verdien én gang ved mount (FJAER-følelse).
- * Oppdaterer textContent direkte (ingen React-state per frame). Ved redusert
- * bevegelse vises sluttverdien direkte. Rendrer «{tall} kr».
+ * Beløp som teller opp fra 0 til verdien én gang ved mount (FJAER-følelse, via
+ * delt `tellOpp`-motor). Ved redusert bevegelse, eller når `tellOpp={false}`
+ * (verdien er allerede kjent — f.eks. etter en delt layout-overgang, Motion2
+ * §1), vises sluttverdien direkte uten telling. Rendrer «{tall} kr».
  */
 export function Belop({
   verdi,
   className,
+  tellOpp: skalTelle = true,
 }: {
   verdi: number;
   className?: string;
+  /** Sett til false når verdien allerede er vist (unngår dobbel telling). */
+  tellOpp?: boolean;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const redusert = useReducedMotion();
@@ -23,18 +27,12 @@ export function Belop({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (redusert) {
+    if (redusert || !skalTelle) {
       el.textContent = `${formaterBelop(verdi)} kr`;
       return;
     }
-    const kontroll = animate(0, verdi, {
-      ...FJAER,
-      onUpdate: (v) => {
-        el.textContent = `${formaterBelop(Math.round(v))} kr`;
-      },
-    });
-    return () => kontroll.stop();
-  }, [verdi, redusert]);
+    return tellOpp(el, verdi, (v) => `${formaterBelop(v)} kr`);
+  }, [verdi, redusert, skalTelle]);
 
   // Sluttverdien er også initielt innhold (riktig uten JS / ved reduksjon).
   return (

@@ -1,4 +1,9 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { useReducedMotion } from "motion/react";
 import { dagerTil } from "@/lib/dato";
+import { tellOpp } from "@/lib/tell";
 
 /** «24. juli» — dag + full måned, uten år (som i mockupen). */
 function langDato(iso: string): string {
@@ -25,6 +30,19 @@ export function Nedtelling({
   const d = dagerTil(forfallsdato);
   const rod = d <= 10; // ≤10 dager igjen, i dag, eller utløpt
   const tallFarge = rod ? "text-dom-rod" : "text-blekk";
+  const ref = useRef<HTMLSpanElement>(null);
+  const redusert = useReducedMotion();
+
+  // Dagtallet ruller 0 → d ved mount (delt tellOpp-motor, Motion2 §5).
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || d <= 0) return;
+    if (redusert) {
+      el.textContent = String(d);
+      return;
+    }
+    return tellOpp(el, d, (v) => String(v));
+  }, [d, redusert]);
 
   return (
     <div
@@ -48,6 +66,7 @@ export function Nedtelling({
         ) : (
           <>
             <span
+              ref={ref}
               className={`font-serif text-[26px] font-semibold leading-none tabular-nums ${tallFarge}`}
             >
               {d}

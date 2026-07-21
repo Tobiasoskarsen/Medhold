@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLenke as Link } from "@/components/NavLenke";
 import { ChevronLeft, Plus } from "lucide-react";
 import { Skjermramme } from "@/components/ui";
 import { NyttKravSkjema } from "./NyttKravSkjema";
