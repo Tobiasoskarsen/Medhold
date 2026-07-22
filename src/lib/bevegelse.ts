@@ -24,6 +24,10 @@ export const TRAPP_STIGRING = 0.09;
 // stedet for å konkurrere med sideglidet (Motion2 §1).
 export const GLID_DYBDE = 8;
 
+// Glid-avstand (px) for steg-bytte i onboarding-karusellen og logg inn sin
+// kontakt↔kode-overgang (Onboarding/Logg inn-arbeidsordre §1.3/§2.2).
+export const STEG_GLID = 28;
+
 // Opasitet på lenkeinnhold mens navigasjonen er pending (Motion2 §2) — umiddel-
 // bar respons ved trykk, beholdes til ny rute er montert.
 export const PENDING_OPASITET = 0.6;

@@ -730,6 +730,74 @@ Ingen migrasjon, ingen endring i datamodell/RLS.
 
 ---
 
+## Onboarding + Logg inn (MEDHOLD_ONBOARDING_LOGGINN_ARBEIDSORDRE, ferdig i kode)
+
+Én sammenhengende reise: velkomst → 4-stegs onboarding → logg inn. Tekst og
+utseende fulgt ordrett fra de to godkjente mockupene, verifisert i browser
+(DOM-inspeksjon — raw `style`/`aria-*`-attributter, ikke `getComputedStyle`
+som viste seg upålitelig i dette preview-miljøet).
+
+- **`/velkommen`:** tynn server-wrapper (`page.tsx`, redirect til `/` for
+  innlogget bruker med `har_sett_onboarding=true`) + klientkomponent
+  `Onboarding.tsx` med intern steg-tilstand (ingen egne URL-er). Fire
+  presentasjonskomponenter i `velkommen/steg/` (Brev/Trapp/Dom/Veier) — egne,
+  dekorative SVG/CSS-illustrasjoner, IKKE de ekte `Trapp`/`Dom`-UI-komponentene
+  (som krever ekte sak-/gebyrsjekk-data onboarding ikke har).
+- Steg-bytte: `opacity` + `translateX` (ny token `STEG_GLID=28` i
+  bevegelse.ts) med `VARIGHET.normal`/`EASING`, alle fire steg alltid montert
+  og CSS-stablet (unngår høyde-kollaps som ren `position:absolute` uten fast
+  høyde ville gitt). Prikker, «Hopp over» (steg 1–3), ghost-tilbake (steg 2–4),
+  «Kom i gang» → setter `localStorage` + `/logg-inn` — alt verifisert i
+  browser.
+- **`har_sett_onboarding`:** satt i `auth/callback/route.ts` (Google, sammen
+  med fornavn-berikelsen) og i `logg-inn/page.tsx` sin `verifiser()`
+  (e-postkode/SMS). Begge ikke-blokkerende (try/catch, feiler aldri
+  innloggingen).
+- **Logg inn:** `MetodeVeksler.tsx` (fysisk glidende bakgrunn,
+  `translateX(0%/100%)`) og `NyttForsokLenke.tsx` (ren refaktor av
+  nedtellingen). Kontakt↔kode-steg bruker samme CSS-stablingsteknikk som
+  onboarding. Kodebokser: 44×56px, serif, stagger via eksisterende `STIGRING`
+  (ikke `TRAPP_STIGRING`), kun ved steg-bytte (ikke tastetrykk, verifisert).
+  Boksdimensjoner/radius oppdatert til mockup.
+
+Valg tatt underveis:
+1. **`/intro` (post-login, `sett_intro`-flagg) er en SEPARAT, eksisterende
+   omvisning denne ordren ikke nevner og IKKE rører** (guardrail 3 forbyr
+   redirect-endringer utover §1.5). En helt ny bruker vil derfor møte BÅDE
+   den nye pre-login-onboardingen OG den gamle post-login-introen rett
+   etter hverandre — mulig redundans, flagget for vurdering, ikke løst her.
+2. **E-postkode/SMS har ingen egen server-callback-rute** —
+   `auth/confirm/route.ts` viste seg ubrukt (ingen referanser i kodebasen;
+   den ekte flyten verifiserer klientsidig i `logg-inn/page.tsx`). Satte
+   derfor `har_sett_onboarding` der innloggingen faktisk fullføres
+   (`verifiser()`s suksess-gren, bruker `data.user` fra selve
+   `verifyOtp`-svaret — ingen ekstra rundtur), funksjonelt likeverdig med
+   Google sin server-callback.
+3. **Footnote-teksten «… engangskode på seks tegn» er IKKE hardkodet** —
+   e-post-koden er faktisk 8 tegn i denne appen (admin.generateLink sin
+   email_otp), kun SMS er 6. Hardkodet «seks» ville vært direkte feil for
+   e-postbrukere. Erstattet med `{kodeLengde}` interpolert fra ekte state —
+   samme mønster, korrekt tall.
+4. **Gammel «‹ tilbake til /velkommen»-affordance fra logg-inn er borte** —
+   ny tilbake-knapp vises KUN på kode-steget (som mockup, opacity 0 + ikke-
+   interaktiv på inntast-steget) og går kun til «inntast», aldri til
+   `/velkommen`. Nettleserens egen tilbakeknapp dekker fortsatt den veien.
+5. **Gamle `/velkommen`-elementer uten motsvar i ny mockup er fjernet**: «Jeg
+   har allerede en konto»-lenken og «Gratis å forstå brevet ditt ·
+   Norskutviklet»-fotteksten. Alle brukere (nye og eksisterende) går via
+   samme «Kom i gang» → `/logg-inn`, som uansett håndterer begge.
+6. **`MetodeVekslers` glidende bakgrunn beholder `transform` under redusert
+   bevegelse** (i motsetning til steg-bytte/kodebokser, som fjerner
+   `transform` helt) — den globale CSS-regelen
+   (`transition-duration:0.01ms!important`) gir et øyeblikkelig hopp til
+   riktig posisjon uten synlig glid; å fjerne transformen helt ville i
+   stedet SKJULT hvilken metode som er valgt. Bevisst, verifisert valg.
+
+`build`/`lint`/`test` grønne (51 tester — ren UI/motion, ingen ny
+forretningslogikk). Ingen migrasjon.
+
+---
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**

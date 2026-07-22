@@ -6,14 +6,18 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type CSSProperties,
   type KeyboardEvent,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { useReducedMotion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { Primærknapp } from "@/components/ui";
 import { normaliserTelefon, telefonLoginPa } from "@/lib/telefon";
+import { STEG_GLID, STIGRING } from "@/lib/bevegelse";
 import { GoogleKnapp } from "./GoogleKnapp";
+import { MetodeVeksler } from "./MetodeVeksler";
+import { NyttForsokLenke } from "./NyttForsokLenke";
 import { beOmKode } from "./actions";
 
 export default function LoggInnPage() {
@@ -26,14 +30,16 @@ export default function LoggInnPage() {
 
 const KODE_LENGDE = 6;
 type Metode = "epost" | "telefon";
+type Steg = "inntast" | "kode";
 
 function LoggInn() {
   const router = useRouter();
   const params = useSearchParams();
+  const redusert = useReducedMotion();
   const telefonPa = telefonLoginPa();
 
   const [metode, setMetode] = useState<Metode>("epost");
-  const [steg, setSteg] = useState<"inntast" | "kode">("inntast");
+  const [steg, setSteg] = useState<Steg>("inntast");
   const [epost, setEpost] = useState("");
   const [telefon, setTelefon] = useState("");
   const [sendtTil, setSendtTil] = useState(""); // normalisert kontakt kode gikk til
@@ -59,6 +65,26 @@ function LoggInn() {
     const t = setTimeout(() => setNedtelling((n) => n - 1), 1000);
     return () => clearTimeout(t);
   }, [nedtelling]);
+
+  // Etter vellykket verifisering: sett har_sett_onboarding hvis det mangler,
+  // slik at «Kom i gang»-onboardingen aldri vises igjen for en kjent bruker
+  // (Onboarding/Logg inn-arbeidsordre §1.5). E-postkode/SMS har ingen egen
+  // server-callback-rute (verifiseringen skjer her, klientsidig) — dette er
+  // derfor det funksjonelt tilsvarende stedet til Google sin auth/callback.
+  async function settOnboardingSettHvisMangler(
+    supabase: ReturnType<typeof createClient>,
+    bruker: { user_metadata?: Record<string, unknown> } | null,
+  ) {
+    try {
+      if (bruker && !bruker.user_metadata?.har_sett_onboarding) {
+        await supabase.auth.updateUser({
+          data: { har_sett_onboarding: true },
+        });
+      }
+    } catch (feil) {
+      console.error("Kunne ikke sette har_sett_onboarding", feil);
+    }
+  }
 
   async function sendKode() {
     setLaster(true);
@@ -110,7 +136,7 @@ function LoggInn() {
     setLaster(true);
     setFeil(null);
     const supabase = createClient();
-    const { error } =
+    const { data, error } =
       metode === "epost"
         ? await supabase.auth.verifyOtp({
             email: sendtTil,
@@ -130,6 +156,7 @@ function LoggInn() {
       bokser.current[0]?.focus();
       return;
     }
+    await settOnboardingSettHvisMangler(supabase, data.user);
     router.push("/");
     router.refresh();
   }
@@ -172,26 +199,76 @@ function LoggInn() {
     setFeil(null);
   }
 
+  function tilInntast() {
+    setSteg("inntast");
+    setNedtelling(0);
+  }
+
+  const feltKlasse =
+    "mt-1.5 w-full rounded-xl border-[1.5px] border-strek bg-flate px-[15px] py-3.5 text-[15.5px] text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+
+  // Steg-overgang (opacity + translateX) — samme mønster som onboardingen.
+  function stegStil(denneSteg: Steg): CSSProperties {
+    const aktiv = steg === denneSteg;
+    // "inntast" ligger til venstre for "kode" i rekkefølgen.
+    const forlater = denneSteg === "inntast" && steg === "kode";
+    return {
+      opacity: aktiv ? 1 : 0,
+      transform: redusert
+        ? undefined
+        : `translateX(${aktiv ? 0 : forlater ? -STEG_GLID : STEG_GLID}px)`,
+      pointerEvents: aktiv ? "auto" : "none",
+      transitionProperty: "opacity, transform",
+      transitionDuration: "var(--bevegelse-normal)",
+      transitionTimingFunction: "var(--bevegelse-easing)",
+    };
+  }
+
+  function metodeFeltStil(dennMetode: Metode): CSSProperties {
+    const aktiv = metode === dennMetode;
+    return {
+      opacity: aktiv ? 1 : 0,
+      pointerEvents: aktiv ? "auto" : "none",
+      transitionProperty: "opacity",
+      transitionDuration: "var(--bevegelse-hurtig)",
+      transitionTimingFunction: "var(--bevegelse-easing)",
+    };
+  }
+
   return (
-    <main className="inntoning mx-auto flex min-h-screen w-full max-w-[420px] flex-col px-6 pt-6">
-      <button
-        type="button"
-        onClick={() =>
-          steg === "kode" ? setSteg("inntast") : router.push("/velkommen")
-        }
-        aria-label="Tilbake"
-        className="mb-6 -ml-1 flex size-8 items-center justify-center text-dempet transition hover:text-blekk"
-      >
-        <ChevronLeft className="size-5" aria-hidden />
-      </button>
+    <main className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col">
+      <div className="flex min-h-10 items-center px-6 pt-6">
+        <button
+          type="button"
+          onClick={tilInntast}
+          className="text-[13px] font-semibold text-dempet"
+          style={{
+            opacity: steg === "kode" ? 1 : 0,
+            pointerEvents: steg === "kode" ? "auto" : "none",
+            transitionProperty: "opacity",
+            transitionDuration: "var(--bevegelse-hurtig)",
+            transitionTimingFunction: "var(--bevegelse-easing)",
+          }}
+        >
+          ‹ Tilbake
+        </button>
+      </div>
 
-      <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
-        Logg inn i Medhold
-      </h1>
+      <div className="relative grid px-6">
+        {/* STEG: inntast (kontakt) */}
+        <div
+          className="[grid-area:1/1] flex flex-col"
+          style={stegStil("inntast")}
+          aria-hidden={steg !== "inntast"}
+        >
+          <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+            Logg inn i Medhold
+          </h1>
+          <p className="mt-2 text-[13.5px] leading-[1.55] text-dempet">
+            Rolig og trygt — vi trenger bare én ting å sende koden til.
+          </p>
 
-      {steg === "inntast" ? (
-        <>
-          <div className="mt-5">
+          <div className="mt-[22px]">
             <GoogleKnapp />
           </div>
           <div className="my-5 flex items-center gap-3">
@@ -201,90 +278,85 @@ function LoggInn() {
           </div>
 
           {telefonPa && (
-            <div className="mt-4 inline-flex self-start rounded-[10px] border-[0.5px] border-strek bg-flate p-0.5">
-              {(["epost", "telefon"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => byttMetode(m)}
-                  aria-pressed={metode === m}
-                  className={`trykk rounded-lg px-4 py-1.5 text-[13px] font-medium transition ${
-                    metode === m ? "bg-aksent text-white" : "text-dempet"
-                  }`}
-                >
-                  {m === "epost" ? "E-post" : "Telefon"}
-                </button>
-              ))}
+            <div className="mb-4">
+              <MetodeVeksler metode={metode} onVelg={byttMetode} />
             </div>
           )}
 
-          <p className="mt-4 text-[13px] leading-relaxed text-dempet">
-            {metode === "epost"
-              ? "Ingen passord å huske — vi sender deg en engangskode på e-post."
-              : "Ingen passord å huske — vi sender deg en engangskode på SMS."}
-          </p>
-
           <form
-            className="mt-5"
             onSubmit={(e) => {
               e.preventDefault();
               if (!laster) sendKode();
             }}
           >
-            {metode === "epost" ? (
-              <>
-                <label
-                  htmlFor="epost"
-                  className="text-[13px] font-medium text-blekk"
-                >
+            <div className="relative grid">
+              <label
+                className="flex flex-col [grid-area:1/1]"
+                style={metodeFeltStil("epost")}
+              >
+                <span className="text-[12.5px] font-semibold text-blekk">
                   E-postadresse
-                </label>
+                </span>
                 <input
-                  id="epost"
                   type="email"
-                  required
                   autoComplete="email"
                   inputMode="email"
                   value={epost}
                   onChange={(e) => setEpost(e.target.value)}
                   placeholder="navn@epost.no"
-                  className="mt-1.5 mb-4 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+                  className={feltKlasse}
                 />
-              </>
-            ) : (
-              <>
-                <label
-                  htmlFor="telefon"
-                  className="text-[13px] font-medium text-blekk"
-                >
-                  Telefonnummer
-                </label>
+              </label>
+              <label
+                className="flex flex-col [grid-area:1/1]"
+                style={metodeFeltStil("telefon")}
+              >
+                <span className="text-[12.5px] font-semibold text-blekk">
+                  Mobilnummer
+                </span>
                 <input
-                  id="telefon"
                   type="tel"
-                  required
                   autoComplete="tel"
                   inputMode="tel"
                   value={telefon}
                   onChange={(e) => setTelefon(e.target.value)}
-                  placeholder="412 34 567"
-                  className="mt-1.5 mb-4 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+                  placeholder="912 34 567"
+                  className={feltKlasse}
                 />
-              </>
+              </label>
+            </div>
+
+            {melding && (
+              <p className="mt-4 text-[13px] text-aksent">{melding}</p>
             )}
-            {melding && <p className="mb-3 text-[13px] text-aksent">{melding}</p>}
-            {feil && <p className="mb-3 text-[13px] text-red-700">{feil}</p>}
-            <Primærknapp type="submit" disabled={laster}>
-              {laster ? "Sender …" : "Send kode"}
-            </Primærknapp>
+            {feil && <p className="mt-4 text-[13px] text-red-700">{feil}</p>}
+            <div className="mt-[18px]">
+              <Primærknapp type="submit" disabled={laster}>
+                {laster ? "Sender …" : "Send meg en kode"}
+              </Primærknapp>
+            </div>
           </form>
-        </>
-      ) : (
-        <>
-          <p className="mt-4 text-[13px] leading-relaxed text-dempet">
-            Vi sendte en kode til {sendtTil}. Skriv den inn under.
+
+          <p className="mt-3.5 pb-8 text-[13px] leading-[1.55] text-dempet">
+            Ingen passord å huske — vi sender en engangskode på {kodeLengde}{" "}
+            tegn.
           </p>
-          <div className="mt-6 flex justify-center gap-1.5">
+        </div>
+
+        {/* STEG: kode */}
+        <div
+          className="[grid-area:1/1] flex flex-col"
+          style={stegStil("kode")}
+          aria-hidden={steg !== "kode"}
+        >
+          <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+            Skriv inn koden
+          </h1>
+          <p className="mt-2.5 text-[13.5px] text-dempet">
+            Sendt til <b className="font-semibold text-blekk">{sendtTil}</b>
+          </p>
+
+          <div className="mt-[22px] flex justify-center gap-[9px]">
             {siffer.map((s, i) => (
               <input
                 key={i}
@@ -299,35 +371,42 @@ function LoggInn() {
                 onKeyDown={(e) => håndterTast(i, e)}
                 onPaste={håndterLim}
                 aria-label={`Siffer ${i + 1}`}
-                className={`h-[42px] w-8 rounded-lg border-[0.5px] text-center text-[17px] font-medium text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30 ${
+                tabIndex={steg === "kode" ? 0 : -1}
+                className={`flex h-[56px] w-[44px] items-center justify-center rounded-xl border-[1.5px] bg-flate text-center font-serif text-[24px] font-semibold text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30 ${
                   s ? "border-aksent" : "border-strek"
                 }`}
+                style={{
+                  opacity: steg === "kode" ? 1 : 0,
+                  transform:
+                    steg === "kode" || redusert
+                      ? "none"
+                      : "translateY(8px) scale(0.9)",
+                  transitionProperty: "opacity, transform, border-color",
+                  transitionDuration:
+                    "var(--bevegelse-normal), var(--bevegelse-normal), var(--bevegelse-hurtig)",
+                  transitionTimingFunction: "var(--bevegelse-easing)",
+                  transitionDelay: redusert ? "0ms" : `${i * STIGRING * 1000}ms`,
+                }}
               />
             ))}
           </div>
 
           {feil && (
-            <p className="mt-4 text-center text-[13px] text-red-700">{feil}</p>
+            <p className="mt-4 text-center text-[13px] text-red-700">
+              {feil}
+            </p>
           )}
 
-          <p className="mt-5 text-center text-[13px] text-dempet">
-            {nedtelling > 0 ? (
-              <span>Send ny kode om {nedtelling} s</span>
-            ) : (
-              <button
-                type="button"
-                onClick={sendKode}
-                disabled={laster}
-                className="text-aksent transition hover:opacity-80 disabled:opacity-50"
-              >
-                Send ny kode
-              </button>
-            )}
-          </p>
-        </>
-      )}
+          <NyttForsokLenke
+            sekunder={nedtelling}
+            onSendPaNytt={sendKode}
+            deaktivert={laster}
+          />
+          <div className="pb-8" />
+        </div>
+      </div>
 
-      <p className="mt-auto pb-8 pt-8 text-center text-xs text-dempet">
+      <p className="mt-auto px-6 pb-8 pt-8 text-center text-xs text-dempet">
         Første innlogging oppretter kontoen din automatisk.
       </p>
     </main>
