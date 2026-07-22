@@ -25,9 +25,10 @@ type AapenFrist = {
   saker: SakKobling | null;
 };
 
-/** Dagens dato som eyebrow: «Torsdag 16. juli». */
+/** Dagens dato som eyebrow: «Torsdag 16. juli» (norsk tid — se dato.ts). */
 function idagEyebrow(): string {
   const s = new Date().toLocaleDateString("nb-NO", {
+    timeZone: "Europe/Oslo",
     weekday: "long",
     day: "numeric",
     month: "long",

@@ -6,6 +6,7 @@ import {
   type FristVarsel,
 } from "@/lib/epost";
 import { oppfolgingsKandidater, type VenterSak } from "@/lib/oppfolging";
+import { idagOslo } from "@/lib/dato";
 
 // Kjøres av Vercel Cron én gang i døgnet (se vercel.json). Kan ta litt tid hvis
 // mange e-poster skal ut — gi den rom slik at den ikke kuttes av timeouten.
@@ -15,16 +16,6 @@ export const dynamic = "force-dynamic";
 // Hvor mange dager før forfall vi sender påminnelse. Gir opptil tre rolige nudge
 // per frist. Én rad i sendte_varsler per (frist, terskel) hindrer duplikater.
 const TERSKLER = [7, 3, 1] as const;
-
-/** Dagens dato i norsk tidssone som YYYY-MM-DD (en-CA gir ISO-format). */
-function idagOslo(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Oslo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 /** Hele dager mellom to rene datoer (YYYY-MM-DD), tolket som UTC-midnatt. */
 function dagerMellom(fra: string, til: string): number {

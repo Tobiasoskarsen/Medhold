@@ -1,4 +1,19 @@
 // Dato-hjelpere. Frister lagres som rene datoer (YYYY-MM-DD).
+//
+// VIKTIG: bruk ALDRI `new Date()` alene for å avgjøre «i dag» — serveren
+// (Vercel) kjører i UTC, og Norge ligger foran UTC (CEST = UTC+2 om sommeren),
+// så uten eksplisitt tidssone viser serveren «i går» store deler av kvelden.
+// `idagOslo()` er eneste kilde til «i dag» i appen.
+
+/** Dagens dato i norsk tid (Europe/Oslo) som YYYY-MM-DD (en-CA gir ISO-format). */
+export function idagOslo(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Oslo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
 
 export function formaterDato(iso: string): string {
   return new Date(iso).toLocaleDateString("nb-NO", {
@@ -15,13 +30,12 @@ export function formaterKortDato(iso: string): string {
   });
 }
 
-/** Antall hele dager fra i dag til datoen (negativt = på overtid). */
+/** Antall hele dager fra i dag (norsk tid) til datoen (negativt = på overtid). */
 export function dagerTil(isoDato: string): number {
-  const idag = new Date();
-  idag.setHours(0, 0, 0, 0);
-  const mål = new Date(isoDato + "T00:00:00");
+  const idag = Date.parse(`${idagOslo()}T00:00:00Z`);
+  const mål = Date.parse(`${isoDato}T00:00:00Z`);
   const msPerDag = 1000 * 60 * 60 * 24;
-  return Math.round((mål.getTime() - idag.getTime()) / msPerDag);
+  return Math.round((mål - idag) / msPerDag);
 }
 
 export type Hastegrad = "overtid" | "snart" | "senere";

@@ -277,6 +277,7 @@ export async function analyserBrevTekst(
     return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
 
   const idag = new Date().toLocaleDateString("nb-NO", {
+    timeZone: "Europe/Oslo",
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -351,6 +352,7 @@ export async function analyserBrevBilder(
     return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
 
   const idag = new Date().toLocaleDateString("nb-NO", {
+    timeZone: "Europe/Oslo",
     day: "numeric",
     month: "long",
     year: "numeric",
