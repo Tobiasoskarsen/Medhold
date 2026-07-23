@@ -17,6 +17,7 @@ import {
   type SakUtfall,
 } from "@/lib/types";
 import { svarUtfallTilSak } from "@/lib/utfall";
+import { tolkKr } from "@/lib/format";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { Veivalg } from "@/components/Veivalg";
 import { LeserBrev } from "./LeserBrev";
@@ -38,13 +39,6 @@ type ValgtBilde = Bilde & { navn: string };
 
 function brevtypeEtikett(bt: BrevType): string {
   return bt === "annet" ? "Annet" : STADIUM_ETIKETT[bt];
-}
-
-/** Beløpstekst (sifre + evt. mellomrom) → tall, ellers null. */
-function tolkTall(s: string): number | null {
-  if (!s.trim()) return null;
-  const n = Number(s.replace(/\s/g, ""));
-  return Number.isNaN(n) ? null : n;
 }
 
 function lesFilSomBase64(fil: File): Promise<ValgtBilde> {
@@ -108,7 +102,7 @@ export function LeggTilBrevFlyt({
   const gebyrsjekk = useMemo(() => {
     const linjer = analyse?.kostnadslinjer ?? [];
     if (linjer.length === 0) return null;
-    const grunnlag = tolkTall(analyse?.hovedstol ?? "") ?? tolkTall(belop);
+    const grunnlag = tolkKr(analyse?.hovedstol) ?? tolkKr(belop);
     return sjekkKostnader(linjer, grunnlag, brevdato || null);
   }, [analyse, belop, brevdato]);
 
@@ -199,7 +193,6 @@ export function LeggTilBrevFlyt({
 
     const valgteFrister = fristForslag.filter((f, i) => f.forfallsdato && fristAv[i]);
     const valgteSteg = analyse.foreslatte_steg.filter((_, i) => stegAv[i] !== false);
-    const belopTall = belop.trim() ? Number(belop.replace(/\s/g, "")) : null;
 
     const input: LagreBrevInput = {
       krav:
@@ -210,7 +203,7 @@ export function LeggTilBrevFlyt({
       avsender_epost: avsenderEpost,
       brevtype: brevtype || null,
       brevdato,
-      belop: belopTall != null && !Number.isNaN(belopTall) ? belopTall : null,
+      belop: tolkKr(belop),
       saksnummer,
       original_tekst: originalTekst,
       forklaring: analyse.forklaring,
@@ -218,7 +211,7 @@ export function LeggTilBrevFlyt({
       valgteFrister,
       utfall: valgtKravVenter && utfall ? utfall : null,
       kostnadslinjer: analyse.kostnadslinjer,
-      hovedstol: tolkTall(analyse.hovedstol),
+      hovedstol: tolkKr(analyse.hovedstol),
     };
 
     const r = await lagreBrev(input);

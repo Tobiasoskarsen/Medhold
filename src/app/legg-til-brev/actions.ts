@@ -9,6 +9,7 @@ import { beregnFrist, foreslaStadium, BREVTYPER, type BrevType } from "@/lib/gje
 import { utfallOvergang } from "@/lib/utfall";
 import { AI_MODELL } from "@/lib/ai";
 import { maskerFodselsnummer } from "@/lib/maskering";
+import { tolkKr } from "@/lib/format";
 import {
   sjekkKostnader,
   KOSTNADSTYPER,
@@ -50,12 +51,12 @@ const SVAR_SKJEMA = {
     belop: {
       type: "string",
       description:
-        "Totalt utestående beløp i kroner, kun sifre. KUN hvis det står eksplisitt. Ellers tom streng.",
+        "Totalt utestående beløp i kroner. Bruk komma for øre hvis beløpet har det, f.eks. «3201,80» — ellers bare heltallet, f.eks. «3201». ALDRI mellomrom, punktum eller «kr» i tallet. KUN hvis det står eksplisitt. Ellers tom streng.",
     },
     hovedstol: {
       type: "string",
       description:
-        "Opprinnelig hovedstol/hovedkrav — selve gjelden FØR gebyrer, renter og salær — i kroner, kun sifre. KUN hvis den står eksplisitt i brevet (ofte som «hovedstol», «hovedkrav» eller «opprinnelig beløp»). Ellers tom streng.",
+        "Opprinnelig hovedstol/hovedkrav — selve gjelden FØR gebyrer, renter og salær — i kroner. Bruk komma for øre hvis beløpet har det, f.eks. «3201,80» — ellers bare heltallet, f.eks. «3201». ALDRI mellomrom, punktum eller «kr» i tallet. KUN hvis den står eksplisitt i brevet (ofte som «hovedstol», «hovedkrav» eller «opprinnelig beløp»). Ellers tom streng.",
     },
     saksnummer: {
       type: "string",
@@ -201,13 +202,6 @@ export type AnalyseResultat =
     }
   | { ok: false; feil: string };
 
-/** Tolker et beløp fra AI/skjema (kun sifre + evt. mellomrom) til tall. */
-function tolkBelop(s: string | null | undefined): number | null {
-  if (!s || !s.trim()) return null;
-  const n = Number(s.replace(/\s/g, ""));
-  return Number.isNaN(n) ? null : n;
-}
-
 // Kode beslutter: beregn frist av regel + match mot eksisterende krav. Deles
 // mellom tekst- og bildeanalysen.
 async function etterbehandle(
@@ -229,7 +223,7 @@ async function etterbehandle(
   // Gebyrsjekk (kode beslutter). Salærtrinnene defineres av opprinnelig
   // hovedstol; bruk den når AI-en fant den eksplisitt, og fall tilbake til
   // totalbeløpet (konservativt) når hovedstol mangler.
-  const hovedstol = tolkBelop(analyse.hovedstol) ?? tolkBelop(analyse.belop);
+  const hovedstol = tolkKr(analyse.hovedstol) ?? tolkKr(analyse.belop);
   const gebyrsjekk =
     analyse.kostnadslinjer.length > 0
       ? sjekkKostnader(analyse.kostnadslinjer, hovedstol, analyse.brevdato || null)

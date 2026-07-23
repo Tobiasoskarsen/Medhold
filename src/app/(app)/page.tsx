@@ -81,7 +81,12 @@ export default async function HjemPage() {
   ]);
 
   const saker = (sakData ?? []) as (SakKobling & { sist_endret: string })[];
-  const frister = (fristData ?? []) as unknown as AapenFrist[];
+  // markerLost lukker aldri sakens åpne frister automatisk — filtrer bort
+  // frister som tilhører en allerede avsluttet sak, så Hjem ikke lar en
+  // gjenglemt frist dra en løst sak tilbake på forsidekortet.
+  const frister = ((fristData ?? []) as unknown as AapenFrist[]).filter(
+    (f) => f.saker?.status !== "fullfort",
+  );
 
   frister.sort((a, b) => {
     if (a.forfallsdato !== b.forfallsdato)
@@ -90,10 +95,11 @@ export default async function HjemPage() {
   });
 
   const harKrav = saker.length > 0;
-  const aktive = saker.filter((s) => s.status !== "fullfort").length;
+  const aktiveSaker = saker.filter((s) => s.status !== "fullfort");
+  const aktive = aktiveSaker.length;
   const harLoste = saker.some((s) => s.status === "fullfort");
   const topFrist = frister[0] ?? null;
-  const topSak = topFrist?.saker ?? saker[0] ?? null;
+  const topSak = topFrist?.saker ?? aktiveSaker[0] ?? null;
   const kommende = frister.slice(topFrist ? 1 : 0, topFrist ? 4 : 3);
   const venter = !!topSak && topSak.status === "venter_pa_svar" && !topFrist;
 
@@ -159,6 +165,12 @@ export default async function HjemPage() {
             </p>
           </div>
         </div>
+      ) : !topSak ? (
+        <Kort className="mt-6">
+          <p className="text-[15px] leading-relaxed text-blekk">
+            Ingen aktive saker akkurat nå. Godt jobbet.
+          </p>
+        </Kort>
       ) : (
         <>
           <Kort className="mt-6">

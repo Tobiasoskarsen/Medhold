@@ -971,6 +971,45 @@ Avvik/tvetydigheter tatt underveis:
    ikke) — «Svar på kravet» peker til `?type=innsigelse` som før;
    utkast-skjermen lar brukeren bytte type der.
 
+## Tre feilrettinger (på brukerens rapport, ferdig i kode)
+
+**1. Hjem viste en nylig avsluttet sak som om den fortsatt var aktiv.**
+`markerLost` (`krav/actions.ts`) setter kun `saker.status='fullfort'` — den
+lukker aldri sakens åpne frister. Hjem (`(app)/page.tsx`) sin
+`topSak`/`topFrist`-logikk filtrerte ikke bort avsluttede saker, så en
+gjenglemt åpen frist (eller `saker[0]`-fallbacken uten status-filter) kunne
+fortsatt dra en løst sak tilbake på forsidekortet med feil CTA («Lag utkast
+til svar»/«Se hele saken»). Fikset ved å filtrere `frister` til kun de som
+tilhører en aktiv sak FØR noe annet beregnes (påvirker `topFrist`, `topSak`,
+«N frister»-tallet i H1 og «Kommende»-lista), og la `saker[0]`-fallbacken
+kun se aktive saker. La også til en liten «Ingen aktive saker akkurat nå»-
+tilstand for når alt er avsluttet uten medhold (ellers et nesten tomt kort).
+
+**2. Ny bruker møtte den gamle post-login-introen etter registrering,
+i tillegg til den nye pre-login-onboardingen.** Flagget i
+Onboarding-ordren (§ Valg tatt underveis, se der) — `/intro`
+(`sett_intro`-flagg, tre-stegs omvisning fra før pre-login-onboardingen
+fantes) ble aldri fjernet da den nye velkomst-karusellen kom. Fjernet
+redirect-vakten i `(app)/layout.tsx` og hele `src/app/intro/`-ruten.
+
+**3. Beløp med øre ble lagret 100× for stort (3201,80 kr → 320 180 kr).**
+`SVAR_SKJEMA`s `belop`/`hovedstol`-felt (`legg-til-brev/actions.ts`) ba AI-en
+om beløpet «kun sifre» — modellen strippet da desimaltegnet, og
+«3 201,80» ble til strengen «320180». Bekreftet årsak ved å kjøre samme
+testbrev mot både det gamle og det nye skjemaet direkte mot Anthropic-API-et:
+gammelt skjema → `"320180"`, nytt → `"3201,80"`. Fikset ved å (a) endre
+skjemabeskrivelsen til eksplisitt å be om komma for øre, aldri mellomrom/
+punktum/«kr», og (b) samle ALL beløpstolkning (som før lå duplisert som
+`tolkBelop` i actions.ts og `tolkTall` i `LeggTilBrevFlyt.tsx`, begge med
+kun `Number(s.replace(/\s/g,""))`) i én delt, robust `tolkKr()` i
+`src/lib/format.ts` — håndterer norsk format (komma desimal, mellomrom/
+punktum tusenskille), internasjonalt format (punktum desimal) og «kr»-
+suffiks. **10 nye enhetstester** i `format.test.ts`, inkl. en eksplisitt
+regresjonstest for akkurat brukerens tilfelle («3201.80» → 3201.8, ikke
+320180).
+
+`build`/`lint`/`test` grønne (84 tester). Ingen migrasjon.
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**
