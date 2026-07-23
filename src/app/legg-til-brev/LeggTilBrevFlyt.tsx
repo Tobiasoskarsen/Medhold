@@ -18,6 +18,7 @@ import {
 } from "@/lib/types";
 import { svarUtfallTilSak } from "@/lib/utfall";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
+import { Veivalg } from "@/components/Veivalg";
 import { LeserBrev } from "./LeserBrev";
 import { sjekkKostnader } from "@/lib/gebyr";
 import {
@@ -110,6 +111,15 @@ export function LeggTilBrevFlyt({
     const grunnlag = tolkTall(analyse?.hovedstol ?? "") ?? tolkTall(belop);
     return sjekkKostnader(linjer, grunnlag, brevdato || null);
   }, [analyse, belop, brevdato]);
+
+  // Sum kr over lovlig sats — kun brukt i Veivalgs «betale»-resultattekst.
+  const gebyrDifferanse = useMemo(
+    () =>
+      (gebyrsjekk?.linjer ?? [])
+        .filter((l) => l.vurdering === "over")
+        .reduce((sum, l) => sum + (l.differanse ?? 0), 0),
+    [gebyrsjekk],
+  );
 
   // Utfallsraden vises kun når svaret matches mot en sak i «venter på svar».
   const valgtKravVenter =
@@ -627,43 +637,30 @@ export function LeggTilBrevFlyt({
           {feil && <p className="mt-4 text-[13px] text-red-700">{feil}</p>}
 
           <div className="mt-6">
-            <p className="text-[13px] font-medium text-blekk">Hva vil du gjøre?</p>
-            <div className="mt-2 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                disabled={lagrer}
-                onClick={() => lagre("innsigelse")}
-                className="trykk flex flex-col rounded-2xl border-[0.5px] border-aksent/40 bg-aksent/5 px-4 py-4 text-left disabled:opacity-60"
-              >
-                <span className="text-sm font-semibold text-blekk">
-                  Jeg er uenig i kravet
-                </span>
-                <span className="mt-0.5 text-[12px] text-dempet">
-                  Skriv en innsigelse
-                </span>
-              </button>
-              <button
-                type="button"
-                disabled={lagrer}
-                onClick={() => lagre("veier-ut")}
-                className="trykk flex flex-col rounded-2xl border-[0.5px] border-trygg/40 bg-trygg/5 px-4 py-4 text-left disabled:opacity-60"
-              >
-                <span className="text-sm font-semibold text-blekk">
-                  Kravet stemmer
-                </span>
-                <span className="mt-0.5 text-[12px] text-dempet">
-                  Se veiene ut
-                </span>
-              </button>
-            </div>
-            <button
-              type="button"
-              disabled={lagrer}
-              onClick={() => lagre("krav")}
-              className="trykk mt-3 flex w-full items-center justify-center rounded-[10px] border-[0.5px] border-strek bg-flate px-3 py-3 text-sm font-medium text-blekk transition hover:border-dempet/40 disabled:opacity-60"
-            >
-              {lagrer ? "Lagrer …" : "Bestem senere — lagre i tidslinjen"}
-            </button>
+            <Veivalg
+              harGebyrfunn={(gebyrsjekk?.antallOver ?? 0) > 0}
+              gebyrDifferanse={gebyrDifferanse}
+              svarMål={{
+                type: "klikk",
+                onKlikk: () => lagre("innsigelse"),
+                deaktivert: lagrer,
+              }}
+              betaleMål={{
+                type: "klikk",
+                onKlikk: () => lagre("veier-ut"),
+                deaktivert: lagrer,
+              }}
+              ekstra={
+                <button
+                  type="button"
+                  disabled={lagrer}
+                  onClick={() => lagre("krav")}
+                  className="trykk mt-3 block text-[13px] text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk disabled:opacity-60"
+                >
+                  {lagrer ? "Lagrer …" : "Bestem senere — lagre i tidslinjen"}
+                </button>
+              }
+            />
           </div>
         </div>
       )}
