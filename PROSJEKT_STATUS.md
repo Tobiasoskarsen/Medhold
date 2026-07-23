@@ -622,6 +622,12 @@ Samlet liste over påstander/tekster som bør sees av advokat før bred lanserin
 - **Seremoni-tekstene:** «Avtale på plass. / Du har en plan — og saken har en
   slutt.» og «Saken er ute av verden. / Betalt og avsluttet.»
 - **Gebyrsjekk/Dom-tekstene** (fra gebyrsjekk-ordren) — allerede juridiske i natur.
+- **Referansebrevene i `src/lib/utkast-stemme.ts`** (fem stiler: innsigelse
+  helt/delvis bestridt, nedbetalingsavtale vanlig/rettslig, betalingsutsettelse)
+  — mekanismene de bygger på (omtvistet-erklæring, avslutt-eller-forliksråd,
+  betal-det-du-er-enig-i, forliksklage-på-vent) bør juridisk kvalitetssikres
+  før bred lansering, siden AI-en nå imiterer disse tekstene direkte i hvert
+  utkast som genereres.
 
 ---
 
@@ -797,6 +803,95 @@ Valg tatt underveis:
 forretningslogikk). Ingen migrasjon.
 
 ---
+
+## Utkast-stemme (MEDHOLD_UTKAST_STEMME_ARBEIDSORDRE, ferdig i kode)
+
+Retter den «robotaktige» tonen i AI-genererte utkast (viser til/anmodning/
+substantivlister) med tre lag: referansebrev som few-shot, forbudsliste som
+hard regel, og en deterministisk etterkontroll av output. Substansen i
+utkastene (omtvistet-mekanismen, gebyrFunnTekst-tallene, avdragstallene) er
+urørt — dette er en språkdrakt-operasjon.
+
+- **`src/lib/utkast-stemme.ts`** (ren, ingen AI): `FORBUDTE_ORD` (15 ord/fraser,
+  ordgrense- og Unicode-bevisst matching så «beroende»/«anmoderen»/«erlegges»
+  ikke gir falske treff), `finnForbudteOrd()`, `TONEREGLER` (§3, 10 punkter),
+  `REFERANSEBREV` (Record<UtkastType,string> — brev 1/3/4 ordrett, klage
+  gjenbruker brev 1), `REFERANSEBREV_TILLEGG` (brev 2 delvis-bestrid + brev 5
+  rettslig-nedbetaling — se avvik under) og `MOTEKSEMPEL` («slik skriver vi
+  ikke»). **12 enhetstester** i `utkast-stemme.test.ts` (treff/ikke-treff,
+  ordgrenser, kasus, frase vs. løsrevne ord).
+- **`lagUtkast` bygget om:** systemprompten limer inn `TONEREGLER` +
+  `MOTEKSEMPEL` + en stadium-avhengig regel for nedbetalingsavtale (se under).
+  Referansebrevene sendes som ekte user/assistant-turer (few-shot) i
+  meldingshistorikken — se avviksnotat 2. `saker.stadium` hentes nå i
+  `lagUtkast` (ny spørring) for å avgjøre forliksråd/namsmann → rettslig
+  nedbetalingsmønster.
+- **Etterkontroll (§5):** etter generering kjøres `finnForbudteOrd` + en
+  ordtelling. Treff eller over 300 ord → ÉN regenerering (utvider
+  meldingshistorikken med det feilete utkastet + en rettemelding, ikke en
+  løkke). Fortsatt treff etterpå → beholder likevel utkastet og logger
+  (`console.error`) — blokkerer aldri brukeren.
+- **Navnefelt (§6):** «Navnet ditt (slik det skal stå i brevet)» i
+  utkast-skjermen (`UtkastFlyt.tsx`), forhåndsutfylt fra
+  `user_metadata.brevnavn` ellers `fornavn`. Sendes til prompten som
+  «Navnet mitt: …»; modellen instrueres å bruke akkurat denne verdien i
+  signaturen, aldri finne på et. `lagUtkast` lagrer verdien til
+  `user_metadata.brevnavn` (best-effort, blokkerer ikke generering ved feil)
+  slik at neste utkast forhåndsutfylles med samme navn.
+- **Verifisert mot ekte Claude-API** (frittstående skript, ikke i
+  repoet — kjørt manuelt): alle fem utkasttyper, inkl. §8s to navngitte
+  scenarioer (delvis bestrid med gebyrfunn: nevner 800/750/50 kr-differansen,
+  hovedkrav betales, ingen forbudte ord; nedbetaling ved forliksvarsel:
+  alle tre Brev 5-punktene til stede). Ingen av testkjøringene trengte
+  etterkontroll-regenerering — few-shot + toneregler traff riktig første gang.
+  `build`/`lint`/`test` grønne (62 tester).
+
+Avvik/tvetydigheter tatt underveis:
+
+1. **«Jeg viser til» byttet til «Jeg har mottatt» i brev 2–4.** §1s nye
+   forbudsliste forbyr «viser til» («Jeg har mottatt …» brukes i stedet),
+   men de ordrette referansebrevene i §2 (hentet fra
+   MEDHOLD_REFERANSEBREV.md, uendret siden forrige ordre) åpner nettopp med
+   «Jeg viser til …» i brev 2, 3 og 4. Brev 5 (nytt i denne ordren) bruker
+   allerede «har mottatt». Rettet brev 2–4 til samme form for å ikke sende
+   modellen et eksempel som bryter dens egen forbudsliste — selvmotsigende
+   signaler ville svekket kondisjoneringen. Brev 1 var allerede riktig.
+2. **`REFERANSEBREV` er `Record<UtkastType,string>` som spesifisert, men
+   brukes som ekte few-shot-samtaleturer i `lagUtkast`, ikke som ren tekst
+   limt inn i systemprompten.** Modulen eier teksten (streng-typen holdes),
+   men prompt-byggeren (som §1 sier skal importere fra modulen) pakker den
+   inn i syntetiske bruker/assistent-turer. Valgt fordi dette var arkitekturen
+   som empirisk ga best stilkondisjonering i forrige runde (validert mot
+   ekte API), og fordi det stemmer med ordrens egen §0-diagnose: «modeller
+   imiterer eksempler langt bedre enn de følger adjektiver» — et ekte
+   assistent-svar er en sterkere imitasjons-anker enn tekst modellen bare
+   leser om.
+3. **`REFERANSEBREV_TILLEGG`** (ikke i §1s eksplisitte eksportliste) holder
+   brev 2 (delvis bestrid) og brev 5 (rettslig nedbetaling), siden
+   `Record<UtkastType,string>` bare har plass til ÉN tekst per type, mens §2
+   ber om to mønstre for både innsigelse og nedbetalingsavtale. Innsigelse
+   sender alltid begge (modellen velger, som §2 sier); nedbetalingsavtale
+   sender brev 3-mønsteret som few-shot uansett (grunntone) og legger brev
+   5-malen + en eksplisitt hard regel (de tre punktene) i systemprompten KUN
+   når `saker.stadium` er forliksråd/namsmann — kode bestemmer valget
+   deterministisk, few-shotten alene fikk ikke holde ansvaret for et
+   testbart akseptansekriterium.
+4. **Emnelinjen («Emne: …») i referansebrevene genereres IKKE av AI-en.**
+   Toneregel §3.9 nevner et emnelinje-format, og alle fem referansebrev har
+   en Emne-linje øverst (beholdt ordrett i `utkast-stemme.ts`), men appen
+   bygger allerede mailto-emnet deterministisk i `UtkastFlyt.tsx`
+   (`byggEpost`). Å la AI-en ALSO skrive en emnelinje inn i brevteksten
+   ville dupli­sert/kollidert med det når brukeren bruker «Åpne i e-post».
+   Modellen instrueres eksplisitt til å hoppe over emnelinjen og starte på
+   «Hei,».
+5. **Navnet lagres automatisk ved hver vellykket generering** (ikke en egen
+   lagre-knapp/on-blur som `Fornavn.tsx`), siden §6 kun ber om at det
+   «huskes … etter første gang» — knyttet naturlig til den eksisterende
+   generer-flyten, ingen ny UI-mekanikk nødvendig.
+
+⚠ Ingen migrasjon i denne leveransen (kun `user_metadata.brevnavn`, samme
+mønster som `telefon`/`fornavn` — ingen kolonneendring). `build`/`lint`/`test`
+grønne.
 
 ## Deploy
 

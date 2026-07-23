@@ -9,6 +9,13 @@ import { type UtkastType } from "@/lib/types";
 import { gebyrFunnTekst, type GebyrsjekkResultat } from "@/lib/gebyr";
 import type { AvdragsForslag } from "@/lib/avdrag";
 import { AI_MODELL } from "@/lib/ai";
+import {
+  TONEREGLER,
+  REFERANSEBREV,
+  REFERANSEBREV_TILLEGG,
+  MOTEKSEMPEL,
+  finnForbudteOrd,
+} from "@/lib/utkast-stemme";
 
 function kr(n: number): string {
   return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
@@ -26,6 +33,10 @@ function fjernStjerner(tekst: string): string {
     .trim();
 }
 
+function tellOrd(tekst: string): number {
+  return tekst.split(/\s+/).filter(Boolean).length;
+}
+
 export type UtkastResultat =
   | { ok: true; id: string; innhold: string }
   | { ok: false; feil?: string; paywall?: boolean };
@@ -40,110 +51,93 @@ const FORMÅL: Record<UtkastType, string> = {
   klage: "en klage på vedtaket/kravet",
 };
 
-// Tonereglene som definerer Medholds brevstemme (arbeidsordre
-// MEDHOLD_REFERANSEBREV.md). Delt mellom alle utkasttyper.
-const TONEREGLER = `Toneregler for brevet:
-1. Kort: ingen setning over cirka 20 ord, ingen avsnitt over tre setninger, hele brevet under 200 ord.
-2. «Jeg» er subjektet, aktiv form — «Jeg er uenig i kravet», aldri «Det gjøres innsigelse mot kravet».
-3. Konklusjonen først: uenig/enig/forslag kommer i avsnitt to, før begrunnelsen.
-4. Fakta med datoer, ikke karakteristikker — «Jeg sa opp 28. november og har bekreftelsen», aldri «kravet er urimelig og uholdbart».
-5. Be om konkrete handlinger, ikke vurderinger — registrer som omtvistet, stans inndrivingen, bekreft skriftlig, korriger, avslutt saken, send til forliksrådet.
-6. Bruk ALDRI disse ordene: anmodning, anmoder, vedrørende, herved, undertegnede, imøteser, bero, fremsettes, «viser til ovennevnte», «på bakgrunn av dette», besørge, angjeldende, erlegge, «Deres» med stor D.
-7. Det personen selv skrev i detaljfeltet skal kunne kjennes igjen i brevet — ryddet for skrivefeil, ikke oversatt til jusspråk.
-8. Høflig uten å krype: ingen «beklager at jeg må», ingen «håper på forståelse», ingen utropstegn. «Vennlig hilsen», ferdig.
-9. Ren tekst, ingen markdown. En kort strekliste (med "-") er greit når det er tre eller flere konkrete handlingspunkter.`;
-
 type FewShot = { bruker: string; svar: string };
 
-// Eksemplene under er hentet fra referansebrevene i arbeidsordren. Navn,
-// beløp og datoer i eksemplene er kun illustrasjon for tonen — modellen
-// instrueres eksplisitt om å bruke sakens egne verdier, aldri disse.
-const EKSEMPEL_BESTRID_HELT: FewShot = {
+// Synteiske «bruker»-turer som pares med de ekte referansebrevene (eid av
+// utkast-stemme.ts — ingen duplisering av selve brevteksten her, kun
+// saksbeskrivelsene som danner konteksten svarene ble skrevet i). Sendes som
+// ekte user/assistant-turer (few-shot) siden det viste seg å kondisjonere
+// stilen langt bedre enn å bare beskrive den i systemprompten.
+const FS_BESTRID_HELT: FewShot = {
   bruker: `Brevet det svares på:
 
 Betalingsoppfordring fra Pulsløft Treningssenter AS. Saksnummer FK-2026-88213. Datert 12. juli 2026. Krever 3 243,20 kr for medlemskap januar–mars 2026.
 
-Det personen selv oppgir: sa opp i november, har eposten som bevis`,
-  svar: `Jeg har mottatt betalingsoppfordringen deres datert 12. juli 2026, med krav på 3 243,20 kr på vegne av Pulsløft Treningssenter AS.
+Det personen selv oppgir: sa opp i november, har eposten som bevis
 
-Jeg er uenig i kravet og betaler det ikke.
-
-Kravet gjelder medlemskap for januar til mars 2026. Jeg sa opp medlemskapet skriftlig 28. november 2025 og har e-postbekreftelse på at oppsigelsen ble mottatt. Med én måneds oppsigelsestid var medlemskapet avsluttet 31. desember 2025. Det er derfor ikke grunnlag for å fakturere meg for januar, februar og mars.
-
-Kravet er dermed omtvistet og kan ikke drives inn ved ordinær inkasso. Jeg ber om at dere:
-- registrerer kravet som omtvistet og stanser videre inndriving
-- bekrefter dette skriftlig
-- enten avslutter saken eller sender den til forliksrådet, hvis dere mener kravet står seg
-
-Dokumentasjonen sender jeg gjerne ved behov.
-
-Vennlig hilsen`,
+Navnet mitt: Kari Eksempel`,
+  svar: REFERANSEBREV.innsigelse,
 };
 
-const EKSEMPEL_BESTRID_DELVIS: FewShot = {
+const FS_BESTRID_DELVIS: FewShot = {
   bruker: `Brevet det svares på:
 
 Betalingsoppfordring. Saksnummer KY-2026-3341. Datert 13. juli 2026. Hovedkrav 2 400 kr. Inkassosalær 800 kr.
 
 Fakta fra Medhold: Inkassosalæret på 800 kr overstiger lovlig maksimalsats. Høyeste tillatte salær for et krav i denne størrelsen er 750 kr.
 
-Personen har ikke oppgitt utfyllende detaljer.`,
-  svar: `Jeg viser til betalingsoppfordringen deres datert 13. juli 2026.
+Personen har ikke oppgitt utfyllende detaljer.
 
-Hovedkravet på 2 400 kr er jeg enig i, og det betaler jeg innen fristen.
-
-Inkassosalæret på 800 kr er jeg uenig i. Høyeste tillatte salær etter inkassoforskriften er 750 kr for et krav på denne størrelsen. Salæret er altså 50 kr over lovlig maksimalsats, og denne delen av kravet er omtvistet til den er korrigert.
-
-Jeg ber om at dere retter salæret og sender meg en oppdatert oppstilling.
-
-Vennlig hilsen`,
+Navnet mitt: Kari Eksempel`,
+  svar: REFERANSEBREV_TILLEGG.innsigelseDelvis,
 };
 
-const EKSEMPEL_NEDBETALING: FewShot = {
+const FS_NEDBETALING: FewShot = {
   bruker: `Brevet det svares på:
 
 Betalingsoppfordring. Saksnummer FK-2026-88213. Datert 12. juli 2026. Krav 3 243,20 kr.
 
 Fakta fra Medhold: Nedbetalingsforslag: 500 kr per måned i 7 måneder (siste avdrag 243,20 kr).
 
-Personen har ikke oppgitt utfyllende detaljer.`,
-  svar: `Jeg viser til betalingsoppfordringen deres datert 12. juli 2026. Kravet på 3 243,20 kr er riktig, og jeg vil gjøre opp for meg.
+Personen har ikke oppgitt utfyllende detaljer.
 
-Jeg klarer ikke å betale alt på én gang. Jeg foreslår derfor 500 kr i måneden i sju måneder, med første betaling 1. august 2026 og et siste avdrag på 243,20 kr.
-
-Kan dere bekrefte skriftlig om dere godtar forslaget? Jeg ber også om at saken ikke sendes videre mens dere vurderer det.
-
-Vennlig hilsen`,
+Navnet mitt: Kari Eksempel`,
+  svar: REFERANSEBREV.nedbetalingsavtale,
 };
 
-const EKSEMPEL_UTSETTELSE: FewShot = {
+const FS_UTSETTELSE: FewShot = {
   bruker: `Brevet det svares på:
 
 Inkassovarsel. Saksnummer AG-2026-04471. Datert 10. juli 2026. Betalingsfrist 24. juli 2026.
 
-Det personen selv oppgir: får lønn 15.`,
-  svar: `Jeg viser til inkassovarselet datert 10. juli 2026 med betalingsfrist 24. juli. Kravet er riktig, og jeg skal betale hele beløpet.
+Det personen selv oppgir: får lønn 15.
 
-Jeg rekker ikke fristen, men kan betale alt 15. august, rett etter lønning. Jeg ber derfor om utsatt frist til denne datoen.
-
-Kan dere bekrefte skriftlig at det er i orden?
-
-Vennlig hilsen`,
+Navnet mitt: Kari Eksempel`,
+  svar: REFERANSEBREV.betalingsutsettelse,
 };
 
-// Klage ligner mest på en full bestridelse (uenig, konkret handling bedt om).
+// Klage gjenbruker bestrid-helt-eksempelet som stilreferanse (§2 — ingen
+// egen mal denne runden).
 const EKSEMPLER: Record<UtkastType, FewShot[]> = {
-  innsigelse: [EKSEMPEL_BESTRID_HELT, EKSEMPEL_BESTRID_DELVIS],
-  betalingsutsettelse: [EKSEMPEL_UTSETTELSE],
-  nedbetalingsavtale: [EKSEMPEL_NEDBETALING],
-  klage: [EKSEMPEL_BESTRID_HELT],
+  innsigelse: [FS_BESTRID_HELT, FS_BESTRID_DELVIS],
+  betalingsutsettelse: [FS_UTSETTELSE],
+  nedbetalingsavtale: [FS_NEDBETALING],
+  klage: [FS_BESTRID_HELT],
 };
+
+async function genererTekst(
+  anthropic: Anthropic,
+  system: string,
+  meldinger: { role: "user" | "assistant"; content: string }[],
+): Promise<string | null> {
+  const svar = await anthropic.messages.create({
+    model: AI_MODELL,
+    max_tokens: 1500,
+    thinking: { type: "disabled" },
+    system,
+    messages: meldinger,
+  });
+  const blokk = svar.content.find((b) => b.type === "text");
+  if (!blokk || blokk.type !== "text") return null;
+  return fjernStjerner(blokk.text);
+}
 
 export async function lagUtkast(
   sakId: string,
   brevId: string | null,
   type: UtkastType,
   detaljer: string,
+  navn: string,
   avdrag?: AvdragsForslag | null,
 ): Promise<UtkastResultat> {
   const supabase = await createClient();
@@ -174,7 +168,19 @@ export async function lagUtkast(
     if (gs && gs.antallOver > 0) gebyrFakta = gebyrFunnTekst(gs);
   }
 
+  // Stadium avgjør om nedbetalingsforslaget svarer på rettslig inndriving
+  // (forliksråd/namsmann) — kode beslutter hvilket mønster som gjelder, ikke AI.
+  const { data: sak } = await supabase
+    .from("saker")
+    .select("stadium")
+    .eq("id", sakId)
+    .maybeSingle();
+  const rettslig =
+    sak?.stadium === "forliksrad" || sak?.stadium === "namsmann";
+
   const detalj = detaljer.trim();
+  const navnTrimmet = navn.trim();
+
   const gebyrRegel = gebyrFakta
     ? `
 - Appen har gjort en automatisk kontroll mot inkassoforskriftens maksimalsatser (se «Fakta fra Medhold» under). Du KAN vise til at det aktuelle beløpet overstiger den lovlige maksimalsatsen etter inkassoforskriften, men oppgi ALDRI paragrafnummer, og hold tonen rolig og saklig — ikke skjerp den.`
@@ -189,19 +195,36 @@ export async function lagUtkast(
   const avtaleRegel =
     type === "nedbetalingsavtale"
       ? `
-- Dette er et FORSLAG om nedbetalingsavtale, ikke en bestridelse av kravet. Bruk avdragsforslaget fra «Fakta fra Medhold» ORDRETT (nøyaktig månedsbeløp, antall måneder og siste avdrag). Be om skriftlig bekreftelse på avtalen, og be høflig om at videre inndriving og nye omkostninger settes på vent mens forslaget vurderes. Hold en verdig, saklig tone — ingen bønnfallelse, og ikke oppgi grunner personen ikke selv har skrevet.`
+- Dette er et FORSLAG om nedbetalingsavtale, ikke en bestridelse av kravet. Bruk avdragsforslaget fra «Fakta fra Medhold» ORDRETT (nøyaktig månedsbeløp, antall måneder og siste avdrag). Hold en verdig, saklig tone — ingen bønnfallelse, og ikke oppgi grunner personen ikke selv har skrevet.`
       : "";
+  const rettsligRegel =
+    type === "nedbetalingsavtale" && rettslig
+      ? `
+- Saken er i stadiet «${sak?.stadium}» — rettslig inndriving er varslet eller igangsatt. Brevet MÅ inneholde disse tre punktene, som en kort strekliste: (1) be om skriftlig bekreftelse på om nedbetalingsplanen godtas, (2) be om at forliksklage og videre inndriving settes på vent mens forslaget vurderes, (3) be om at det ikke legges til nye omkostninger i denne perioden. Følg mønsteret i «Fasit ved rettslig varsel» under — fyll inn sakens egne verdier for {}-feltene, ta ALDRI med selve klammeparentesene i svaret.
+
+Fasit ved rettslig varsel (mønster, ikke ordrett tekst):
+
+${REFERANSEBREV_TILLEGG.nedbetalingRettslig}`
+      : "";
+  const navnRegel = navnTrimmet
+    ? `
+- Avslutt brevet med «Vennlig hilsen» og deretter navnelinjen «${navnTrimmet}» nøyaktig — aldri et annet eller oppdiktet navn.`
+    : `
+- Avslutt brevet med kun «Vennlig hilsen», uten navnelinje under (ikke oppgitt navn — finn aldri på et).`;
 
   const system = `Du skriver et utkast til ${FORMÅL[type]} på vegne av en privatperson som har fått et brev om gjeld/inkasso.
 
 ${TONEREGLER}
 
+${MOTEKSEMPEL}
+
 Ufravikelige regler:
 - Skriv KUN ren tekst, klar til å limes rett inn i en e-post. INGEN markdown: ingen stjerner (*), ingen fet skrift, ingen overskrifter (#). Bruk vanlig bindestrek (-) for korte handlingslister, aldri stjerner.
 - Bruk KUN fakta fra brevet, det personen selv oppgir, og fakta fra Medhold når det er oppgitt. Finn ALDRI opp beløp, datoer, paragrafer, navn eller omstendigheter.
 - Nevn ikke forhold personen ikke har oppgitt. Er noe uklart, hold det generelt fremfor å gjette.
-- Ikke gi garantier om utfallet. Ikke lat som du er advokat.${gebyrRegel}${avtaleRegel}
-- Skriv kun selve brevteksten (ingen forklaring rundt, ingen «her er utkastet»), og avslutt med «Vennlig hilsen» uten navn under.
+- Ikke gi garantier om utfallet. Ikke lat som du er advokat.${gebyrRegel}${avtaleRegel}${rettsligRegel}${navnRegel}
+- IKKE ta med emnelinjen (linjen som starter med «Emne:») i svaret ditt, selv om referansebrevene har den — appen bygger emnelinjen selv. Start rett på «Hei,».
+- Skriv kun selve brevteksten (ingen forklaring rundt, ingen «her er utkastet»).
 - Eksemplene i samtalen viser ønsket tone, lengde og struktur. Navn, beløp, datoer og saksnumre i eksemplene er kun illustrasjon — bruk alltid sakens faktiske verdier, aldri eksemplenes.`;
 
   const bruker = [
@@ -211,6 +234,7 @@ Ufravikelige regler:
     detalj
       ? `Det personen selv oppgir: ${detalj}`
       : "Personen har ikke oppgitt utfyllende detaljer.",
+    navnTrimmet ? `Navnet mitt: ${navnTrimmet}` : null,
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -223,20 +247,58 @@ Ufravikelige regler:
   let innhold: string;
   try {
     const anthropic = new Anthropic();
-    const svar = await anthropic.messages.create({
-      model: AI_MODELL,
-      max_tokens: 1500,
-      thinking: { type: "disabled" },
-      system,
-      messages: [...fewShotMeldinger, { role: "user", content: bruker }],
-    });
-    const blokk = svar.content.find((b) => b.type === "text");
-    if (!blokk || blokk.type !== "text")
+    const meldinger = [
+      ...fewShotMeldinger,
+      { role: "user" as const, content: bruker },
+    ];
+    let tekst = await genererTekst(anthropic, system, meldinger);
+    if (tekst === null)
       return { ok: false, feil: "Fikk ikke et brukbart utkast. Prøv igjen." };
-    innhold = fjernStjerner(blokk.text);
+
+    // Etterkontroll: «AI tolker, kode beslutter» — også for stil. Treff på
+    // forbudslisten eller for langt utkast → ÉN regenerering (ikke en løkke,
+    // av kostnadshensyn). Fortsatt treff etterpå → behold og logg, ikke blokkér.
+    const treff = finnForbudteOrd(tekst);
+    const ordtall = tellOrd(tekst);
+    if (treff.length > 0 || ordtall > 300) {
+      const problemer: string[] = [];
+      if (treff.length > 0)
+        problemer.push(
+          `Disse ordene/frasene forekommer og MÅ bort: ${treff.join(", ")}.`,
+        );
+      if (ordtall > 300)
+        problemer.push(
+          `Brevet er ${ordtall} ord — for langt. Kort det ned til under 200 ord.`,
+        );
+      const rettemelding = `Utkastet ditt har feil:\n- ${problemer.join("\n- ")}\n\nSkriv HELE brevet på nytt med samme fakta, rettet. Kun brevteksten, ingen forklaring.`;
+      const meldinger2 = [
+        ...meldinger,
+        { role: "assistant" as const, content: tekst },
+        { role: "user" as const, content: rettemelding },
+      ];
+      const tekst2 = await genererTekst(anthropic, system, meldinger2);
+      if (tekst2 !== null) {
+        const treff2 = finnForbudteOrd(tekst2);
+        if (treff2.length > 0) {
+          console.error(
+            `[lagUtkast] Forbudte ord slapp gjennom etter regenerering (type=${type}): ${treff2.join(", ")}`,
+          );
+        }
+        tekst = tekst2;
+      }
+    }
+    innhold = tekst;
   } catch (e) {
     console.error("[lagUtkast] AI-generering feilet:", e);
     return { ok: false, feil: "Noe gikk galt. Prøv igjen om litt." };
+  }
+
+  // Husk navnet til neste gang (§6). Best-effort — skal aldri velte
+  // utkastgenereringen selv om denne skulle feile.
+  if (navnTrimmet) {
+    await supabase.auth
+      .updateUser({ data: { brevnavn: navnTrimmet } })
+      .catch(() => {});
   }
 
   // Lagre som tidslinjehendelse på kravet.
