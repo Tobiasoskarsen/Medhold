@@ -1,4 +1,4 @@
-// Avdragshjelper for «Kravet stemmer»-sporet. Ren, deterministisk kode —
+// Avdragshjelper for «Finn en måte å betale på»-sporet. Ren, deterministisk kode —
 // «AI tolker, kode beslutter». Regner ut en nedbetalingsplan fra et månedsbeløp
 // brukeren selv oppgir. Ingen råd om hva man BØR betale — bare matematikken.
 

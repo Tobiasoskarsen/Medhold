@@ -628,6 +628,14 @@ Samlet liste over påstander/tekster som bør sees av advokat før bred lanserin
   betal-det-du-er-enig-i, forliksklage-på-vent) bør juridisk kvalitetssikres
   før bred lansering, siden AI-en nå imiterer disse tekstene direkte i hvert
   utkast som genereres.
+- **Veivalg-tekstene** (`src/components/Veivalg.tsx` og
+  `krav/[id]/veier-ut/page.tsx`): sjekkliste-resultatene «Da er det god
+  grunn til å svare på kravet …» og «Da ser kravet ut til å stemme …» er en
+  ny form for anbefaling appen gir basert på brukerens egne svar — bør
+  vurderes for at den ikke leses som juridisk rådgivning. Samme for
+  kortundertekstene («Vi skriver brevet — du godkjenner før noe sendes» /
+  «Bruk gebyrfunnet — vi skriver brevet») og veier-ut sin nye ingress («Tre
+  helt vanlige måter å håndtere et krav på …»).
 
 ---
 
@@ -892,6 +900,76 @@ Avvik/tvetydigheter tatt underveis:
 ⚠ Ingen migrasjon i denne leveransen (kun `user_metadata.brevnavn`, samme
 mønster som `telefon`/`fornavn` — ingen kolonneendring). `build`/`lint`/`test`
 grønne.
+
+## Veivalg (MEDHOLD_VEIVALG_ARBEIDSORDRE, ferdig i kode)
+
+Erstatter det gamle standpunkt-baserte dørvalget («Jeg er uenig i kravet» /
+«Kravet stemmer» — leses som tilståelse/konflikt) med et handlingsbasert
+valg («Svar på kravet» / «Finn en måte å betale på») + en deterministisk
+«hjelp meg å velge»-sjekkliste for den usikre brukeren. Ren tekst/UI —
+destinasjonene (utkast-flyten, `/veier-ut`) er uendret. Ingen migrasjon.
+
+- **`src/lib/veivalg.ts`** (ren, testet): `anbefalVei(svar)` →
+  `"svar"`/`"betale"` etter regelen i §1 (tvil peker mot å svare). **11
+  enhetstester** i `veivalg.test.ts` (åtte-kombinasjoners sannhetstabell +
+  egne tester for at «vet ikke» på hvert av de to feltene som støtter det,
+  gir «svar»).
+- **`src/components/Veivalg.tsx`** (delt komponent): to handlingskort
+  (ikonbrikke + tittel + undertekst + chevron) — «Svar på kravet» (§-ikon på
+  `dom-rod-bg`) og «Finn en måte å betale på» (hake på `trygg/10`).
+  Anbefalt-pillen (ny `aksent`-variant i `Pill.tsx`, samme fylte stil som
+  knappene) og `border-aksent` på kort 1 vises KUN når `harGebyrfunn` er
+  sann — deterministisk, appen synser aldri (guardrail 2). «Usikker? Hjelp
+  meg å velge» ekspanderer sjekklisten (samme height/opacity-mønster og
+  motion-tokens som `meg/Utvidbar.tsx`; reduced motion følger den delte
+  `Bevegelsesramme`n, ingen egen gren). Resultatboksen har
+  `aria-live="polite"`; toggelen har `aria-expanded`; alle spørsmålsknapper
+  er ekte `<button>` med `aria-pressed`. Sjekklistesvarene lever kun i
+  komponentens `useState` — ingen lagring, ingen sending til utkast-prompten
+  (verifisert: ingen nye Supabase-kall lagt til for dette).
+- **Mål-abstraksjon:** `VeivalgMål` er enten `{type:"href"}` (krav-detalj,
+  navigerer direkte) eller `{type:"klikk", onKlikk, deaktivert?}` (steg 3,
+  som må lagre brevet før navigering) — samme komponent dekker begge uten
+  gren i selve `Veivalg.tsx`.
+- **Krav-detalj (`krav/[id]/page.tsx`):** det gamle to-korts/CTA-splittet
+  (`toLikeverdigeDorer`) er fjernet — `Veivalg` vises nå likt uansett
+  gebyrfunn, kun pillen endrer seg. Synlighetsbetingelsen er uendret
+  (`stotterUtkast(stadium) && !lost`).
+- **Legg-til-brev steg 3:** samme komponent, `klikk`-mål kaller eksisterende
+  `lagre("innsigelse"|"veier-ut")`. «Bestem senere — lagre i tidslinjen»
+  sendes inn via `ekstra`-slotten, omstylt til en dempet tekstlenke (var en
+  full kantet knapp) — se avvik 2.
+- **`/veier-ut`:** H1 → «Veiene ut», ny ingress. Kortene og resten uendret
+  (§3.3 — kun følgeendring).
+- **Grep-verifisert:** «Kravet stemmer» finnes ikke lenger noe sted i `src/`
+  (også ryddet to interne kodekommentarer som brukte frasen, i
+  `avdrag.ts` og komponentens egen filkommentar — ikke brukergrensesnitt,
+  men konsistent med akseptansekriteriet).
+- **Verifisert i browser** (midlertidig uautentisert forhåndsvisningsrute,
+  fjernet igjen — samme mønster som Fase 2s midlertidige mock-forhåndsvisning):
+  begge korttilstander (med/uten Anbefalt-pill, `border-aksent` bekreftet
+  via computed style), sjekklisten ekspanderer/kollapser, alle åtte
+  svarkombinasjoner ga korrekt resultatboks og lenketekst («Start svaret →»
+  / «Se veiene ut →»), gebyrdifferansen vises korrekt formatert i
+  betale-resultatet, og deaktivert/klikk-modus (steg 3) fungerte. `build`/
+  `lint`/`test` grønne (73 tester).
+
+Avvik/tvetydigheter tatt underveis:
+
+1. **Fasit-mockupen `medhold_kravskjerm_v2_mockup.html` finnes ikke i
+   repoet** (kun eldre `design/medhold_krav_detalj_mockup.html`, ikke v2).
+   Bygget direkte fra den detaljerte tekstspesifikasjonen i §2.1/§2.2 i
+   stedet, og gjenbrukte etablerte tokens/mønstre der spesifikasjonen ikke
+   ga et eksakt tall (ikonbrikke-størrelse, korthøyde, ANBEFALT-pillens
+   fylte `bg-aksent`-stil hentet fra Primærknapp/Doms CTA-knapp). Bør
+   sammenlignes mot ekte mockup når den finnes.
+2. **«Bestem senere»-lenken i steg 3 er restylet** fra en full kantet knapp
+   (`border-strek bg-flate`) til en dempet understreket tekstlenke, siden
+   §3.2 eksplisitt sier «dempet tekstlenke» — et bevisst stilskifte fra
+   Plan B-ordrens opprinnelige knappestil, ikke bare en ren flytting.
+3. **Klage-typen har ingen spesialbehandling i Veivalg** (ordren nevner den
+   ikke) — «Svar på kravet» peker til `?type=innsigelse` som før;
+   utkast-skjermen lar brukeren bytte type der.
 
 ## Deploy
 

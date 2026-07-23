@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type Variant = "noytral" | "varsel" | "suksess" | "feil";
+type Variant = "noytral" | "varsel" | "suksess" | "feil" | "aksent";
 
 const varianter: Record<Variant, string> = {
   noytral: "bg-strek text-dempet",
@@ -9,6 +9,8 @@ const varianter: Record<Variant, string> = {
   // Rød = appens etablerte feilfarge (samme som HASTEGRAD_STIL.overtid).
   suksess: "bg-trygg/10 text-trygg",
   feil: "bg-red-50 text-red-700",
+  // Fylt aksent — «ANBEFALT»-merket i Veivalg, samme fylte stil som knapper.
+  aksent: "bg-aksent text-white",
 };
 
 /**

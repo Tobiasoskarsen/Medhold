@@ -5,17 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import {
   Skjermramme,
   Pillknapp,
-  Primærknapp,
   Trapp,
   Nedtelling,
   Tidslinje,
   TidslinjeHendelse,
 } from "@/components/ui";
 import { DomMini } from "@/components/Dom";
+import { Veivalg } from "@/components/Veivalg";
 import { KravNavn, KravBelop } from "./KravHeader";
 import { formaterKortDato } from "@/lib/dato";
 import {
-  STADIER,
   STADIUM_ETIKETT,
   stotterUtkast,
   type Stadium,
@@ -154,15 +153,6 @@ export default async function KravDetaljPage({
   const sisteBrev = brevListe[0];
   const overDiff = overTotal(sisteBrev?.gebyrsjekk ?? null);
   const harOverGebyr = overDiff > 0;
-
-  // Dørvalget (§2.1): to likeverdige dører KUN når det ikke er gebyrfunn og
-  // stadiet er betalingsoppfordring eller senere. Ved funn er innsigelsen
-  // objektivt sterkest → behold CTA + sekundærlenke.
-  const senereEnnVarsel =
-    stadium != null &&
-    STADIER.indexOf(stadium) >= STADIER.indexOf("betalingsoppfordring");
-  const toLikeverdigeDorer =
-    stotterUtkast(stadium) && !lost && senereEnnVarsel && !harOverGebyr;
 
   // Navn: hovedkravet i overskriften, inkassoselskapet i eyebrow-en (når det
   // finnes en opprinnelig kreditor, er `kreditor` selve inkassoselskapet).
@@ -325,47 +315,15 @@ export default async function KravDetaljPage({
         <DomMini resultat={sisteBrev.gebyrsjekk} className="mt-4" />
       )}
 
-      {stotterUtkast(stadium) &&
-        !lost &&
-        (toLikeverdigeDorer ? (
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <Link
-              href={`/krav/${sak.id}/utkast?type=innsigelse`}
-              className="trykk flex flex-col rounded-2xl border-[0.5px] border-aksent/40 bg-aksent/5 px-4 py-4"
-            >
-              <span className="text-sm font-semibold text-blekk">
-                Jeg er uenig i kravet
-              </span>
-              <span className="mt-0.5 text-[12px] text-dempet">
-                Skriv en innsigelse
-              </span>
-            </Link>
-            <Link
-              href={`/krav/${sak.id}/veier-ut`}
-              className="trykk flex flex-col rounded-2xl border-[0.5px] border-trygg/40 bg-trygg/5 px-4 py-4"
-            >
-              <span className="text-sm font-semibold text-blekk">
-                Kravet stemmer
-              </span>
-              <span className="mt-0.5 text-[12px] text-dempet">Se veiene ut</span>
-            </Link>
-          </div>
-        ) : (
-          <div className="mt-5">
-            <Primærknapp href={`/krav/${sak.id}/utkast?type=innsigelse`}>
-              Skriv innsigelsen
-            </Primærknapp>
-            <p className="mt-1.5 text-center text-[12px] text-dempet">
-              Tar bare noen minutter.
-            </p>
-            <Link
-              href={`/krav/${sak.id}/veier-ut`}
-              className="trykk mt-3 flex w-full items-center justify-center rounded-[10px] border-[0.5px] border-trygg/40 bg-trygg/5 px-3 py-3 text-sm font-medium text-blekk transition hover:border-trygg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trygg"
-            >
-              Kravet stemmer — se veiene ut
-            </Link>
-          </div>
-        ))}
+      {stotterUtkast(stadium) && !lost && (
+        <Veivalg
+          className="mt-5"
+          harGebyrfunn={harOverGebyr}
+          gebyrDifferanse={overDiff}
+          svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
+          betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
+        />
+      )}
 
       <h2 className="mb-4 mt-8 font-serif text-[19px] font-semibold text-blekk">
         Sakens gang

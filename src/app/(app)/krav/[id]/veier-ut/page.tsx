@@ -52,11 +52,11 @@ export default async function VeierUtPage({
 
       <p className="eyebrow mb-1">{eyebrow}</p>
       <h1 className="font-serif text-[26px] font-medium leading-[1.15] tracking-[-0.01em] text-blekk">
-        Kravet stemmer. Her er veiene ut.
+        Veiene ut
       </h1>
       <p className="mt-2 text-[13px] leading-relaxed text-dempet">
-        Alle tre er helt vanlige. Det viktigste er å velge én — og gi beskjed før
-        fristen.
+        Tre helt vanlige måter å håndtere et krav på. Det viktigste er å
+        velge én — og gi beskjed før fristen.
       </p>
 
       <VeierUtFlyt
