@@ -25,6 +25,7 @@ export function UtkastFlyt({
   starttype,
   harOverGebyr,
   avdrag,
+  navnStart,
 }: {
   sakId: string;
   brevId: string | null;
@@ -35,10 +36,12 @@ export function UtkastFlyt({
   starttype: UtkastType;
   harOverGebyr: boolean;
   avdrag?: AvdragsForslag | null;
+  navnStart: string;
 }) {
   const router = useRouter();
   const [type, setType] = useState<UtkastType>(starttype);
   const [detaljer, setDetaljer] = useState("");
+  const [navn, setNavn] = useState(navnStart);
   const [genererer, setGenererer] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
   const [utkastId, setUtkastId] = useState<string | null>(null);
@@ -55,6 +58,7 @@ export function UtkastFlyt({
       brevId,
       type,
       detaljer,
+      navn,
       type === "nedbetalingsavtale" ? avdrag : null,
     );
     setGenererer(false);
@@ -176,6 +180,17 @@ export function UtkastFlyt({
               rows={5}
               placeholder="Skriv kort med egne ord. La stå tomt om du er usikker."
               className="mt-1.5 w-full resize-none rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+            />
+          </label>
+
+          <label className="mt-5 block text-[13px] font-medium text-blekk">
+            Navnet ditt (slik det skal stå i brevet)
+            <input
+              type="text"
+              value={navn}
+              onChange={(e) => setNavn(e.target.value)}
+              placeholder="Fullt navn"
+              className="mt-1.5 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
             />
           </label>
 

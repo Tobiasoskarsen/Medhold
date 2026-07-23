@@ -57,6 +57,12 @@ export default async function UtkastPage({
 
   const starttype = erUtkastType(type) ? type : "innsigelse";
 
+  // Navnelinjen i brevet (§6): husket verdi først, ellers profil-fornavnet.
+  const meta = user.user_metadata as
+    | { brevnavn?: string; fornavn?: string }
+    | undefined;
+  const navnStart = (meta?.brevnavn?.trim() || meta?.fornavn?.trim()) ?? "";
+
   // Avdragsforslag fra Veier ut (kun for nedbetalingsavtale, med totalbeløp).
   const manedTall = manedsbelop ? Number(manedsbelop) : NaN;
   const avdrag: AvdragsForslag | null =
@@ -97,6 +103,7 @@ export default async function UtkastPage({
           starttype={starttype}
           harOverGebyr={harOverGebyr}
           avdrag={avdrag}
+          navnStart={navnStart}
         />
       </div>
     </Skjermramme>
