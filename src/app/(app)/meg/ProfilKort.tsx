@@ -4,7 +4,6 @@ import { useState } from "react";
 import { AnimatePresence, m } from "motion/react";
 import { Phone, KeyRound } from "lucide-react";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
-import { Fornavn } from "./Fornavn";
 import { Brevnavn } from "./Brevnavn";
 import { Telefon } from "./Telefon";
 import { Gruppe } from "./Gruppe";
@@ -16,20 +15,21 @@ import { Rad } from "./Rad";
  * — derfor bor de i samme klientkomponent.
  */
 export function ProfilKort({
-  fornavn,
-  brevnavn,
+  navn,
   epost,
   telefon,
   innlogging,
 }: {
-  fornavn: string;
-  brevnavn: string;
+  /** Fullt navn (user_metadata.brevnavn). Kun første ord vises i profilhodet
+   * — resten av navnet er der for brevsignaturen (§6, utkast-stemme). */
+  navn: string;
   epost: string;
   telefon: string;
   innlogging: string;
 }) {
   const [rediger, setRediger] = useState(false);
-  const initial = (fornavn.trim()[0] ?? epost.trim()[0] ?? "M").toUpperCase();
+  const fornavn = navn.trim().split(/\s+/)[0] ?? "";
+  const initial = (fornavn[0] ?? epost.trim()[0] ?? "M").toUpperCase();
 
   return (
     <div>
@@ -37,7 +37,7 @@ export function ProfilKort({
         <div className="flex size-16 items-center justify-center rounded-full bg-aksent/10 font-serif text-[27px] font-semibold text-aksent-dyp">
           {initial}
         </div>
-        {fornavn.trim() && (
+        {fornavn && (
           <p className="mt-2.5 font-serif text-[22px] font-medium text-blekk">
             {fornavn}
           </p>
@@ -64,8 +64,7 @@ export function ProfilKort({
             style={{ overflow: "hidden" }}
           >
             <div className="mb-[18px] flex flex-col gap-4 rounded-2xl border-[0.5px] border-strek bg-flate p-[18px]">
-              <Fornavn start={fornavn} />
-              <Brevnavn start={brevnavn} />
+              <Brevnavn start={navn} />
               <Telefon start={telefon} />
             </div>
           </m.div>

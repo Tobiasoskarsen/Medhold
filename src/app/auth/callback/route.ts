@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * OAuth-tilbakekall (PKCE code flow) — Google-innlogging via Supabase.
- * Bytter `code` mot en session, beriker fornavn fra Google (uten å overskrive
- * et eksisterende), setter user_metadata.har_sett_onboarding hvis det mangler
+ * Bytter `code` mot en session, beriker navnet (brevnavn) fra Google (uten å
+ * overskrive et eksisterende), setter user_metadata.har_sett_onboarding hvis det mangler
  * (Onboarding/Logg inn-arbeidsordre §1.5 — «Kom i gang» vises aldri igjen for
  * en kjent bruker, uansett enhet), og sender brukeren videre til `next`.
  * Feiler pent til /logg-inn?feil=google — aldri en hvit skjerm (også når
@@ -21,21 +21,24 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Fornavn-berikelse: Google gir given_name/full_name. Sett fornavn kun
-      // når det er tomt — aldri overskriv. Feil her skal ikke stoppe innlogging.
+      // Navn-berikelse: Google gir full_name/name (og given_name som siste
+      // utvei). Sett brevnavn kun når det er tomt — aldri overskriv. Feil her
+      // skal ikke stoppe innlogging.
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser();
         const meta = user?.user_metadata ?? {};
-        const eksisterende = (meta.fornavn as string | undefined)?.trim();
+        const eksisterende =
+          (meta.brevnavn as string | undefined)?.trim() ||
+          (meta.fornavn as string | undefined)?.trim();
         const fraGoogle = (
-          (meta.given_name as string | undefined) ??
-          (meta.full_name as string | undefined)?.split(" ")[0] ??
-          (meta.name as string | undefined)?.split(" ")[0]
+          (meta.full_name as string | undefined) ??
+          (meta.name as string | undefined) ??
+          (meta.given_name as string | undefined)
         )?.trim();
         const nyeFelter: Record<string, unknown> = {};
-        if (!eksisterende && fraGoogle) nyeFelter.fornavn = fraGoogle;
+        if (!eksisterende && fraGoogle) nyeFelter.brevnavn = fraGoogle;
         if (!meta.har_sett_onboarding) nyeFelter.har_sett_onboarding = true;
         if (user && Object.keys(nyeFelter).length > 0) {
           await supabase.auth.updateUser({ data: nyeFelter });

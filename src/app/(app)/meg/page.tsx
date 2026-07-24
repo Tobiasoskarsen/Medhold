@@ -26,9 +26,13 @@ export default async function MegPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const fornavn = (user?.user_metadata?.fornavn as string | undefined) ?? "";
-  const brevnavn =
-    (user?.user_metadata?.brevnavn as string | undefined) ?? fornavn;
+  // Ett navnefelt (brevnavn) dekker både profilhodet og brevsignaturen.
+  // Fallback til det gamle fornavn-feltet for brukere som satte det før
+  // sammenslåingen — aldri tomt for noen som allerede har oppgitt et navn.
+  const navn =
+    ((user?.user_metadata?.brevnavn as string | undefined) ??
+      (user?.user_metadata?.fornavn as string | undefined)) ??
+    "";
   const telefon = (user?.user_metadata?.telefon as string | undefined) ?? "";
   const varslerPa = user?.user_metadata?.varsler_paa !== false;
 
@@ -46,8 +50,7 @@ export default async function MegPage() {
       <h1 className="sr-only">Meg</h1>
 
       <ProfilKort
-        fornavn={fornavn}
-        brevnavn={brevnavn}
+        navn={navn}
         epost={user?.email ?? ""}
         telefon={telefon}
         innlogging={innlogging}

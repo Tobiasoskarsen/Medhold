@@ -3,8 +3,9 @@
 import { useEffect, useState, useTransition } from "react";
 import { lagreBrevnavn } from "./actions";
 
-/** Fullt navn til brevsignaturen — fylles automatisk inn neste gang du lager
- * et utkast, uten at du må skrive det på nytt. Lagres når feltet forlates. */
+/** Fullt navn — vises øverst på profilen din (kun første ord) og brukes som
+ * signatur i utkast til brev. Fylles automatisk inn neste gang du lager et
+ * utkast, uten at du må skrive det på nytt. Lagres når feltet forlates. */
 export function Brevnavn({ start }: { start: string }) {
   const [navn, setNavn] = useState(start);
   const [lagret, setLagret] = useState(false);
@@ -35,7 +36,8 @@ export function Brevnavn({ start }: { start: string }) {
         Fullt navn
       </label>
       <p className="mt-0.5 text-[13px] text-dempet">
-        Valgfritt — brukes som signatur når vi lager et utkast til brev.
+        Valgfritt — vises øverst på profilen din, og brukes som signatur når
+        vi lager et utkast til brev.
       </p>
       <input
         id="brevnavn"

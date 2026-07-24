@@ -1076,31 +1076,40 @@ korrekt blir `aktiveSaker[0]`.
 `build`/`lint`/`test` grønne (84 tester — ingen nye, samme datalogikk som
 forrige Hjem-fiks). Ingen migrasjon.
 
-## Fullt navn på Meg-profilen (på brukerens forespørsel)
+## Ett navnefelt på Meg-profilen (på brukerens forespørsel)
 
 **Bakgrunn:** Fornavn-feltets hjelpetekst sa «brukes i hilsenen på Hjem» —
 stale siden hilsenen ble fjernet fra Hjem i designordren
-(logo/hilsen-fjerningen, se «Designretning»-seksjonen). Fornavn brukes i
-dag kun til profilhodet (navn + avatar-initial) og som Google-fallback.
-Brukeren ønsket i tillegg et synlig sted å sette hele navnet som brukes i
-brevsignaturen (§6 i utkast-stemme-ordren), i stedet for at det kun kan
-settes/endres inne i selve utkast-flyten.
+(logo/hilsen-fjerningen, se «Designretning»-seksjonen). Første forsøk la
+til et NYTT «Fullt navn»-felt (for brevsignaturen, §6 i
+utkast-stemme-ordren) ved siden av Fornavn — men brukeren påpekte
+(med rette) at Fornavn da ble rent overflødig: alt det gjorde (profilhode +
+avatar-initial + Google-fallback) kan avledes av det fulle navnet.
 
-- **Ny `Brevnavn.tsx`** i «Rediger profil»-utvidelsen (mellom Fornavn og
-  Telefon), speiler `Fornavn.tsx` nøyaktig (samme lagre-på-blur-mønster).
-  Skriver til SAMME `user_metadata.brevnavn`-felt som `lagUtkast` allerede
-  auto-lagrer til — ingen ny datamodell, kun en ny, mer synlig inngang til
-  feltet. Forhåndsutfylt med `brevnavn ?? fornavn` (samme fallback som
-  utkast-skjermen allerede bruker).
-- **Ny `lagreBrevnavn`-action** i `meg/actions.ts`, speiler `lagreFornavn`.
-- **Fornavn.tsx sin hjelpetekst rettet** til «vises øverst på profilen din»
-  (den faktiske, nåværende bruken).
+**Endelig løsning: ett felt, ikke to.** `Fornavn.tsx` og `lagreFornavn` er
+fjernet. `Brevnavn.tsx` («Fullt navn») er nå det ENESTE navnefeltet på Meg,
+lagret i `user_metadata.brevnavn`:
+- **Profilhodet** (`ProfilKort.tsx`) viser kun FØRSTE ORD av det fulle
+  navnet + avatar-initial — resten av navnet finnes fortsatt, bare ikke i
+  hilsenen.
+- **`meg/page.tsx`** leser ett samlet `navn` (`brevnavn ?? fornavn` —
+  fallback til det gamle feltet for brukere som satte det FØR
+  sammenslåingen, aldri tomt for noen som allerede har oppgitt et navn).
+  Samme lesemønster som `utkast/page.tsx` allerede brukte.
+- **`auth/callback/route.ts`** (Google-innlogging) skriver nå
+  `full_name`/`name` (hele navnet, ikke bare `given_name`) til
+  `brevnavn` ved første innlogging, i stedet for kun fornavnet til det gamle
+  feltet.
+- Gjenværende `fornavn`-lesinger i koden (`meg/page.tsx`, `utkast/page.tsx`,
+  `auth/callback/route.ts`) er alle bevisste bakoverkompatible fallbacker —
+  ALDRI skrevet til lenger, kun lest for eksisterende brukere.
 - Verifisert i browser (midlertidig uautentisert forhåndsvisning av
-  `ProfilKort`, fjernet igjen): riktig feltrekkefølge/-etiketter/
-  hjelpetekster, alle tre felt forhåndsutfylt korrekt.
+  `ProfilKort`, fjernet igjen): profilhodet viser «Kari» (kun første ord),
+  feltet inneholder hele «Kari Nordmann», ett samlet felt i
+  Rediger profil-utvidelsen.
 
-`build`/`lint`/`test` grønne (84 tester — ingen nye, ren UI/profil-utvidelse).
-Ingen migrasjon.
+`build`/`lint`/`test` grønne (84 tester — ingen nye, ren UI/profil-forenkling).
+Ingen migrasjon (kun `user_metadata`, ingen kolonneendring).
 
 ## Deploy
 
