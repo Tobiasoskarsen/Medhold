@@ -19,6 +19,24 @@ export async function lagreFornavn(
   if (error) return { feil: "Kunne ikke lagre. Prøv igjen." };
 }
 
+/** Fullt navn til brevsignaturen (utkast/actions.ts). Samme user_metadata-felt
+ * som lagUtkast selv skriver til etter generering — denne raden gjør det
+ * synlig og redigerbart uten å måtte lage et utkast først. */
+export async function lagreBrevnavn(
+  navn: string,
+): Promise<{ feil: string } | void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  const { error } = await supabase.auth.updateUser({
+    data: { brevnavn: navn.trim() || null },
+  });
+  if (error) return { feil: "Kunne ikke lagre. Prøv igjen." };
+}
+
 export async function lagreTelefon(
   raw: string,
 ): Promise<{ feil: string } | void> {

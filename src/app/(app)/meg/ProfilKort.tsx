@@ -5,6 +5,7 @@ import { AnimatePresence, m } from "motion/react";
 import { Phone, KeyRound } from "lucide-react";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { Fornavn } from "./Fornavn";
+import { Brevnavn } from "./Brevnavn";
 import { Telefon } from "./Telefon";
 import { Gruppe } from "./Gruppe";
 import { Rad } from "./Rad";
@@ -16,11 +17,13 @@ import { Rad } from "./Rad";
  */
 export function ProfilKort({
   fornavn,
+  brevnavn,
   epost,
   telefon,
   innlogging,
 }: {
   fornavn: string;
+  brevnavn: string;
   epost: string;
   telefon: string;
   innlogging: string;
@@ -62,6 +65,7 @@ export function ProfilKort({
           >
             <div className="mb-[18px] flex flex-col gap-4 rounded-2xl border-[0.5px] border-strek bg-flate p-[18px]">
               <Fornavn start={fornavn} />
+              <Brevnavn start={brevnavn} />
               <Telefon start={telefon} />
             </div>
           </m.div>

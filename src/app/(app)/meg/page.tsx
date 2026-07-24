@@ -27,6 +27,8 @@ export default async function MegPage() {
   } = await supabase.auth.getUser();
 
   const fornavn = (user?.user_metadata?.fornavn as string | undefined) ?? "";
+  const brevnavn =
+    (user?.user_metadata?.brevnavn as string | undefined) ?? fornavn;
   const telefon = (user?.user_metadata?.telefon as string | undefined) ?? "";
   const varslerPa = user?.user_metadata?.varsler_paa !== false;
 
@@ -45,6 +47,7 @@ export default async function MegPage() {
 
       <ProfilKort
         fornavn={fornavn}
+        brevnavn={brevnavn}
         epost={user?.email ?? ""}
         telefon={telefon}
         innlogging={innlogging}

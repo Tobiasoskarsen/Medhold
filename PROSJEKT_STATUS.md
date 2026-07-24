@@ -1076,6 +1076,32 @@ korrekt blir `aktiveSaker[0]`.
 `build`/`lint`/`test` grønne (84 tester — ingen nye, samme datalogikk som
 forrige Hjem-fiks). Ingen migrasjon.
 
+## Fullt navn på Meg-profilen (på brukerens forespørsel)
+
+**Bakgrunn:** Fornavn-feltets hjelpetekst sa «brukes i hilsenen på Hjem» —
+stale siden hilsenen ble fjernet fra Hjem i designordren
+(logo/hilsen-fjerningen, se «Designretning»-seksjonen). Fornavn brukes i
+dag kun til profilhodet (navn + avatar-initial) og som Google-fallback.
+Brukeren ønsket i tillegg et synlig sted å sette hele navnet som brukes i
+brevsignaturen (§6 i utkast-stemme-ordren), i stedet for at det kun kan
+settes/endres inne i selve utkast-flyten.
+
+- **Ny `Brevnavn.tsx`** i «Rediger profil»-utvidelsen (mellom Fornavn og
+  Telefon), speiler `Fornavn.tsx` nøyaktig (samme lagre-på-blur-mønster).
+  Skriver til SAMME `user_metadata.brevnavn`-felt som `lagUtkast` allerede
+  auto-lagrer til — ingen ny datamodell, kun en ny, mer synlig inngang til
+  feltet. Forhåndsutfylt med `brevnavn ?? fornavn` (samme fallback som
+  utkast-skjermen allerede bruker).
+- **Ny `lagreBrevnavn`-action** i `meg/actions.ts`, speiler `lagreFornavn`.
+- **Fornavn.tsx sin hjelpetekst rettet** til «vises øverst på profilen din»
+  (den faktiske, nåværende bruken).
+- Verifisert i browser (midlertidig uautentisert forhåndsvisning av
+  `ProfilKort`, fjernet igjen): riktig feltrekkefølge/-etiketter/
+  hjelpetekster, alle tre felt forhåndsutfylt korrekt.
+
+`build`/`lint`/`test` grønne (84 tester — ingen nye, ren UI/profil-utvidelse).
+Ingen migrasjon.
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**
