@@ -31,13 +31,23 @@ function lesOnboardingSett(): boolean {
 export function Onboarding() {
   const router = useRouter();
   const redusert = useReducedMotion();
-  const [hoppOverAlt] = useState(lesOnboardingSett);
+  // Ukjent til etter mount. localStorage finnes ikke ved SSR — å lese den i
+  // useState-initialisereren gir ulik server-/klient-hydrering når nøkkelen
+  // ER satt (server tegner introen, klienten forventer null), noe som
+  // knekker hydreringen: introen fryser (ingen event-handlere festes) og
+  // ligger igjen over logg-inn-skjermen etter redirect.
+  const [hoppOverAlt, setHoppOverAlt] = useState<boolean | null>(null);
   const [i, setI] = useState(0);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHoppOverAlt(lesOnboardingSett());
+  }, []);
 
   // Sett på nytt besøk, samme enhet, ikke logget inn: hopp rett til logg inn
   // uten å blitze steg 1 først.
   useEffect(() => {
-    if (hoppOverAlt) router.replace("/logg-inn");
+    if (hoppOverAlt === true) router.replace("/logg-inn");
   }, [hoppOverAlt, router]);
 
   function gaTil(idx: number) {
@@ -60,7 +70,10 @@ export function Onboarding() {
     router.push("/logg-inn");
   }
 
-  if (hoppOverAlt) return null;
+  // Samme markup på server og klient inntil avgjørelsen er tatt (null) eller
+  // vi omdirigerer bort (true) — en tom, bakgrunnsfarget flate. Unngår at
+  // server og klientens første render noensinne kan avvike strukturelt.
+  if (hoppOverAlt !== false) return <main className="min-h-screen bg-bakgrunn" />;
 
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-[420px] flex-col">
