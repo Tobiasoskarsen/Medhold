@@ -81,11 +81,13 @@ export default async function HjemPage() {
   ]);
 
   const saker = (sakData ?? []) as (SakKobling & { sist_endret: string })[];
-  // markerLost lukker aldri sakens åpne frister automatisk — filtrer bort
-  // frister som tilhører en allerede avsluttet sak, så Hjem ikke lar en
-  // gjenglemt frist dra en løst sak tilbake på forsidekortet.
+  // Verken markerLost eller markerUtkastSendt lukker sakens åpne frister
+  // automatisk når status endres (til fullfort/venter_pa_svar) — filtrer
+  // bort frister som tilhører en sak som ikke lenger er aktiv, så Hjem ikke
+  // lar en gjenglemt frist overstyre «venter på svar»-kortet eller dra en
+  // løst sak tilbake på forsidekortet.
   const frister = ((fristData ?? []) as unknown as AapenFrist[]).filter(
-    (f) => f.saker?.status !== "fullfort",
+    (f) => f.saker?.status === "aktiv",
   );
 
   frister.sort((a, b) => {
