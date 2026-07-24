@@ -1010,6 +1010,45 @@ regresjonstest for akkurat brukerens tilfelle («3201.80» → 3201.8, ikke
 
 `build`/`lint`/`test` grønne (84 tester). Ingen migrasjon.
 
+## Fiks: hydreringskrasj i onboardingen (på brukerens rapport, ferdig i kode)
+
+**Symptom:** en gjenbruker (localStorage-nøkkelen `medhold-onboarding-sett`
+satt) møtte en frosset, uinteraktiv onboarding-intro liggende oppå den
+fungerende logg inn-skjermen — to skjermer stablet i DOM-en, scrollbar
+mellom dem.
+
+**Rotårsak:** `Onboarding.tsx` leste `lesOnboardingSett()` (som sjekker
+`localStorage`) direkte i `useState`s lazy-initialiserer. Ved SSR finnes
+ikke `localStorage`, så serveren tegnet alltid hele intro-markupen. Er
+nøkkelen satt på klienten, ga SAMME initialiserer `true` allerede i
+hydrerings-render-et → komponenten returnerte `null` — strukturelt avvik
+fra det serveren tegnet. React klarer ikke å hydrere et slikt avvik:
+event-handlerne festes aldri på serverens markup (derav «frosset»), og når
+redirect-effekten likevel fyrer, monteres logg inn-skjermen ved siden av
+liket i stedet for å erstatte det.
+
+**Fiks:** samme SSR-trygge mønster som `Tema.tsx` allerede bruker for
+`localStorage` — `hoppOverAlt` initialiseres til `null` (ukjent), leses i en
+`useEffect` etter mount, og komponenten tegner EN nøytral, bakgrunnsfarget
+`<main>` både mens avgjørelsen tas og ved redirect (`hoppOverAlt !== false`)
+— aldri intro-markupen — inntil klienten vet at den skal vises. Server og
+klientens første render er dermed alltid identiske; en kort blank flate i
+noen millisekunder er prisen for gjenbrukere, usynlig i praksis.
+
+**Verifisert i browser:** begge stier (nøkkel satt → clean redirect til
+`/logg-inn`, kun ett `<main>` i DOM-en, fullt interaktivt; nøkkel fjernet →
+onboardingen vises og «Neste» avanserte faktisk steget), ingen
+hydreringsvarsler i konsollen i noen av tilfellene. **Ingen fil-overlapp**
+med forrige fiks (commit `59dc1bf`, som rørte den separate post-login
+`/intro`-ruten, ikke denne pre-login-karusellen).
+
+Regel notert for videre arbeid: vindu-/`localStorage`-avhengig tilstand
+settes ALDRI i en `useState`-initialiserer — kun i `useEffect` etter mount
+(samme felle som denne kan ellers oppstå igjen).
+
+`build`/`lint`/`test` grønne (84 tester — ingen nye, ren hydreringsfiks).
+Ingen migrasjon.
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**
