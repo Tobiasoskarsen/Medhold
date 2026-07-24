@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { lagreFornavn } from "./actions";
+import { lagreBrevnavn } from "./actions";
 
-/** Valgfritt fornavn — brukes i hilsenen på Hjem. Lagres når feltet forlates. */
-export function Fornavn({ start }: { start: string }) {
+/** Fullt navn — vises øverst på profilen din (kun første ord) og brukes som
+ * signatur i utkast til brev. Fylles automatisk inn neste gang du lager et
+ * utkast, uten at du må skrive det på nytt. Lagres når feltet forlates. */
+export function Brevnavn({ start }: { start: string }) {
   const [navn, setNavn] = useState(start);
   const [lagret, setLagret] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export function Fornavn({ start }: { start: string }) {
     setFeil(null);
     setLagret(false);
     startTransition(async () => {
-      const r = await lagreFornavn(navn);
+      const r = await lagreBrevnavn(navn);
       if (r?.feil) setFeil(r.feil);
       else setLagret(true);
     });
@@ -30,18 +32,19 @@ export function Fornavn({ start }: { start: string }) {
 
   return (
     <div>
-      <label htmlFor="fornavn" className="text-sm font-medium text-blekk">
-        Fornavn
+      <label htmlFor="brevnavn" className="text-sm font-medium text-blekk">
+        Fullt navn
       </label>
       <p className="mt-0.5 text-[13px] text-dempet">
-        Valgfritt — brukes i hilsenen på Hjem.
+        Valgfritt — vises øverst på profilen din, og brukes som signatur når
+        vi lager et utkast til brev.
       </p>
       <input
-        id="fornavn"
+        id="brevnavn"
         type="text"
         value={navn}
-        maxLength={40}
-        placeholder="Fornavn"
+        maxLength={80}
+        placeholder="Fullt navn"
         onChange={(e) => {
           setNavn(e.target.value);
           setLagret(false);

@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { normaliserTelefon } from "@/lib/telefon";
 
-export async function lagreFornavn(
+/** Fullt navn til brevsignaturen (utkast/actions.ts). Samme user_metadata-felt
+ * som lagUtkast selv skriver til etter generering — denne raden gjør det
+ * synlig og redigerbart uten å måtte lage et utkast først. */
+export async function lagreBrevnavn(
   navn: string,
 ): Promise<{ feil: string } | void> {
   const supabase = await createClient();
@@ -14,7 +17,7 @@ export async function lagreFornavn(
   if (!user) redirect("/velkommen");
 
   const { error } = await supabase.auth.updateUser({
-    data: { fornavn: navn.trim() || null },
+    data: { brevnavn: navn.trim() || null },
   });
   if (error) return { feil: "Kunne ikke lagre. Prøv igjen." };
 }
