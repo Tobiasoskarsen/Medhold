@@ -1010,6 +1010,33 @@ regresjonstest for akkurat brukerens tilfelle («3201.80» → 3201.8, ikke
 
 `build`/`lint`/`test` grønne (84 tester). Ingen migrasjon.
 
+## Fiks: «venter på svar»-sak viste feil kort på Hjem (på brukerens rapport)
+
+**Symptom:** en sak med `status='venter_pa_svar'` (nettopp sendt utkast) viste
+likevel «Svar på inkassovarselet» / «Lag utkast til svar» på Hjem, i stedet
+for «Venter på svar»-kortet.
+
+**Rotårsak:** samme mønster som forrige Hjem-fiks (`59dc1bf`), men for en
+annen statusovergang. `markerUtkastSendt` (`utkast/actions.ts`) setter
+`status='venter_pa_svar'` uten å lukke sakens opprinnelige frist (den som
+utløste svaret). Forrige fiks filtrerte kun bort frister fra `fullfort`-
+saker — en frist fra en `venter_pa_svar`-sak slapp gjennom, ble `topFrist`,
+og `venter`-sjekken (`!!topSak && topSak.status==='venter_pa_svar' &&
+!topFrist`) feilet nettopp fordi `topFrist` IKKE var null.
+
+**Fiks:** ett linjeskifte i `(app)/page.tsx` — frist-filteret er nå
+`f.saker?.status === "aktiv"` (i stedet for `!== "fullfort"`), så frister
+fra BÅDE avsluttede og ventende saker holdes utenfor `topFrist`/
+«Kommende»/frist-tallet i H1. `aktiveSaker`-fallbacken (brukt når det ikke
+finnes noen relevant frist) er urørt og inkluderer fortsatt
+`venter_pa_svar`-saker, slik at «Venter på svar»-kortet fortsatt kan vises.
+Bekreftet at `saker_set_sist_endret`-triggeren (0001_saker.sql) automatisk
+oppdaterer `sist_endret` ved statusendring, så den nettopp sendte saken
+korrekt blir `aktiveSaker[0]`.
+
+`build`/`lint`/`test` grønne (84 tester — ingen nye, samme datalogikk som
+forrige Hjem-fiks). Ingen migrasjon.
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**
