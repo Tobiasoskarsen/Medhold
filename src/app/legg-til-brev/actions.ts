@@ -26,7 +26,7 @@ const SVAR_SKJEMA = {
     forklaring: {
       type: "string",
       description:
-        "Forklaring på enkelt, kort, rolig norsk — maks 70 ord, ett avsnitt, ingen linjeskift/overskrifter. Struktur: (1) første setning om hva brevet ER og hva de krever, mønster «Dette er {brevtype i klartekst} fra {avsender} med krav på {beløp}.» (uten beløp/avsender når de mangler); (2) deretter maks 3 korte setninger (maks ca. 20 ord hver) om det viktigste — hva kravet gjelder, hva som skjer ved fristoversittelse, og evt. det som skiller brevet fra et standardbrev. Start ALDRI med hilsen eller «du har mottatt» — start rett på «Dette er …». INGEN forbehold/disclaimer (appen viser det selv).",
+        "Forklaring på enkelt, kort, rolig norsk — 80–140 ord i TRE korte avsnitt (linjeskift mellom dem), ingen overskrifter. Avsnitt 1 «Hva dette er» (1–2 setninger: brevtype, avsender, beløp, hva kravet gjelder). Avsnitt 2 «Hva det betyr for deg» (2–3 setninger: hvor i prosessen saken står, hva som konkret skjer hvis man ikke gjør noe innen fristen — f.eks. mer salær, forliksråd, betalingsanmerkning, det faktiske neste trinnet for DETTE brevet — og evt. det som skiller brevet fra et standardbrev). Avsnitt 3 «Det viktigste nå» (én setning som peker på det som haster mest). Start ALDRI med hilsen eller «du har mottatt» — start rett på «Dette er …». INGEN forbehold/disclaimer (appen viser det selv).",
     },
     brevtype: {
       type: "string",
@@ -77,7 +77,7 @@ const SVAR_SKJEMA = {
     foreslatte_steg: {
       type: "array",
       description:
-        "Maks 3 konkrete steg BRUKEREN kan gjøre utenfor appen (finne dokumentasjon, verifisere betaling i nettbank, hente frem en avtale), utledet KUN av brevets konkrete innhold. Tom liste er et gyldig og ofte riktig svar. Hvert steg: imperativ, maks 10 ord, én konkret handling. Viktigst først. Foreslå ALDRI å betale/svare/bestride (brukerens eget valg i appen), å notere/huske fristen (appen beregner og varsler), å sjekke om gebyrer er lovlige (appen gjør det automatisk), eller generisk fyll («les brevet nøye», «ta kontakt hvis noe er uklart», «vurder å søke rådgivning»).",
+        "Sikt på 2–3 konkrete steg BRUKEREN kan gjøre utenfor appen, utledet av brevets konkrete innhold. Gir brevet naturlige dokumentasjonssteg (kvitteringer, oppsigelser, e-poster, betaling å verifisere i nettbank), bruk dem. Gir det IKKE det, foreslå heller FORBEREDENDE steg ut fra hva slags krav det er (f.eks. «Finn frem avtalen eller ordrebekreftelsen», «Sjekk kontoutskriften for mai og juni»). Helt tom liste er kun riktig når selv forberedende steg ville vært meningsløse (f.eks. et brev som bare bekrefter at en sak er avsluttet). Maks 3 steg. Hvert steg: imperativ, maks 10 ord, én konkret handling. Viktigst først. Foreslå ALDRI å betale/svare/bestride (brukerens eget valg i appen), å notere/huske fristen (appen beregner og varsler), å sjekke om gebyrer er lovlige (appen gjør det automatisk), eller generisk fyll («les brevet nøye», «ta kontakt hvis noe er uklart», «vurder å søke rådgivning»).",
       items: { type: "string" },
     },
     foreslatte_frister: {
@@ -170,19 +170,22 @@ Ufravikelige regler:
 - I dag er ${idag}. Bruk dette bare til å forstå teksten – ikke til å regne ut frister som ikke står der.
 - Ikke inkluder forbehold eller disclaimere i forklaringen; appen viser dette selv.
 
-Forklaringen — struktur (se også skjemafeltet):
-1. Første setning: hva brevet ER og hva de krever. Mønster: «Dette er {brevtype i klartekst} fra {avsender} med krav på {beløp}.» (uten beløp/avsender når de mangler).
-2. Deretter maks 3 korte setninger om det viktigste: hva kravet gjelder, hva som skjer hvis man ikke gjør noe innen fristen, og eventuelt det som skiller akkurat dette brevet fra et standardbrev (f.eks. varsel om rettslig inndriving). Ingen setning over ca. 20 ord.
-3. Maks 70 ord totalt. Ett avsnitt. Ingen linjeskift, ingen overskrifter.
-4. Start ALDRI med hilsen («hei») eller «du har mottatt» — start rett på «Dette er …».
-5. Bruk ALDRI disse ordene/frasene: ${FYLL_FORBUD.map((f) => `«${f}»`).join(", ")}.
+Forklaringen — tre korte avsnitt, hvert med sin jobb (se også skjemafeltet):
+1. «Hva dette er» — 1–2 setninger: brevtype, avsender, beløp, hva kravet gjelder.
+2. «Hva det betyr for deg» — 2–3 setninger: hvor i prosessen saken står, hva som KONKRET skjer hvis man ikke gjør noe innen fristen (det faktiske neste trinnet for DETTE brevet — f.eks. mer salær, forliksråd, betalingsanmerkning, ikke en generisk formulering), og eventuelt det som skiller akkurat dette brevet fra et standardbrev (f.eks. varsel om rettslig inndriving).
+3. «Det viktigste nå» — én setning som peker på den ene tingen som haster mest.
+4. 80–140 ord totalt. Linjeskift mellom avsnittene, ingen overskrifter.
+5. Start ALDRI med hilsen («hei») eller «du har mottatt» — start rett på «Dette er …».
+6. Bruk ALDRI disse ordene/frasene: ${FYLL_FORBUD.map((f) => `«${f}»`).join(", ")}.
 
 Foreslåtte steg — regler (se også skjemafeltet):
-- Maks 3 steg. Færre er bedre. Tom liste er et gyldig og ofte riktig svar.
+- Sikt på 2–3 steg. Maks 3.
 - Hvert steg: imperativ, maks 10 ord, én konkret handling.
 - Rekkefølge: viktigst først.
-- Foreslå ALDRI: betale/svare/bestride-valget, å notere/huske fristen, å sjekke om gebyrer er lovlige, eller generisk fyll («les brevet nøye», «ta kontakt hvis noe er uklart», «vurder å søke rådgivning»).
-- Steg skal være ting bare brukeren kan gjøre utenfor appen: finne dokumentasjon (kvitteringer, oppsigelser, e-poster), verifisere betaling i nettbank, hente frem en avtale — utledet av brevets konkrete innhold.`;
+- Gir brevet naturlige dokumentasjonssteg (kvitteringer, oppsigelser, e-poster, betaling å verifisere i nettbank), bruk dem.
+- Gir det IKKE det, foreslå heller forberedende steg ut fra hva slags krav det er (f.eks. «Finn frem avtalen eller ordrebekreftelsen», «Sjekk kontoutskriften for mai og juni»).
+- Helt tom liste er kun riktig når selv forberedende steg ville vært meningsløse (f.eks. et brev som bare bekrefter at en sak er avsluttet).
+- Foreslå ALDRI: betale/svare/bestride-valget, å notere/huske fristen, å sjekke om gebyrer er lovlige, eller generisk fyll («les brevet nøye», «ta kontakt hvis noe er uklart», «vurder å søke rådgivning»).`;
 }
 
 type Analyse = {
@@ -231,48 +234,57 @@ export type AnalyseResultat =
     }
   | { ok: false; feil: string };
 
-// Kodehåndhevelse av analyse-kort-ordrens §2.2-tak. «AI tolker, kode
-// beslutter» — også for lengde/antall.
+// Kodehåndhevelse av analyse-kort-ordrens §2.2-tak (kalibrert etter første
+// runde — 70 ord viste seg å tvinge modellen til å ofre innhold; se
+// PROSJEKT_STATUS). «AI tolker, kode beslutter» — også for lengde/antall.
 const MAKS_STEG = 3;
 const MAKS_STEG_ORD = 14;
-// Kode-tak (70 er prompt-målet i §1.1; 110 er terskelen som utløser én
-// regenerering — se etterbehandle()).
-const FORKLARING_TAK = 110;
+// Kode-tak (80–140 er prompt-målet i §1.1). Nedre grense er like viktig som
+// øvre — en forklaring under 80 ord dekker sjelden alle tre avsnittene godt.
+const FORKLARING_TAK_OVER = 180;
+const FORKLARING_TAK_UNDER = 80;
 
 /**
- * Ber om en kortere versjon av en for lang forklaring. Frittstående, minimalt
- * kall — trenger ikke brevteksten på nytt, kun å skrive om teksten som
- * allerede finnes (ingen ny faktautledning, se guardrail 1). Feiler kallet,
- * returneres null og den opprinnelige forklaringen beholdes.
+ * Ber om en omskrevet versjon av en forklaring som er for lang ELLER for
+ * tynn. Frittstående, minimalt kall — trenger ikke brevteksten på nytt, kun
+ * å skrive om teksten som allerede finnes (ingen ny faktautledning, se
+ * guardrail 1). Feiler kallet, returneres null og originalen beholdes.
  */
-async function korteForklaring(forklaring: string): Promise<string | null> {
+async function korrigerForklaring(
+  forklaring: string,
+  problem: "for_lang" | "for_tynn",
+): Promise<string | null> {
+  const oppgave =
+    problem === "for_lang"
+      ? `Denne forklaringen er for lang:\n\n${forklaring}\n\nSkriv den om til 80–140 ord.`
+      : `Denne forklaringen er for tynn og dekker ikke alle tre avsnittene godt nok:\n\n${forklaring}\n\nSkriv den om til 80–140 ord, med mer substans i avsnitt 2 spesielt (hva som konkret skjer ved fristoversittelse). Bruk KUN fakta som allerede står i teksten over — finn ALDRI på nye tall, beløp, satser eller detaljer som ikke allerede er nevnt. Utdyp ved å forklare KONSEKVENSENE av det som allerede står der, i klarere og mer konkret språk — ikke ved å legge til ny informasjon.`;
   try {
     const anthropic = new Anthropic();
     const svar = await anthropic.messages.create({
       model: AI_MODELL,
-      max_tokens: 300,
+      max_tokens: 400,
       thinking: { type: "disabled" },
       system:
-        "Du skriver om en forklaringstekst til å bli kortere, uten å endre meningsinnholdet eller finne på nye fakta.",
+        "Du skriver om en forklaringstekst til riktig lengde. Du endrer ALDRI meningsinnholdet og finner ALDRI på nye fakta, tall eller detaljer som ikke allerede står i teksten du får oppgitt.",
       messages: [
         {
           role: "user",
-          content: `Denne forklaringen er for lang:\n\n${forklaring}\n\nSkriv den om til under 70 ord. Behold strukturen: første setning om hva brevet er og krever, deretter maks tre korte setninger om det viktigste. Ett avsnitt, ingen linjeskift, ingen overskrifter, ingen forbehold/disclaimer. Svar KUN med den nye forklaringsteksten — ingen annen tekst.`,
+          content: `${oppgave} Behold strukturen: avsnitt 1 «hva dette er», avsnitt 2 «hva det betyr for deg» (hvor saken står, hva som konkret skjer ved fristoversittelse, evt. hva som skiller brevet fra standard), avsnitt 3 «det viktigste nå» (én setning). Linjeskift mellom avsnittene, ingen overskrifter, ingen forbehold/disclaimer. Svar KUN med den nye forklaringsteksten — ingen annen tekst.`,
         },
       ],
     });
     const blokk = svar.content.find((b) => b.type === "text");
     return blokk && blokk.type === "text" ? blokk.text.trim() : null;
   } catch (feil) {
-    console.error("[legg-til-brev] Forkorting av forklaring feilet:", feil);
+    console.error("[legg-til-brev] Omskriving av forklaring feilet:", feil);
     return null;
   }
 }
 
 // Kode beslutter: beregn frist av regel + match mot eksisterende krav, kutt
-// steg-lista og kort ned en for lang forklaring. Deles mellom tekst- og
-// bildeanalysen. Muterer analyse.forklaring/foreslatte_steg direkte — kalleren
-// leser de samme (nå rettede) feltene fra sitt eget analyse-objekt etterpå.
+// steg-lista og korriger en forklaring utenfor ordtaket. Deles mellom tekst-
+// og bildeanalysen. Muterer analyse.forklaring/foreslatte_steg direkte —
+// kalleren leser de samme (nå rettede) feltene fra sitt eget objekt etterpå.
 async function etterbehandle(
   supabase: Awaited<ReturnType<typeof createClient>>,
   analyse: Analyse,
@@ -291,17 +303,20 @@ async function etterbehandle(
     }
   }
 
-  // Forklaring: over kode-taket → én regenerering (ikke en løkke). Fortsatt
-  // over taket etterpå → behold og logg, ikke blokkér brukeren.
-  if (tellOrd(analyse.forklaring) > FORKLARING_TAK) {
-    const kortere = await korteForklaring(analyse.forklaring);
-    if (kortere) {
-      if (tellOrd(kortere) > FORKLARING_TAK) {
+  // Forklaring: utenfor 80–180 ord → én regenerering (ikke en løkke).
+  // Fortsatt utenfor taket etterpå → behold og logg, ikke blokkér brukeren.
+  const ordtall = tellOrd(analyse.forklaring);
+  if (ordtall > FORKLARING_TAK_OVER || ordtall < FORKLARING_TAK_UNDER) {
+    const problem = ordtall > FORKLARING_TAK_OVER ? "for_lang" : "for_tynn";
+    const korrigert = await korrigerForklaring(analyse.forklaring, problem);
+    if (korrigert) {
+      const nyttAntall = tellOrd(korrigert);
+      if (nyttAntall > FORKLARING_TAK_OVER || nyttAntall < FORKLARING_TAK_UNDER) {
         console.warn(
-          `[legg-til-brev] Forklaring fortsatt over ${FORKLARING_TAK} ord etter omskriving.`,
+          `[legg-til-brev] Forklaring fortsatt utenfor 80–180 ord etter omskriving (${nyttAntall} ord).`,
         );
       }
-      analyse.forklaring = kortere;
+      analyse.forklaring = korrigert;
     }
   }
 

@@ -1176,6 +1176,56 @@ Avvik/tvetydigheter tatt underveis:
    — direkte i strid med guardrail 1. En ren omskrivings-forespørsel uten
    brevkontekst kan ikke finne på nye fakta, kun korte ned eksisterende tekst.
 
+## Kalibrering av analyse-kort (brukertilbakemelding, ferdig i kode)
+
+70-ordstaket fra forrige runde viste seg for trangt i praksis: modellen
+ofret nettopp det som gir verdi (konkrete konsekvenser, hva som skiller
+brevet) for å klare taket, og «tom liste er ofte riktig» for steg ble
+tolket som en invitasjon til å levere nesten ingenting. Forbudslisten
+(`FYLL_FORBUD`) var riktig kalibrert og er uendret — det var taket og
+tomhets-tillatelsen som måtte justeres, ikke fyll-reglene.
+
+- **Forklaringen er nå tre faste avsnitt** (linjeskift mellom dem, ikke
+  lenger «ett avsnitt»): (1) «Hva dette er», (2) «Hva det betyr for deg»
+  (eksplisitt: det KONKRETE neste trinnet — mer salær, forliksråd,
+  betalingsanmerkning — ikke en generisk formulering), (3) «Det viktigste
+  nå» (én setning som peker på det som haster mest).
+- **Ordtak endret fra maks 70 til mål 80–140**, med kode-håndhevelse i
+  BEGGE retninger i `etterbehandle()`: over 180 ord ELLER under 80 ord →
+  én regenerering (samme «ikke en løkke»-prinsipp som før).
+  `korteForklaring()` er omdøpt `korrigerForklaring()` og tar nå et
+  `problem: "for_lang" | "for_tynn"`-parameter med ulik instruksjon.
+- **Foreslåtte steg:** «tom liste er ofte riktig» fjernet. Nytt mål 2–3
+  steg (maks fortsatt 3). Gir ikke brevet naturlige dokumentasjonssteg,
+  skal modellen foreslå FORBEREDENDE steg ut fra krav-typen (f.eks. «Finn
+  frem avtalen eller ordrebekreftelsen»). Helt tom liste er nå forbeholdt
+  tilfeller der selv forberedende steg ville vært meningsløse (f.eks. en
+  bekreftelse på at saken er avsluttet).
+- **Reelt funn under verifisering — rettet:** det utvidende
+  korrigeringskallet («for_tynn») fant først opp et konkret gebyrbeløp
+  («700–800 kr») som ikke sto i originalteksten, når det ble bedt om «mer
+  substans». Rettet ved å eksplisitt forby nye tall/beløp/detaljer i
+  omskrivings-instruksjonen, og be modellen utdype KONSEKVENSENE av
+  eksisterende fakta i stedet for å legge til nye. Reverifisert: begge
+  testbrevene korrigert til 120/122 ord uten et eneste nytt tall — kun
+  gjentakelse av beløp som allerede sto i originalen.
+- **Verifisert mot ekte Claude-API** (frittstående skript, ikke i
+  repoet): testbrev 1 — 73 ord i første forsøk (under 80, ville trigget
+  kode-korrigering i praksis; korrigert versjon 120 ord, korrekt struktur,
+  ingen oppdiktede tall); testbrev 8 — 68 ord i første forsøk, siste
+  avsnitt pekte korrekt på «fristen er 29. juli 2026»; korrigert versjon
+  122 ord. Et brev som kun bekrefter en avsluttet sak ga ett rimelig
+  forberedende steg («Lagre brevet som kvittering»), ikke tom liste — i
+  tråd med den nye regelen om at helt tom liste er unntaket.
+
+`build`/`lint`/`test` grønne (92 tester — ingen nye, ren prompt-/tak-
+kalibrering). Ingen migrasjon.
+
+Merknad: dette er en smaksdimensjon uten objektivt fasitsvar. Kalibreringen
+er nå satt basert på to runder med tilbakemelding (for langt → for kort →
+denne justeringen); neste datapunkt bør komme fra faktiske pilotbrukere,
+ikke en tredje runde med intern synsing.
+
 ## Skjul navnefeltet på utkast-skjermen når det alt er satt (følgeendring)
 
 Følge av forrige endring: nå som navnet kan settes proaktivt på Meg, er det
