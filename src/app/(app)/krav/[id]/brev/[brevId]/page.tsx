@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort } from "@/components/ui";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { formaterKortDato } from "@/lib/dato";
+import { FORKLARING_DISCLAIMER } from "@/lib/brand";
 import {
   STADIUM_ETIKETT,
   stotterUtkast,
@@ -84,6 +85,7 @@ export default async function BrevPage({
           {brev.forklaring}
         </p>
       </Kort>
+      <p className="mt-1.5 text-[12px] text-dempet">{FORKLARING_DISCLAIMER}</p>
 
       <Gebyrsjekk
         resultat={(brev.gebyrsjekk as GebyrsjekkResultat | null) ?? null}

@@ -8,3 +8,9 @@ export const APP_VERSJON = "1.0";
 
 // E-post for support/hjelp. Byttes til en dedikert supportadresse senere.
 export const SUPPORT_EPOST = "tobsenfire@gmail.com";
+
+// Fast, kodebestemt linje under AI-forklaringen av et brev (analyse-kort-
+// ordren §1.2) — disclaimeren er IKKE lenger en del av AI-teksten selv, slik
+// at den er identisk og garantert til stede overalt forklaringen vises.
+export const FORKLARING_DISCLAIMER =
+  "Automatisk forklaring — ikke profesjonell rådgivning.";

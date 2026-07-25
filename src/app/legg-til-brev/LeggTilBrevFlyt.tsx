@@ -18,6 +18,7 @@ import {
 } from "@/lib/types";
 import { svarUtfallTilSak } from "@/lib/utfall";
 import { tolkKr } from "@/lib/format";
+import { FORKLARING_DISCLAIMER } from "@/lib/brand";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { Veivalg } from "@/components/Veivalg";
 import { LeserBrev } from "./LeserBrev";
@@ -390,6 +391,9 @@ export function LeggTilBrevFlyt({
               {analyse.forklaring}
             </p>
           </div>
+          <p className="mt-1.5 text-[12px] text-dempet">
+            {FORKLARING_DISCLAIMER}
+          </p>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <label className="col-span-2 block text-[13px] font-medium text-blekk">
