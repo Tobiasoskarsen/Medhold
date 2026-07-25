@@ -636,6 +636,10 @@ Samlet liste over påstander/tekster som bør sees av advokat før bred lanserin
   kortundertekstene («Vi skriver brevet — du godkjenner før noe sendes» /
   «Bruk gebyrfunnet — vi skriver brevet») og veier-ut sin nye ingress («Tre
   helt vanlige måter å håndtere et krav på …»).
+- **`FORKLARING_DISCLAIMER`** (`src/lib/brand.ts`): «Automatisk forklaring —
+  ikke profesjonell rådgivning.» — ny, fast linje som nå er ENESTE
+  disclaimer under brevforklaringen (AI-en har ikke lenger lov til å
+  formulere sin egen, se analyse-kort-seksjonen under).
 
 ---
 
@@ -1110,6 +1114,67 @@ lagret i `user_metadata.brevnavn`:
 
 `build`/`lint`/`test` grønne (84 tester — ingen nye, ren UI/profil-forenkling).
 Ingen migrasjon (kun `user_metadata`, ingen kolonneendring).
+
+## Kortere brevanalyse (MEDHOLD_ANALYSE_KORT_ARBEIDSORDRE, ferdig i kode)
+
+Samme kur som utkast-stemme-ordren: harde formatkrav i prompten + deterministisk
+kodehåndhevelse, denne gangen for de to fritekstfeltene i brevanalysen
+(`forklaring` + `foreslatte_steg`) — ikke bare brevutkastene. Gjelder begge
+inntaksveier (tekst og bilde), som deler skjema/prompt/`etterbehandle()`.
+
+- **`src/lib/format.ts`**: ny `tellOrd(tekst)` (flyttet fra en lokal,
+  utestet duplikat i `utkast/actions.ts`, som nå importerer den delte
+  versjonen) og ny `kuttTilMaks(liste, maks)`. **8 nye tester** i
+  `format.test.ts` (19 totalt i fila).
+- **`legg-til-brev/actions.ts`**: `SVAR_SKJEMA`s `forklaring`- og
+  `foreslatte_steg`-beskrivelser skrevet om med harde formatkrav (§1.1/§2.1
+  — struktur, maks 70/10 ord, forbudsliste `FYLL_FORBUD`, forbud mot å
+  foreslå det appen selv håndterer). Systemprompten («Svar på enkelt, varmt
+  og rolig») endret til «enkelt, rolig og KORT — klarhet er omsorgen».
+  Disclaimer-instruksjonen fjernet fra prompten, erstattet med et eksplisitt
+  forbud mot at AI-en tar den med selv.
+- **`etterbehandle()`** (delt av tekst-/bildeanalysen): `foreslatte_steg`
+  kuttes deterministisk til 3 (`kuttTilMaks`), steg over 14 ord logges
+  (`console.warn`) men beholdes — ingen regenerering, rekkefølgen er
+  prioritert så kutting er trygt. `forklaring` over 110 ord (kode-tak; 70 er
+  prompt-målet) → ett frittstående oppfølgingskall som KUN ber om en kortere
+  omskriving av den eksisterende teksten (ingen ny brevkontekst, ingen ny
+  faktautledning — minimerer risiko for at andre felter påvirkes, jf.
+  guardrail 1). Fortsatt over taket etterpå → beholdes og logges.
+  `etterbehandle()` muterer `analyse.forklaring`/`.foreslatte_steg` direkte;
+  begge kallesteder leser samme (nå rettede) objekt etterpå.
+- **Disclaimer flyttet til UI** (§1.2): ny `FORKLARING_DISCLAIMER`-konstant i
+  `brand.ts`, vist som fast, dempet 12px-linje under forklaringen i BÅDE
+  steg 3 (`LeggTilBrevFlyt.tsx`) og brev-detalj
+  (`krav/[id]/brev/[brevId]/page.tsx`).
+- **Tom steg-liste:** steg 3 skjulte allerede hele «Foreslåtte steg»-
+  seksjonen ved tom liste (`{analyse.foreslatte_steg.length > 0 && (...)}`)
+  — verifisert urørt av kuttingen. Se avvik under for brev-detalj-siden.
+- **Verifisert mot ekte Claude-API** (frittstående skript, ikke i repoet):
+  testbrev 1 (enkelt inkassovarsel) — 39 ord, starter «Dette er …», ingen
+  FYLL_FORBUD-treff, 2 steg (begge lovlige verifiseringssteg — «sjekk i
+  nettbanken om betalt», ikke selve betale-valget); testbrev 8
+  (forliksvarsel) — 51 ord, nevner forliksråd som det som skiller brevet,
+  ingen FYLL_FORBUD-treff.
+
+`build`/`lint`/`test` grønne (92 tester). Ingen migrasjon.
+
+Avvik/tvetydigheter tatt underveis:
+
+1. **Brev-detalj-siden (`krav/[id]/brev/[brevId]/page.tsx`) rendrer ikke
+   `foreslatte_steg` i det hele tatt** — verken før eller etter denne
+   ordren. Lagrede steg havner i en egen `neste_steg`-tabell (sak-nivå, satt
+   av `lagreBrev`) som ikke leses/vises noe sted i appen per i dag. Ordrens
+   §2.2 ba om å «verifisere begge steder» for tom-liste-håndtering; det
+   andre stedet finnes ikke ennå, så det er ingenting å skjule der. Utenfor
+   denne ordrens omfang å bygge visningen — flagget for egen vurdering.
+2. **Forklarings-forkorting bruker et helt frittstående oppfølgingskall**
+   (kun den for lange teksten sendes inn, ikke brevet på nytt) i stedet for
+   å fortsette den opprinnelige samtalen med hele skjemaet på nytt. Valgt
+   fordi å regenerere HELE den strukturerte JSON-en på nytt ville risikert å
+   endre andre, allerede korrekt uttrukne felt (beløp, datoer, kostnadslinjer)
+   — direkte i strid med guardrail 1. En ren omskrivings-forespørsel uten
+   brevkontekst kan ikke finne på nye fakta, kun korte ned eksisterende tekst.
 
 ## Skjul navnefeltet på utkast-skjermen når det alt er satt (følgeendring)
 

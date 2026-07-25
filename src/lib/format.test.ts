@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { formaterBelop, tolkKr } from "./format.ts";
+import { formaterBelop, tolkKr, tellOrd, kuttTilMaks } from "./format.ts";
 
 test("formaterBelop: norsk tusenskille, ingen desimaler", () => {
   // Intl.NumberFormat("nb-NO") bruker hardt mellomrom (U+00A0), ikke vanlig.
@@ -55,4 +55,37 @@ test("tolkKr: ugyldig tekst gir null", () => {
 
 test("tolkKr: étt siffer øre", () => {
   assert.equal(tolkKr("100,5"), 100.5);
+});
+
+test("tellOrd: teller ord adskilt av mellomrom", () => {
+  assert.equal(tellOrd("Dette er fire ord"), 4);
+});
+
+test("tellOrd: håndterer flere mellomrom og linjeskift", () => {
+  assert.equal(tellOrd("Ett   to\ntre"), 3);
+});
+
+test("tellOrd: tom eller kun mellomrom gir 0", () => {
+  assert.equal(tellOrd(""), 0);
+  assert.equal(tellOrd("   "), 0);
+});
+
+test("tellOrd: ett ord gir 1", () => {
+  assert.equal(tellOrd("Enkeltord"), 1);
+});
+
+test("kuttTilMaks: kutter til maks antall, beholder rekkefølge", () => {
+  assert.deepEqual(kuttTilMaks(["a", "b", "c", "d"], 3), ["a", "b", "c"]);
+});
+
+test("kuttTilMaks: kortere liste enn maks er urørt", () => {
+  assert.deepEqual(kuttTilMaks(["a"], 3), ["a"]);
+});
+
+test("kuttTilMaks: liste nøyaktig lik maks er urørt", () => {
+  assert.deepEqual(kuttTilMaks(["a", "b", "c"], 3), ["a", "b", "c"]);
+});
+
+test("kuttTilMaks: tom liste forblir tom", () => {
+  assert.deepEqual(kuttTilMaks([], 3), []);
 });
