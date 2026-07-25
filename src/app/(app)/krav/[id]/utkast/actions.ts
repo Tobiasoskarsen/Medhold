@@ -9,6 +9,7 @@ import { type UtkastType } from "@/lib/types";
 import { gebyrFunnTekst, type GebyrsjekkResultat } from "@/lib/gebyr";
 import type { AvdragsForslag } from "@/lib/avdrag";
 import { AI_MODELL } from "@/lib/ai";
+import { tellOrd } from "@/lib/format";
 import {
   TONEREGLER,
   REFERANSEBREV,
@@ -31,10 +32,6 @@ function fjernStjerner(tekst: string): string {
     .replace(/^[ \t]*\*[ \t]+/gm, "")
     .replace(/\*/g, "")
     .trim();
-}
-
-function tellOrd(tekst: string): number {
-  return tekst.split(/\s+/).filter(Boolean).length;
 }
 
 export type UtkastResultat =

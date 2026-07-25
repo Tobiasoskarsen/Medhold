@@ -39,3 +39,14 @@ export function tolkKr(s: string | null | undefined): number | null {
   const n = Number(`${heltall || "0"}.${desimalDel || "0"}`);
   return Number.isNaN(n) ? null : n;
 }
+
+/** Teller ord i en tekst (skilt av ett eller flere mellomrom/linjeskift). */
+export function tellOrd(tekst: string): number {
+  return tekst.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/** Kutter en liste til maks N elementer, uten å endre rekkefølgen. Brukt til
+ * å håndheve tak som «maks 3 steg» deterministisk, uten AI. */
+export function kuttTilMaks<T>(liste: T[], maks: number): T[] {
+  return liste.slice(0, maks);
+}
