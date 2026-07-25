@@ -1111,6 +1111,22 @@ lagret i `user_metadata.brevnavn`:
 `build`/`lint`/`test` grønne (84 tester — ingen nye, ren UI/profil-forenkling).
 Ingen migrasjon (kun `user_metadata`, ingen kolonneendring).
 
+## Skjul navnefeltet på utkast-skjermen når det alt er satt (følgeendring)
+
+Følge av forrige endring: nå som navnet kan settes proaktivt på Meg, er det
+overflødig å spørre om det på nytt hver gang på utkast-skjermen. «Navnet
+ditt (slik det skal stå i brevet)»-feltet i `UtkastFlyt.tsx` vises nå KUN
+når `navnStart` er tom (ingen navn satt noe sted ennå) — er det satt (på
+Meg, eller husket fra en tidligere generering), brukes det stille uten å
+vise feltet. `navn`-state og selve `lagUtkast`-kallet er urørt.
+
+Verifisert i browser (midlertidig uautentisert forhåndsvisning av
+`UtkastFlyt` med `navnStart=""` vs. `navnStart="Kari Nordmann"`, fjernet
+igjen): feltet vises kun i det tomme tilfellet.
+
+`build`/`lint`/`test` grønne (84 tester — ingen nye, ren UI-betingelse).
+Ingen migrasjon.
+
 ## Deploy
 
 Deployes til Vercel-prosjektet `app2` (prod). **Husk `NEXT_PUBLIC_PILOT=true`**

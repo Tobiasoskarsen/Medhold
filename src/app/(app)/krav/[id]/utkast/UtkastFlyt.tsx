@@ -183,16 +183,20 @@ export function UtkastFlyt({
             />
           </label>
 
-          <label className="mt-5 block text-[13px] font-medium text-blekk">
-            Navnet ditt (slik det skal stå i brevet)
-            <input
-              type="text"
-              value={navn}
-              onChange={(e) => setNavn(e.target.value)}
-              placeholder="Fullt navn"
-              className="mt-1.5 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
-            />
-          </label>
+          {/* Kun når navnet ikke allerede er satt på Meg — er det satt der,
+              brukes det uten å spørre på nytt her (§6, utkast-stemme). */}
+          {!navnStart.trim() && (
+            <label className="mt-5 block text-[13px] font-medium text-blekk">
+              Navnet ditt (slik det skal stå i brevet)
+              <input
+                type="text"
+                value={navn}
+                onChange={(e) => setNavn(e.target.value)}
+                placeholder="Fullt navn"
+                className="mt-1.5 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+              />
+            </label>
+          )}
 
           {feil && <p className="mt-3 text-[13px] text-red-700">{feil}</p>}
 
