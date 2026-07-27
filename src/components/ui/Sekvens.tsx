@@ -22,7 +22,7 @@ import {
  * Sekvens — orkestrerer inntredenen av navngitte seksjoner INNI en skjerm
  * (Motion3 §2), adskilt fra Skjermrammens egen per-barn-stagger (STIGRING):
  * Sekvens er for FÅ, STORE deler («header», «Trapp», «Sakens gang» …), ikke
- * lange lister. Usynlig wrapper — hvert direkte <Sekvens.Del>-barn får sin
+ * lange lister. Usynlig wrapper — hvert direkte <SekvensDel>-barn får sin
  * rekkefølgeindeks automatisk (posisjon blant Sekvens sine barn, ikke en
  * manuelt oppgitt prop) og toner inn med INNTREDEN, forsinket
  * indeks*ORKESTER_STIGRING (cappet ved MAKS_STAGGER — lange skjermer drypper
@@ -31,6 +31,13 @@ import {
  * Når Sekvens brukes på en skjerm, sett Skjermramme sin `animerInn={false}`
  * på samme skjerm — de to stagger-mekanismene er ikke ment å kombineres
  * (guardrail 6: maks én orkestrert inntreden per skjerm).
+ *
+ * `SekvensDel` er en FLAT navngitt eksport, ikke en `Sekvens.Del`-egenskap:
+ * skjermene som bruker Sekvens er Server Components, og Next sin RSC-
+ * klientreferanse for en «use client»-eksport bevarer IKKE vilkårlige
+ * egenskaper hengt på selve funksjonen — `Sekvens.Del` ville vært `undefined`
+ * på serversiden («Element type is invalid»). Flate navngitte eksporter går
+ * gjennom den vanlige modul-referansen og er trygge.
  */
 export function Sekvens({ children }: { children: ReactNode }) {
   const barn = Children.toArray(children).filter(isValidElement) as ReactElement<{
@@ -41,7 +48,7 @@ export function Sekvens({ children }: { children: ReactNode }) {
 
 // Gjør en Dels egen (cappede) forsinkelse tilgjengelig for barn som skal
 // KJEDES etter Del-en sin egen inntreden, ikke løpe parallelt med den (f.eks.
-// Trapp-veksten på krav-detalj, Motion3 §2.2). Uten en omsluttende Sekvens.Del
+// Trapp-veksten på krav-detalj, Motion3 §2.2). Uten en omsluttende SekvensDel
 // er verdien 0 — helt trygt for komponenter som også brukes utenfor Sekvens.
 const SekvensForsinkelseContext = createContext(0);
 
@@ -52,7 +59,7 @@ export function useSekvensForsinkelse(): number {
 /**
  * INNTREDEN-props (initial/animate/transition) for en gitt forsinkelse,
  * reduced-motion-korrekt (kun opasitet, ingen y, ingen delay — Motion3 §2.1).
- * Delt av Sekvens.Del og steder som kjeder egne del-lister etter en Del sin
+ * Delt av SekvensDel og steder som kjeder egne del-lister etter en Del sin
  * forsinkelse (useSekvensForsinkelse) i stedet for å bruke en ny Sekvens.
  *
  * `varighet` (default VARIGHET.normal) lar småelementer som chips/piller på
@@ -75,7 +82,7 @@ export function useInntreden(delay = 0, varighet: number = VARIGHET.normal) {
   };
 }
 
-function Del({
+export function SekvensDel({
   children,
   indeks = 0,
 }: {
@@ -98,5 +105,3 @@ function Del({
     </SekvensForsinkelseContext.Provider>
   );
 }
-
-Sekvens.Del = Del;

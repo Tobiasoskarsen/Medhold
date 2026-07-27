@@ -10,6 +10,7 @@ import {
   Tidslinje,
   TidslinjeHendelse,
   Sekvens,
+  SekvensDel,
 } from "@/components/ui";
 import { DomMini } from "@/components/Dom";
 import { Veivalg } from "@/components/Veivalg";
@@ -260,7 +261,7 @@ export default async function KravDetaljPage({
       </div>
 
       <Sekvens>
-      <Sekvens.Del>
+      <SekvensDel>
       {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
       <KravNavn
         navn={hovednavn}
@@ -299,34 +300,34 @@ export default async function KravDetaljPage({
           </span>
         )}
       </div>
-      </Sekvens.Del>
+      </SekvensDel>
 
       {stadium && (
-        <Sekvens.Del>
+        <SekvensDel>
           <div className="mt-5">
             <Trapp stadium={stadium} />
           </div>
-        </Sekvens.Del>
+        </SekvensDel>
       )}
 
       {nesteFrist && (
-        <Sekvens.Del>
+        <SekvensDel>
           <Nedtelling
             forfallsdato={nesteFrist.forfallsdato}
             tittel={nesteFrist.tittel}
             className="mt-4"
           />
-        </Sekvens.Del>
+        </SekvensDel>
       )}
 
       {harOverGebyr && sisteBrev?.gebyrsjekk && (
-        <Sekvens.Del>
+        <SekvensDel>
           <DomMini resultat={sisteBrev.gebyrsjekk} className="mt-4" />
-        </Sekvens.Del>
+        </SekvensDel>
       )}
 
       {stotterUtkast(stadium) && !lost && (
-        <Sekvens.Del>
+        <SekvensDel>
           <Veivalg
             className="mt-5"
             harGebyrfunn={harOverGebyr}
@@ -334,10 +335,10 @@ export default async function KravDetaljPage({
             svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
             betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
           />
-        </Sekvens.Del>
+        </SekvensDel>
       )}
 
-      <Sekvens.Del>
+      <SekvensDel>
       <h2 className="mb-4 mt-8 font-serif text-[19px] font-semibold text-blekk">
         Sakens gang
       </h2>
@@ -436,7 +437,7 @@ export default async function KravDetaljPage({
           </Tidslinje>
         )}
       </div>
-      </Sekvens.Del>
+      </SekvensDel>
       </Sekvens>
 
       <div className="my-6 flex justify-center">

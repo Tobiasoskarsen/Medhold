@@ -8,6 +8,7 @@ import {
   Belop,
   Trapp,
   Sekvens,
+  SekvensDel,
 } from "@/components/ui";
 import { FristChip } from "./FristChip";
 import { formaterKortDato, fristNærhet } from "@/lib/dato";
@@ -146,15 +147,15 @@ export default async function HjemPage() {
   return (
     <Skjermramme className="pt-6" animerInn={false}>
       <Sekvens>
-      <Sekvens.Del>
+      <SekvensDel>
       <p className="eyebrow mb-2">{idagEyebrow()}</p>
       <h1 className="font-serif text-[30px] font-medium leading-[1.15] tracking-[-0.01em] text-blekk">
         {h1Tekst}{" "}
         <em className="italic text-aksent-dyp">{h1Ledd}</em>
       </h1>
-      </Sekvens.Del>
+      </SekvensDel>
 
-      <Sekvens.Del>
+      <SekvensDel>
       {!harKrav ? (
         <Kort className="mt-6">
           <p className="text-[15px] leading-relaxed text-blekk">
@@ -287,10 +288,10 @@ export default async function HjemPage() {
             )}
           </Kort>
       )}
-      </Sekvens.Del>
+      </SekvensDel>
 
       {harKrav && !seierSak && topSak && kommende.length > 0 && (
-        <Sekvens.Del>
+        <SekvensDel>
           <p className="eyebrow mb-1 mt-6">Kommende</p>
           <ul>
             {kommende.map((f, i) => (
@@ -310,7 +311,7 @@ export default async function HjemPage() {
               </li>
             ))}
           </ul>
-        </Sekvens.Del>
+        </SekvensDel>
       )}
       </Sekvens>
     </Skjermramme>

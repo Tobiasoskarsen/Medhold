@@ -2,7 +2,7 @@ import { NavLenke as Link } from "@/components/NavLenke";
 import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Kort, Sekvens } from "@/components/ui";
+import { Skjermramme, Kort, Sekvens, SekvensDel } from "@/components/ui";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { formaterKortDato } from "@/lib/dato";
 import { FORKLARING_DISCLAIMER } from "@/lib/brand";
@@ -72,7 +72,7 @@ export default async function BrevPage({
       </Link>
 
       <Sekvens>
-      <Sekvens.Del>
+      <SekvensDel>
       <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
         {tittel}
       </h1>
@@ -81,26 +81,26 @@ export default async function BrevPage({
           .filter(Boolean)
           .join(" · ")}
       </p>
-      </Sekvens.Del>
+      </SekvensDel>
 
-      <Sekvens.Del>
+      <SekvensDel>
       <Kort className="mt-4">
         <p className="whitespace-pre-line text-sm leading-relaxed text-blekk">
           {brev.forklaring}
         </p>
       </Kort>
       <p className="mt-1.5 text-[12px] text-dempet">{FORKLARING_DISCLAIMER}</p>
-      </Sekvens.Del>
+      </SekvensDel>
 
-      <Sekvens.Del>
+      <SekvensDel>
       <Gebyrsjekk
         resultat={(brev.gebyrsjekk as GebyrsjekkResultat | null) ?? null}
         utkastHref={utkastHref}
         className="mt-3"
       />
-      </Sekvens.Del>
+      </SekvensDel>
 
-      <Sekvens.Del>
+      <SekvensDel>
       <details className="mt-3">
         <summary className="cursor-pointer text-[13px] text-dempet transition hover:text-blekk">
           Vis originalteksten
@@ -109,16 +109,16 @@ export default async function BrevPage({
           {brev.original_tekst}
         </p>
       </details>
-      </Sekvens.Del>
+      </SekvensDel>
 
-      <Sekvens.Del>
+      <SekvensDel>
       <div className="mt-6">
         <p className="mb-3 text-[13px] font-medium text-blekk">
           Spør om brevet
         </p>
         <BrevSamtale brevId={brev.id} start={samtale} />
       </div>
-      </Sekvens.Del>
+      </SekvensDel>
       </Sekvens>
     </Skjermramme>
   );

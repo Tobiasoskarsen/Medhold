@@ -92,7 +92,7 @@ export function Kravkort({
   const visUnderlinje = !!stadiumEtikett || dagerIgjen != null;
 
   // Frist-chip/status-piller/§-markør lander et blunk etter kortet sitt eget
-  // (Sekvens.Del) — kjedet via useSekvensForsinkelse, 0 utenfor en Sekvens
+  // (SekvensDel) — kjedet via useSekvensForsinkelse, 0 utenfor en Sekvens
   // (Motion3 §2.3).
   const kjedet = useSekvensForsinkelse();
   const merkeInntreden = useInntreden(
