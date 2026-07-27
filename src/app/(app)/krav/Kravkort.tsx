@@ -2,7 +2,8 @@
 
 import { useRef, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Kort } from "@/components/ui";
+import { m } from "motion/react";
+import { Kort, useInntreden, useSekvensForsinkelse } from "@/components/ui";
 import {
   STATUS_ETIKETT,
   STATUS_STIL,
@@ -11,7 +12,12 @@ import {
   type SakStatus,
   type SakUtfall,
 } from "@/lib/types";
-import { DELT_OVERGANG_NOKKEL, PENDING_OPASITET } from "@/lib/bevegelse";
+import {
+  DELT_OVERGANG_NOKKEL,
+  ORKESTER_STIGRING,
+  PENDING_OPASITET,
+  VARIGHET,
+} from "@/lib/bevegelse";
 import { useViewOvergang } from "@/components/ViewOvergang";
 import { useTrykkFeedback } from "@/lib/useTrykkFeedback";
 import { dagerTil, erHastende, fristChipTekst } from "@/lib/frist";
@@ -85,6 +91,15 @@ export function Kravkort({
   const chipRod = dagerIgjen != null && erHastende(dagerIgjen);
   const visUnderlinje = !!stadiumEtikett || dagerIgjen != null;
 
+  // Frist-chip/status-piller/§-markør lander et blunk etter kortet sitt eget
+  // (Sekvens.Del) — kjedet via useSekvensForsinkelse, 0 utenfor en Sekvens
+  // (Motion3 §2.3).
+  const kjedet = useSekvensForsinkelse();
+  const merkeInntreden = useInntreden(
+    kjedet + ORKESTER_STIGRING,
+    VARIGHET.hurtig,
+  );
+
   return (
     <a
       href={href}
@@ -108,13 +123,14 @@ export function Kravkort({
           </span>
           <span className="flex shrink-0 items-center gap-1.5">
             {harFunn && !avsluttet && (
-              <span
+              <m.span
+                {...merkeInntreden}
                 role="img"
                 aria-label="Gebyrfunn i denne saken"
                 className="font-serif text-[13px] font-semibold leading-none text-dom-rod"
               >
                 §
-              </span>
+              </m.span>
             )}
             {belop && (
               <span
@@ -132,29 +148,32 @@ export function Kravkort({
               <p className="text-xs text-dempet">{stadiumEtikett}</p>
             )}
             {dagerIgjen != null && (
-              <span
+              <m.span
+                {...merkeInntreden}
                 className={`shrink-0 text-[11px] font-medium ${
                   chipRod ? "text-dom-rod" : "text-dempet"
                 }`}
               >
                 {fristChipTekst(dagerIgjen)}
-              </span>
+              </m.span>
             )}
           </div>
         )}
         {!avsluttet && status === "venter_pa_svar" && (
-          <span
+          <m.span
+            {...merkeInntreden}
             className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
           >
             {STATUS_ETIKETT.venter_pa_svar}
-          </span>
+          </m.span>
         )}
         {avsluttet && utfall && (
-          <span
+          <m.span
+            {...merkeInntreden}
             className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
           >
             {UTFALL_ETIKETT[utfall]}
-          </span>
+          </m.span>
         )}
       </Kort>
     </a>

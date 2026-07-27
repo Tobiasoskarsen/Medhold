@@ -2,8 +2,10 @@
 
 import { NavLenke as Link } from "@/components/NavLenke";
 import { usePathname } from "next/navigation";
+import { m } from "motion/react";
 import { Home, Folder, User, type LucideIcon } from "lucide-react";
 import { haptikk } from "@/lib/haptikk";
+import { FJAER, IKON_TRYKK_SKALA, INDIKATOR_FJAER } from "@/lib/bevegelse";
 
 /** Flagg som forteller ruteovergangen (template.tsx) at byttet er en fane-
  *  navigasjon → ren fade, ikke dybde-glid (faner er søsken). */
@@ -31,6 +33,13 @@ function erAktiv(pathname: string, p: NavPunkt): boolean {
 
 /**
  * BunnNav — tre punkter (Hjem, Krav, Meg). Fast i bunn på mobil.
+ *
+ * Glidende indikator (Motion3 §3): en liten strek under aktivt ikon, delt
+ * `layoutId` mellom fanene — motion morfer den automatisk til ny posisjon
+ * ved navigasjon (BunnNav bor i layout, remountes ikke). Ikonet som
+ * AKTIVERES gjør i tillegg ett dupp (skala ned→1 med FJAER): rendres kun som
+ * <m.span> når fanen er aktiv, så «dupp»-en spilles nettopp ved bytte, aldri
+ * ved re-render eller loop — deaktivering har ingen egen animasjon.
  */
 export function BunnNav() {
   const pathname = usePathname() ?? "/";
@@ -59,7 +68,26 @@ export function BunnNav() {
                 aktiv ? "text-aksent" : "text-dempet"
               }`}
             >
-              <Ikon className="size-5" strokeWidth={2} aria-hidden />
+              <span className="relative flex items-center justify-center">
+                {aktiv ? (
+                  <m.span
+                    initial={{ scale: IKON_TRYKK_SKALA }}
+                    animate={{ scale: 1 }}
+                    transition={FJAER}
+                  >
+                    <Ikon className="size-5" strokeWidth={2} aria-hidden />
+                  </m.span>
+                ) : (
+                  <Ikon className="size-5" strokeWidth={2} aria-hidden />
+                )}
+                {aktiv && (
+                  <m.span
+                    layoutId="bunnnav-indikator"
+                    className="absolute -bottom-1.5 left-1/2 h-[3px] w-5 -translate-x-1/2 rounded-full bg-aksent"
+                    transition={INDIKATOR_FJAER}
+                  />
+                )}
+              </span>
               <span
                 className={`text-[11px] ${aktiv ? "font-medium" : "font-normal"}`}
               >

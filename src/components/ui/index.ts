@@ -12,3 +12,4 @@ export { StadiumIndikator } from "./StadiumIndikator";
 export { Trapp } from "./Trapp";
 export { Nedtelling } from "./Nedtelling";
 export { Tidslinje, TidslinjeHendelse } from "./Tidslinje";
+export { Sekvens, useSekvensForsinkelse, useInntreden } from "./Sekvens";

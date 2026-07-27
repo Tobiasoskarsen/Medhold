@@ -14,6 +14,7 @@ etter hver fase.
 | 4 | Inntak og posisjonering | ✅ Ferdig |
 | 5 | Ekte betaling | 🔒 Låst (krever egen beskjed) |
 | Motion | Bevegelsesspråk (egen ordre) | ✅ Ferdig |
+| Motion3 | Skjermorkestrering, BunnNav-indikator, onboarding-koreografi (egen ordre) | ✅ Ferdig |
 | Tillegg | Mørk modus + fyldigere Meg (på forespørsel) | ✅ Ferdig |
 | Tillegg | Brevarkiv + kontakt support (på forespørsel) | ✅ Ferdig |
 
@@ -110,6 +111,70 @@ Valg tatt underveis:
    i samme chunk; motion-andelen er lavere enn råtallet.
 4. **`(app)/loading.tsx`** (Hjem-skjelett) dekker også /meg og /pluss kort ved
    navigasjon (Next scoper loading per segment). Akseptert — vises sjelden/kort.
+
+## Motion3 — skjermorkestrering, BunnNav-indikator, onboarding-koreografi (ferdig)
+
+Implementert etter `MEDHOLD_MOTION3_ARBEIDSORDRE.md`.
+
+- **Nye tokens** i `bevegelse.ts`: `ORKESTER_STIGRING` (0.07s, stagger mellom
+  skjermseksjoner), `PARALLAKSE` (1.3, onboarding-illustrasjonens glid-faktor),
+  `INDIKATOR_FJAER` (BunnNav-indikatoren), `IKON_TRYKK_SKALA` (0.92,
+  BunnNav-ikonets aktiverings-dupp).
+- **`Sekvens`/`Sekvens.Del`** (`src/components/ui/Sekvens.tsx`): usynlig
+  wrapper som gir hvert `Sekvens.Del`-barn `INNTREDEN` forsinket
+  `indeks*ORKESTER_STIGRING` (cappet ved `MAKS_STAGGER`), kun ved mount.
+  `useSekvensForsinkelse()` gjør en Dels forsinkelse tilgjengelig for barn som
+  skal KJEDES etter (Trapp-veksten på krav-detalj, VeierUtFlyt sine kort,
+  Kravkort sine chips/piller — 0 utenfor en Sekvens, uendret oppførsel).
+  `useInntreden(delay, varighet?)` deler mekanismen; `varighet` (default
+  VARIGHET.normal) lar småelementer bruke VARIGHET.hurtig.
+- **Orkestrert på 7 skjermer** (`animerInn={false}` på Skjermramme der Sekvens
+  brukes): Hjem, Saker (`/krav`), krav-detalj, Veier ut, Meg, brev-detalj,
+  Logg inn.
+- **BunnNav:** glidende indikator (`layoutId`, `INDIKATOR_FJAER`) under aktivt
+  ikon; ikonet dupper (`IKON_TRYKK_SKALA→1`, `FJAER`) kun ved aktivering.
+- **Onboarding-koreografi** (`src/app/velkommen/`): app-start (steg 1)
+  skalerer illustrasjonsflaten inn (`FJAER`), deretter H1→tekst→prikker/knapp
+  med `ORKESTER_STIGRING`. Hvert steg sin illustrasjon opptrer ved FØRSTE
+  visning (`useForstegangsvisning`-hook: sant fra og med første gang steget er
+  aktivt, ingen replay ved tilbake-navigering — nødvendig fordi alle 4 steg
+  mountes samtidig ved appstart, ikke på nytt per steg-bytte): brevkort
+  glir opp + lupe ankommer + rød linje toner inn (steg 1); Trapp-veksten
+  gjenbrukt eksakt (`VARIGHET.trapp`/`TRAPP_STIGRING`, steg 2); Dom-stempelet
+  gjenbrukt eksakt (skala 1.04→1, rotasjon −0.6°→0, `FJAER`, steg 3);
+  liste-stagger (steg 4). Parallakse ved steg-bytte: illustrasjonen glir
+  `STEG_GLID*PARALLAKSE`, tekstblokken kun `STEG_GLID`.
+- **Småelementer:** frist-chip/status-piller/§-markør på Kravkort og Hjem sitt
+  handlingskort lander `ORKESTER_STIGRING` etter kortets egen inntreden
+  (`VARIGHET.hurtig`). Veivalg sin sjekkliste-anbefaling gikk fra
+  display-toggle til høyde+opasitet (gjenbruker Utvidbar-mekanikken).
+- `npm run build`/`lint`/`test` grønne. Reduced motion: `Sekvens`/`useInntreden`
+  degraderer til ren opasitet uten delay (kode-verifisert); BunnNav-indikatoren
+  og onboarding-scenene arver `reducedMotion="user"` fra `Bevegelsesramme`
+  (samme MotionConfig-mekanisme som resten av appen, ikke en ny gren).
+
+Valg tatt underveis:
+
+1. **`/velkommen` fikk sin egen `Bevegelsesramme`**-innpakning (fantes ikke
+   fra før — kun `(app)` og legg-til-brev hadde den) siden onboarding-
+   koreografien trenger `LazyMotion`/`MotionConfig` for `m`-komponentene.
+   Ingen endring i (app)-laget.
+2. **Onboarding-illustrasjonenes vekst er ikke visuelt verifisert i denne
+   økten** — Browser-previewruten var ikke kompositert i sesjonen (rAF kjørte
+   ikke, alle `m`-komponenter sto fast på sin `initial`-verdi i DOM-en), så
+   selve tween/spring-fremdriften kunne ikke skjermdumpes. Logikken er
+   verifisert med konsoll-instrumentering (`aktiv→vist`-overgangen trigges
+   korrekt ved steg-bytte) og gjenbruker EKSAKT samme `initial`/`animate`/
+   `transition`-form som de allerede skipede Dom- og Trapp-komponentene.
+   Anbefaling: én rask visuell sjekk (skjermdump med panelet synlig) neste
+   gang noen har terminaltilgang, som en siste bekreftelse.
+3. **`useForstegangsvisning`** er en ny, liten hook
+   (`src/app/velkommen/steg/useForstegangsvisning.ts`) fremfor å stole på
+   ren mount-basert `initial`/`animate` (som Dom/Trapp bruker andre steder) —
+   nødvendig fordi onboardingens fire steg alle mountes samtidig ved
+   appstart og aldri på nytt; uten gaten ville steg 2–4 sin vekst spilt
+   usynlig i bakgrunnen med det samme, ferdig før brukeren noensinne ser
+   steget.
 
 ## Fase 0 — Rebrand + designfundament (ferdig)
 

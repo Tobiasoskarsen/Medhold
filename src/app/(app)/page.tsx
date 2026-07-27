@@ -1,7 +1,15 @@
 import type { ReactNode } from "react";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Kort, Primærknapp, Pill, Belop, Trapp } from "@/components/ui";
+import {
+  Skjermramme,
+  Kort,
+  Primærknapp,
+  Belop,
+  Trapp,
+  Sekvens,
+} from "@/components/ui";
+import { FristChip } from "./FristChip";
 import { formaterKortDato, fristNærhet } from "@/lib/dato";
 import { handlingstittel, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus, SakUtfall } from "@/lib/types";
@@ -136,13 +144,17 @@ export default async function HjemPage() {
   }
 
   return (
-    <Skjermramme className="pt-6">
+    <Skjermramme className="pt-6" animerInn={false}>
+      <Sekvens>
+      <Sekvens.Del>
       <p className="eyebrow mb-2">{idagEyebrow()}</p>
       <h1 className="font-serif text-[30px] font-medium leading-[1.15] tracking-[-0.01em] text-blekk">
         {h1Tekst}{" "}
         <em className="italic text-aksent-dyp">{h1Ledd}</em>
       </h1>
+      </Sekvens.Del>
 
+      <Sekvens.Del>
       {!harKrav ? (
         <Kort className="mt-6">
           <p className="text-[15px] leading-relaxed text-blekk">
@@ -174,7 +186,6 @@ export default async function HjemPage() {
           </p>
         </Kort>
       ) : (
-        <>
           <Kort className="mt-6">
             {venter ? (
               <>
@@ -205,9 +216,9 @@ export default async function HjemPage() {
             ) : (
               <>
                 {topFrist && (
-                  <Pill variant="varsel">
+                  <FristChip>
                     Frist {fristNærhet(topFrist.forfallsdato).toLowerCase()}
-                  </Pill>
+                  </FristChip>
                 )}
                 <p className="mt-3 text-[17px] font-medium text-blekk">
                   {handlingstittel(topSak?.stadium ?? null)}
@@ -275,32 +286,33 @@ export default async function HjemPage() {
               </>
             )}
           </Kort>
-
-          {kommende.length > 0 && (
-            <>
-              <p className="eyebrow mb-1 mt-6">Kommende</p>
-              <ul>
-                {kommende.map((f, i) => (
-                  <li
-                    key={f.id}
-                    className={`flex items-center gap-2.5 py-[11px] ${
-                      i < kommende.length - 1 ? "border-b-[0.5px] border-strek" : ""
-                    }`}
-                  >
-                    <span className="min-w-[46px] text-xs text-dempet">
-                      {formaterKortDato(f.forfallsdato)}
-                    </span>
-                    <span className="text-sm text-blekk">
-                      {f.tittel}
-                      {f.saker?.kreditor ? ` — ${f.saker.kreditor}` : ""}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </>
       )}
+      </Sekvens.Del>
+
+      {harKrav && !seierSak && topSak && kommende.length > 0 && (
+        <Sekvens.Del>
+          <p className="eyebrow mb-1 mt-6">Kommende</p>
+          <ul>
+            {kommende.map((f, i) => (
+              <li
+                key={f.id}
+                className={`flex items-center gap-2.5 py-[11px] ${
+                  i < kommende.length - 1 ? "border-b-[0.5px] border-strek" : ""
+                }`}
+              >
+                <span className="min-w-[46px] text-xs text-dempet">
+                  {formaterKortDato(f.forfallsdato)}
+                </span>
+                <span className="text-sm text-blekk">
+                  {f.tittel}
+                  {f.saker?.kreditor ? ` — ${f.saker.kreditor}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Sekvens.Del>
+      )}
+      </Sekvens>
     </Skjermramme>
   );
 }

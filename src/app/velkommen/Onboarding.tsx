@@ -2,9 +2,16 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { Primærknapp } from "@/components/ui";
-import { STEG_GLID } from "@/lib/bevegelse";
+import { Bevegelsesramme } from "@/components/Bevegelsesramme";
+import {
+  EASING,
+  ORKESTER_STIGRING,
+  PARALLAKSE,
+  STEG_GLID,
+  VARIGHET,
+} from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
 import { BrevSteg } from "./steg/BrevSteg";
 import { TrappSteg } from "./steg/TrappSteg";
@@ -75,90 +82,119 @@ export function Onboarding() {
   // server og klientens første render noensinne kan avvike strukturelt.
   if (hoppOverAlt !== false) return <main className="min-h-screen bg-bakgrunn" />;
 
+  // Parallakse ved steg-bytte (Motion3 §4.3): illustrasjonen glir `faktor`
+  // ganger STEG_GLID, tekstblokken kun STEG_GLID — samme varighet/easing som
+  // før, bare fordelt over to elementer i stedet for ett, for en subtil
+  // dybdefølelse. `faktor=1` gjenskaper akkurat det gamle, samlede glidet.
+  function parallakseStil(idx: number, faktor: number): CSSProperties {
+    const posisjon = idx === i ? "aktiv" : idx < i ? "forlater" : "venter";
+    return {
+      transform: redusert
+        ? undefined
+        : `translateX(${
+            posisjon === "forlater"
+              ? -STEG_GLID * faktor
+              : posisjon === "venter"
+                ? STEG_GLID * faktor
+                : 0
+          }px)`,
+      transitionProperty: "transform",
+      transitionDuration: "var(--bevegelse-normal)",
+      transitionTimingFunction: "var(--bevegelse-easing)",
+    };
+  }
+
   return (
-    <main className="relative mx-auto flex min-h-screen w-full max-w-[420px] flex-col">
-      {i < SISTE && (
-        <button
-          type="button"
-          onClick={() => gaTil(SISTE)}
-          className="absolute right-5 top-5 z-10 text-[13px] font-medium text-dempet"
+    <Bevegelsesramme>
+      <main className="relative mx-auto flex min-h-screen w-full max-w-[420px] flex-col">
+        {i < SISTE && (
+          <button
+            type="button"
+            onClick={() => gaTil(SISTE)}
+            className="absolute right-5 top-5 z-10 text-[13px] font-medium text-dempet"
+          >
+            Hopp over
+          </button>
+        )}
+
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          {STEG.map((StegKomponent, idx) => {
+            const posisjon =
+              idx === i ? "aktiv" : idx < i ? "forlater" : "venter";
+            const style: CSSProperties = {
+              opacity: posisjon === "aktiv" ? 1 : 0,
+              pointerEvents: posisjon === "aktiv" ? "auto" : "none",
+              transitionProperty: "opacity",
+              transitionDuration: "var(--bevegelse-normal)",
+              transitionTimingFunction: "var(--bevegelse-easing)",
+            };
+            return (
+              <div
+                key={idx}
+                className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center"
+                style={style}
+                aria-hidden={posisjon !== "aktiv"}
+              >
+                <StegKomponent
+                  aktiv={posisjon === "aktiv"}
+                  illustrasjonStil={parallakseStil(idx, PARALLAKSE)}
+                  tekstStil={parallakseStil(idx, 1)}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        <m.div
+          className="flex flex-col gap-4 px-6 pb-8 pt-4"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: VARIGHET.normal,
+            ease: EASING,
+            delay: 3 * ORKESTER_STIGRING,
+          }}
         >
-          Hopp over
-        </button>
-      )}
-
-      <div className="relative min-h-0 flex-1 overflow-hidden">
-        {STEG.map((StegKomponent, idx) => {
-          const posisjon = idx === i ? "aktiv" : idx < i ? "forlater" : "venter";
-          const style: CSSProperties = {
-            opacity: posisjon === "aktiv" ? 1 : 0,
-            transform: redusert
-              ? undefined
-              : `translateX(${
-                  posisjon === "forlater"
-                    ? -STEG_GLID
-                    : posisjon === "venter"
-                      ? STEG_GLID
-                      : 0
-                }px)`,
-            pointerEvents: posisjon === "aktiv" ? "auto" : "none",
-            transitionProperty: "opacity, transform",
-            transitionDuration: "var(--bevegelse-normal)",
-            transitionTimingFunction: "var(--bevegelse-easing)",
-          };
-          return (
-            <div
-              key={idx}
-              className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center"
-              style={style}
-              aria-hidden={posisjon !== "aktiv"}
-            >
-              <StegKomponent />
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="flex flex-col gap-4 px-6 pb-8 pt-4">
-        <div className="flex justify-center gap-1.5" role="tablist">
-          {STEG.map((_, idx) => (
-            <button
-              key={idx}
-              type="button"
-              role="tab"
-              aria-label={`Gå til steg ${idx + 1}`}
-              aria-selected={idx === i}
-              onClick={() => gaTil(idx)}
-              className="h-[7px] rounded-full"
-              style={{
-                width: idx === i ? 20 : 7,
-                backgroundColor: idx === i ? "var(--aksent)" : "var(--strek)",
-                transitionProperty: "width, background-color",
-                transitionDuration: "var(--bevegelse-normal)",
-                transitionTimingFunction: "var(--bevegelse-easing)",
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          {i > 0 && (
-            <button
-              type="button"
-              onClick={() => gaTil(i - 1)}
-              aria-label="Tilbake"
-              className="trykk flex size-[52px] shrink-0 items-center justify-center rounded-xl border-[0.5px] border-strek bg-flate text-[15px] font-semibold text-blekk"
-            >
-              ‹
-            </button>
-          )}
-          <div className="flex-1">
-            <Primærknapp onClick={neste}>
-              {i === SISTE ? "Kom i gang" : "Neste"}
-            </Primærknapp>
+          <div className="flex justify-center gap-1.5" role="tablist">
+            {STEG.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                role="tab"
+                aria-label={`Gå til steg ${idx + 1}`}
+                aria-selected={idx === i}
+                onClick={() => gaTil(idx)}
+                className="h-[7px] rounded-full"
+                style={{
+                  width: idx === i ? 20 : 7,
+                  backgroundColor: idx === i ? "var(--aksent)" : "var(--strek)",
+                  transitionProperty: "width, background-color",
+                  transitionDuration: "var(--bevegelse-normal)",
+                  transitionTimingFunction: "var(--bevegelse-easing)",
+                }}
+              />
+            ))}
           </div>
-        </div>
-      </div>
-    </main>
+
+          <div className="flex items-center gap-2.5">
+            {i > 0 && (
+              <button
+                type="button"
+                onClick={() => gaTil(i - 1)}
+                aria-label="Tilbake"
+                className="trykk flex size-[52px] shrink-0 items-center justify-center rounded-xl border-[0.5px] border-strek bg-flate text-[15px] font-semibold text-blekk"
+              >
+                ‹
+              </button>
+            )}
+            <div className="flex-1">
+              <Primærknapp onClick={neste}>
+                {i === SISTE ? "Kom i gang" : "Neste"}
+              </Primærknapp>
+            </div>
+          </div>
+        </m.div>
+      </main>
+    </Bevegelsesramme>
   );
 }
