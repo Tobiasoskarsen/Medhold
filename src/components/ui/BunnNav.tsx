@@ -64,7 +64,7 @@ export function BunnNav() {
                   }
                 }
               }}
-              className={`trykk flex flex-1 flex-col items-center gap-0.5 px-0 pb-4 pt-3 ${
+              className={`trykk flex flex-1 flex-col items-center gap-2 px-0 pb-4 pt-3 ${
                 aktiv ? "text-aksent" : "text-dempet"
               }`}
             >
