@@ -3,6 +3,7 @@
 import { m } from "motion/react";
 import type { Stadium } from "@/lib/gjeld";
 import { EASING, VARIGHET, TRAPP_STIGRING } from "@/lib/bevegelse";
+import { useSekvensForsinkelse } from "./Sekvens";
 
 /**
  * Trapp — appens identitetsmotiv: fire stigende søyler for inkasso-
@@ -12,7 +13,10 @@ import { EASING, VARIGHET, TRAPP_STIGRING } from "@/lib/bevegelse";
  *
  * Søylene vokser inn (scaleY 0→1 fra bunnlinjen) med stagger, én gang ved
  * mount (Motion2 §3); etikettene fader inn etter siste søyle. Reduced motion
- * (MotionConfig i (app)-layout) → vises ferdig uten animasjon.
+ * (MotionConfig i (app)-layout) → vises ferdig uten animasjon. Står Trapp
+ * inni en <Sekvens.Del>, KJEDES veksten etter Del-ens egen inntreden i
+ * stedet for å løpe parallelt med den (Motion3 §2.2) — utenfor Sekvens er
+ * forsinkelsen 0, helt uendret oppførsel.
  *
  * Presentasjon — endrer ikke gjeld-logikken (fylteSegmenter står urørt).
  */
@@ -48,6 +52,7 @@ export function Trapp({
 }) {
   const naa = naaTrinn(stadium);
   const hoyder = kompakt ? HOYDER_KOMPAKT : HOYDER;
+  const kjedet = useSekvensForsinkelse();
 
   return (
     <div>
@@ -65,7 +70,7 @@ export function Trapp({
               transition={{
                 duration: VARIGHET.trapp,
                 ease: EASING,
-                delay: i * TRAPP_STIGRING,
+                delay: kjedet + i * TRAPP_STIGRING,
               }}
             />
           );
@@ -79,7 +84,7 @@ export function Trapp({
           transition={{
             duration: VARIGHET.normal,
             ease: EASING,
-            delay: ETIKETTER.length * TRAPP_STIGRING,
+            delay: kjedet + ETIKETTER.length * TRAPP_STIGRING,
           }}
         >
           {ETIKETTER.map((etikett, i) => (

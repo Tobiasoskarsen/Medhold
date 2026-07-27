@@ -2,7 +2,7 @@ import { NavLenke as Link } from "@/components/NavLenke";
 import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme } from "@/components/ui";
+import { Skjermramme, Sekvens } from "@/components/ui";
 import { formaterBelop } from "@/lib/format";
 import { VeierUtFlyt } from "./VeierUtFlyt";
 
@@ -41,7 +41,7 @@ export default async function VeierUtPage({
     .join(" · ");
 
   return (
-    <Skjermramme className="pt-5">
+    <Skjermramme className="pt-5" animerInn={false}>
       <Link
         href={`/krav/${id}`}
         className="mb-3.5 flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
@@ -50,6 +50,8 @@ export default async function VeierUtPage({
         {kreditor}
       </Link>
 
+      <Sekvens>
+      <Sekvens.Del>
       <p className="eyebrow mb-1">{eyebrow}</p>
       <h1 className="font-serif text-[26px] font-medium leading-[1.15] tracking-[-0.01em] text-blekk">
         Veiene ut
@@ -58,12 +60,16 @@ export default async function VeierUtPage({
         Tre helt vanlige måter å håndtere et krav på. Det viktigste er å
         velge én — og gi beskjed før fristen.
       </p>
+      </Sekvens.Del>
 
-      <VeierUtFlyt
-        sakId={sak.id}
-        brevId={brevId}
-        total={sak.belop_totalt}
-      />
+      <Sekvens.Del>
+        <VeierUtFlyt
+          sakId={sak.id}
+          brevId={brevId}
+          total={sak.belop_totalt}
+        />
+      </Sekvens.Del>
+      </Sekvens>
     </Skjermramme>
   );
 }

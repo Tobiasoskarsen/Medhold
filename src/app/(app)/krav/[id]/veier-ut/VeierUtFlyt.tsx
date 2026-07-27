@@ -2,10 +2,12 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Kort, Pill } from "@/components/ui";
+import { m } from "motion/react";
+import { Kort, Pill, useSekvensForsinkelse, useInntreden } from "@/components/ui";
 import { haptikk } from "@/lib/haptikk";
 import { formaterBelop } from "@/lib/format";
 import { beregnAvdrag } from "@/lib/avdrag";
+import { STIGRING } from "@/lib/bevegelse";
 import { markerLost } from "../../actions";
 
 const knapp =
@@ -63,9 +65,18 @@ export function VeierUtFlyt({
   const feltKlasse =
     "mt-2 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
+  // Kjeder kortenes egen liste-stagger etter Sekvens.Del sin forsinkelse
+  // (Motion3 §2.2) — 0 utenfor en Sekvens, helt uendret oppførsel da.
+  const kjedet = useSekvensForsinkelse();
+  const kort1 = useInntreden(kjedet);
+  const kort2 = useInntreden(kjedet + STIGRING);
+  const kort3 = useInntreden(kjedet + 2 * STIGRING);
+  const navLinje = useInntreden(kjedet + 3 * STIGRING);
+
   return (
     <div className="mt-6 flex flex-col gap-3.5">
       {/* 1 — Betal alt nå */}
+      <m.div {...kort1}>
       <Kort>
         <div className="flex items-center justify-between gap-3">
           <p className="text-[15px] font-semibold text-blekk">Betal alt nå</p>
@@ -113,8 +124,10 @@ export function VeierUtFlyt({
           </button>
         )}
       </Kort>
+      </m.div>
 
       {/* 2 — Nedbetalingsavtale */}
+      <m.div {...kort2}>
       <Kort>
         <p className="text-[15px] font-semibold text-blekk">
           Foreslå nedbetalingsavtale
@@ -178,8 +191,10 @@ export function VeierUtFlyt({
           Lag forslaget
         </button>
       </Kort>
+      </m.div>
 
       {/* 3 — Betalingsutsettelse */}
+      <m.div {...kort3}>
       <Kort>
         <p className="text-[15px] font-semibold text-blekk">
           Be om betalingsutsettelse
@@ -200,8 +215,12 @@ export function VeierUtFlyt({
           Skriv anmodningen
         </button>
       </Kort>
+      </m.div>
 
-      <p className="mt-2 text-center text-[12px] leading-relaxed text-dempet">
+      <m.p
+        {...navLinje}
+        className="mt-2 text-center text-[12px] leading-relaxed text-dempet"
+      >
         Trenger du hjelp med helheten i økonomien?{" "}
         <a
           href="https://www.nav.no/okonomi-gjeld"
@@ -211,7 +230,7 @@ export function VeierUtFlyt({
         >
           NAV tilbyr gratis gjeldsrådgivning.
         </a>
-      </p>
+      </m.p>
     </div>
   );
 }

@@ -260,41 +260,55 @@ export function Veivalg({
                 onVelg={(v) => setSvar((s) => ({ ...s, belopStemmer: v }))}
               />
 
-              {anbefaling && (
-                <div
-                  aria-live="polite"
-                  className={`rounded-xl p-3.5 text-[13.5px] leading-relaxed text-blekk ${
-                    anbefaling === "svar" ? "bg-dom-rod-bg" : "bg-trygg/10"
-                  }`}
-                >
-                  {anbefaling === "svar" ? (
-                    <p>
-                      Da er det god grunn til å svare på kravet.{" "}
-                      {harGebyrfunn
-                        ? "Det du har fortalt — sammen med gebyrfunnet — er akkurat det et innsigelsesbrev bygges av."
-                        : "Det du har fortalt er akkurat det et innsigelsesbrev bygges av."}
-                    </p>
-                  ) : (
-                    <p>
-                      Da ser kravet ut til å stemme. Det er helt greit — nå
-                      handler det om å finne veien ut som passer deg.
-                      {harGebyrfunn && gebyrDifferanse
-                        ? ` Salæret på ${kr(gebyrDifferanse)} kr over sats tar vi med uansett.`
-                        : ""}
-                    </p>
-                  )}
-                  <MålKnapp
-                    mål={anbefaling === "svar" ? svarMål : betaleMål}
-                    className={`trykk mt-2 inline-block text-[13.5px] font-semibold underline underline-offset-4 ${
-                      anbefaling === "svar" ? "text-dom-rod" : "text-trygg"
-                    }`}
+              {/* Høyde+opasitet-inntreden i stedet for display-toggle
+                  (gjenbruker Utvidbar-mekanikken, Motion3 §2.3) — reduced
+                  motion følger MotionConfig, som over. */}
+              <AnimatePresence initial={false}>
+                {anbefaling && (
+                  <m.div
+                    key="anbefaling"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: VARIGHET.rolig, ease: EASING }}
+                    style={{ overflow: "hidden" }}
                   >
-                    {anbefaling === "svar"
-                      ? "Start svaret →"
-                      : "Se veiene ut →"}
-                  </MålKnapp>
-                </div>
-              )}
+                    <div
+                      aria-live="polite"
+                      className={`rounded-xl p-3.5 text-[13.5px] leading-relaxed text-blekk ${
+                        anbefaling === "svar" ? "bg-dom-rod-bg" : "bg-trygg/10"
+                      }`}
+                    >
+                      {anbefaling === "svar" ? (
+                        <p>
+                          Da er det god grunn til å svare på kravet.{" "}
+                          {harGebyrfunn
+                            ? "Det du har fortalt — sammen med gebyrfunnet — er akkurat det et innsigelsesbrev bygges av."
+                            : "Det du har fortalt er akkurat det et innsigelsesbrev bygges av."}
+                        </p>
+                      ) : (
+                        <p>
+                          Da ser kravet ut til å stemme. Det er helt greit — nå
+                          handler det om å finne veien ut som passer deg.
+                          {harGebyrfunn && gebyrDifferanse
+                            ? ` Salæret på ${kr(gebyrDifferanse)} kr over sats tar vi med uansett.`
+                            : ""}
+                        </p>
+                      )}
+                      <MålKnapp
+                        mål={anbefaling === "svar" ? svarMål : betaleMål}
+                        className={`trykk mt-2 inline-block text-[13.5px] font-semibold underline underline-offset-4 ${
+                          anbefaling === "svar" ? "text-dom-rod" : "text-trygg"
+                        }`}
+                      >
+                        {anbefaling === "svar"
+                          ? "Start svaret →"
+                          : "Se veiene ut →"}
+                      </MålKnapp>
+                    </div>
+                  </m.div>
+                )}
+              </AnimatePresence>
             </div>
           </m.div>
         )}

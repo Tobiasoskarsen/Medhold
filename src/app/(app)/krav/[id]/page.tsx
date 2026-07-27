@@ -9,6 +9,7 @@ import {
   Nedtelling,
   Tidslinje,
   TidslinjeHendelse,
+  Sekvens,
 } from "@/components/ui";
 import { DomMini } from "@/components/Dom";
 import { Veivalg } from "@/components/Veivalg";
@@ -246,7 +247,7 @@ export default async function KravDetaljPage({
   if (items[0]) items[0].fremhevet = items[0].variant ? false : true;
 
   return (
-    <Skjermramme className="pt-5">
+    <Skjermramme className="pt-5" animerInn={false}>
       <div className="mb-4 flex items-center justify-between">
         <Link
           href="/krav"
@@ -258,6 +259,8 @@ export default async function KravDetaljPage({
         <KravMeny kravId={sak.id} lost={lost} />
       </div>
 
+      <Sekvens>
+      <Sekvens.Del>
       {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
       <KravNavn
         navn={hovednavn}
@@ -296,35 +299,45 @@ export default async function KravDetaljPage({
           </span>
         )}
       </div>
+      </Sekvens.Del>
 
       {stadium && (
-        <div className="mt-5">
-          <Trapp stadium={stadium} />
-        </div>
+        <Sekvens.Del>
+          <div className="mt-5">
+            <Trapp stadium={stadium} />
+          </div>
+        </Sekvens.Del>
       )}
 
       {nesteFrist && (
-        <Nedtelling
-          forfallsdato={nesteFrist.forfallsdato}
-          tittel={nesteFrist.tittel}
-          className="mt-4"
-        />
+        <Sekvens.Del>
+          <Nedtelling
+            forfallsdato={nesteFrist.forfallsdato}
+            tittel={nesteFrist.tittel}
+            className="mt-4"
+          />
+        </Sekvens.Del>
       )}
 
       {harOverGebyr && sisteBrev?.gebyrsjekk && (
-        <DomMini resultat={sisteBrev.gebyrsjekk} className="mt-4" />
+        <Sekvens.Del>
+          <DomMini resultat={sisteBrev.gebyrsjekk} className="mt-4" />
+        </Sekvens.Del>
       )}
 
       {stotterUtkast(stadium) && !lost && (
-        <Veivalg
-          className="mt-5"
-          harGebyrfunn={harOverGebyr}
-          gebyrDifferanse={overDiff}
-          svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
-          betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
-        />
+        <Sekvens.Del>
+          <Veivalg
+            className="mt-5"
+            harGebyrfunn={harOverGebyr}
+            gebyrDifferanse={overDiff}
+            svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
+            betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
+          />
+        </Sekvens.Del>
       )}
 
+      <Sekvens.Del>
       <h2 className="mb-4 mt-8 font-serif text-[19px] font-semibold text-blekk">
         Sakens gang
       </h2>
@@ -423,6 +436,8 @@ export default async function KravDetaljPage({
           </Tidslinje>
         )}
       </div>
+      </Sekvens.Del>
+      </Sekvens>
 
       <div className="my-6 flex justify-center">
         <Pillknapp href={`/legg-til-brev?krav=${sak.id}`}>

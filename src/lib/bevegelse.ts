@@ -58,3 +58,24 @@ export const INNTREDEN = {
 // den siste delayen slik at lange lister aldri «drypper» lenge.
 export const STIGRING = 0.05;
 export const MAKS_STAGGER = 8;
+
+// Motion3: skjermorkestrering, BunnNav-indikator, onboarding-koreografi.
+
+// Sekunder mellom skjermseksjoner i <Sekvens> (Motion3 §1–2) — kortere enn
+// STIGRING-listestaggeret, siden dette er FÆRRE, STØRRE deler av en skjerm,
+// ikke en lang liste av like elementer. MAKS_STAGGER gjelder også her.
+export const ORKESTER_STIGRING = 0.07;
+
+// Illustrasjonens glid-faktor relativt til STEG_GLID ved onboarding-
+// steg-bytte (Motion3 §4.3) — illustrasjonen flytter litt mer enn
+// tekstblokken for en subtil dybdefølelse (parallakse).
+export const PARALLAKSE = 1.3;
+
+// Fjær for BunnNav-indikatoren som glir mellom fanene (Motion3 §3) — litt
+// stivere/raskere enn standard FJAER, siden det er en liten strek, ikke en
+// flate.
+export const INDIKATOR_FJAER = { type: "spring", stiffness: 600, damping: 42 } as const;
+
+// Skala BunnNav-ikonet dupper til (→ 1 med FJAER) når fanen aktiveres
+// (Motion3 §3) — kun ved bytte, aldri loop.
+export const IKON_TRYKK_SKALA = 0.92;

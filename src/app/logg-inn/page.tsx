@@ -14,7 +14,7 @@ import { useReducedMotion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { Primærknapp } from "@/components/ui";
 import { normaliserTelefon, telefonLoginPa } from "@/lib/telefon";
-import { STEG_GLID, STIGRING } from "@/lib/bevegelse";
+import { ORKESTER_STIGRING, STEG_GLID, STIGRING } from "@/lib/bevegelse";
 import { GoogleKnapp } from "./GoogleKnapp";
 import { MetodeVeksler } from "./MetodeVeksler";
 import { NyttForsokLenke } from "./NyttForsokLenke";
@@ -65,6 +65,28 @@ function LoggInn() {
     const t = setTimeout(() => setNedtelling((n) => n - 1), 1000);
     return () => clearTimeout(t);
   }, [nedtelling]);
+
+  // Skjermorkestrering ved første maling (Motion3 §2.2): H1 → Google-knapp →
+  // deler/veksler → felt. Samme «commit start-tilstand, bytt til slutt-
+  // tilstand på neste tikk»-mønster som resten av fila (CSS-transitions, ikke
+  // motion/react — konsistent med skjermens øvrige mekanikk). Kun ved mount,
+  // ingen loop.
+  const [vist, setVist] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVist(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  function inntredenStil(indeks: number): CSSProperties {
+    return {
+      opacity: vist ? 1 : 0,
+      transform: redusert || vist ? "none" : "translateY(8px)",
+      transitionProperty: "opacity, transform",
+      transitionDuration: "var(--bevegelse-normal)",
+      transitionTimingFunction: "var(--bevegelse-easing)",
+      transitionDelay: redusert ? "0ms" : `${indeks * ORKESTER_STIGRING * 1000}ms`,
+    };
+  }
 
   // Etter vellykket verifisering: sett har_sett_onboarding hvis det mangler,
   // slik at «Kom i gang»-onboardingen aldri vises igjen for en kjent bruker
@@ -261,29 +283,35 @@ function LoggInn() {
           style={stegStil("inntast")}
           aria-hidden={steg !== "inntast"}
         >
-          <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
-            Logg inn i Medhold
-          </h1>
-          <p className="mt-2 text-[13.5px] leading-[1.55] text-dempet">
-            Rolig og trygt — vi trenger bare én ting å sende koden til.
-          </p>
+          <div style={inntredenStil(0)}>
+            <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+              Logg inn i Medhold
+            </h1>
+            <p className="mt-2 text-[13.5px] leading-[1.55] text-dempet">
+              Rolig og trygt — vi trenger bare én ting å sende koden til.
+            </p>
+          </div>
 
-          <div className="mt-[22px]">
+          <div className="mt-[22px]" style={inntredenStil(1)}>
             <GoogleKnapp />
           </div>
-          <div className="my-5 flex items-center gap-3">
-            <span className="h-px flex-1 bg-strek" />
-            <span className="text-[12px] text-dempet">eller</span>
-            <span className="h-px flex-1 bg-strek" />
+
+          <div style={inntredenStil(2)}>
+            <div className="my-5 flex items-center gap-3">
+              <span className="h-px flex-1 bg-strek" />
+              <span className="text-[12px] text-dempet">eller</span>
+              <span className="h-px flex-1 bg-strek" />
+            </div>
+
+            {telefonPa && (
+              <div className="mb-4">
+                <MetodeVeksler metode={metode} onVelg={byttMetode} />
+              </div>
+            )}
           </div>
 
-          {telefonPa && (
-            <div className="mb-4">
-              <MetodeVeksler metode={metode} onVelg={byttMetode} />
-            </div>
-          )}
-
           <form
+            style={inntredenStil(3)}
             onSubmit={(e) => {
               e.preventDefault();
               if (!laster) sendKode();

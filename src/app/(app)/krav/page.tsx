@@ -1,7 +1,7 @@
 import { NavLenke as Link } from "@/components/NavLenke";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Kort, Primærknapp, Trapp } from "@/components/ui";
+import { Skjermramme, Kort, Primærknapp, Trapp, Sekvens } from "@/components/ui";
 import { Kravkort } from "./Kravkort";
 import { AvsluttedeListe } from "./AvsluttedeListe";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
@@ -108,47 +108,55 @@ export default async function KravListePage() {
   const stripe = oversiktsstripe(saker);
 
   return (
-    <Skjermramme className="pt-6">
+    <Skjermramme className="pt-6" animerInn={false}>
+      <Sekvens>
+      <Sekvens.Del>
       <h1 className="font-serif text-[26px] font-medium tracking-[-0.01em] text-blekk">
         Sakene dine
       </h1>
-      {stripe && <p className="eyebrow mt-1.5">{stripe}</p>}
-
-      {saker.length === 0 ? (
-        <Kort className="mt-6">
-          <Trapp stadium="faktura" kompakt />
-          <p className="mt-4 text-[15px] leading-relaxed text-blekk">
-            Legg inn ditt første brev, så holder Medhold oversikten.
-          </p>
-          <div className="mt-4">
-            <Primærknapp href="/legg-til-brev">Legg til brev</Primærknapp>
-          </div>
-        </Kort>
-      ) : (
-        <>
-          {aktive.length > 0 && (
-            <div className="mt-6">
-              {avsluttede.length > 0 && (
-                <p className="eyebrow mb-2">Aktive</p>
-              )}
-              <ul className="flex flex-col gap-2.5">
-                {aktiveSortert.map((sak) => (
-                  <li key={sak.id}>
-                    <Kravkort {...kortData(sak)} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {avsluttede.length > 0 && (
-            <div className="mt-8">
-              <p className="eyebrow mb-2">Avsluttet</p>
-              <AvsluttedeListe saker={avsluttede.map(kortData)} />
-            </div>
-          )}
-        </>
+      </Sekvens.Del>
+      {stripe && (
+        <Sekvens.Del>
+          <p className="eyebrow mt-1.5">{stripe}</p>
+        </Sekvens.Del>
       )}
+
+      {saker.length === 0 && (
+        <Sekvens.Del>
+          <Kort className="mt-6">
+            <Trapp stadium="faktura" kompakt />
+            <p className="mt-4 text-[15px] leading-relaxed text-blekk">
+              Legg inn ditt første brev, så holder Medhold oversikten.
+            </p>
+            <div className="mt-4">
+              <Primærknapp href="/legg-til-brev">Legg til brev</Primærknapp>
+            </div>
+          </Kort>
+        </Sekvens.Del>
+      )}
+      {aktive.length > 0 && (
+        <Sekvens.Del>
+          <div className="mt-6">
+            {avsluttede.length > 0 && <p className="eyebrow mb-2">Aktive</p>}
+            <ul className="flex flex-col gap-2.5">
+              {aktiveSortert.map((sak) => (
+                <li key={sak.id}>
+                  <Kravkort {...kortData(sak)} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Sekvens.Del>
+      )}
+      {avsluttede.length > 0 && (
+        <Sekvens.Del>
+          <div className="mt-8">
+            <p className="eyebrow mb-2">Avsluttet</p>
+            <AvsluttedeListe saker={avsluttede.map(kortData)} />
+          </div>
+        </Sekvens.Del>
+      )}
+      </Sekvens>
 
       <Link
         href="/krav/ny"
