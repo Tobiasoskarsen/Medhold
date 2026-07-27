@@ -1,7 +1,7 @@
 import { NavLenke as Link } from "@/components/NavLenke";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Kort, Primærknapp, Trapp, Sekvens } from "@/components/ui";
+import { Skjermramme, Kort, Primærknapp, Trapp, Sekvens, SekvensDel } from "@/components/ui";
 import { Kravkort } from "./Kravkort";
 import { AvsluttedeListe } from "./AvsluttedeListe";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
@@ -110,19 +110,19 @@ export default async function KravListePage() {
   return (
     <Skjermramme className="pt-6" animerInn={false}>
       <Sekvens>
-      <Sekvens.Del>
+      <SekvensDel>
       <h1 className="font-serif text-[26px] font-medium tracking-[-0.01em] text-blekk">
         Sakene dine
       </h1>
-      </Sekvens.Del>
+      </SekvensDel>
       {stripe && (
-        <Sekvens.Del>
+        <SekvensDel>
           <p className="eyebrow mt-1.5">{stripe}</p>
-        </Sekvens.Del>
+        </SekvensDel>
       )}
 
       {saker.length === 0 && (
-        <Sekvens.Del>
+        <SekvensDel>
           <Kort className="mt-6">
             <Trapp stadium="faktura" kompakt />
             <p className="mt-4 text-[15px] leading-relaxed text-blekk">
@@ -132,10 +132,10 @@ export default async function KravListePage() {
               <Primærknapp href="/legg-til-brev">Legg til brev</Primærknapp>
             </div>
           </Kort>
-        </Sekvens.Del>
+        </SekvensDel>
       )}
       {aktive.length > 0 && (
-        <Sekvens.Del>
+        <SekvensDel>
           <div className="mt-6">
             {avsluttede.length > 0 && <p className="eyebrow mb-2">Aktive</p>}
             <ul className="flex flex-col gap-2.5">
@@ -146,15 +146,15 @@ export default async function KravListePage() {
               ))}
             </ul>
           </div>
-        </Sekvens.Del>
+        </SekvensDel>
       )}
       {avsluttede.length > 0 && (
-        <Sekvens.Del>
+        <SekvensDel>
           <div className="mt-8">
             <p className="eyebrow mb-2">Avsluttet</p>
             <AvsluttedeListe saker={avsluttede.map(kortData)} />
           </div>
-        </Sekvens.Del>
+        </SekvensDel>
       )}
       </Sekvens>
 

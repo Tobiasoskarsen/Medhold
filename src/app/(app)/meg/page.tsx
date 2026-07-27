@@ -1,6 +1,6 @@
 import { Bell, Mail, FileText, ShieldCheck, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Sekvens } from "@/components/ui";
+import { Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
 import SlettKonto from "@/components/SlettKonto";
 import VarselInnstilling from "@/components/VarselInnstilling";
 import { APP_NAME, APP_VERSJON, SUPPORT_EPOST } from "@/lib/brand";
@@ -50,16 +50,16 @@ export default async function MegPage() {
       <h1 className="sr-only">Meg</h1>
 
       <Sekvens>
-      <Sekvens.Del>
+      <SekvensDel>
       <ProfilKort
         navn={navn}
         epost={user?.email ?? ""}
         telefon={telefon}
         innlogging={innlogging}
       />
-      </Sekvens.Del>
+      </SekvensDel>
 
-      <Sekvens.Del>
+      <SekvensDel>
       <Gruppe tittel="Innstillinger">
         <TemaRad />
         <Rad
@@ -69,9 +69,9 @@ export default async function MegPage() {
           chevron={false}
         />
       </Gruppe>
-      </Sekvens.Del>
+      </SekvensDel>
 
-      <Sekvens.Del>
+      <SekvensDel>
       <Gruppe tittel="Hjelp">
         <Rad ikon={FileText} etikett="Alle brev" href="/brev" />
         <Rad
@@ -83,9 +83,9 @@ export default async function MegPage() {
         />
         <Rad ikon={ShieldCheck} etikett="Personvern og data" href="/personvern" />
       </Gruppe>
-      </Sekvens.Del>
+      </SekvensDel>
 
-      <Sekvens.Del>
+      <SekvensDel>
       <Gruppe>
         <form action="/auth/signout" method="post">
           <button
@@ -97,9 +97,9 @@ export default async function MegPage() {
           </button>
         </form>
       </Gruppe>
-      </Sekvens.Del>
+      </SekvensDel>
 
-      <Sekvens.Del>
+      <SekvensDel>
       <div className="mt-[18px] flex flex-col items-center gap-1.5 text-center">
         <p className="font-serif text-[13px] italic text-dempet">
           {APP_NAME} {APP_VERSJON}
@@ -107,7 +107,7 @@ export default async function MegPage() {
         <p className="text-[11px] text-dempet">Ikke profesjonell rådgivning</p>
         <SlettKonto />
       </div>
-      </Sekvens.Del>
+      </SekvensDel>
       </Sekvens>
     </Skjermramme>
   );

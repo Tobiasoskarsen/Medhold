@@ -14,7 +14,7 @@ import { useSekvensForsinkelse } from "./Sekvens";
  * Søylene vokser inn (scaleY 0→1 fra bunnlinjen) med stagger, én gang ved
  * mount (Motion2 §3); etikettene fader inn etter siste søyle. Reduced motion
  * (MotionConfig i (app)-layout) → vises ferdig uten animasjon. Står Trapp
- * inni en <Sekvens.Del>, KJEDES veksten etter Del-ens egen inntreden i
+ * inni en <SekvensDel>, KJEDES veksten etter Del-ens egen inntreden i
  * stedet for å løpe parallelt med den (Motion3 §2.2) — utenfor Sekvens er
  * forsinkelsen 0, helt uendret oppførsel.
  *

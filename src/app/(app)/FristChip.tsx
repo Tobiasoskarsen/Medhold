@@ -7,7 +7,7 @@ import { ORKESTER_STIGRING, VARIGHET } from "@/lib/bevegelse";
 
 /**
  * Frist-pillen på Hjem sitt handlingskort — lander et blunk etter kortet sitt
- * eget (Sekvens.Del), samme mekanikk som Kravkort sine chips/piller
+ * eget (SekvensDel), samme mekanikk som Kravkort sine chips/piller
  * (Motion3 §2.3).
  */
 export function FristChip({ children }: { children: ReactNode }) {

@@ -65,7 +65,7 @@ export function VeierUtFlyt({
   const feltKlasse =
     "mt-2 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
-  // Kjeder kortenes egen liste-stagger etter Sekvens.Del sin forsinkelse
+  // Kjeder kortenes egen liste-stagger etter SekvensDel sin forsinkelse
   // (Motion3 §2.2) — 0 utenfor en Sekvens, helt uendret oppførsel da.
   const kjedet = useSekvensForsinkelse();
   const kort1 = useInntreden(kjedet);
