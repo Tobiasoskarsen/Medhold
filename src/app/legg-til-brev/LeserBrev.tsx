@@ -15,8 +15,14 @@ const STEG = [
   "Gjør klar forklaringen …",
 ] as const;
 
+// Samme synklengde som logoens puls (under) — når «ferdig»-bølgen løper over
+// strekene bruker den nøyaktig denne varigheten, så de to leses som ÉN
+// koreografi, ikke to uavhengige animasjoner som tilfeldigvis begge pulserer.
+const PULS_SYKLUS = 2;
+
 export function LeserBrev() {
   const [i, setI] = useState(0);
+  const ferdig = i === STEG.length - 1;
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -29,7 +35,7 @@ export function LeserBrev() {
     <div className="flex flex-1 flex-col items-center justify-center pb-16 text-center">
       <m.div
         animate={{ scale: [1, 1.08, 1], opacity: [0.65, 1, 0.65] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: PULS_SYKLUS, repeat: Infinity, ease: "easeInOut" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-ikon.svg" alt="" width={52} height={52} aria-hidden />
@@ -51,18 +57,37 @@ export function LeserBrev() {
       </div>
 
       <div className="mt-5 flex items-center gap-1.5" aria-hidden>
-        {STEG.map((_, n) => (
-          <span
-            key={n}
-            className={`h-1.5 rounded-full transition-all duration-500 ${
-              n < i
-                ? "w-5 bg-aksent"
-                : n === i
-                  ? "w-5 animate-pulse bg-aksent"
-                  : "w-1.5 bg-strek"
-            }`}
-          />
-        ))}
+        {STEG.map((_, n) =>
+          ferdig ? (
+            // Alle punktene er «gjort» — i stedet for å la det bare stå
+            // stille venter appen, løper en bølge av lys over dem i takt med
+            // logoens puls (Motion3-mønster: delt varighet = én koreografi).
+            // Hver strek får sin egen forsinkelse (n/STEG.length av synklengden)
+            // slik at bølgen leses som «først → sist», ikke samtidig blink.
+            <m.span
+              key={n}
+              className="h-1.5 w-5 rounded-full bg-aksent"
+              animate={{ opacity: [0.35, 1, 0.35] }}
+              transition={{
+                duration: PULS_SYKLUS,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: (n / STEG.length) * PULS_SYKLUS,
+              }}
+            />
+          ) : (
+            <span
+              key={n}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                n < i
+                  ? "w-5 bg-aksent"
+                  : n === i
+                    ? "w-5 animate-pulse bg-aksent"
+                    : "w-1.5 bg-strek"
+              }`}
+            />
+          ),
+        )}
       </div>
     </div>
   );
