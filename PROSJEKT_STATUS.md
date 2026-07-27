@@ -128,6 +128,18 @@ Implementert etter `MEDHOLD_MOTION3_ARBEIDSORDRE.md`.
   Kravkort sine chips/piller — 0 utenfor en Sekvens, uendret oppførsel).
   `useInntreden(delay, varighet?)` deler mekanismen; `varighet` (default
   VARIGHET.normal) lar småelementer bruke VARIGHET.hurtig.
+  **PROD-GOTCHA (fikset i egen commit rett etter første deploy):** `Del`
+  ble først eksportert som `Sekvens.Del = Del` (statisk egenskap på en
+  «use client»-funksjon). Next sin RSC-klientreferanse for en slik eksport
+  bevarer IKKE vilkårlige egenskaper hengt på selve funksjonen når en
+  **Server Component** importerer den — `Sekvens.Del` ble `undefined` på
+  serversiden («Element type is invalid»), og brøt ALLE 6 sidene som bruker
+  Sekvens (alle er Server Components) rett etter innlogging i prod. Løst
+  ved å eksportere `SekvensDel` flatt i stedet. **Lærdom:** heng ALDRI
+  egenskaper på en «use client»-eksportert funksjon (`X.Y = Z`-mønsteret)
+  hvis den skal kunne importeres fra en Server Component — bruk alltid
+  flate navngitte eksporter. `npm run build`/`lint`/`test` fanger IKKE
+  dette (kun synlig ved faktisk RSC-rendring med ekte sesjon i prod/dev).
 - **Orkestrert på 7 skjermer** (`animerInn={false}` på Skjermramme der Sekvens
   brukes): Hjem, Saker (`/krav`), krav-detalj, Veier ut, Meg, brev-detalj,
   Logg inn.
