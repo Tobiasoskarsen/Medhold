@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { m } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { X, Camera, Upload, Type, Trash2 } from "lucide-react";
 import { Primærknapp } from "@/components/ui";
 import { Bevegelsesramme } from "@/components/Bevegelsesramme";
@@ -277,8 +277,15 @@ export function LeggTilBrevFlyt({
         onChange={(e) => velgFiler(e.target.files)}
       />
 
+      <AnimatePresence mode="wait">
       {steg === 1 && (
-        <div className="flex flex-1 flex-col">
+        <m.div
+          key="steg-1"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: VARIGHET.rolig, ease: EASING }}
+          className="flex flex-1 flex-col">
           <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
             Legg til brev
           </h1>
@@ -375,13 +382,31 @@ export function LeggTilBrevFlyt({
               </div>
             </>
           )}
-        </div>
+        </m.div>
       )}
 
-      {steg === 2 && <LeserBrev />}
+      {steg === 2 && (
+        <m.div
+          key="steg-2"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: VARIGHET.rolig, ease: EASING }}
+          className="flex flex-1 flex-col"
+        >
+          <LeserBrev />
+        </m.div>
+      )}
 
       {steg === 3 && analyse && (
-        <div className="flex flex-1 flex-col pb-8">
+        <m.div
+          key="steg-3"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: VARIGHET.rolig, ease: EASING }}
+          className="flex flex-1 flex-col pb-8"
+        >
           <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
             Slik forstår vi brevet
           </h1>
@@ -659,8 +684,9 @@ export function LeggTilBrevFlyt({
               }
             />
           </div>
-        </div>
+        </m.div>
       )}
+      </AnimatePresence>
     </m.main>
     </Bevegelsesramme>
   );
