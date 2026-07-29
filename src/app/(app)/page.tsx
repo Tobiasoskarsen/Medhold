@@ -15,6 +15,12 @@ import { formaterKortDato, fristNærhet } from "@/lib/dato";
 import { handlingstittel, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus, SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import { beregnOversikt, type SakOppsummering } from "@/lib/oversikt";
+import {
+  dagerTilOppfolging,
+  oppfolgingTilstand,
+  type OppfolgingTilstand,
+} from "@/lib/oppfolging";
 
 type SakKobling = {
   id: string;
@@ -71,23 +77,58 @@ function hjemH1(
   return [`${aktive} ${ord}.`, "Alt under kontroll."];
 }
 
+/**
+ * Ventetid som synlig aktivitet (§5), kortform på Hjem sitt handlingskort —
+ * inkassoselskapet nevnes ikke her (står alt i tittelen «Venter på svar fra
+ * {kreditor}»). Er e-postpåminnelser av, loves ingen e-post appen ikke
+ * sender.
+ */
+function oppfolgingTekstKort(
+  tilstand: OppfolgingTilstand,
+  varslerPa: boolean,
+): string {
+  switch (tilstand.type) {
+    case "kommer":
+      return varslerPa
+        ? `Purrer om ${tilstand.dager} dager`
+        : `Følg opp selv om ${tilstand.dager} dager`;
+    case "i_dag":
+      return varslerPa ? "Purrer i dag" : "Følg opp selv i dag";
+    case "sendt":
+      return "Oppfølging er sendt";
+    case "na":
+      return varslerPa ? "Vi følger opp nå" : "Følg opp selv nå";
+  }
+}
+
 export default async function HjemPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const varslerPa = user?.user_metadata?.varsler_paa !== false;
 
-  const [{ data: sakData }, { data: fristData }] = await Promise.all([
-    supabase
-      .from("saker")
-      .select(
-        "id, kreditor, tittel, belop_totalt, stadium, status, utfall, sist_endret",
-      )
-      .order("sist_endret", { ascending: false }),
-    supabase
-      .from("frister")
-      .select(
-        "id, sak_id, tittel, forfallsdato, saker(id, kreditor, tittel, belop_totalt, stadium, status, utfall)",
-      )
-      .eq("fullfort", false),
-  ]);
+  const [{ data: sakData }, { data: fristData }, { data: brevData }] =
+    await Promise.all([
+      supabase
+        .from("saker")
+        .select(
+          "id, kreditor, tittel, belop_totalt, stadium, status, utfall, sist_endret",
+        )
+        .order("sist_endret", { ascending: false }),
+      supabase
+        .from("frister")
+        .select(
+          "id, sak_id, tittel, forfallsdato, saker(id, kreditor, tittel, belop_totalt, stadium, status, utfall)",
+        )
+        .eq("fullfort", false),
+      // Nyeste brev per sak (kun for gebyrsjekk-summeringen) — ÉN spørring,
+      // ingen N+1, samme mønster som /krav (Kravkort sin §-markør).
+      supabase
+        .from("brev")
+        .select("sak_id, opprettet, gebyrsjekk")
+        .order("opprettet", { ascending: false }),
+    ]);
 
   const saker = (sakData ?? []) as (SakKobling & { sist_endret: string })[];
   // Verken markerLost eller markerUtkastSendt lukker sakens åpne frister
@@ -109,10 +150,66 @@ export default async function HjemPage() {
   const aktiveSaker = saker.filter((s) => s.status !== "fullfort");
   const aktive = aktiveSaker.length;
   const harLoste = saker.some((s) => s.status === "fullfort");
+
+  // Nyeste brev sin gebyrsjekk per sak (DB-sortert nyeste først → første
+  // treff per sak_id holdes) — grunnlaget for oversiktspanelet under.
+  const gebyrsjekkPerSak = new Map<string, GebyrsjekkResultat | null>();
+  for (const b of brevData ?? []) {
+    if (gebyrsjekkPerSak.has(b.sak_id)) continue;
+    gebyrsjekkPerSak.set(
+      b.sak_id,
+      (b.gebyrsjekk as GebyrsjekkResultat | null) ?? null,
+    );
+  }
+  const sakOppsummeringer: SakOppsummering[] = saker.map((s) => ({
+    id: s.id,
+    status: s.status,
+    utfall: s.utfall ?? null,
+    belopTotalt: s.belop_totalt,
+    gebyrsjekk: gebyrsjekkPerSak.get(s.id) ?? null,
+  }));
+  const oversikt = beregnOversikt(sakOppsummeringer);
+  const historikkLedd = [
+    oversikt.antallMedhold > 0 ? `${oversikt.antallMedhold} medhold` : null,
+    oversikt.antallAvtale > 0 ? `${oversikt.antallAvtale} avtaler` : null,
+    oversikt.antallOppgjort > 0 ? `${oversikt.antallOppgjort} oppgjort` : null,
+  ].filter(Boolean);
   const topFrist = frister[0] ?? null;
   const topSak = topFrist?.saker ?? aktiveSaker[0] ?? null;
   const kommende = frister.slice(topFrist ? 1 : 0, topFrist ? 4 : 3);
   const venter = !!topSak && topSak.status === "venter_pa_svar" && !topFrist;
+
+  // Ventetid som synlig aktivitet (§5), kortform på handlingskortet. Samme
+  // definisjon av «siste aktivitet» som krav-detalj/cron-en: nyeste av
+  // (utkast.sendt_at, brev.opprettet).
+  let oppfolgingTilstandVerdi: OppfolgingTilstand | null = null;
+  if (venter && topSak) {
+    const brevOpprettetDatoer = (brevData ?? [])
+      .filter((b) => b.sak_id === topSak.id)
+      .map((b) => b.opprettet);
+    const { data: utkastData } = await supabase
+      .from("utkast")
+      .select("sendt_at")
+      .eq("sak_id", topSak.id)
+      .not("sendt_at", "is", null);
+    const sisteAktivitet = [
+      ...(utkastData ?? []).map((u) => u.sendt_at as string),
+      ...brevOpprettetDatoer,
+    ]
+      .sort()
+      .at(-1);
+    if (sisteAktivitet) {
+      const { data: oppfolging } = await supabase
+        .from("sendte_oppfolginger")
+        .select("sak_id")
+        .eq("sak_id", topSak.id)
+        .maybeSingle();
+      oppfolgingTilstandVerdi = oppfolgingTilstand(
+        dagerTilOppfolging(sisteAktivitet, new Date()),
+        !!oppfolging,
+      );
+    }
+  }
 
   const [h1Tekst, h1Ledd] = hjemH1(
     aktive,
@@ -155,6 +252,46 @@ export default async function HjemPage() {
       </h1>
       </SekvensDel>
 
+      {oversikt.antallAktive > 0 && (
+        <SekvensDel>
+          <Kort className="mt-5">
+            <div className="flex items-stretch text-center">
+              <div className="flex-1">
+                <p className="font-serif text-[22px] font-medium tabular-nums text-blekk">
+                  {oversikt.antallAktive}
+                </p>
+                <p className="eyebrow mt-1">aktive saker</p>
+              </div>
+              <div className="w-px bg-strek" />
+              <div className="flex-1">
+                <Belop
+                  verdi={oversikt.samletKravAktive}
+                  className="font-serif text-[22px] font-medium tabular-nums text-blekk"
+                />
+                <p className="eyebrow mt-1">samlet krav</p>
+              </div>
+              {oversikt.funnetOverSats > 0 && (
+                <>
+                  <div className="w-px bg-strek" />
+                  <div className="flex-1">
+                    <Belop
+                      verdi={oversikt.funnetOverSats}
+                      className="font-serif text-[22px] font-medium tabular-nums text-dom-rod"
+                    />
+                    <p className="eyebrow mt-1">over lovlig sats</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </Kort>
+          {historikkLedd.length > 0 && (
+            <p className="mt-2 text-center text-[12px] text-dempet">
+              Så langt: {historikkLedd.join(" · ")}
+            </p>
+          )}
+        </SekvensDel>
+      )}
+
       <SekvensDel>
       {!harKrav ? (
         <Kort className="mt-6">
@@ -195,8 +332,9 @@ export default async function HjemPage() {
                   {topSak?.kreditor ? ` fra ${topSak.kreditor}` : ""}
                 </p>
                 <p className="mt-0.5 text-[13px] text-dempet">
-                  Vi følger opp om det drøyer. Ta vare på kvitteringen på at du
-                  sendte det.
+                  {oppfolgingTilstandVerdi
+                    ? oppfolgingTekstKort(oppfolgingTilstandVerdi, varslerPa)
+                    : "Ta vare på kvitteringen på at du sendte det."}
                 </p>
                 <div className="mt-4">
                   <Primærknapp href="/legg-til-brev">

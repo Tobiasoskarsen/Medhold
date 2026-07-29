@@ -293,3 +293,72 @@ export function gebyrFunnTekst(resultat: GebyrsjekkResultat): string {
 
   return `Automatisk kontroll mot inkassoforskriftens maksimalsatser (gjeldende fra ${kortDato(resultat.satsGyldigFra)}) fant: ${funn.join("; ")}.`;
 }
+
+// --- «Hvordan vi regnet dette ut» (MEDHOLD_SUBSTANS_ARBEIDSORDRE §3) ---
+
+/**
+ * Salærtrinnets øvre hovedstol-grense som lesbar norsk tekst, f.eks.
+ * «t.o.m. 2 500 kr» for et vanlig trinn, eller «over 250 000 kr» for det
+ * øverste (hovedstolTom === null). Rent presentasjonsoppslag — gjør ALDRI om
+ * på hvilket trinn som allerede er lagt til grunn for vurderingen.
+ */
+export function trinnEtikett(hovedstol: number, sats: Satsversjon): string {
+  const trinn = finnSalaertrinn(sats, hovedstol);
+  if (trinn.hovedstolTom !== null) return `t.o.m. ${kr(trinn.hovedstolTom)} kr`;
+  const grenser = sats.salaerForbruker
+    .map((t) => t.hovedstolTom)
+    .filter((g): g is number => g !== null);
+  return `over ${kr(Math.max(...grenser))} kr`;
+}
+
+export type UtregningRad = {
+  etikett: string;
+  verdi: string;
+  /** Siste, konkluderende rad — fremhevet i visningen. */
+  uthevet?: boolean;
+};
+
+/**
+ * Bygger radene i «Hvordan regnet vi dette ut»-panelet for én kostnadslinje,
+ * KUN fra tall som allerede finnes i det lagrede `LinjeResultat` (og —
+ * `hovedstol`, når den er kjent — selve grunnlaget salærtrinnet slås opp
+ * fra). Regner ALDRI om vurderingen; mangler et tall, utelates raden
+ * (guardrail 3). Kun 'over'/'mulig_over' har noe å vise — andre gir null.
+ */
+export function utregningRaderForLinje(
+  l: LinjeResultat,
+  sats: Satsversjon,
+  hovedstol: number | null,
+): UtregningRad[] | null {
+  if (l.vurdering !== "over" && l.vurdering !== "mulig_over") return null;
+
+  const rader: UtregningRad[] = [];
+  if (l.linje.type === "salaer") {
+    if (hovedstol !== null) {
+      rader.push({ etikett: "Hovedstol i brevet", verdi: `${kr(hovedstol)} kr` });
+      rader.push({ etikett: "Salærtrinn", verdi: trinnEtikett(hovedstol, sats) });
+    }
+    if (l.maksLav !== null) {
+      rader.push({ etikett: "Laveste lovlige sats", verdi: `${kr(l.maksLav)} kr` });
+    }
+    if (l.maksHoy !== null) {
+      rader.push({ etikett: "Høyeste lovlige sats", verdi: `${kr(l.maksHoy)} kr` });
+    }
+    rader.push({ etikett: "Krevd i brevet", verdi: `${kr(l.linje.belop)} kr` });
+    if (l.vurdering === "over" && l.differanse !== null) {
+      rader.push({ etikett: "Over høyeste sats", verdi: `${kr(l.differanse)} kr` });
+    }
+  } else {
+    // Faste gebyrer (purregebyr/inkassovarselgebyr/betalingsoppfordringsgebyr).
+    if (l.maksHoy !== null) {
+      rader.push({ etikett: "Maksimalsats", verdi: `${kr(l.maksHoy)} kr` });
+    }
+    rader.push({ etikett: "Krevd", verdi: `${kr(l.linje.belop)} kr` });
+    if (l.vurdering === "over" && l.differanse !== null) {
+      rader.push({ etikett: "Over", verdi: `${kr(l.differanse)} kr` });
+    }
+  }
+
+  if (rader.length > 0) rader[rader.length - 1].uthevet = true;
+  return rader;
+}

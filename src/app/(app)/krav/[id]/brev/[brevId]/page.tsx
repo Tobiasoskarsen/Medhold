@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Sekvens, SekvensDel } from "@/components/ui";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
+import { AnnotertBrev } from "@/components/AnnotertBrev";
 import { formaterKortDato } from "@/lib/dato";
 import { FORKLARING_DISCLAIMER } from "@/lib/brand";
 import {
@@ -12,7 +13,8 @@ import {
   type BrevType,
   type Stadium,
 } from "@/lib/gjeld";
-import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import type { GebyrsjekkResultat, Kostnadslinje } from "@/lib/gebyr";
+import { finnAnnoteringer } from "@/lib/annotering";
 import { BrevSamtale } from "./BrevSamtale";
 
 type Melding = { rolle: "bruker" | "assistent"; innhold: string };
@@ -38,20 +40,25 @@ export default async function BrevPage({
   const { data: brev } = await supabase
     .from("brev")
     .select(
-      "id, sak_id, avsender, brevtype, brevdato, forklaring, original_tekst, gebyrsjekk",
+      "id, sak_id, avsender, brevtype, brevdato, belop, forklaring, original_tekst, gebyrsjekk, kostnadslinjer",
     )
     .eq("id", brevId)
     .maybeSingle();
   if (!brev || brev.sak_id !== id) notFound();
 
-  const [{ data: samtaleData }, { data: sak }] = await Promise.all([
-    supabase
-      .from("brev_samtale")
-      .select("rolle, innhold")
-      .eq("brev_id", brevId)
-      .order("opprettet", { ascending: true }),
-    supabase.from("saker").select("stadium").eq("id", id).maybeSingle(),
-  ]);
+  const [{ data: samtaleData }, { data: sak }, { data: fristData }] =
+    await Promise.all([
+      supabase
+        .from("brev_samtale")
+        .select("rolle, innhold")
+        .eq("brev_id", brevId)
+        .order("opprettet", { ascending: true }),
+      supabase.from("saker").select("stadium").eq("id", id).maybeSingle(),
+      supabase
+        .from("frister")
+        .select("tittel, forfallsdato")
+        .eq("brev_id", brevId),
+    ]);
 
   const samtale = (samtaleData ?? []) as Melding[];
   const tittel = brevtypeEtikett(brev.brevtype as BrevType | null);
@@ -60,6 +67,19 @@ export default async function BrevPage({
   const utkastHref = stotterUtkast(stadium)
     ? `/krav/${id}/utkast?type=innsigelse&brev=${brevId}`
     : undefined;
+
+  // Annotert brev (§4): rent tekstsøk mot verdier appen allerede har lagret.
+  // `hovedstol` er ikke en egen kolonne på brev (guardrail 4 — se
+  // PROSJEKT_STATUS «Valg tatt underveis»), så kun totalbeløpet (`belop`)
+  // kan annoteres som beløp her.
+  const annoteringer = finnAnnoteringer(
+    brev.original_tekst,
+    (brev.kostnadslinjer as Kostnadslinje[] | null) ?? [],
+    (brev.gebyrsjekk as GebyrsjekkResultat | null) ?? null,
+    null,
+    brev.belop,
+    (fristData ?? []) as { tittel: string; forfallsdato: string }[],
+  );
 
   return (
     <Skjermramme className="pt-5" animerInn={false}>
@@ -105,9 +125,13 @@ export default async function BrevPage({
         <summary className="cursor-pointer text-[13px] text-dempet transition hover:text-blekk">
           Vis originalteksten
         </summary>
-        <p className="mt-2 whitespace-pre-line rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-[13px] leading-relaxed text-dempet">
-          {brev.original_tekst}
-        </p>
+        <div className="mt-2">
+          <AnnotertBrev
+            tekst={brev.original_tekst}
+            annoteringer={annoteringer}
+            className="rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-[13px] leading-relaxed text-dempet"
+          />
+        </div>
       </details>
       </SekvensDel>
 

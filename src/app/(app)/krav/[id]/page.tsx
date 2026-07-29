@@ -14,11 +14,15 @@ import {
 } from "@/components/ui";
 import { DomMini } from "@/components/Dom";
 import { Veivalg } from "@/components/Veivalg";
+import { Utregning } from "@/components/Utregning";
 import { KravNavn, KravBelop } from "./KravHeader";
-import { formaterKortDato } from "@/lib/dato";
+import { formaterKortDato, formaterDato } from "@/lib/dato";
 import {
   STADIUM_ETIKETT,
   stotterUtkast,
+  leggTilDager,
+  LOVBESTEMT_FRIST_DAGER,
+  FRIST_HJEMMEL,
   type Stadium,
   type BrevType,
 } from "@/lib/gjeld";
@@ -33,6 +37,12 @@ import {
   type SakUtfall,
 } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import {
+  dagerTilOppfolging,
+  oppfolgingTilstand,
+  OPPFOLGING_DAGER_GRENSE,
+  type OppfolgingTilstand,
+} from "@/lib/oppfolging";
 import type { HendelseVariant } from "@/components/ui/Tidslinje";
 import type { ReactNode } from "react";
 import { KravMeny } from "./KravMeny";
@@ -77,6 +87,30 @@ function overTotal(g: GebyrsjekkResultat | null): number {
   return g.linjer
     .filter((l) => l.vurdering === "over")
     .reduce((sum, l) => sum + (l.differanse ?? 0), 0);
+}
+
+/**
+ * Ventetid som synlig aktivitet (§5), langform (krav-detalj). Er
+ * e-postpåminnelser av, loves ingen e-post appen ikke sender — teksten blir
+ * «Følg opp selv …» i stedet.
+ */
+function oppfolgingTekst(
+  tilstand: OppfolgingTilstand,
+  navn: string | null,
+  varslerPa: boolean,
+): string {
+  switch (tilstand.type) {
+    case "kommer":
+      return varslerPa
+        ? `Vi purrer${navn ? ` ${navn}` : ""} for deg om ${tilstand.dager} dager`
+        : `Følg opp selv om ${tilstand.dager} dager`;
+    case "i_dag":
+      return varslerPa ? "Vi purrer for deg i dag" : "Følg opp selv i dag";
+    case "sendt":
+      return "Oppfølging er sendt";
+    case "na":
+      return varslerPa ? "Vi følger opp nå" : "Følg opp selv nå";
+  }
 }
 
 function kr(n: number): string {
@@ -150,6 +184,40 @@ export default async function KravDetaljPage({
     a.forfallsdato < b.forfallsdato ? -1 : 1,
   )[0];
 
+  // Brevet en BEREGNET frist stammer fra — til «Hvordan regnet vi dette ut»
+  // under Nedtellingen (§3.3). Kun relevant når kilde === 'beregnet'.
+  const nesteFristBrev = nesteFrist?.brev_id
+    ? brevListe.find((b) => b.id === nesteFrist.brev_id)
+    : undefined;
+
+  // Ventetid som synlig aktivitet (§5) — kun for saker i «venter på svar».
+  // Siste aktivitet = nyeste av (utkast.sendt_at, brev.opprettet), samme
+  // definisjon som cron-en (kjorOppfolging) bruker.
+  let oppfolgingTilstandVerdi: OppfolgingTilstand | null = null;
+  let oppfolgingsdato: string | null = null;
+  if (sak.status === "venter_pa_svar") {
+    const aktivitetsdatoer = [
+      ...utkast.filter((u) => u.sendt_at).map((u) => u.sendt_at as string),
+      ...brevListe.map((b) => b.opprettet),
+    ];
+    const sisteAktivitet = aktivitetsdatoer.sort().at(-1);
+    if (sisteAktivitet) {
+      const { data: oppfolging } = await supabase
+        .from("sendte_oppfolginger")
+        .select("sak_id")
+        .eq("sak_id", id)
+        .maybeSingle();
+      oppfolgingTilstandVerdi = oppfolgingTilstand(
+        dagerTilOppfolging(sisteAktivitet, new Date()),
+        !!oppfolging,
+      );
+      oppfolgingsdato = leggTilDager(
+        sisteAktivitet.slice(0, 10),
+        OPPFOLGING_DAGER_GRENSE,
+      );
+    }
+  }
+
   const stadium = sak.stadium as Stadium | null;
 
   const sisteBrev = brevListe[0];
@@ -222,13 +290,13 @@ export default async function KravDetaljPage({
   const utkastItems: Item[] = utkast.map((u) =>
     u.sendt_at
       ? {
+          // Ventetiden vises nå som en egen, levende hendelse øverst i
+          // tidslinjen (oppfolgingTilstandVerdi, §5) i stedet for en statisk
+          // chip her — unngår at de to sier ulike/utdaterte ting.
           key: `utkast-${u.id}`,
           datoISO: u.sendt_at.slice(0, 10),
           tittel: `${UTKAST_ETIKETT[u.type]} sendt`,
           fremhevet: false,
-          chip: varslerPa
-            ? "Medhold purrer for deg etter 14 dager"
-            : "Husk å følge opp om 14 dager",
         }
       : {
           key: `utkast-${u.id}`,
@@ -317,6 +385,38 @@ export default async function KravDetaljPage({
             tittel={nesteFrist.tittel}
             className="mt-4"
           />
+          {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
+            <Utregning
+              className="mt-2"
+              rader={[
+                {
+                  etikett: "Brevet er datert",
+                  verdi: formaterDato(nesteFristBrev.brevdato),
+                },
+                {
+                  etikett: "Lovbestemt frist",
+                  verdi: `${LOVBESTEMT_FRIST_DAGER} dager`,
+                },
+                {
+                  etikett: "Fristen løper ut",
+                  verdi: formaterDato(nesteFrist.forfallsdato),
+                  uthevet: true,
+                },
+              ]}
+              kildelinje={
+                nesteFristBrev.brevtype &&
+                FRIST_HJEMMEL[nesteFristBrev.brevtype] ? (
+                  <p className="mt-2 text-[12px] text-dempet">
+                    {FRIST_HJEMMEL[nesteFristBrev.brevtype]}
+                  </p>
+                ) : undefined
+              }
+            />
+          ) : nesteFrist.kilde !== "beregnet" ? (
+            <p className="mt-2 text-[12px] text-dempet">
+              Fristen står oppgitt i brevet.
+            </p>
+          ) : null}
         </SekvensDel>
       )}
 
@@ -343,12 +443,27 @@ export default async function KravDetaljPage({
         Sakens gang
       </h2>
       <div>
-        {items.length === 0 && !lost ? (
+        {items.length === 0 && !lost && !oppfolgingTilstandVerdi ? (
           <p className="text-sm text-dempet">
             Ingen hendelser ennå. Legg til det første brevet.
           </p>
         ) : (
           <Tidslinje>
+            {oppfolgingTilstandVerdi && (
+              <TidslinjeHendelse
+                dato={oppfolgingsdato ? formaterKortDato(oppfolgingsdato) : ""}
+                variant="venter"
+                sisteHendelse={items.length === 0}
+              >
+                <p className="text-[14.5px] font-semibold text-blekk">
+                  {oppfolgingTekst(
+                    oppfolgingTilstandVerdi,
+                    inkassoselskap ?? sak.kreditor ?? sak.tittel,
+                    varslerPa,
+                  )}
+                </p>
+              </TidslinjeHendelse>
+            )}
             {lost && (
               <TidslinjeHendelse
                 dato={lostDato ? formaterKortDato(lostDato) : ""}
