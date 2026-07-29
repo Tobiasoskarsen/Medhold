@@ -15,6 +15,7 @@ etter hver fase.
 | 5 | Ekte betaling | 🔒 Låst (krever egen beskjed) |
 | Motion | Bevegelsesspråk (egen ordre) | ✅ Ferdig |
 | Motion3 | Skjermorkestrering, BunnNav-indikator, onboarding-koreografi (egen ordre) | ✅ Ferdig |
+| Substans | Oversiktspanel, utregning, annotert brev, ventetid, satsoversikt (egen ordre) | ✅ Ferdig |
 | Tillegg | Mørk modus + fyldigere Meg (på forespørsel) | ✅ Ferdig |
 | Tillegg | Brevarkiv + kontakt support (på forespørsel) | ✅ Ferdig |
 
@@ -187,6 +188,95 @@ Valg tatt underveis:
    appstart og aldri på nytt; uten gaten ville steg 2–4 sin vekst spilt
    usynlig i bakgrunnen med det samme, ferdig før brukeren noensinne ser
    steget.
+
+## Substans (MEDHOLD_SUBSTANS_ARBEIDSORDRE, ferdig)
+
+Fem leveranser — alt visning/summering av data appen allerede hadde, ingen nye
+AI-kall eller migrasjoner (guardrail 4 respektert, se avvik under).
+
+- **`src/lib/oversikt.ts`** (+ 8 tester): `beregnOversikt()` summerer aktive/
+  avsluttede saker, samlet krav (aktive), funnet over sats (kun `over`-linjer,
+  aldri `mulig_over`) og historikk (medhold/avtaler/oppgjort). Oversiktspanel
+  på Hjem (ny `SekvensDel` mellom H1 og handlingskortet): 2–3 tall
+  (aktive saker · samlet krav · over lovlig sats, siste kun når > 0), skjules
+  helt når `antallAktive === 0`. Historikklinje under, kun når avsluttede
+  saker finnes, ledd med verdi 0 utelates.
+- **`trinnEtikett()` + `utregningRaderForLinje()`** (`gebyr.ts`, +6 tester) og
+  **`Utregning.tsx`** (gjenbruker Utvidbar sin høyde/opasitet-mekanikk): «Hvordan
+  regnet vi dette ut» under Dommen/gebyrsjekk-linjene (brev-detalj + steg 3) og
+  under Nedtellingen på krav-detalj (kun beregnet frist, med paragrafhenvisning
+  fra ny `FRIST_HJEMMEL`-tabell i `gjeld.ts`). `mulig_over`-linjer får samme
+  radsett som `over`, bare uten «Over»-raden — siste rad («Krevd i brevet»)
+  uthevet nøytralt i stedet for dom-rødt (ordren ga kun fargeregelen, ikke et
+  eksakt radsett for denne grenen — se «Valg tatt underveis»).
+- **`/satser`** (ny rute under `(app)`): satsene generert fra `SATSVERSJONER`
+  (ingen hardkodede tall), salærtrinn-tabeller A/B, kildelenke. Nås fra
+  Utregning sin kildelinje («Se satsene vi bruker») og Meg → Hjelp.
+- **`src/lib/annotering.ts`** (+ 10 tester) og **`AnnotertBrev.tsx`**: rent
+  tekstsøk (ingen fuzzy matching, ingen AI) etter kostnadslinjer (ordrett
+  `Kostnadslinje.tekst`), hovedstol/totalbeløp (Intl-format, NBSP-normalisert,
+  og rene sifre) og fristdatoer (kort og lang norsk form) i brevteksten på
+  brev-detalj. Trykk på en markering viser etiketten rett under (ett åpent om
+  gangen); kostnadslinjer gjenbruker `LinjeResultat.forklaring` direkte som
+  etikett — ingen ny tekst. Ingen treff → brevteksten uendret.
+- **Ventetid som synlig aktivitet** (§5): `dagerTilOppfolging()` +
+  `oppfolgingTilstand()` i `oppfolging.ts` (+9 tester; delt
+  `OPPFOLGING_DAGER_GRENSE`-konstant med cron-ens `oppfolgingsKandidater` — cron
+  brukte allerede 14 som default-parameter, nå navngitt i stedet for duplisert).
+  Krav-detalj: ny stiplet («venter»-variant) hendelse øverst i «Sakens gang»
+  med levende nedtelling; erstatter den gamle, statiske «Medhold purrer for
+  deg etter 14 dager»-chippen på utkast-sendt-hendelsen (samme info, nå
+  levende — unngår at de sier ulike ting). Hjem: samme nedtelling i kortform
+  på handlingskortet. Begge respekterer varsler-av («Følg opp selv …») og
+  skiller «i dag»/overskredet-med-registrert-oppfølging («Oppfølging er
+  sendt») fra overskredet-uten («Vi følger opp nå»).
+- `npm run build`/`lint`/`test` (125 tester) grønne. Motion-budsjett
+  verifisert i kode: flest `SekvensDel` er krav-detalj med 6 (under
+  guardrail-taket på 8); ingen skjerm fikk et nytt, eget orkestrert
+  innledningsforløp utover eksisterende `Sekvens`-bruk. Alle nye
+  utvidbare/annoterte elementer gjenbruker eksisterende, allerede
+  reduced-motion-korrekte mekanismer (`Utvidbar`-mønsteret, `SekvensDel`,
+  `Tidslinje`) — ingen ny motion-kode å reduced-motion-teste isolert. Ikke
+  visuelt bekreftet i browser denne økten (samme miljøbegrensning som
+  Motion3-økten).
+
+Valg tatt underveis:
+
+1. **`hovedstol` er ikke en egen kolonne på `brev`** (kun midlertidig i minnet
+   under legg-til-brev steg 3, aldri lagret — verifisert mot
+   `supabase/migrations/`). Per guardrail 4 er det IKKE lagt til en migrasjon.
+   Konsekvens: «Hovedstol i brevet»/«Salærtrinn»-radene i Utregning vises kun
+   i steg 3 (der `hovedstolGrunnlag` finnes i klient-state); på brev-detalj
+   (lagret brev) utelates de to radene (samme mekanisme som «mangler et felt,
+   utelates raden», guardrail 3) — resten av utregningen (laveste/høyeste
+   sats, krevd, over) vises som normalt. `Gebyrsjekk`/`Utregning` tar
+   `hovedstol` som valgfri prop (null → radene faller bort automatisk).
+2. **`utregningRaderForFrist` endte opp bygget INLINE i krav-detalj/page.tsx**
+   i stedet for som egen funksjon i `gjeld.ts` (opprinnelig forsøk): Node sin
+   innebygde testkjører (`node --test`) krever eksplisitt `.ts`-endelse på
+   VERDI-imports mellom lib-filer, men TypeScript (`moduleResolution:
+   "bundler"`, `noEmit`) tillater det kun med `allowImportingTsExtensions`
+   (ikke satt). En `gjeld.ts → dato.ts`-import knakk dermed `npm test» for
+   ALLE filer som transitivt importerer `gjeld.ts` (bl.a. `gjeld.test.ts`
+   selv). Løsning: `gjeld.ts` forblir fri for verdi-imports fra andre
+   lib-filer (kun type-only, som strippes bort og ikke trenger
+   runtime-oppløsning); radbyggingen for frist-utregningen ligger i siden som
+   uansett allerede importerer `formaterDato`.
+3. **`oversikt.test.ts` og `annotering.test.ts` er lagt til i `package.json`
+   sin `test`-kommando** (samme mønster som de andre — ingen glob brukes).
+4. **Ventetidstekstene for varsler-av utvider ordrens ene gitte eksempel**
+   («Følg opp selv om {N} dager») til også å dekke i dag-/overskredet-tilfellene
+   («Følg opp selv i dag» / «Følg opp selv nå»), for å unngå at appen viser en
+   tallverdi som ikke gir mening (0 eller negativt) når varsler er av. Ordren
+   ga kun det ene eksempelet.
+5. **Den nye stiplede tidslinje-hendelsen på krav-detalj får en dato**
+   (den beregnede oppfølgingsdatoen, `sisteAktivitet + 14 dager`) i stedet for
+   en tom eyebrow-linje — ordren spesifiserte kun teksten, ikke om noden
+   skulle ha en dato-etikett; valgt for konsistens med resten av tidslinjen
+   (alle andre hendelser har en dato) og fordi det faktisk er nyttig
+   informasjon.
+6. **`/satser` sin tilbake-lenke peker til `/meg`** (samme faste mønster som
+   `/brev`, som også nås fra flere steder men alltid lenker tilbake til Meg).
 
 ## Fase 0 — Rebrand + designfundament (ferdig)
 
@@ -717,6 +807,27 @@ Samlet liste over påstander/tekster som bør sees av advokat før bred lanserin
   ikke profesjonell rådgivning.» — ny, fast linje som nå er ENESTE
   disclaimer under brevforklaringen (AI-en har ikke lenger lov til å
   formulere sin egen, se analyse-kort-seksjonen under).
+- **Oversiktspanelets etiketter** (Hjem, `src/app/(app)/page.tsx`): «aktive
+  saker» / «samlet krav» / «over lovlig sats» + historikklinjen «Så langt: N
+  medhold · N avtaler · N oppgjort» — første tallbaserte oppsummering av
+  FLERE saker samlet (tidligere var alt per-sak); bør vurderes for at
+  «samlet krav» ikke leses som at hele beløpet er tvilsomt/ubestridt.
+- **`/satser`-siden** (`src/app/(app)/satser/page.tsx`): satstabellene og
+  ingressen «Alle kontroller i Medhold gjøres mot disse satsene …» —
+  juridisk/faktuelt innhold (satser + inkassoforskrift-henvisning), bør
+  kvalitetssikres sammen med gebyrsjekk-tekstene over.
+- **Utregningspanelet** (`src/components/Utregning.tsx`,
+  `MEDHOLD_SUBSTANS_ARBEIDSORDRE §3`): radetikettene («Hovedstol i brevet»,
+  «Salærtrinn», «Lovbestemt frist» osv.) og paragrafhenvisningene i
+  `FRIST_HJEMMEL` (`src/lib/gjeld.ts`) — direkte juridiske påstander (§9/§10),
+  bør sjekkes sammen med gebyrsjekk-tekstene.
+- **Ventetidstekstene** (§5): «Vi purrer {X} for deg om N dager» / «Følg opp
+  selv om N dager» / «Oppfølging er sendt» / «Vi følger opp nå» — nytt
+  løfte/ikke-løfte om automatisk oppfølging, bør sjekkes at ordlyden ikke kan
+  leses som en garanti appen ikke kan holde.
+- **Annotert-brev-etikettene** (`src/lib/annotering.ts`): «Hovedstol —
+  {beløp} kr» / «Totalt beløp — {beløp} kr» — rene tallpåstander avledet fra
+  AI-uttrekk, samme risiko som resten av brevanalysen.
 
 ---
 

@@ -97,15 +97,22 @@ export function LeggTilBrevFlyt({
   const [stegAv, setStegAv] = useState<Record<number, boolean>>({});
   const [utfall, setUtfall] = useState<SakUtfall | "">("");
 
+  // Salærgrunnlaget er hovedstol når den finnes, ellers totalbeløpet — delt
+  // mellom gebyrsjekk-beregningen og utregningsvisningen (Utregning), slik at
+  // «Hovedstol i brevet»-raden alltid stemmer med det som faktisk ble lagt
+  // til grunn.
+  const hovedstolGrunnlag = useMemo(
+    () => tolkKr(analyse?.hovedstol) ?? tolkKr(belop),
+    [analyse, belop],
+  );
+
   // Gebyrsjekken beregnes reaktivt fra kostnadslinjene AI-en fant og de
   // (redigerbare) verdiene i steg 3 — retter du beløpet, følger panelet med.
-  // Salærgrunnlaget er hovedstol når den finnes, ellers totalbeløpet.
   const gebyrsjekk = useMemo(() => {
     const linjer = analyse?.kostnadslinjer ?? [];
     if (linjer.length === 0) return null;
-    const grunnlag = tolkKr(analyse?.hovedstol) ?? tolkKr(belop);
-    return sjekkKostnader(linjer, grunnlag, brevdato || null);
-  }, [analyse, belop, brevdato]);
+    return sjekkKostnader(linjer, hovedstolGrunnlag, brevdato || null);
+  }, [analyse, hovedstolGrunnlag, brevdato]);
 
   // Sum kr over lovlig sats — kun brukt i Veivalgs «betale»-resultattekst.
   const gebyrDifferanse = useMemo(
@@ -489,7 +496,11 @@ export function LeggTilBrevFlyt({
             </label>
           </div>
 
-          <Gebyrsjekk resultat={gebyrsjekk} className="mt-5" />
+          <Gebyrsjekk
+            resultat={gebyrsjekk}
+            hovedstol={hovedstolGrunnlag}
+            className="mt-5"
+          />
 
           <div className="mt-5">
             <p className="text-[13px] font-medium text-blekk">Hører til</p>

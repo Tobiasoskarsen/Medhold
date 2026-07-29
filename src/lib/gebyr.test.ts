@@ -5,6 +5,8 @@ import {
   satserForDato,
   sjekkKostnader,
   gebyrFunnTekst,
+  trinnEtikett,
+  utregningRaderForLinje,
   SATSVERSJONER,
   type Kostnadslinje,
 } from "./gebyr.ts";
@@ -193,4 +195,101 @@ test("gebyrFunnTekst med to funn skiller med semikolon", () => {
   assert.match(tekst, /purregebyr på 70 kr/);
   assert.match(tekst, /inkassosalær på 2\s?100 kr/);
   assert.ok(tekst.includes(";"), "to funn skal skilles med semikolon");
+});
+
+// --- trinnEtikett («Hvordan vi regnet dette ut») --------------------------
+
+test("trinnEtikett: grensene 500/1000/2500/10000/50000/250000/over", () => {
+  const sats = satserForDato("2026-06-01");
+  assert.match(trinnEtikett(500, sats), /t\.o\.m\. 500 kr/);
+  assert.match(trinnEtikett(501, sats), /t\.o\.m\. 1\s?000 kr/);
+  assert.match(trinnEtikett(1000, sats), /t\.o\.m\. 1\s?000 kr/);
+  assert.match(trinnEtikett(1001, sats), /t\.o\.m\. 2\s?500 kr/);
+  assert.match(trinnEtikett(2500, sats), /t\.o\.m\. 2\s?500 kr/);
+  assert.match(trinnEtikett(2501, sats), /t\.o\.m\. 10\s?000 kr/);
+  assert.match(trinnEtikett(10000, sats), /t\.o\.m\. 10\s?000 kr/);
+  assert.match(trinnEtikett(10001, sats), /t\.o\.m\. 50\s?000 kr/);
+  assert.match(trinnEtikett(50000, sats), /t\.o\.m\. 50\s?000 kr/);
+  assert.match(trinnEtikett(50001, sats), /t\.o\.m\. 250\s?000 kr/);
+  assert.match(trinnEtikett(250000, sats), /t\.o\.m\. 250\s?000 kr/);
+  assert.match(trinnEtikett(250001, sats), /over 250\s?000 kr/);
+});
+
+// --- utregningRaderForLinje ------------------------------------------------
+
+test("utregningRaderForLinje: innenfor/ukjent gir ingenting å vise", () => {
+  const sats = satserForDato("2026-06-01");
+  assert.equal(utregningRaderForLinje(vurder({ type: "purregebyr", belop: 38, tekst: "" }), sats, null), null);
+  assert.equal(
+    utregningRaderForLinje(
+      vurder({ type: "forsinkelsesrente", belop: 100, tekst: "" }),
+      sats,
+      null,
+    ),
+    null,
+  );
+});
+
+test("utregningRaderForLinje: over på salær med kjent hovedstol viser full utregning", () => {
+  const sats = satserForDato("2026-06-01");
+  const l = vurder({ type: "salaer", belop: 800, tekst: "" }, 2400);
+  const rader = utregningRaderForLinje(l, sats, 2400);
+  assert.ok(rader);
+  assert.deepEqual(
+    rader!.map((r) => r.etikett),
+    [
+      "Hovedstol i brevet",
+      "Salærtrinn",
+      "Laveste lovlige sats",
+      "Høyeste lovlige sats",
+      "Krevd i brevet",
+      "Over høyeste sats",
+    ],
+  );
+  assert.match(rader![0].verdi, /2\s?400 kr/);
+  assert.match(rader![1].verdi, /t\.o\.m\. 2\s?500 kr/);
+  assert.match(rader![3].verdi, /750 kr/);
+  assert.match(rader![4].verdi, /800 kr/);
+  assert.match(rader![5].verdi, /50 kr/);
+  assert.equal(rader![5].uthevet, true);
+  assert.ok(!rader![4].uthevet);
+});
+
+test("utregningRaderForLinje: fast gebyr over viser kun 3 rader", () => {
+  const sats = satserForDato("2026-06-01");
+  const l = vurder({ type: "purregebyr", belop: 70, tekst: "" });
+  const rader = utregningRaderForLinje(l, sats, null);
+  assert.deepEqual(
+    rader!.map((r) => r.etikett),
+    ["Maksimalsats", "Krevd", "Over"],
+  );
+  assert.equal(rader![2].uthevet, true);
+});
+
+test("utregningRaderForLinje: mulig_over har ingen Over-rad, siste er Krevd i brevet", () => {
+  const sats = satserForDato("2026-06-01");
+  const l = vurder({ type: "salaer", belop: 900, tekst: "" }, 10000);
+  assert.equal(l.vurdering, "mulig_over");
+  const rader = utregningRaderForLinje(l, sats, 10000);
+  assert.deepEqual(
+    rader!.map((r) => r.etikett),
+    [
+      "Hovedstol i brevet",
+      "Salærtrinn",
+      "Laveste lovlige sats",
+      "Høyeste lovlige sats",
+      "Krevd i brevet",
+    ],
+  );
+  assert.equal(rader![4].uthevet, true);
+});
+
+test("utregningRaderForLinje: manglende hovedstol utelater Hovedstol/Salærtrinn-radene", () => {
+  const sats = satserForDato("2026-06-01");
+  const l = vurder({ type: "salaer", belop: 900, tekst: "" }, 10000);
+  const rader = utregningRaderForLinje(l, sats, null);
+  assert.deepEqual(
+    rader!.map((r) => r.etikett),
+    ["Laveste lovlige sats", "Høyeste lovlige sats", "Krevd i brevet"],
+  );
 });

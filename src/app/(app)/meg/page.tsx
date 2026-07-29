@@ -1,4 +1,4 @@
-import { Bell, Mail, FileText, ShieldCheck, LogOut } from "lucide-react";
+import { Bell, Mail, FileText, ShieldCheck, LogOut, Scale } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
 import SlettKonto from "@/components/SlettKonto";
@@ -73,6 +73,7 @@ export default async function MegPage() {
 
       <SekvensDel>
       <Gruppe tittel="Hjelp">
+        <Rad ikon={Scale} etikett="Satsene vi bruker" href="/satser" />
         <Rad ikon={FileText} etikett="Alle brev" href="/brev" />
         <Rad
           ikon={Mail}

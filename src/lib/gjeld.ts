@@ -123,6 +123,11 @@ export type BeregnetFrist = {
   kilde: "beregnet";
 };
 
+// Inkassoloven §§ 9–10 gir begge minst 14 dagers frist — ÉN konstant, ikke
+// duplisert (MEDHOLD_SUBSTANS_ARBEIDSORDRE §3.3), brukt både i beregnFrist
+// og i utregningsvisningen under Nedtellingen.
+export const LOVBESTEMT_FRIST_DAGER = 14;
+
 /**
  * Beregner fristen som følger deterministisk av en brevtype og brevdato.
  * Kun to regler i første versjon (inkassoloven §§ 9–10). Returnerer null når
@@ -137,17 +142,35 @@ export function beregnFrist(
       // § 9: minst 14 dagers betalingsfrist etter at varselet er sendt.
       return {
         tittel: "Betalingsfrist",
-        forfallsdato: leggTilDager(brevdato, 14),
+        forfallsdato: leggTilDager(brevdato, LOVBESTEMT_FRIST_DAGER),
         kilde: "beregnet",
       };
     case "betalingsoppfordring":
       // § 10: minst 14 dagers frist til å betale eller komme med innsigelser.
       return {
         tittel: "Svarfrist",
-        forfallsdato: leggTilDager(brevdato, 14),
+        forfallsdato: leggTilDager(brevdato, LOVBESTEMT_FRIST_DAGER),
         kilde: "beregnet",
       };
     default:
       return null;
   }
 }
+
+// Hjemmel for den beregnede fristen, til kildelinjen i utregningspanelet
+// (§3.3) — kodetabell, ikke AI. Kun de to brevtypene beregnFrist faktisk
+// beregner noe for har en tekst; resten er null (ingen beregnet frist å
+// forklare).
+export const FRIST_HJEMMEL: Record<BrevType, string | null> = {
+  faktura: null,
+  purring: null,
+  inkassovarsel: "Betalingsfrist etter inkassoloven § 9.",
+  betalingsoppfordring:
+    "Frist til å betale eller komme med innsigelser etter inkassoloven § 10.",
+  forliksrad: null,
+  namsmann: null,
+  nedbetaling: null,
+  avsluttet: null,
+  annet: null,
+};
+
