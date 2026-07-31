@@ -16,6 +16,7 @@ etter hver fase.
 | Motion | Bevegelsesspråk (egen ordre) | ✅ Ferdig |
 | Motion3 | Skjermorkestrering, BunnNav-indikator, onboarding-koreografi (egen ordre) | ✅ Ferdig |
 | Substans | Oversiktspanel, utregning, annotert brev, ventetid, satsoversikt (egen ordre) | ✅ Ferdig |
+| Frist og alvor | Fristduplisering-fiks + alvorsgrense (egen ordre) | ✅ Ferdig (migrasjon 0021 IKKE kjørt ennå) |
 | Tillegg | Mørk modus + fyldigere Meg (på forespørsel) | ✅ Ferdig |
 | Tillegg | Brevarkiv + kontakt support (på forespørsel) | ✅ Ferdig |
 
@@ -277,6 +278,85 @@ Valg tatt underveis:
    informasjon.
 6. **`/satser` sin tilbake-lenke peker til `/meg`** (samme faste mønster som
    `/brev`, som også nås fra flere steder men alltid lenker tilbake til Meg).
+
+## Frist og alvor (MEDHOLD_FRIST_OG_ALVOR_ARBEIDSORDRE, ferdig i kode)
+
+To uavhengige fikser, levert sammen (deler migrasjon 0021).
+
+**Del A — fristduplisering:**
+- `sammenlignFrist()` lagt til i **eksisterende** `src/lib/frist.ts` (arbeidsordren
+  ba om et «nytt» `frist.ts`, men filen fantes alt med `dagerTil`/`erHastende`/
+  `fristChipTekst` — lagt til i stedet for å overskrive, se «Valg» under). 6
+  nye tester (identisk dato → samstemmer, avvik begge retninger m/ fortegn,
+  kun-eksplisitt/kun-beregnet, begge null).
+- Steg 3 (`LeggTilBrevFlyt.tsx`): den ENE relevante eksplisitte fristen
+  (første med konkret dato) sammenlignes mot lovberegningen i stedet for å
+  limes sammen i listen. `avvik_kortere` vises som egen dom-rød rad med
+  forklaring; andre statuser som én normal rad. Andre eksplisitte frister
+  (annen tittel) er urørt.
+- `brev.fristfunn` (migrasjon 0021) lagrer resultatet ved lagring — sannheten
+  ved visning. `DomMiniFrist` (ny eksport i `Dom.tsx`, samme stil som
+  `DomMini`) vises på BÅDE brev-detalj og krav-detalj når `status ===
+  'avvik_kortere'`. Krav-detaljens rødnote: gebyrfunn har alltid forrang;
+  uten gebyrfunn men med fristfunn vises «Fristen i brevet kan være for
+  kort» i stedet for kronebeløpet.
+
+**Del B — alvorsgrense:**
+- `src/lib/tekstsok.ts` (ny, delt modul): `escapeRegex`/`fraseRegex` flyttet
+  ut av `utkast-stemme.ts` (ren refaktor), ny `finnFraser()`. 7 tester.
+- `src/lib/alvorsgrense.ts`: `ALVORLIGE_SIGNALER` (8 fraser) + `erAlvorligSak()`
+  — rent tekstsøk, ett treff er nok. 6 tester.
+- `namsmann`-klassifiseringen i `SVAR_SKJEMA.brevtype` fikk en presisering
+  (utleggstrekk/utleggsforretning/tvangsdekning i lønn) — kun promptendring.
+- `erAlvorligSak()` kjøres i `etterbehandle()` på brevets (maskerte) tekst;
+  lagres som `brev.alvorlig` (migrasjon 0021).
+- `Alvorsvarsel.tsx` (ny): vises på krav-detalj MED FORRANG over `Veivalg`
+  når nyeste brev er alvorlig — uansett stadium, men kun når saken ikke er
+  løst (`!lost`, samme gate som Veivalg selv bruker). Signalordet som faktisk
+  matchet slås opp på nytt fra den lagrede brevteksten (ren visningsdetalj,
+  IKKE en rekalkulering av selve `alvorlig`-vurderingen, som forblir den
+  lagrede boolean-en). Tre lenker: Jussbuss, Advokatvakten, NAV.
+- Hjem: sakskort for en alvorlig sak bytter ut hele undertittel-/handling-
+  seksjonen (uansett `venter`-status) med «Alvorlig varsel — søk hjelp» og
+  ingen handlingsknapp, kun «Se hele saken».
+- 20 nye tester totalt (frist 6 + tekstsok 7 + alvorsgrense 6 + 1 i
+  oppfolging-filen fra tidligere), 144 totalt. `npm run build`/`lint` grønne.
+  Grep-verifisert: «spart»/«tjent» finnes fortsatt ikke i appen.
+  Motion-budsjett: krav-detalj har nå 7 `SekvensDel` (opp fra 6), fortsatt
+  under taket på 8 — ingen sammenslåing nødvendig.
+
+Valg tatt underveis:
+
+1. **`allowImportingTsExtensions: true` lagt til i `tsconfig.json`**, og nye
+   cross-lib-verdiimporter (f.eks. `tekstsok.ts` → `alvorsgrense.ts`,
+   `utkast-stemme.ts` → `tekstsok.ts`) bruker eksplisitt `.ts`-endelse.
+   Løser (uten risiko, `noEmit: true` uansett) det tilbakevendende problemet
+   der Node sin innebygde testkjører (`node --test`) krever `.ts`-endelse på
+   verdi-imports mellom lib-filer, mens ren TypeScript uten flagget nekter
+   akkurat det. Verifisert at Next sin egen Turbopack-bygg IKKE bryr seg om
+   endelsen (bygger fint med den) — testet eksplisitt før dette ble valgt
+   fremfor å fortsette å omstrukturere kode for å unngå cross-imports (som i
+   Substans-økten). Nyere kode kan bruke dette mønsteret fritt fremover.
+2. **`sammenlignFrist()` sin `beregnet`-parameter er IKKE typet som
+   `gjeld.ts` sin `BeregnetFrist`** (som arbeidsordren viste), men en enklere
+   `{tittel, forfallsdato}`-form — `AnalyseResultat.beregnetFrist` (actions.ts)
+   returnerer nettopp denne strippede formen (uten `kilde`), og `kilde`
+   brukes uansett ikke inni `sammenlignFrist`. Unngår en unødvendig
+   type-omvei uten å endre oppførsel.
+3. **Kilde på den lagrede, sammenlignede fristraden**: `samstemmer`/
+   `kun_beregnet` → `kilde: "beregnet"`; `avvik_kortere`/`avvik_lengre`/
+   `kun_eksplisitt` → `kilde: "brev_eksplisitt"` — ordren ga ikke en eksplisitt
+   regel for dette, valgt ut fra hvor `visForfallsdato` faktisk kom fra i
+   hvert tilfelle.
+4. **Advokatvakten sin URL er IKKE gitt i arbeidsordren** (kun Jussbuss og NAV
+   hadde eksakte URL-er). Brukt `https://www.advokatenhjelperdeg.no/advokatvakten/`
+   (Advokatforeningens offisielle side) — **bør verifiseres av brukeren** før
+   dette vises for ekte brukere, siden det er en juridisk henvisningslenke.
+5. **`DomMini`/`DomMiniFrist` og `Alvorsvarsel`-teksten forrang**: gebyrfunn og
+   fristfunn kan vises SAMMEN (egen `DomMini`-rad hver, samme `SekvensDel`)
+   siden de er uavhengige funn — kun rødnoten (én linje) og
+   Veivalg/Alvorsvarsel (én handling) har eksplisitt ett-om-gangen-forrang,
+   slik ordren spesifiserte for akkurat de to.
 
 ## Fase 0 — Rebrand + designfundament (ferdig)
 
@@ -828,6 +908,21 @@ Samlet liste over påstander/tekster som bør sees av advokat før bred lanserin
 - **Annotert-brev-etikettene** (`src/lib/annotering.ts`): «Hovedstol —
   {beløp} kr» / «Totalt beløp — {beløp} kr» — rene tallpåstander avledet fra
   AI-uttrekk, samme risiko som resten av brevanalysen.
+- **Fristfunn-tekstene** (`MEDHOLD_FRIST_OG_ALVOR_ARBEIDSORDRE §A`): «Brevet
+  oppgir {dato}, men loven krever minst {N} dager — fristen kan være for
+  kort. Vi bruker likevel brevets dato, siden det er den du faktisk må
+  forholde deg til.» og `DomMiniFrist` sin «Loven gir deg minst {N} dager
+  til.» — en ny, direkte juridisk påstand om at brevets frist kan være
+  ulovlig kort. Bør kvalitetssikres nøye — dette er en sterkere påstand enn
+  gebyrsjekkens «over maksimalsats».
+- **Alvorsvarselet** (`src/components/Alvorsvarsel.tsx`, `§B.4`): «Dette bør
+  du få hjelp med nå» / «Dette brevet nevner {signalord}. Medhold er bygget
+  for vanlige inkassosaker — her bør du snakke med noen som kan hjelpe deg
+  videre. Det er gratis.» — dette ER selve den juridiske grensedragningen
+  arbeidsordren ba om eksplisitt gjennomgang av (guardrail B.6.5): hvor
+  Medhold slutter å hjelpe direkte og henviser videre. Samme for Hjem sin
+  «Alvorlig varsel — søk hjelp». Se også «Valg tatt underveis» punkt 4 om at
+  Advokatvakten sin lenke-URL ikke ble gitt i ordren og bør verifiseres.
 
 ---
 

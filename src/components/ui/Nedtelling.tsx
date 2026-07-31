@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "motion/react";
-import { dagerTil, erHastende } from "@/lib/frist";
+import { dagerTil } from "@/lib/dato";
+import { erHastende } from "@/lib/frist";
 import { tellOpp } from "@/lib/tell";
 
 /** «24. juli» — dag + full måned, uten år (som i mockupen). */

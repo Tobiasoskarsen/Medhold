@@ -3,6 +3,7 @@
 // i utkast/actions.ts. «AI tolker, kode beslutter» — også for stil: denne
 // filen er ren tekst og ren funksjon, ingen AI.
 import type { UtkastType } from "./types";
+import { finnFraser } from "./tekstsok.ts";
 
 /** Ord/fraser som aldri skal forekomme i et generert utkast. */
 export const FORBUDTE_ORD: string[] = [
@@ -23,24 +24,12 @@ export const FORBUDTE_ORD: string[] = [
   "viser til",
 ];
 
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/** Bygger en ordgrense-bevisst regex for en (evt. flerords) frase. Bruker
- * Unicode-bokstavklasser i grensene, slik at norske bokstaver (æøå) telles
- * som ordtegn — ellers ville «\b» kunne gi falske treff/ikke-treff rundt dem. */
-function fraseRegex(frase: string): RegExp {
-  const mønster = escapeRegex(frase).replace(/\s+/g, "\\s+");
-  return new RegExp(`(?<![\\p{L}\\p{N}])${mønster}(?![\\p{L}\\p{N}])`, "giu");
-}
-
 /**
  * Returnerer forbudte ord/fraser funnet i teksten (case-insensitivt,
  * ordgrense-bevisst så «beroende» o.l. ikke gir falsk treff på «i bero»).
  */
 export function finnForbudteOrd(tekst: string): string[] {
-  return FORBUDTE_ORD.filter((ord) => fraseRegex(ord).test(tekst));
+  return finnFraser(tekst, FORBUDTE_ORD);
 }
 
 export const TONEREGLER = `Toneregler for brevet:

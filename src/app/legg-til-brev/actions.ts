@@ -16,6 +16,8 @@ import {
   type Kostnadslinje,
   type GebyrsjekkResultat,
 } from "@/lib/gebyr";
+import { erAlvorligSak } from "@/lib/alvorsgrense";
+import type { FristSammenligning } from "@/lib/frist";
 
 // Strukturert utdata. «AI tolker, kode beslutter»: modellen trekker KUN ut det
 // som eksplisitt står i brevet. Beregnede frister lages i kode, ikke her.
@@ -32,7 +34,7 @@ const SVAR_SKJEMA = {
       type: "string",
       enum: [...BREVTYPER],
       description:
-        "Hvilken type brev dette er. Bruk 'annet' hvis det ikke passer inn i gjeld-/inkassotrinnene.",
+        "Hvilken type brev dette er. 'namsmann': saken er hos/varslet namsmannen, inkl. varsel om utleggstrekk, utleggsforretning eller tvangsdekning i lønn. Bruk 'annet' hvis det ikke passer inn i gjeld-/inkassotrinnene.",
     },
     avsender: {
       type: "string",
@@ -231,6 +233,8 @@ export type AnalyseResultat =
       kravForslag: KravForslag | null;
       /** Deterministisk gebyrsjekk (kode beslutter). Null når ingen kostnadslinjer. */
       gebyrsjekk: GebyrsjekkResultat | null;
+      /** erAlvorligSak() kjørt på brevteksten (kode beslutter, ikke AI). */
+      alvorlig: boolean;
     }
   | { ok: false; feil: string };
 
@@ -288,10 +292,12 @@ async function korrigerForklaring(
 async function etterbehandle(
   supabase: Awaited<ReturnType<typeof createClient>>,
   analyse: Analyse,
+  originalTekst: string,
 ): Promise<{
   beregnetFrist: { tittel: string; forfallsdato: string } | null;
   kravForslag: KravForslag | null;
   gebyrsjekk: GebyrsjekkResultat | null;
+  alvorlig: boolean;
 }> {
   // Steg: maks 3, prioritert rekkefølge → trygt å kutte uten regenerering.
   analyse.foreslatte_steg = kuttTilMaks(analyse.foreslatte_steg, MAKS_STEG);
@@ -358,7 +364,13 @@ async function etterbehandle(
     const t = liste.find((s) => norm(s.kreditor) === norm(analyse.avsender));
     if (t) kravForslag = { id: t.id, navn: navn(t), grunn: "avsender" };
   }
-  return { beregnetFrist, kravForslag, gebyrsjekk };
+
+  // Alvorsgrense (MEDHOLD_FRIST_OG_ALVOR_ARBEIDSORDRE §B.3): rent tekstsøk på
+  // brevets EGEN (allerede maskerte) tekst — ingen AI-dom. Lagres som
+  // brev.alvorlig; sannheten ved visning, rekalkuleres aldri.
+  const alvorlig = erAlvorligSak(originalTekst);
+
+  return { beregnetFrist, kravForslag, gebyrsjekk, alvorlig };
 }
 
 export async function analyserBrevTekst(
@@ -405,19 +417,20 @@ export async function analyserBrevTekst(
     return { ok: false, feil: "Noe gikk galt under analysen. Prøv igjen om litt." };
   }
 
-  const { beregnetFrist, kravForslag, gebyrsjekk } = await etterbehandle(
-    supabase,
-    analyse,
-  );
+  // Masker fødselsnumre før teksten lagres/vises videre (AI-kallet over kjørte
+  // på originalen — det er den uunngåelige første sendingen). Alvorsgrensen
+  // sjekkes mot samme (maskerte) tekst som lagres og vises senere.
+  const original_tekst = maskerFodselsnummer(rensket);
+  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig } =
+    await etterbehandle(supabase, analyse, original_tekst);
   return {
     ok: true,
     analyse,
-    // Masker fødselsnumre før teksten lagres/vises videre (AI-kallet over kjørte
-    // på originalen — det er den uunngåelige første sendingen).
-    original_tekst: maskerFodselsnummer(rensket),
+    original_tekst,
     beregnetFrist,
     kravForslag,
     gebyrsjekk,
+    alvorlig,
   };
 }
 
@@ -504,17 +517,17 @@ export async function analyserBrevBilder(
   }
 
   const { ekstrahert_tekst, ...rest } = analyse;
-  const { beregnetFrist, kravForslag, gebyrsjekk } = await etterbehandle(
-    supabase,
-    rest,
-  );
+  const original_tekst = maskerFodselsnummer(ekstrahert_tekst);
+  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig } =
+    await etterbehandle(supabase, rest, original_tekst);
   return {
     ok: true,
     analyse: rest,
-    original_tekst: maskerFodselsnummer(ekstrahert_tekst),
+    original_tekst,
     beregnetFrist,
     kravForslag,
     gebyrsjekk,
+    alvorlig,
   };
 }
 
@@ -538,6 +551,11 @@ export type LagreBrevInput = {
   kostnadslinjer: Kostnadslinje[] | null;
   /** Opprinnelig hovedstol (salærgrunnlag). Null → totalbeløp brukes. */
   hovedstol: number | null;
+  /** sammenlignFrist()-resultatet (samme verdi som vist i steg 3). Null når
+   *  verken eksplisitt eller beregnet frist finnes for brevtypen. */
+  fristfunn: FristSammenligning | null;
+  /** erAlvorligSak() kjørt av etterbehandle() ved analyse. */
+  alvorlig: boolean;
 };
 
 export type LagreBrevResultat =
@@ -620,6 +638,8 @@ export async function lagreBrev(
       foreslatte_frister: input.valgteFrister,
       kostnadslinjer: linjer.length > 0 ? linjer : null,
       gebyrsjekk: gebyrsjekk && gebyrsjekk.linjer.length > 0 ? gebyrsjekk : null,
+      fristfunn: input.fristfunn,
+      alvorlig: input.alvorlig,
     })
     .select("id")
     .single();

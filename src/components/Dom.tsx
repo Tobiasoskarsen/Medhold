@@ -136,3 +136,37 @@ export function DomMini({
     </div>
   );
 }
+
+/**
+ * DomMiniFrist — samme kompakte stil som DomMini, for et fristfunn
+ * (MEDHOLD_FRIST_OG_ALVOR_ARBEIDSORDRE §A.3): brevets frist er kortere enn
+ * loven krever. `differanseDager` skal være et POSITIVT tall (antall dager
+ * kortere — bruk Math.abs på FristSammenligning sin negative differanse).
+ */
+export function DomMiniFrist({
+  differanseDager,
+  className = "",
+}: {
+  differanseDager: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-2xl border-[0.5px] border-dom-rod/40 bg-dom-rod-bg px-3.5 py-3 ${className}`}
+    >
+      <span
+        aria-hidden
+        className="select-none font-serif text-[24px] font-semibold leading-none text-dom-rod"
+      >
+        §
+      </span>
+      <p className="text-[13px] leading-snug text-blekk">
+        Fristen i brevet er kortere enn loven krever. Loven gir deg{" "}
+        <b className="font-semibold text-dom-rod">
+          minst {differanseDager} dager til
+        </b>
+        .
+      </p>
+    </div>
+  );
+}

@@ -20,7 +20,8 @@ import {
 } from "@/lib/bevegelse";
 import { useViewOvergang } from "@/components/ViewOvergang";
 import { useTrykkFeedback } from "@/lib/useTrykkFeedback";
-import { dagerTil, erHastende, fristChipTekst } from "@/lib/frist";
+import { dagerTil } from "@/lib/dato";
+import { erHastende, fristChipTekst } from "@/lib/frist";
 
 /**
  * Ett kort i kravlisten. Ved trykk settes `view-transition-name` på nettopp

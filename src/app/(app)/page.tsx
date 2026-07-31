@@ -122,11 +122,12 @@ export default async function HjemPage() {
           "id, sak_id, tittel, forfallsdato, saker(id, kreditor, tittel, belop_totalt, stadium, status, utfall)",
         )
         .eq("fullfort", false),
-      // Nyeste brev per sak (kun for gebyrsjekk-summeringen) — ÉN spørring,
-      // ingen N+1, samme mønster som /krav (Kravkort sin §-markør).
+      // Nyeste brev per sak (gebyrsjekk-summeringen + alvorsgrensen, §B.5) —
+      // ÉN spørring, ingen N+1, samme mønster som /krav (Kravkort sin
+      // §-markør).
       supabase
         .from("brev")
-        .select("sak_id, opprettet, gebyrsjekk")
+        .select("sak_id, opprettet, gebyrsjekk, alvorlig")
         .order("opprettet", { ascending: false }),
     ]);
 
@@ -151,15 +152,18 @@ export default async function HjemPage() {
   const aktive = aktiveSaker.length;
   const harLoste = saker.some((s) => s.status === "fullfort");
 
-  // Nyeste brev sin gebyrsjekk per sak (DB-sortert nyeste først → første
-  // treff per sak_id holdes) — grunnlaget for oversiktspanelet under.
+  // Nyeste brev sin gebyrsjekk/alvorlighet per sak (DB-sortert nyeste først
+  // → første treff per sak_id holdes) — grunnlaget for oversiktspanelet og
+  // alvorsvarselet (§B.5) under.
   const gebyrsjekkPerSak = new Map<string, GebyrsjekkResultat | null>();
+  const alvorligPerSak = new Map<string, boolean>();
   for (const b of brevData ?? []) {
     if (gebyrsjekkPerSak.has(b.sak_id)) continue;
     gebyrsjekkPerSak.set(
       b.sak_id,
       (b.gebyrsjekk as GebyrsjekkResultat | null) ?? null,
     );
+    alvorligPerSak.set(b.sak_id, !!b.alvorlig);
   }
   const sakOppsummeringer: SakOppsummering[] = saker.map((s) => ({
     id: s.id,
@@ -178,6 +182,7 @@ export default async function HjemPage() {
   const topSak = topFrist?.saker ?? aktiveSaker[0] ?? null;
   const kommende = frister.slice(topFrist ? 1 : 0, topFrist ? 4 : 3);
   const venter = !!topSak && topSak.status === "venter_pa_svar" && !topFrist;
+  const topSakAlvorlig = topSak ? (alvorligPerSak.get(topSak.id) ?? false) : false;
 
   // Ventetid som synlig aktivitet (§5), kortform på handlingskortet. Samme
   // definisjon av «siste aktivitet» som krav-detalj/cron-en: nyeste av
@@ -325,7 +330,34 @@ export default async function HjemPage() {
         </Kort>
       ) : (
           <Kort className="mt-6">
-            {venter ? (
+            {topSakAlvorlig ? (
+              <>
+                <p className="text-[17px] font-medium text-blekk">
+                  {topSak?.kreditor ?? topSak?.tittel}
+                </p>
+                <p className="mt-0.5 text-[13px] font-medium text-dom-rod">
+                  Alvorlig varsel — søk hjelp
+                </p>
+                {topSak?.belop_totalt != null && (
+                  <p className="mt-2">
+                    <Belop
+                      verdi={topSak.belop_totalt}
+                      className="font-serif text-[30px] font-medium tracking-[-0.02em] tabular-nums text-blekk"
+                    />
+                  </p>
+                )}
+                {topSak && (
+                  <p className="mt-3 text-center text-[13px] text-dempet">
+                    <Link
+                      href={`/krav/${topSak.id}`}
+                      className="transition hover:text-blekk"
+                    >
+                      Se hele saken
+                    </Link>
+                  </p>
+                )}
+              </>
+            ) : venter ? (
               <>
                 <p className="text-[17px] font-medium text-blekk">
                   Venter på svar
