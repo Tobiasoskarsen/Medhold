@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Sekvens, SekvensDel } from "@/components/ui";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
+import { DomMiniFrist } from "@/components/Dom";
 import { AnnotertBrev } from "@/components/AnnotertBrev";
 import { formaterKortDato } from "@/lib/dato";
 import { FORKLARING_DISCLAIMER } from "@/lib/brand";
@@ -14,6 +15,7 @@ import {
   type Stadium,
 } from "@/lib/gjeld";
 import type { GebyrsjekkResultat, Kostnadslinje } from "@/lib/gebyr";
+import type { FristSammenligning } from "@/lib/frist";
 import { finnAnnoteringer } from "@/lib/annotering";
 import { BrevSamtale } from "./BrevSamtale";
 
@@ -40,7 +42,7 @@ export default async function BrevPage({
   const { data: brev } = await supabase
     .from("brev")
     .select(
-      "id, sak_id, avsender, brevtype, brevdato, belop, forklaring, original_tekst, gebyrsjekk, kostnadslinjer",
+      "id, sak_id, avsender, brevtype, brevdato, belop, forklaring, original_tekst, gebyrsjekk, kostnadslinjer, fristfunn",
     )
     .eq("id", brevId)
     .maybeSingle();
@@ -81,6 +83,10 @@ export default async function BrevPage({
     (fristData ?? []) as { tittel: string; forfallsdato: string }[],
   );
 
+  // Fristfunn (§A.3): lagret sammenlignFrist()-resultat, aldri rekalkulert.
+  const fristfunn = brev.fristfunn as FristSammenligning | null;
+  const harFristfunn = fristfunn?.status === "avvik_kortere";
+
   return (
     <Skjermramme className="pt-5" animerInn={false}>
       <Link
@@ -118,6 +124,12 @@ export default async function BrevPage({
         utkastHref={utkastHref}
         className="mt-3"
       />
+      {harFristfunn && (
+        <DomMiniFrist
+          differanseDager={Math.abs(fristfunn?.differanseDager ?? 0)}
+          className="mt-3"
+        />
+      )}
       </SekvensDel>
 
       <SekvensDel>

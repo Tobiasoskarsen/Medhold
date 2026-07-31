@@ -12,8 +12,9 @@ import {
   Sekvens,
   SekvensDel,
 } from "@/components/ui";
-import { DomMini } from "@/components/Dom";
+import { DomMini, DomMiniFrist } from "@/components/Dom";
 import { Veivalg } from "@/components/Veivalg";
+import { Alvorsvarsel } from "@/components/Alvorsvarsel";
 import { Utregning } from "@/components/Utregning";
 import { KravNavn, KravBelop } from "./KravHeader";
 import { formaterKortDato, formaterDato } from "@/lib/dato";
@@ -37,6 +38,9 @@ import {
   type SakUtfall,
 } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import type { FristSammenligning } from "@/lib/frist";
+import { finnFraser } from "@/lib/tekstsok";
+import { ALVORLIGE_SIGNALER } from "@/lib/alvorsgrense";
 import {
   dagerTilOppfolging,
   oppfolgingTilstand,
@@ -56,6 +60,9 @@ type BrevRad = {
   avsender: string | null;
   opprettet: string;
   gebyrsjekk: GebyrsjekkResultat | null;
+  fristfunn: FristSammenligning | null;
+  alvorlig: boolean;
+  original_tekst: string;
 };
 
 type FristRad = {
@@ -147,7 +154,9 @@ export default async function KravDetaljPage({
     await Promise.all([
       supabase
         .from("brev")
-        .select("id, brevdato, brevtype, avsender, opprettet, gebyrsjekk")
+        .select(
+          "id, brevdato, brevtype, avsender, opprettet, gebyrsjekk, fristfunn, alvorlig, original_tekst",
+        )
         .eq("sak_id", id)
         .order("brevdato", { ascending: false, nullsFirst: false })
         .order("opprettet", { ascending: false }),
@@ -223,6 +232,19 @@ export default async function KravDetaljPage({
   const sisteBrev = brevListe[0];
   const overDiff = overTotal(sisteBrev?.gebyrsjekk ?? null);
   const harOverGebyr = overDiff > 0;
+
+  // Alvorsgrense (§B.4): MED FORRANG over Veivalg, uansett stadium. Signalordet
+  // som faktisk trigget den lagrede `alvorlig`-verdien slås opp på nytt fra
+  // samme (lagrede) brevtekst — kun for VISNING, den lagrede boolean-en er og
+  // forblir sannheten.
+  const erSakAlvorlig = sisteBrev?.alvorlig ?? false;
+  const signalord = erSakAlvorlig
+    ? (finnFraser(sisteBrev.original_tekst, ALVORLIGE_SIGNALER)[0] ??
+      "et alvorlig signal")
+    : null;
+
+  // Fristfunn (§A.3): gebyrfunn har alltid forrang i rødnoten under beløpet.
+  const harFristfunn = sisteBrev?.fristfunn?.status === "avvik_kortere";
 
   // Navn: hovedkravet i overskriften, inkassoselskapet i eyebrow-en (når det
   // finnes en opprinnelig kreditor, er `kreditor` selve inkassoselskapet).
@@ -346,10 +368,16 @@ export default async function KravDetaljPage({
           />
         </p>
       )}
-      {harOverGebyr && (
+      {harOverGebyr ? (
         <p className="mt-1 text-[12.5px] font-semibold text-dom-rod">
           {kr(overDiff)} kr av dette er over lovlig sats.
         </p>
+      ) : (
+        harFristfunn && (
+          <p className="mt-1 text-[12.5px] font-semibold text-dom-rod">
+            Fristen i brevet kan være for kort.
+          </p>
+        )
       )}
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -420,22 +448,38 @@ export default async function KravDetaljPage({
         </SekvensDel>
       )}
 
-      {harOverGebyr && sisteBrev?.gebyrsjekk && (
+      {((harOverGebyr && sisteBrev?.gebyrsjekk) ||
+        (harFristfunn && sisteBrev?.fristfunn)) && (
         <SekvensDel>
-          <DomMini resultat={sisteBrev.gebyrsjekk} className="mt-4" />
+          {harOverGebyr && sisteBrev?.gebyrsjekk && (
+            <DomMini resultat={sisteBrev.gebyrsjekk} className="mt-4" />
+          )}
+          {harFristfunn && sisteBrev?.fristfunn && (
+            <DomMiniFrist
+              differanseDager={Math.abs(sisteBrev.fristfunn.differanseDager ?? 0)}
+              className={harOverGebyr ? "mt-3" : "mt-4"}
+            />
+          )}
         </SekvensDel>
       )}
 
-      {stotterUtkast(stadium) && !lost && (
+      {erSakAlvorlig && !lost ? (
         <SekvensDel>
-          <Veivalg
-            className="mt-5"
-            harGebyrfunn={harOverGebyr}
-            gebyrDifferanse={overDiff}
-            svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
-            betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
-          />
+          <Alvorsvarsel signalord={signalord as string} className="mt-5" />
         </SekvensDel>
+      ) : (
+        stotterUtkast(stadium) &&
+        !lost && (
+          <SekvensDel>
+            <Veivalg
+              className="mt-5"
+              harGebyrfunn={harOverGebyr}
+              gebyrDifferanse={overDiff}
+              svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
+              betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
+            />
+          </SekvensDel>
+        )
       )}
 
       <SekvensDel>

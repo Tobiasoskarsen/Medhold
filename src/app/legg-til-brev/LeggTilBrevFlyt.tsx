@@ -8,12 +8,19 @@ import { Primærknapp } from "@/components/ui";
 import { Bevegelsesramme } from "@/components/Bevegelsesramme";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
-import { BREVTYPER, STADIUM_ETIKETT, type BrevType } from "@/lib/gjeld";
-import { formaterKortDato } from "@/lib/dato";
+import {
+  BREVTYPER,
+  STADIUM_ETIKETT,
+  LOVBESTEMT_FRIST_DAGER,
+  type BrevType,
+} from "@/lib/gjeld";
+import { formaterKortDato, formaterDato } from "@/lib/dato";
+import { sammenlignFrist, type FristSammenligning } from "@/lib/frist";
 import {
   UTFALL_VALGBARE,
   UTFALL_ETIKETT,
   type FristForslag,
+  type FristKilde,
   type SakUtfall,
 } from "@/lib/types";
 import { svarUtfallTilSak } from "@/lib/utfall";
@@ -94,6 +101,13 @@ export function LeggTilBrevFlyt({
   const [kravForslag, setKravForslag] = useState<KravForslag | null>(null);
   const [fristForslag, setFristForslag] = useState<FristForslag[]>([]);
   const [fristAv, setFristAv] = useState<Record<number, boolean>>({});
+  // Den ENE fristen som er sammenlignet mot lovberegningen (§A.2) — vises som
+  // egen rad, atskilt fra fristForslag sine (urørte) øvrige eksplisitte
+  // frister.
+  const [fristSammenligning, setFristSammenligning] =
+    useState<FristSammenligning | null>(null);
+  const [fristSammenligningAv, setFristSammenligningAv] = useState(false);
+  const [alvorlig, setAlvorlig] = useState(false);
   const [stegAv, setStegAv] = useState<Record<number, boolean>>({});
   const [utfall, setUtfall] = useState<SakUtfall | "">("");
 
@@ -140,19 +154,38 @@ export function LeggTilBrevFlyt({
     // Forslag om eksisterende krav — aldri auto-valgt. Vises kun når vi ikke
     // allerede er på et bestemt krav (forvalgtKrav). Brukeren bekrefter selv.
     setKravForslag(forvalgtKrav ? null : r.kravForslag);
+    setAlvorlig(r.alvorlig);
+
     const eksplisitte: FristForslag[] = r.analyse.foreslatte_frister.map((f) => ({
       ...f,
       kilde: "brev_eksplisitt" as const,
     }));
-    const beregnede: FristForslag[] = r.beregnetFrist
-      ? [{ ...r.beregnetFrist, kilde: "beregnet" as const }]
-      : [];
-    const alle = [...eksplisitte, ...beregnede];
-    setFristForslag(alle);
-    setFristAv(Object.fromEntries(alle.map((f, i) => [i, !!f.forfallsdato])));
+    // Den ENE eksplisitte fristen som er «samme frist» som lovberegningen —
+    // første med en konkret dato (§A.2). Andre eksplisitte frister (annen
+    // tittel) vises urørt som før.
+    const relevantIndeks = eksplisitte.findIndex((f) => f.forfallsdato);
+    const relevantEksplisitt = relevantIndeks >= 0 ? eksplisitte[relevantIndeks] : null;
+    const andreEksplisitte = eksplisitte.filter((_, i) => i !== relevantIndeks);
+
+    const sammenligning = sammenlignFrist(relevantEksplisitt, r.beregnetFrist);
+    setFristSammenligning(sammenligning);
+    setFristSammenligningAv(sammenligning !== null);
+
+    setFristForslag(andreEksplisitte);
+    setFristAv(
+      Object.fromEntries(andreEksplisitte.map((f, i) => [i, !!f.forfallsdato])),
+    );
     // Forhåndsvalgt utfall fra AI (null ved «uklart» → ingen forhåndsvalg).
     setUtfall(svarUtfallTilSak(r.analyse.svar_utfall) ?? "");
     setSteg(3);
+  }
+
+  // samstemmer/kun_beregnet → dato er (også) lovens; avvik_kortere/
+  // avvik_lengre/kun_eksplisitt → dato er hentet fra selve brevet.
+  function fristSammenligningKilde(status: FristSammenligning["status"]): FristKilde {
+    return status === "samstemmer" || status === "kun_beregnet"
+      ? "beregnet"
+      : "brev_eksplisitt";
   }
 
   async function lesTekst() {
@@ -199,7 +232,18 @@ export function LeggTilBrevFlyt({
     setLagrer(true);
     setFeil(null);
 
-    const valgteFrister = fristForslag.filter((f, i) => f.forfallsdato && fristAv[i]);
+    const andreValgte = fristForslag.filter((f, i) => f.forfallsdato && fristAv[i]);
+    const sammenligningValgt: FristForslag[] =
+      fristSammenligning && fristSammenligningAv
+        ? [
+            {
+              tittel: fristSammenligning.visTittel,
+              forfallsdato: fristSammenligning.visForfallsdato,
+              kilde: fristSammenligningKilde(fristSammenligning.status),
+            },
+          ]
+        : [];
+    const valgteFrister = [...sammenligningValgt, ...andreValgte];
     const valgteSteg = analyse.foreslatte_steg.filter((_, i) => stegAv[i] !== false);
 
     const input: LagreBrevInput = {
@@ -220,6 +264,8 @@ export function LeggTilBrevFlyt({
       utfall: valgtKravVenter && utfall ? utfall : null,
       kostnadslinjer: analyse.kostnadslinjer,
       hovedstol: tolkKr(analyse.hovedstol),
+      fristfunn: fristSammenligning,
+      alvorlig,
     };
 
     const r = await lagreBrev(input);
@@ -604,12 +650,52 @@ export function LeggTilBrevFlyt({
             </div>
           )}
 
-          {fristForslag.length > 0 && (
+          {(fristSammenligning || fristForslag.length > 0) && (
             <div className="mt-5">
               <p className="text-[13px] font-medium text-blekk">
                 Foreslåtte frister
               </p>
               <div className="mt-2 flex flex-col gap-2">
+                {fristSammenligning &&
+                  (fristSammenligning.status === "avvik_kortere" ? (
+                    <label className="flex items-start justify-between gap-3 rounded-xl border-[0.5px] border-dom-rod bg-dom-rod-bg px-3.5 py-2.5">
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-dom-rod">
+                          {formaterKortDato(fristSammenligning.visForfallsdato)}
+                        </span>
+                        <span className="mt-1 block text-[12.5px] leading-snug text-blekk">
+                          Brevet oppgir{" "}
+                          {formaterDato(fristSammenligning.eksplisittDato as string)}
+                          , men loven krever minst {LOVBESTEMT_FRIST_DAGER} dager —
+                          fristen kan være for kort. Vi bruker likevel brevets
+                          dato, siden det er den du faktisk må forholde deg til.
+                        </span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={fristSammenligningAv}
+                        onChange={(e) => setFristSammenligningAv(e.target.checked)}
+                        className="mt-0.5 size-4 shrink-0 accent-aksent"
+                      />
+                    </label>
+                  ) : (
+                    <label className="flex items-center justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5">
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm text-blekk">
+                          {fristSammenligning.visTittel}
+                        </span>
+                        <span className="text-xs text-dempet">
+                          {formaterKortDato(fristSammenligning.visForfallsdato)}
+                        </span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={fristSammenligningAv}
+                        onChange={(e) => setFristSammenligningAv(e.target.checked)}
+                        className="size-4 accent-aksent"
+                      />
+                    </label>
+                  ))}
                 {fristForslag.map((f, i) => (
                   <label
                     key={i}
