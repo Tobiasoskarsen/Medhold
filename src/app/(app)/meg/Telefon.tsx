@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { lagreTelefon } from "./actions";
+import { useLagretBekreftelse } from "@/lib/useLagretBekreftelse";
 
 /**
  * Valgfritt telefonnummer. Lagres i profilen når feltet forlates. Brukes ikke
@@ -9,16 +10,9 @@ import { lagreTelefon } from "./actions";
  */
 export function Telefon({ start }: { start: string }) {
   const [nummer, setNummer] = useState(start);
-  const [lagret, setLagret] = useState(false);
+  const [lagret, setLagret] = useLagretBekreftelse();
   const [feil, setFeil] = useState<string | null>(null);
   const [venter, startTransition] = useTransition();
-
-  // «Lagret» forsvinner av seg selv, så den ikke blir stående som stale state.
-  useEffect(() => {
-    if (!lagret) return;
-    const t = setTimeout(() => setLagret(false), 2500);
-    return () => clearTimeout(t);
-  }, [lagret]);
 
   function lagre() {
     if (nummer.trim() === start.trim()) return;
