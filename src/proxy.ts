@@ -8,8 +8,11 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Kjør på alle ruter unntatt statiske filer og bilder.
+     * Kjør på alle ruter unntatt statiske filer og bilder. `opengraph-image`
+     * må være unntatt slik at sosiale mediers krawlere (ikke innlogget) kan
+     * hente delingsbildet — ellers ville proxy-en sendt dem til /velkommen
+     * i stedet for selve PNG-en (samme resonnement som manifest.webmanifest).
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

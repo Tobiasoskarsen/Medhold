@@ -3,7 +3,7 @@
 // Dommen — signaturøyeblikket ved et gebyrfunn (designordre §2.1). Ren
 // presentasjon av det lagrede gebyrsjekk-resultatet; ingen vurderingslogikk her.
 import { m } from "motion/react";
-import { NavLenke as Link } from "@/components/NavLenke";
+import { Primærknapp } from "@/components/ui";
 import type { GebyrsjekkResultat, Kostnadstype, LinjeResultat } from "@/lib/gebyr";
 import { formaterDato } from "@/lib/dato";
 import { FJAER } from "@/lib/bevegelse";
@@ -90,12 +90,9 @@ export function Dom({
       </p>
 
       {utkastHref && (
-        <Link
-          href={utkastHref}
-          className="trykk relative mt-3.5 block w-full rounded-[10px] bg-aksent px-3 py-3 text-center text-sm font-medium text-white hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent focus-visible:ring-offset-2"
-        >
+        <Primærknapp href={utkastHref} className="relative mt-3.5">
           Bruk funnet i innsigelsen
-        </Link>
+        </Primærknapp>
       )}
     </m.div>
   );
