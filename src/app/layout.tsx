@@ -18,6 +18,14 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
+  // Kreves for at og:image/twitter:image (opengraph-image.tsx) skal bli en
+  // gyldig absolutt URL i prod — samme fallback-URL som lib/epost.ts sin
+  // appUrl() allerede bruker. Uten denne løser Next kun til localhost (se
+  // build-advarselen), og delingsbildet ville vært uinnhentbart for Facebook/
+  // LinkedIn/Twitters debuggere.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "https://app2-chi-five.vercel.app",
+  ),
   title: APP_NAME,
   description:
     "Brev, frister og krav — samlet på ett sted, med hjelp til å svare riktig og i tide.",
@@ -29,6 +37,19 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: APP_NAME,
+  },
+  openGraph: {
+    title: APP_NAME,
+    description:
+      "Forstå inkassobrevet ditt, sjekk gebyrene mot loven, og svar riktig og i tide.",
+    locale: "nb_NO",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: APP_NAME,
+    description:
+      "Forstå inkassobrevet ditt, sjekk gebyrene mot loven, og svar riktig og i tide.",
   },
 };
 

@@ -3,15 +3,18 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { m } from "motion/react";
-import { Kort, Pill, useSekvensForsinkelse, useInntreden } from "@/components/ui";
+import {
+  Kort,
+  Pill,
+  Primærknapp,
+  useSekvensForsinkelse,
+  useInntreden,
+} from "@/components/ui";
 import { haptikk } from "@/lib/haptikk";
 import { formaterBelop } from "@/lib/format";
 import { beregnAvdrag } from "@/lib/avdrag";
 import { STIGRING } from "@/lib/bevegelse";
 import { markerLost } from "../../actions";
-
-const knapp =
-  "trykk block w-full rounded-[10px] bg-aksent px-3 py-3 text-center text-sm font-medium text-white hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent focus-visible:ring-offset-2 disabled:opacity-60";
 
 export function VeierUtFlyt({
   sakId,
@@ -97,14 +100,13 @@ export function VeierUtFlyt({
               Har du betalt hele beløpet til kontonummeret i brevet?
             </p>
             <div className="mt-3 flex items-center gap-3">
-              <button
-                type="button"
+              <Primærknapp
+                full={false}
                 disabled={lagrer}
                 onClick={jegHarBetalt}
-                className={`${knapp} w-auto px-4 py-2.5`}
               >
                 {lagrer ? "Lagrer …" : "Ja, betalt"}
-              </button>
+              </Primærknapp>
               <button
                 type="button"
                 onClick={() => setBetaltBekreft(false)}
@@ -115,13 +117,9 @@ export function VeierUtFlyt({
             </div>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setBetaltBekreft(true)}
-            className={`${knapp} mt-3.5`}
-          >
+          <Primærknapp onClick={() => setBetaltBekreft(true)} className="mt-3.5">
             Jeg har betalt
-          </button>
+          </Primærknapp>
         )}
       </Kort>
       </m.div>
@@ -182,14 +180,13 @@ export function VeierUtFlyt({
           er betalt.
         </p>
 
-        <button
-          type="button"
+        <Primærknapp
           disabled={!forslag}
           onClick={lagAvtaleForslag}
-          className={`${knapp} mt-3.5`}
+          className="mt-3.5"
         >
           Lag forslaget
-        </button>
+        </Primærknapp>
       </Kort>
       </m.div>
 
@@ -203,17 +200,16 @@ export function VeierUtFlyt({
           Be om å utsette betalingen til en bestemt dato. Beløpet endres ikke — du
           kjøper tid.
         </p>
-        <button
-          type="button"
+        <Primærknapp
           onClick={() =>
             router.push(
               `/krav/${sakId}/utkast?type=betalingsutsettelse${brevQuery}`,
             )
           }
-          className={`${knapp} mt-3.5`}
+          className="mt-3.5"
         >
           Skriv anmodningen
-        </button>
+        </Primærknapp>
       </Kort>
       </m.div>
 

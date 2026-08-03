@@ -21,6 +21,84 @@ etter hver fase.
 | Tillegg | Brevarkiv + kontakt support (på forespørsel) | ✅ Ferdig |
 | Finpuss | PWA-identitet, feilskjermer, lasteskjeletter, delt lagret-bekreftelse (egen ordre) | ✅ Ferdig |
 | Sakstatus synlig | Statuslinje på brevsiden + synlig «venter på svar»-kort (egen ordre) | ✅ Ferdig |
+| Deling og opprydding | Delingsmetadata (OG/Twitter) + knapp-konsolidering (egen ordre) | ✅ Ferdig |
+
+---
+
+## Deling og opprydding (MEDHOLD_DELING_OG_OPPRYDDING_ARBEIDSORDRE, ferdig)
+
+To uavhengige leveranser.
+
+**§1 Delingsmetadata:**
+
+- **`src/app/opengraph-image.tsx`** (ny, Next sin `ImageResponse`-konvensjon):
+  Trapp-motiv (tre stigende søyler, siste i gull) + «Medhold» + undertekst,
+  1200×630 PNG generert ved forespørsel. Kun de eksakte hex-verdiene fra
+  arbeidsordren, systemfont/serif, ingen ekstern fontlasting.
+- **`layout.tsx`**: `metadata` utvidet med `openGraph`/`twitter` (uendret
+  `icons`/`appleWebApp`/`viewport` — rørt ikke). `og:image`/`twitter:image`
+  settes automatisk av `opengraph-image.tsx`.
+- **To ekstra fiks nødvendige for at leveransen faktisk virker i prod** (se
+  «Valg» under): `metadataBase` lagt til (uten den løser Next kun til
+  `localhost`, verifisert via build-advarsel), og `src/proxy.ts` sin
+  matcher utvidet til å unnta `opengraph-image` (uten unntaket omdirigerte
+  proxy-en uinnloggede forespørsler — inkl. sosiale mediers krawlere — til
+  `/velkommen` i stedet for å levere bildet, verifisert med `curl`: 307 før
+  fiksen, 200 `image/png` etter).
+- Verifisert lokalt: `/opengraph-image` gir et gyldig 1200×630 PNG (lest
+  PNG-header direkte), `og:image`/`twitter:image`-meta på `/velkommen`
+  peker på riktig genererte URL med riktig bredde/høyde/locale/type.
+  **Gjenstår (manuelt, etter neste deploy):** lim inn produksjons-URL-en i
+  Facebook Sharing Debugger eller LinkedIn Post Inspector for å bekrefte
+  visningen i praksis — kan ikke gjøres før bildet ligger på en offentlig
+  URL.
+
+**§2 Knapp-opprydding:**
+
+- **`VeierUtFlyt.tsx`**: den lokale `knapp`-konstanten (ordrett kopi av
+  `Primærknapp`s klassestreng) fjernet; alle fire knapper bruker nå
+  `Primærknapp`.
+- **`Dom.tsx`** hadde samme kopi-mønster (som en `Link`, ikke en lokal
+  konstant) — grep-funnet og konvertert til `Primærknapp` også, selv om
+  arbeidsordren kun nevnte `VeierUtFlyt.tsx` eksplisitt (§2.2 ba om å grepe
+  etter flere forekomster).
+- Grep-verifisert etter fiksen: ingen filer har igjen den duplikate
+  klassestrengen (`rounded-\[10px\] bg-aksent px-3 py-3` / `px-4 py-2.5`) —
+  kun `Primaerknapp.tsx` selv.
+- `npm run build`/`lint`/`test` (144 tester) grønne.
+
+Valg tatt underveis:
+
+1. **Reell Tailwind-bug fanget under verifisering:** «Ja, betalt»-knappen i
+   `VeierUtFlyt.tsx` er en KOMPAKT variant (selvstørrende, mindre padding)
+   ved siden av en «Avbryt»-tekstlenke — ikke full bredde som resten.
+   Første forsøk overstyrte `Primærknapp`s `w-full`/`px-3 py-3` via
+   `className="w-auto px-4 py-2.5"` (streng-konkatenering, samme mønster
+   arbeidsordren implisitt foreslo). Verifisert i browser (computed style):
+   `px-4`/`py-2.5` overstyrte korrekt, men **`w-auto` overstyrte IKKE
+   `w-full`** — knappen forble 337px bred i en 400px ramme i stedet for å
+   krympe til tekstbredden. Tailwinds genererte CSS avgjør vinneren for
+   utilities på samme CSS-egenskap etter en INTERN, deterministisk
+   rekkefølge — ikke etter rekkefølgen klassene står i `className`-strengen.
+   `npm run build`/`lint`/`test` fanger IKKE dette (ren klassestreng, ingen
+   statisk analyse av faktisk cascade-utfall) — kun synlig ved faktisk
+   rendring. **Fikset** ved å legge til en minimal `full?: boolean`-prop på
+   `Primærknapp` (default `true`, uendret for alle andre ~10 bruksstedene):
+   `full={false}` velger en HELT EGEN klassestreng (`inline-block w-auto
+   ... px-4 py-2.5`) i stedet for å stole på at én streng kan overstyre en
+   annen. Re-verifisert: kompakt knapp krymper nå korrekt til 94px
+   (tekstbredde), full-knappen uendret (398px i samme ramme). **Lærdom:**
+   bruk ALDRI `className`-overstyring for utilities på samme CSS-egenskap
+   (bredde, padding, display) som allerede er satt i en delt komponents
+   basisklasse — legg i stedet til en eksplisitt variant-prop som velger
+   mellom hele, atskilte klassestrenger.
+2. **`metadataBase` og `proxy.ts`-unntaket er IKKE eksplisitt bedt om** i
+   arbeidsordren, men uten dem virker ikke selve leveransen i prod (bildet
+   uinnhentbart for krawlere) — vurdert som nødvendige korrekthetsfikser
+   for §1s eget akseptansekriterium («peker automatisk til det genererte
+   bildet»), ikke scope-utvidelse. `metadataBase` bruker samme
+   fallback-URL-mønster som `lib/epost.ts` sin `appUrl()` allerede
+   etablerte (`NEXT_PUBLIC_APP_URL` med prod-alias som fallback).
 
 ---
 
