@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import "./globals.css";
 import { APP_NAME } from "@/lib/brand";
@@ -21,6 +21,21 @@ export const metadata: Metadata = {
   title: APP_NAME,
   description:
     "Brev, frister og krav — samlet på ett sted, med hjelp til å svare riktig og i tide.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/ikon-192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: APP_NAME,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#21456e",
+  width: "device-width",
+  initialScale: 1,
 };
 
 // Settes før paint (ingen FOUC): leser lagret tema og legger .mork på <html>

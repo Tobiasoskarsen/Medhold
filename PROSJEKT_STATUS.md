@@ -19,6 +19,69 @@ etter hver fase.
 | Frist og alvor | Fristduplisering-fiks + alvorsgrense (egen ordre) | ✅ Ferdig (migrasjon 0021 IKKE kjørt ennå) |
 | Tillegg | Mørk modus + fyldigere Meg (på forespørsel) | ✅ Ferdig |
 | Tillegg | Brevarkiv + kontakt support (på forespørsel) | ✅ Ferdig |
+| Finpuss | PWA-identitet, feilskjermer, lasteskjeletter, delt lagret-bekreftelse (egen ordre) | ✅ Ferdig |
+
+---
+
+## Finpuss (MEDHOLD_FINPUSS_ARBEIDSORDRE, ferdig)
+
+Fire uavhengige, avgrensede fikser funnet ved kodegjennomgang (ikke funksjonsmangel).
+Ingen ny forretningslogikk, ingen migrasjon, ingen nye avhengigheter/farger.
+
+- **§1 PWA-identitet:** `src/app/favicon.ico` generert lokalt fra
+  `public/ikon-512.png` (sharp resize til 32×32 + en minimal ICO-container
+  bygget for hånd som pakker PNG-dataen — `sharp` skriver ikke `.ico`
+  direkte, samme begrensning som ble notert i Fase 0). `layout.tsx` fikk
+  `metadata.icons`/`appleWebApp` + egen `viewport`-eksport (`themeColor`
+  `#21456e`). Ubrukte Next-standard-SVG-er fjernet fra `public/`
+  (`file/globe/next/vercel/window.svg` — grep-verifisert at ingen refererte
+  dem).
+- **§4 Delt «lagret»-bekreftelse:** ny `src/lib/useLagretBekreftelse.ts`
+  (`useState`+`useEffect`, samme oppførsel som før). `Telefon.tsx`/
+  `Brevnavn.tsx` i `meg/` bruker nå hooken i stedet for egen duplikatlogikk —
+  ren refaktor, ingen synlig endring («Lagret» i 2,5 s som før). Grep for
+  samme mønster ellers i koden ga ingen flere treff.
+- **§2 Feilskjermer:** ny delt `src/components/FeilVisning.tsx` (client,
+  gjenbruker `Skjermramme`/`Kort`/`Primærknapp`) brukt av alle fire filer:
+  `src/app/(app)/error.tsx` + `src/app/(app)/not-found.tsx` (innlogget sone)
+  og `src/app/error.tsx` + `src/app/not-found.tsx` (rot-nivå, for feil på
+  `/velkommen`, `/logg-inn`, `/personvern` m.fl. før/utenfor innlogget sone).
+  `error.tsx` viser `error.message` KUN når `NODE_ENV !== "production"`.
+  Verifisert live: root-`not-found.tsx` (naviger til en ukjent offentlig
+  URL) og root-`error.tsx` (midlertidig kastende debug-rute under
+  `/personvern`, testet og fjernet igjen) — begge rendrer korrekt med
+  branded stil, riktige knapper/lenke og dev-detaljlinjen synlig lokalt.
+- **§3 Manglende loading.tsx:** lagt til for `meg`, `krav/ny`,
+  `krav/[id]/veier-ut`, `krav/[id]/brev/[brevId]`, `satser` — hver speiler
+  den faktiske layouten på siden (samme prinsipp som eksisterende
+  `krav/loading.tsx`), `animerInn={false}` + `Skjelett`.
+- `npm run build`/`lint`/`test` (144 tester) grønne.
+
+Valg tatt underveis:
+
+1. **`public/manifest.json` (§1.1) ble IKKE opprettet.** Arbeidsordren så ut
+   til ikke å være klar over at `src/app/manifest.ts` allerede finnes (lagt
+   til i Fase 4) og alt genererer manifestet dynamisk på
+   `/manifest.webmanifest` — Next injiserer `<link rel="manifest">`
+   automatisk via filkonvensjonen, uten at `metadata.manifest` trenger
+   settes i `layout.tsx`. En ekstra statisk `public/manifest.json` hadde
+   blitt en død, ubrukt fil (eller kollidert med den ekte). I stedet ble
+   `manifest.ts` sin `background_color` rettet fra en gammel, avvikende hex
+   (`#f7f6f2`) til nøyaktig `--bakgrunn`-tokenet (`#f7f7f5`), som var selve
+   poenget med §1.1. `theme_color`/ikonene stemte allerede.
+2. **`pluss/loading.tsx` (§3) ble bevisst hoppet over**, som arbeidsordren
+   selv åpnet for: `PlussPage` er ikke `async` og gjør ingen server-side
+   henting (`erPilot()` er et synkront miljøvariabel-oppslag) — det finnes
+   ingen ventetid å dekke med et skjelett.
+3. **Ingen `Trapp`-illustrasjon på `not-found.tsx`** (valgfritt per §2.2):
+   `Trapp` krever en ekte `stadium`-prop fra en konkret sak, som ikke finnes
+   på en generisk 404-side — å dikte opp en verdi hadde vært «ny logikk»,
+   som §2.2 ba om å unngå.
+4. **`FeilVisning` er markert `"use client"`**, selv om `not-found.tsx`
+   (server component) også bruker den: den trenger det for `error.tsx` sin
+   `reset()`-handler, og en server component kan uansett rendre en client
+   component direkte (`not-found.tsx` sender kun strenger/href til den, ikke
+   funksjoner).
 
 ---
 

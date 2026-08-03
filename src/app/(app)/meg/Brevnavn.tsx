@@ -1,23 +1,17 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { lagreBrevnavn } from "./actions";
+import { useLagretBekreftelse } from "@/lib/useLagretBekreftelse";
 
 /** Fullt navn — vises øverst på profilen din (kun første ord) og brukes som
  * signatur i utkast til brev. Fylles automatisk inn neste gang du lager et
  * utkast, uten at du må skrive det på nytt. Lagres når feltet forlates. */
 export function Brevnavn({ start }: { start: string }) {
   const [navn, setNavn] = useState(start);
-  const [lagret, setLagret] = useState(false);
+  const [lagret, setLagret] = useLagretBekreftelse();
   const [feil, setFeil] = useState<string | null>(null);
   const [venter, startTransition] = useTransition();
-
-  // «Lagret» forsvinner av seg selv, så den ikke blir stående som stale state.
-  useEffect(() => {
-    if (!lagret) return;
-    const t = setTimeout(() => setLagret(false), 2500);
-    return () => clearTimeout(t);
-  }, [lagret]);
 
   function lagre() {
     if (navn.trim() === start.trim()) return;
