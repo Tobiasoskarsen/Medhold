@@ -1,37 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { MoreVertical, Check } from "lucide-react";
-import { markerLost, slettKrav } from "../actions";
-import { UTFALL_VALGBARE, UTFALL_ETIKETT, type SakUtfall } from "@/lib/types";
+import { slettKrav } from "../actions";
+import { UtfallVelger } from "./UtfallVelger";
 
 /** Meny oppe til høyre på kravsiden: marker som løst (med valgfritt utfall) +
  *  sletting, bak et MoreVertical-ikon. */
 export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
   const [åpen, setÅpen] = useState(false);
   const [modus, setModus] = useState<"meny" | "utfall" | "slett">("meny");
-  const [venter, startTransition] = useTransition();
 
   function apne() {
     setModus("meny");
     setÅpen((v) => !v);
   }
-
-  function fullfor(utfall: SakUtfall | null) {
-    // Flagg til seremonien (LostNode) at dette er en fersk «marker som løst».
-    try {
-      sessionStorage.setItem(`medhold-lost-nettopp-${kravId}`, "1");
-    } catch {
-      /* ignorer */
-    }
-    setÅpen(false);
-    startTransition(async () => {
-      await markerLost(kravId, utfall);
-    });
-  }
-
-  const valgKlasse =
-    "block w-full px-4 py-2.5 text-left text-sm text-blekk transition hover:bg-strek/40 disabled:opacity-50";
 
   return (
     <div className="relative">
@@ -76,32 +59,11 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
           )}
 
           {modus === "utfall" && (
-            <>
-              <p className="px-4 py-2 text-xs text-dempet">
-                Hvordan endte saken?
-              </p>
-              {UTFALL_VALGBARE.map((u) => (
-                <button
-                  key={u}
-                  type="button"
-                  role="menuitem"
-                  disabled={venter}
-                  onClick={() => fullfor(u)}
-                  className={valgKlasse}
-                >
-                  {UTFALL_ETIKETT[u]}
-                </button>
-              ))}
-              <button
-                type="button"
-                role="menuitem"
-                disabled={venter}
-                onClick={() => fullfor(null)}
-                className={`${valgKlasse} text-dempet`}
-              >
-                Annet / vet ikke
-              </button>
-            </>
+            <UtfallVelger
+              kravId={kravId}
+              onFerdig={() => setÅpen(false)}
+              iMeny
+            />
           )}
 
           {modus === "slett" && (

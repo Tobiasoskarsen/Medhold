@@ -18,6 +18,8 @@ import type { GebyrsjekkResultat, Kostnadslinje } from "@/lib/gebyr";
 import type { FristSammenligning } from "@/lib/frist";
 import { finnAnnoteringer } from "@/lib/annotering";
 import { BrevSamtale } from "./BrevSamtale";
+import { SakStatusLinje } from "./SakStatusLinje";
+import type { SakStatus, SakUtfall } from "@/lib/types";
 
 type Melding = { rolle: "bruker" | "assistent"; innhold: string };
 
@@ -55,7 +57,11 @@ export default async function BrevPage({
         .select("rolle, innhold")
         .eq("brev_id", brevId)
         .order("opprettet", { ascending: true }),
-      supabase.from("saker").select("stadium").eq("id", id).maybeSingle(),
+      supabase
+        .from("saker")
+        .select("stadium, status, utfall, kreditor, opprinnelig_kreditor, tittel")
+        .eq("id", id)
+        .maybeSingle(),
       supabase
         .from("frister")
         .select("tittel, forfallsdato")
@@ -87,6 +93,15 @@ export default async function BrevPage({
   const fristfunn = brev.fristfunn as FristSammenligning | null;
   const harFristfunn = fristfunn?.status === "avvik_kortere";
 
+  // Statuslinje (§3): samme inkassoselskap-utledning som krav-detaljen —
+  // opprinnelig_kreditor betyr at `kreditor` er selve inkassoselskapet.
+  // `sak.tittel` (garantert satt) er med som siste fallback her, i tillegg
+  // til feltene arbeidsordren listet, så linjen aldri viser et tomt navn.
+  const sakStatus = (sak?.status as SakStatus | undefined) ?? "aktiv";
+  const sakUtfall = (sak?.utfall as SakUtfall | null) ?? null;
+  const inkassoselskap = sak?.opprinnelig_kreditor ? sak.kreditor : null;
+  const kravNavn = inkassoselskap ?? sak?.kreditor ?? sak?.tittel ?? "";
+
   return (
     <Skjermramme className="pt-5" animerInn={false}>
       <Link
@@ -108,6 +123,19 @@ export default async function BrevPage({
           .join(" · ")}
       </p>
       </SekvensDel>
+
+      {(sakStatus === "venter_pa_svar" || sakStatus === "fullfort") && (
+        <SekvensDel>
+          <div className="mt-2">
+            <SakStatusLinje
+              sakId={id}
+              status={sakStatus}
+              utfall={sakUtfall}
+              navn={kravNavn}
+            />
+          </div>
+        </SekvensDel>
+      )}
 
       <SekvensDel>
       <Kort className="mt-4">

@@ -20,6 +20,90 @@ etter hver fase.
 | Tillegg | Mørk modus + fyldigere Meg (på forespørsel) | ✅ Ferdig |
 | Tillegg | Brevarkiv + kontakt support (på forespørsel) | ✅ Ferdig |
 | Finpuss | PWA-identitet, feilskjermer, lasteskjeletter, delt lagret-bekreftelse (egen ordre) | ✅ Ferdig |
+| Sakstatus synlig | Statuslinje på brevsiden + synlig «venter på svar»-kort (egen ordre) | ✅ Ferdig |
+
+---
+
+## Sakstatus synlig (MEDHOLD_SAKSTATUS_SYNLIG_ARBEIDSORDRE, ferdig)
+
+To leveranser: statuslinje på brevsiden + et synlig, kontekstuelt «venter på
+svar»-kort på krav-siden med inline utfallsvelger — delt med `KravMeny` via
+én komponent. Ren henting/visning av data (`status`, `utfall`) som allerede
+fantes, pluss omplassering av eksisterende handling (`markerLost`). Ingen
+migrasjon, ingen ny forretningslogikk.
+
+- **`UtfallVelger.tsx`** (ny, `src/app/(app)/krav/[id]/`): trukket ut fra
+  `KravMeny`s «utfall»-modus — eneste sted `markerLost` kalles fra UI.
+  `iMeny`-prop styrer `role="menuitem"` (kun i `KravMeny`s dropdown, ikke i
+  det nye kortet). `KravMeny.tsx` bruker den nå i stedet for duplisert kode
+  — ren refaktor, ingen adferdsendring.
+- **«Venter på svar»-kort på krav-siden:** ny `SekvensDel` rett over «Sakens
+  gang», kun når `sak.status === "venter_pa_svar"`. Nøytral `Kort` (ikke
+  dom-rød, ikke gull) med kreditornavn + samme ventetidstekst som tidslinjens
+  chip (samme lokale `oppfolgingTekst()`-funksjon — begge kall i
+  `krav/[id]/page.tsx` bruker identisk `inkassoselskap ?? sak.kreditor ??
+  sak.tittel`-argument, så tekstene aldri kan avvike). «Har du fått svar?»
+  er en `Utvidbar` (gjenbrukt fra Meg) med `UtfallVelger` inni.
+- **`SakStatusLinje.tsx`** (ny, `krav/[id]/brev/[brevId]/`): statuslinje
+  øverst på brevsiden, egen `SekvensDel` rett under eyebrow/tittel — kun for
+  `venter_pa_svar` og `fullfort`, usynlig for `aktiv` (ingen ekstra
+  `SekvensDel` da heller, se «Valg» under). Fargen for `fullfort`-linjen
+  hentes fra `UTFALL_STIL` (samme fargekilde som pillene), ikke en ny
+  fargetabell — en liten `tekstFarge()`-hjelper plukker kun `text-*`-tokenet
+  ut av pill-stilen siden dette er en enkel linje, ikke en pill.
+  `BrevPage`s `saker`-spørring utvidet med `status, utfall, kreditor,
+  opprinnelig_kreditor` (+ `tittel`, se «Valg»).
+- `npm run build`/`lint`/`test` (144 tester) grønne. Verifisert visuelt via
+  en midlertidig debug-rute under `/personvern` (samme knep som i Finpuss-
+  økten, fjernet igjen etter bruk): alle `SakStatusLinje`-varianter,
+  `Utvidbar`-ekspansjon → `UtfallVelger`, mørk modus (tokens/`UTFALL_STIL`
+  begge korrekte i `.mork`).
+
+Valg tatt underveis:
+
+1. **RSC-boundary-feil fanget og fikset under verifisering:** å sende
+   `HelpCircle` (et lucide-react-ikon, altså en funksjon) direkte som
+   `Utvidbar`s `ikon`-prop fra `krav/[id]/page.tsx` (en Server Component) til
+   `Utvidbar` («use client») feiler i praksis («Functions cannot be passed
+   directly to Client Components») — samme klasse feil som Motion3-øktens
+   `Sekvens.Del`-hendelse (se der), men ved prop-passering i stedet for en
+   hengt statisk egenskap. `npm run build`/`lint`/`test` fanger IKKE dette
+   (ren TS/statisk analyse), kun synlig ved faktisk RSC-rendring. Fikset med
+   en ny, liten client-komponent `VenterPaSvarUtvidelse.tsx` som holder
+   ikonet, `Utvidbar` og `UtfallVelger` samlet på klientsiden; siden sender
+   kun `kravId` (en streng) over grensen. **Lærdom, samme som Motion3:**
+   sjekk alltid at noe som sendes som prop til en «use client»-komponent fra
+   en Server Component er serialiserbart (data, ikke funksjoner/komponent-
+   referanser) — oppdages kun ved faktisk rendring, ikke ved bygg/typesjekk.
+2. **`SakStatusLinje`s `SekvensDel` på brevsiden er betinget** (kun rendret
+   når status er `venter_pa_svar`/`fullfort`), i stedet for alltid til stede
+   og la komponenten selv returnere `null` inni: `Sekvens` teller
+   `SekvensDel`-elementer (ikke om de har synlig innhold) for stagger-
+   indeksen, så en alltid-til-stede (men tom) `SekvensDel` ville forskjøvet
+   alle senere seksjoners inntredens-forsinkelse med ett hakk selv for
+   `aktiv`-saker — i strid med akseptansekriteriet «brevsiden for en aktiv
+   sak er visuelt uendret». Betinget rendring unngår dette helt.
+3. **`BrevPage`s `saker`-utvalg fikk også `tittel`**, i tillegg til de fire
+   feltene arbeidsordren listet (`status, utfall, kreditor,
+   opprinnelig_kreditor`): `kreditor` er nullable på `saker`-tabellen, og
+   uten en siste fallback kunne statuslinjen i sjeldne tilfeller vist et tomt
+   navn. Samme fallback-kjede (`inkassoselskap ?? kreditor ?? tittel`) som
+   resten av appen allerede bruker for «hovednavn».
+4. **Ingen `role="menuitem"` som default i `UtfallVelger`**: lagt til en
+   `iMeny`-prop (default `false`) siden komponenten nå brukes to steder — kun
+   inni `KravMeny`s `role="menu"` skal knappene ha `role="menuitem"`, ikke
+   inni det frittstående kortet på krav-siden.
+5. **Reduced motion ikke isolert re-testet**: verken `UtfallVelger`,
+   `SakStatusLinje` eller `VenterPaSvarUtvidelse` inneholder egen animasjon —
+   `Utvidbar`s eksisterende `AnimatePresence` (allerede
+   reduced-motion-korrekt via `MotionConfig` i `Bevegelsesramme`) og
+   `SekvensDel` (samme) er de eneste bevegelsesmekanismene involvert, begge
+   gjenbrukt uendret.
+6. **Motion-budsjett:** krav-detalj når nå nøyaktig taket på 8 `SekvensDel`
+   (opp fra 7) når «venter på svar»-kortet vises — fortsatt innenfor
+   `MAKS_STAGGER`, ingen kapping av stagger-indekser skjer (kun 9. og
+   påfølgende ville delt siste forsinkelse). Brevsiden går fra 5 til 6 når
+   statuslinjen vises, godt innenfor taket.
 
 ---
 
