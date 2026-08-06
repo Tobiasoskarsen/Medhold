@@ -22,6 +22,212 @@ etter hver fase.
 | Finpuss | PWA-identitet, feilskjermer, lasteskjeletter, delt lagret-bekreftelse (egen ordre) | ✅ Ferdig |
 | Sakstatus synlig | Statuslinje på brevsiden + synlig «venter på svar»-kort (egen ordre) | ✅ Ferdig |
 | Deling og opprydding | Delingsmetadata (OG/Twitter) + knapp-konsolidering (egen ordre) | ✅ Ferdig |
+| AI-fart | Modelloppgradering (Sonnet 5/Haiku 4.5) + streaming utkastgenerering (egen ordre) | ✅ Ferdig |
+| Gruppert saksliste | Kravlisten gruppert på kreditor over 10 aktive saker (på forespørsel, mockup) | ✅ Ferdig |
+
+---
+
+## Gruppert saksliste (på brukerens forespørsel, mockup-drevet)
+
+Bygget etter `medhold_gruppert_saksliste_mockup_1.html` (levert som en lokal
+fil, ikke en formell arbeidsordre — samme «mockup er visuell fasit»-mønster
+som resten av prosjektet). Mockupens egen fotnote var eksplisitt om
+terskelen: «Grupper vises kun når antall aktive saker er høyt (over 10). Med
+få saker vises den vanlige, flate listen som i dag.»
+
+- **`src/app/(app)/krav/GruppertSaksliste.tsx`** (ny, client): søkefelt
+  («Søk etter kreditor …», filtrerer klientside på kreditornavn), grupper
+  (avrundet kort, initial-sirkel gjenbruker `bg-aksent/10`/`text-aksent-dyp`
+  fra `ProfilKort` — ikke en ny farge), § ved gebyrfunn i gruppen, en
+  dom-rød frist-chip (`bg-dom-rod-bg`/`text-dom-rod`, samme tokens som
+  `DomMini`) KUN når gruppens nærmeste frist er hastende
+  (`erHastende`/`fristChipTekst` fra `lib/frist.ts`, samme kilde som
+  `Kravkort` allerede bruker — ingen ny tekstlogikk), samlet beløp, og en
+  enkel CSS `rotate-90`-chevron (samme mønster som `Utvidbar`). Åpne/lukkede
+  grupper er ren klient-tilstand (ingen ny rute). Kreditorer med kun ETT
+  krav vises uendret som `Kravkort` under en egen «Enkeltstående»-seksjon —
+  ingen ny komponent for dem.
+- **`krav/page.tsx`**: `GRUPPERING_TERSKEL = 10` styrer hvilken visning som
+  rendres (uendret flat liste ellers — ingen adferdsendring under
+  terskelen). Grupperer `aktiveSortert` på `kreditor ?? tittel` (samme navn-
+  logikk som `kortData` allerede bruker); gruppene sorteres på samlet beløp
+  (høyest øverst, matcher mockupens rekkefølge), radene INNI hver gruppe
+  arver sin rekkefølge fra `aktiveSortert` (nærmeste frist først) — ingen
+  ekstra sortering trengs der. `saksnummer` lagt til i `saker`-spørringen
+  (var ikke hentet fra før på denne siden).
+- **Radens tittel inni en åpnet gruppe** (arbeidsordren/mockupen viste
+  «Ordre #88213», appen har ikke et eget ordre-/referansefelt per sak):
+  bruker `saksnummer` når det finnes («Sak #{saksnummer}»), ellers stadiet
+  (`STADIUM_ETIKETT`), ellers «Krav» — appens `tittel`-felt dupliserte alltid
+  kreditornavnet (samme verdi som allerede står i gruppens overskrift, se
+  `opprettKrav`/`lagreBrev`) og var derfor ubrukelig som rad-differensiator.
+- `npm run build`/`lint`/`test` (144 tester) grønne. Verifisert i browser
+  (midlertidig debug-rute med mock-data speilende mockupens tall, fjernet
+  igjen): gruppeekspansjon/kollaps, søk (filtrerer korrekt, «ingen treff»-
+  tilstand), mørk modus (kun eksisterende tokens, ingen nye farger å
+  verifisere separat), reduced motion (appens globale
+  `prefers-reduced-motion`-regel i `globals.css` nøytraliserer
+  `transition-duration` allerede — ingen egen gren nødvendig for
+  chevron-rotasjonen, samme som `Utvidbar`/`Utregning`).
+
+Valg tatt underveis:
+
+1. **Kun `aktive` grupperes, `avsluttede` er uendret** (fortsatt
+   `AvsluttedeListe`) — mockupens fotnote nevnte eksplisitt kun aktive
+   saker.
+2. **Ingen ny rute for «Se alle fra {kreditor}»**: mockupens største
+   eksempelgruppe (8 krav) viste kun 3 rader + en «+5 krav til»-lenke ved
+   ekspansjon. Bygget i stedet en gruppe som viser ALLE sine krav når åpnet
+   (ingen indre trunkering) — enklere, krever ingen ny per-kreditor-side, og
+   fullt funksjonelt (all informasjon tilgjengelig, bare uten mockupens
+   ekstra optimalisering for uvanlig store enkeltgrupper).
+3. **Ingen gruppe er forhåndsåpnet.** Mockupens statiske skjermbilde hadde
+   Klarna-gruppen åpen (for å vise hvordan den åpne tilstanden ser ut i
+   selve bildet) — tolket som en visningsdetalj for skjermbildet, ikke et
+   tiltenkt reelt standardvalg. Alle grupper lukket ved sidelast, samme
+   konvensjon som appens eksisterende `Utvidbar`.
+4. **Søket filtrerer på toppnivå** (grupper og enkeltstående etter
+   kreditornavn) — matcher ikke inni en gruppes enkeltrader, og åpner ikke
+   grupper automatisk ved treff. Mockupen viste ikke et søkeresultat, så
+   dette er den enkleste tolkningen som dekker det oppgitte søkefeltet.
+
+---
+
+## AI-fart (MEDHOLD_AI_FART_ARBEIDSORDRE, ferdig)
+
+To leveranser: A) riktig modell til riktig oppgave, B) streaming av
+utkastgenereringen.
+
+**§A Modelloppgradering:**
+
+- **`src/lib/ai.ts`**: `AI_MODELL = "claude-sonnet-5"` (opp fra
+  `claude-sonnet-4-6`) + ny `AI_MODELL_RASK = "claude-haiku-4-5-20251001"`.
+  Begge modell-ID-ene verifisert direkte mot ekte Anthropic-API (frittstående
+  skript, ikke i repoet) FØR de ble tatt i bruk — begge svarte OK.
+  `claude-haiku-4-5` i selve arbeidsordren var en forkortet streng; brukte i
+  stedet den eksakte, daterte ID-en (`-20251001`) kjent fra gjeldende
+  modelloversikt, per arbeidsordrens eget forbehold i §A.1.
+- **`AI_MODELL_RASK` tatt i bruk** for `korrigerForklaring()` og den
+  tekstbaserte brevanalysen (`SVAR_SKJEMA`-kallet) i
+  `legg-til-brev/actions.ts`. Verifisert mot ekte API med et representativt
+  inkassobrev (frittstående skript): alle felter (brevtype, avsender,
+  brevdato, beløp, hovedstol, saksnummer, kostnadslinjer — inkl. korrekt
+  IKKE å ta med hovedstolen som en kostnadslinje) trukket ut korrekt, ingen
+  oppdiktede fakta.
+- **Bildebasert brevanalyse (`analyserBrevBilder`) beholder `AI_MODELL`
+  (Sonnet), IKKE byttet.** Arbeidsordren §A.3 ba om å teste
+  `AI_MODELL_RASK` mot et testbrevsett med bilder (særlig
+  `testbrev_9_mobilfoto_skjevt.pdf`) og velge rask modell KUN ved
+  likeverdig nøyaktighet. Et slikt testbrevsett finnes ikke i repoet — grep
+  bekreftet at «testbrev»-referanser i tidligere økter var frittstående,
+  ikke-innsjekkede skript/tekstsnutter (jf. tidligere PROSJEKT_STATUS-
+  oppføringer «frittstående skript, ikke i repoet»), og ingen faktiske
+  bilde-/PDF-testfiler finnes noe sted i prosjektet. Uten grunnlag for den
+  foreskrevne sammenligningen er `AI_MODELL` beholdt — arbeidsordrens egen,
+  eksplisitte fallback-regel («behold AI_MODELL ellers»). **Gjenstår:** kjør
+  den faktiske sammenligningen når/hvis et ekte testbildesett gjøres
+  tilgjengelig.
+- `AI_MODELL` (Sonnet) beholdt uendret for utkastgenerering og
+  brev-samtalen, som ordren ba om (§A.4) — ingen endring der utover selve
+  modellstrengoppgraderingen (4-6 → 5), som gjelder alle Sonnet-kall likt.
+
+**§B Streaming av utkastgenerering:**
+
+- **`byggUtkastPrompt()`** (ny, eksportert fra
+  `krav/[id]/utkast/actions.ts`): trekker ut ALT som bygger system-prompt +
+  few-shot-meldinger fra `lagUtkast` — samme innhold/regler, ren utrekking.
+  Signaturen i arbeidsordren manglet `brevId`/`navn`/`avdrag` (prompten kan
+  ikke bygges uten dem) — fylt inn som nødvendig, notert her per
+  «tvetydigheter»-instruksen. Tar en allerede autentisert `supabase`-klient
+  (samme mønster som `etterbehandle()` i `legg-til-brev/actions.ts`).
+  Lagt til én liten, bevisst utvidelse utover ren utrekking: en eksplisitt
+  `!sak`-sjekk (→ `{feil: "Fant ikke saken."}`) — implementerer §B.2s egen
+  «RLS + eksplisitt sjekk»-formulering, og unngår at et ugyldig/fremmed
+  `sakId` skulle sløse et helt AI-kall før det uansett hadde feilet på
+  innsettingen. `lagUtkast` bruker nå `byggUtkastPrompt()` og er ellers
+  uendret (kalles ikke lenger fra UI, men beholdt — se «forblir tilgjengelig
+  for evt. fremtidig ikke-streamet bruk» i ordren selv).
+- **`src/app/api/utkast-generer/route.ts`** (ny): samme mønster som
+  `api/brev-samtale/route.ts` (auth, `maxDuration=60`, `ReadableStream`).
+  Validerer `type` mot `UTKAST_TYPER`; ingen eksisterende grense på
+  `detaljer` ble funnet å speile (arbeidsordren antok én) — satte en ny,
+  romslig 2000-tegns fornuftsgrense. Etterkontrollen (`finnForbudteOrd`,
+  `tellOrd`, én regenerering, «behold og logg» ved fortsatt treff) er
+  UENDRET logikk, kun flyttet hit. Lagring skjer KUN med kontrollert tekst
+  (guardrail 2) — den rå strømmen lagres aldri.
+- **Kontrollsekvenser** (`UTKAST_STRØM_MARKØR` i `lib/ai.ts`, delt
+  server/klient — ikke duplisert streng): NUL-omsluttede `__FERDIG__`
+  (+id), `__JUSTERER__`, `__FEIL__`, adskilt fra brevteksten. **Reell bug
+  fanget og fikset under verifisering** (se «Valg» under for detaljer):
+  raw NUL-byte i kildefilen (i stedet for `String.fromCharCode(0)`) ga en
+  `SyntaxError` i nettleseren fra Turbopacks klient-bundling, selv om
+  `tsc`/Node godtok den uten problemer.
+- **`UtkastFlyt.tsx`**: `lagUtkast`-kallet erstattet med
+  `fetch("/api/utkast-generer")` + en hånd-skrevet, robust strøm-parser
+  (holder tilbake en hale som kan være en påbegynt markør; håndterer at
+  `FERDIG`-markøren og id-en som følger IKKE er garantert å ankomme i
+  samme biffer-lesing — se «Valg» under). Tre faser (`skjema` → `strømmer`
+  → `ferdig`); feltet er skrivebeskyttet under strømming, redigerbart når
+  ferdig. `__JUSTERER__`: eksisterende (nedtonede) tekst blir stående via en
+  `m.div`-opasitetsanimasjon (`VARIGHET.hurtig`, `useReducedMotion` →
+  umiddelbar uten fade) til regenereringen erstatter den i ett steg —
+  ikke vist som en feil. Blinkende markør (`animate-pulse`) på slutten av
+  teksten mens strømmen pågår — degraderes automatisk til stillstand under
+  redusert bevegelse via appens allerede eksisterende globale
+  `prefers-reduced-motion`-regel i `globals.css` (ingen egen gren
+  nødvendig). «Skriver utkast …»-knappeteksten fjernet — knappen viser en
+  `Loader2`-spinner (`animate-spin`, lucide-react — samme ikonbibliotek som
+  resten av appen allerede bruker, ingen ny avhengighet) KUN i det korte
+  vinduet før skjemaet bytter til strømmevisningen; deretter er det feltet
+  selv (med den blinkende markøren) som viser fremdrift.
+- `npm run build`/`lint`/`test` (144 tester) grønne.
+
+Valg tatt underveis:
+
+1. **Reell protokollbug fanget og fikset under verifisering** (viktigste
+   funnet i denne økten): en frittstående Node-simulering av klientens
+   strøm-parser (samme algoritme, kjørt mot syntetiske biffer-splittede
+   strømmer) avdekket at `FERDIG`-markøren og id-en som følger IKKE alltid
+   ankommer i samme `reader.read()`-resultat — første implementasjon sluttet
+   å lese strømmen straks markøren ble funnet, og mistet id-en når den kom i
+   en SENERE lesing. `npm run build`/`lint`/`test` fanger IKKE dette (ren
+   logikkfeil, ingen typefeil). Fikset ved å innføre en «id-modus» som
+   fortsetter å akkumulere alle senere biter som id, helt til strømmen
+   faktisk lukkes (serveren sender aldri noe etter id-en). Verifisert med 4
+   simulerte tester (splittet markør, byte-for-byte strøm med JUSTERER, FEIL,
+   id splittet over tre lesinger) — alle grønne etter fiksen.
+2. **Reell Turbopack-bundlingbug fanget og fikset under verifisering:** en
+   rå NUL-byte skrevet direkte inn i `lib/ai.ts` sin kildetekst (gyldig
+   JS/TS — kompilerer fint med `tsc`/Node) ga `Uncaught SyntaxError: Invalid
+   or unexpected token` i nettleseren så snart filen ble importert i en
+   klientkomponent (`UtkastFlyt.tsx`) — Turbopacks klient-bundler håndterer
+   åpenbart ikke rå NUL-byte i kildefiler robust. Fikset ved å bygge
+   NUL-tegnet eksplisitt via `String.fromCharCode(0)` i stedet for å skrive
+   det direkte i filen. **Lærdom:** skriv ALDRI kontrolltegn/usynlige tegn
+   direkte i en kildefil som når klientbunten — bygg dem eksplisitt med
+   `fromCharCode`/escape-sekvenser i kode i stedet, selv om begge varianter
+   er gyldig TypeScript.
+3. **Verifisering av selve klikk-/strømme-flyten i nettleseren lot seg IKKE
+   fullføre denne økten:** samme miljøbegrensning som tidligere økter har
+   notert («Browser-MCP-panelet komposiiterte ikke») viste seg denne gangen
+   å hindre React-hydrering helt (verifisert: null DOM-elementer på siden
+   fikk noensinne en `__reactFiber`/`__reactProps`-nøkkel, selv på
+   urelaterte, allerede fungerende sider) — knapper var dermed inerte for
+   både koordinat- og JS-utløste klikk, uavhengig av denne ordrens kode.
+   Kompensert med: (a) frittstående verifisering av begge modell-ID-ene og
+   uttrekkskvaliteten direkte mot Anthropic-API-et, (b) en isolert
+   Node-simulering av hele strøm-parser-algoritmen (fant og bekreftet
+   fiksen på bug nr. 1 over), (c) statisk DOM-verifisering av at skjemaet
+   rendrer korrekt uten konsollfeil. **Anbefaling:** en rask manuell
+   sjekk av selve «Lag utkast»-knappen + streaming-visningen (helst med
+   ekte innlogget bruker) neste gang noen har terminal-/browsertilgang som
+   faktisk kompositerer.
+4. **`DETALJER_MAKS_TEGN = 2000`** i den nye ruten er en ny grense (ingen
+   eksisterende å speile ble funnet ved grep i `lagUtkast`/`UtkastFlyt`) —
+   romslig for et felt ment å være kort («Skriv kort med egne ord»).
+5. **`lagUtkast` er ikke slettet** selv om UI-et ikke lenger kaller den —
+   beholdt som en fungerende, ikke-strømmet vei (samme begrunnelse ordren
+   ga for å beholde `byggUtkastPrompt()` gjenbrukbar).
 
 ---
 

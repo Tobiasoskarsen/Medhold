@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { FristForslag, SakUtfall } from "@/lib/types";
 import { beregnFrist, foreslaStadium, BREVTYPER, type BrevType } from "@/lib/gjeld";
 import { utfallOvergang } from "@/lib/utfall";
-import { AI_MODELL } from "@/lib/ai";
+import { AI_MODELL, AI_MODELL_RASK } from "@/lib/ai";
 import { maskerFodselsnummer } from "@/lib/maskering";
 import { tolkKr, tellOrd, kuttTilMaks } from "@/lib/format";
 import {
@@ -265,7 +265,7 @@ async function korrigerForklaring(
   try {
     const anthropic = new Anthropic();
     const svar = await anthropic.messages.create({
-      model: AI_MODELL,
+      model: AI_MODELL_RASK,
       max_tokens: 400,
       thinking: { type: "disabled" },
       system:
@@ -401,7 +401,7 @@ export async function analyserBrevTekst(
   try {
     const anthropic = new Anthropic();
     const svar = await anthropic.messages.create({
-      model: AI_MODELL,
+      model: AI_MODELL_RASK,
       max_tokens: 2000,
       thinking: { type: "disabled" },
       system: systemprompt(idag),

@@ -112,10 +112,15 @@ const EKSEMPLER: Record<UtkastType, FewShot[]> = {
   klage: [FS_BESTRID_HELT],
 };
 
+// Meldingsformen brukt overalt i denne filen — smalere enn
+// `Anthropic.MessageParam` (som også tillater "system"-rolle og content-
+// blokker), siden alt her alltid er plain user/assistant-tekst.
+export type UtkastMelding = { role: "user" | "assistant"; content: string };
+
 async function genererTekst(
   anthropic: Anthropic,
   system: string,
-  meldinger: { role: "user" | "assistant"; content: string }[],
+  meldinger: UtkastMelding[],
 ): Promise<string | null> {
   const svar = await anthropic.messages.create({
     model: AI_MODELL,
@@ -129,26 +134,28 @@ async function genererTekst(
   return fjernStjerner(blokk.text);
 }
 
-export async function lagUtkast(
+/**
+ * Bygger system-prompt og few-shot-meldinger for et utkast — ren utrekking av
+ * det som lå inline i `lagUtkast` (referansebrev-valg, gebyrFunnTekst,
+ * navnehåndtering, MOTEKSEMPEL osv.), samme innhold/regler, ingen adferds-
+ * endring. Brukes av BÅDE `lagUtkast` og streaming-ruten
+ * (`api/utkast-generer/route.ts`) — ingen duplisering av selve prompten.
+ * `supabase` er en allerede autentisert klient (RLS sikrer eierskap på
+ * brev/sak-oppslagene); kalleren gjør sin egen auth-/paywall-/nøkkel-sjekk
+ * FØR denne kalles.
+ */
+export async function byggUtkastPrompt(
+  supabase: Awaited<ReturnType<typeof createClient>>,
   sakId: string,
   brevId: string | null,
   type: UtkastType,
   detaljer: string,
   navn: string,
   avdrag?: AvdragsForslag | null,
-): Promise<UtkastResultat> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/velkommen");
-
-  // Gating: utkastgenerering krever Pluss (i pilotmodus alltid tillatt).
-  if (!(await harPluss(user.id))) return { ok: false, paywall: true };
-
-  if (!process.env.ANTHROPIC_API_KEY)
-    return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
-
+): Promise<
+  | { system: string; meldinger: UtkastMelding[] }
+  | { feil: string }
+> {
   // Hent brevet det svares på (RLS sikrer eierskap).
   let original = "";
   let gebyrFakta = "";
@@ -167,13 +174,17 @@ export async function lagUtkast(
 
   // Stadium avgjør om nedbetalingsforslaget svarer på rettslig inndriving
   // (forliksråd/namsmann) — kode beslutter hvilket mønster som gjelder, ikke AI.
+  // Eksplisitt eierskapssjekk (utover RLS): finnes ikke saken, avbryt her —
+  // samme feil-union brukes av streaming-ruten (§B.2) til å svare 404/feil
+  // FØR noe AI-kall gjøres.
   const { data: sak } = await supabase
     .from("saker")
     .select("stadium")
     .eq("id", sakId)
     .maybeSingle();
+  if (!sak) return { feil: "Fant ikke saken." };
   const rettslig =
-    sak?.stadium === "forliksrad" || sak?.stadium === "namsmann";
+    sak.stadium === "forliksrad" || sak.stadium === "namsmann";
 
   const detalj = detaljer.trim();
   const navnTrimmet = navn.trim();
@@ -197,7 +208,7 @@ export async function lagUtkast(
   const rettsligRegel =
     type === "nedbetalingsavtale" && rettslig
       ? `
-- Saken er i stadiet «${sak?.stadium}» — rettslig inndriving er varslet eller igangsatt. Brevet MÅ inneholde disse tre punktene, som en kort strekliste: (1) be om skriftlig bekreftelse på om nedbetalingsplanen godtas, (2) be om at forliksklage og videre inndriving settes på vent mens forslaget vurderes, (3) be om at det ikke legges til nye omkostninger i denne perioden. Følg mønsteret i «Fasit ved rettslig varsel» under — fyll inn sakens egne verdier for {}-feltene, ta ALDRI med selve klammeparentesene i svaret.
+- Saken er i stadiet «${sak.stadium}» — rettslig inndriving er varslet eller igangsatt. Brevet MÅ inneholde disse tre punktene, som en kort strekliste: (1) be om skriftlig bekreftelse på om nedbetalingsplanen godtas, (2) be om at forliksklage og videre inndriving settes på vent mens forslaget vurderes, (3) be om at det ikke legges til nye omkostninger i denne perioden. Følg mønsteret i «Fasit ved rettslig varsel» under — fyll inn sakens egne verdier for {}-feltene, ta ALDRI med selve klammeparentesene i svaret.
 
 Fasit ved rettslig varsel (mønster, ikke ordrett tekst):
 
@@ -236,18 +247,54 @@ Ufravikelige regler:
     .filter(Boolean)
     .join("\n\n");
 
-  const fewShotMeldinger = EKSEMPLER[type].flatMap((ex) => [
+  const fewShotMeldinger: UtkastMelding[] = EKSEMPLER[type].flatMap((ex) => [
     { role: "user" as const, content: ex.bruker },
     { role: "assistant" as const, content: ex.svar },
   ]);
 
+  const meldinger: UtkastMelding[] = [
+    ...fewShotMeldinger,
+    { role: "user" as const, content: bruker },
+  ];
+
+  return { system, meldinger };
+}
+
+export async function lagUtkast(
+  sakId: string,
+  brevId: string | null,
+  type: UtkastType,
+  detaljer: string,
+  navn: string,
+  avdrag?: AvdragsForslag | null,
+): Promise<UtkastResultat> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  // Gating: utkastgenerering krever Pluss (i pilotmodus alltid tillatt).
+  if (!(await harPluss(user.id))) return { ok: false, paywall: true };
+
+  if (!process.env.ANTHROPIC_API_KEY)
+    return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
+
+  const prompt = await byggUtkastPrompt(
+    supabase,
+    sakId,
+    brevId,
+    type,
+    detaljer,
+    navn,
+    avdrag,
+  );
+  if ("feil" in prompt) return { ok: false, feil: prompt.feil };
+  const { system, meldinger } = prompt;
+
   let innhold: string;
   try {
     const anthropic = new Anthropic();
-    const meldinger = [
-      ...fewShotMeldinger,
-      { role: "user" as const, content: bruker },
-    ];
     let tekst = await genererTekst(anthropic, system, meldinger);
     if (tekst === null)
       return { ok: false, feil: "Fikk ikke et brukbart utkast. Prøv igjen." };
@@ -292,6 +339,7 @@ Ufravikelige regler:
 
   // Husk navnet til neste gang (§6). Best-effort — skal aldri velte
   // utkastgenereringen selv om denne skulle feile.
+  const navnTrimmet = navn.trim();
   if (navnTrimmet) {
     await supabase.auth
       .updateUser({ data: { brevnavn: navnTrimmet } })

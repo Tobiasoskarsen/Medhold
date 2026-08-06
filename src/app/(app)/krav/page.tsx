@@ -4,9 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp, Trapp, Sekvens, SekvensDel } from "@/components/ui";
 import { Kravkort } from "./Kravkort";
 import { AvsluttedeListe } from "./AvsluttedeListe";
+import { GruppertSaksliste, type Gruppe, type GruppeRad } from "./GruppertSaksliste";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
 import { formaterBelop } from "@/lib/format";
-import type { SakStatus, SakUtfall } from "@/lib/types";
+import { dagerTil } from "@/lib/dato";
+import { erHastende, fristChipTekst } from "@/lib/frist";
+import { STATUS_ETIKETT, type SakStatus, type SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
 
 type SakRad = {
@@ -14,12 +17,17 @@ type SakRad = {
   kreditor: string | null;
   tittel: string;
   opprinnelig_kreditor: string | null;
+  saksnummer: string | null;
   belop_totalt: number | null;
   stadium: Stadium | null;
   status: SakStatus;
   utfall: SakUtfall | null;
   sist_endret: string;
 };
+
+// Grupperingen (på kreditor) vises kun når listen faktisk er stor nok til at
+// den hjelper — med få saker er den vanlige, flate listen mer oversiktlig.
+const GRUPPERING_TERSKEL = 10;
 
 /** «{N} aktive · {M} venter på svar · {K} avsluttet» — ledd med 0 utelates. */
 function oversiktsstripe(saker: SakRad[]): string {
@@ -43,7 +51,7 @@ export default async function KravListePage() {
       supabase
         .from("saker")
         .select(
-          "id, kreditor, tittel, opprinnelig_kreditor, belop_totalt, stadium, status, utfall, sist_endret",
+          "id, kreditor, tittel, opprinnelig_kreditor, saksnummer, belop_totalt, stadium, status, utfall, sist_endret",
         )
         .order("sist_endret", { ascending: false }),
       supabase
@@ -105,6 +113,83 @@ export default async function KravListePage() {
     };
   }
 
+  // Gruppert visning (kun brukt over terskelen, se lenger ned): raden inni
+  // en åpnet gruppe. Kreditornavnet er allerede gruppens overskrift, så
+  // radens egen tittel er saksnummeret når det finnes, ellers stadiet.
+  function gruppeRad(sak: SakRad): GruppeRad {
+    const frist = nesteFrist.get(sak.id) ?? null;
+    const dagerIgjen = frist ? dagerTil(frist) : null;
+    const hastende = dagerIgjen != null && erHastende(dagerIgjen);
+    const stadiumTekst = sak.stadium ? STADIUM_ETIKETT[sak.stadium] : null;
+    const fristTekst = dagerIgjen != null ? fristChipTekst(dagerIgjen) : null;
+    const tittel = sak.saksnummer
+      ? `Sak #${sak.saksnummer}`
+      : (stadiumTekst ?? "Krav");
+    const underDeler = sak.saksnummer
+      ? [stadiumTekst, fristTekst].filter(Boolean)
+      : [
+          fristTekst ??
+            (sak.status === "venter_pa_svar"
+              ? STATUS_ETIKETT.venter_pa_svar
+              : null),
+        ].filter(Boolean);
+    return {
+      id: sak.id,
+      tittel,
+      underTekst: underDeler.length > 0 ? (underDeler.join(" · ") as string) : null,
+      hastende,
+      belop: sak.belop_totalt,
+      harFunn: harFunnPerSak.get(sak.id) ?? false,
+    };
+  }
+
+  // Gruppering på kreditor (§ mockup «gruppert saksliste») — kun over
+  // GRUPPERING_TERSKEL aktive saker. Rekkefølgen inni hver gruppe arves fra
+  // aktiveSortert (nærmeste frist først); selve gruppene sorteres på samlet
+  // beløp (høyest øverst).
+  const brukGruppering = aktive.length > GRUPPERING_TERSKEL;
+  const grupper: Gruppe[] = [];
+  const enkeltstaendeSaker: SakRad[] = [];
+  if (brukGruppering) {
+    const perKreditor = new Map<string, SakRad[]>();
+    for (const sak of aktiveSortert) {
+      const navn = sak.kreditor ?? sak.tittel;
+      const liste = perKreditor.get(navn);
+      if (liste) liste.push(sak);
+      else perKreditor.set(navn, [sak]);
+    }
+    for (const [navn, liste] of perKreditor) {
+      if (liste.length === 1) {
+        enkeltstaendeSaker.push(liste[0]);
+        continue;
+      }
+      const rader = liste.map(gruppeRad);
+      const samletBelop = liste.reduce(
+        (sum, s) => sum + (s.belop_totalt ?? 0),
+        0,
+      );
+      let minDager: number | null = null;
+      for (const s of liste) {
+        const f = nesteFrist.get(s.id);
+        if (!f) continue;
+        const d = dagerTil(f);
+        if (minDager == null || d < minDager) minDager = d;
+      }
+      grupper.push({
+        navn,
+        saker: rader,
+        samletBelop: samletBelop > 0 ? samletBelop : null,
+        harFunn: rader.some((r) => r.harFunn),
+        fristTekst:
+          minDager != null && erHastende(minDager)
+            ? fristChipTekst(minDager)
+            : null,
+      });
+    }
+    grupper.sort((a, b) => (b.samletBelop ?? 0) - (a.samletBelop ?? 0));
+  }
+  const antallKreditorer = grupper.length + enkeltstaendeSaker.length;
+
   const stripe = oversiktsstripe(saker);
 
   return (
@@ -138,13 +223,21 @@ export default async function KravListePage() {
         <SekvensDel>
           <div className="mt-6">
             {avsluttede.length > 0 && <p className="eyebrow mb-2">Aktive</p>}
-            <ul className="flex flex-col gap-2.5">
-              {aktiveSortert.map((sak) => (
-                <li key={sak.id}>
-                  <Kravkort {...kortData(sak)} />
-                </li>
-              ))}
-            </ul>
+            {brukGruppering ? (
+              <GruppertSaksliste
+                grupper={grupper}
+                enkeltstaende={enkeltstaendeSaker.map(kortData)}
+                antallKreditorer={antallKreditorer}
+              />
+            ) : (
+              <ul className="flex flex-col gap-2.5">
+                {aktiveSortert.map((sak) => (
+                  <li key={sak.id}>
+                    <Kravkort {...kortData(sak)} />
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </SekvensDel>
       )}
