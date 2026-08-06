@@ -23,6 +23,73 @@ etter hver fase.
 | Sakstatus synlig | Statuslinje på brevsiden + synlig «venter på svar»-kort (egen ordre) | ✅ Ferdig |
 | Deling og opprydding | Delingsmetadata (OG/Twitter) + knapp-konsolidering (egen ordre) | ✅ Ferdig |
 | AI-fart | Modelloppgradering (Sonnet 5/Haiku 4.5) + streaming utkastgenerering (egen ordre) | ✅ Ferdig |
+| Gruppert saksliste | Kravlisten gruppert på kreditor over 10 aktive saker (på forespørsel, mockup) | ✅ Ferdig |
+
+---
+
+## Gruppert saksliste (på brukerens forespørsel, mockup-drevet)
+
+Bygget etter `medhold_gruppert_saksliste_mockup_1.html` (levert som en lokal
+fil, ikke en formell arbeidsordre — samme «mockup er visuell fasit»-mønster
+som resten av prosjektet). Mockupens egen fotnote var eksplisitt om
+terskelen: «Grupper vises kun når antall aktive saker er høyt (over 10). Med
+få saker vises den vanlige, flate listen som i dag.»
+
+- **`src/app/(app)/krav/GruppertSaksliste.tsx`** (ny, client): søkefelt
+  («Søk etter kreditor …», filtrerer klientside på kreditornavn), grupper
+  (avrundet kort, initial-sirkel gjenbruker `bg-aksent/10`/`text-aksent-dyp`
+  fra `ProfilKort` — ikke en ny farge), § ved gebyrfunn i gruppen, en
+  dom-rød frist-chip (`bg-dom-rod-bg`/`text-dom-rod`, samme tokens som
+  `DomMini`) KUN når gruppens nærmeste frist er hastende
+  (`erHastende`/`fristChipTekst` fra `lib/frist.ts`, samme kilde som
+  `Kravkort` allerede bruker — ingen ny tekstlogikk), samlet beløp, og en
+  enkel CSS `rotate-90`-chevron (samme mønster som `Utvidbar`). Åpne/lukkede
+  grupper er ren klient-tilstand (ingen ny rute). Kreditorer med kun ETT
+  krav vises uendret som `Kravkort` under en egen «Enkeltstående»-seksjon —
+  ingen ny komponent for dem.
+- **`krav/page.tsx`**: `GRUPPERING_TERSKEL = 10` styrer hvilken visning som
+  rendres (uendret flat liste ellers — ingen adferdsendring under
+  terskelen). Grupperer `aktiveSortert` på `kreditor ?? tittel` (samme navn-
+  logikk som `kortData` allerede bruker); gruppene sorteres på samlet beløp
+  (høyest øverst, matcher mockupens rekkefølge), radene INNI hver gruppe
+  arver sin rekkefølge fra `aktiveSortert` (nærmeste frist først) — ingen
+  ekstra sortering trengs der. `saksnummer` lagt til i `saker`-spørringen
+  (var ikke hentet fra før på denne siden).
+- **Radens tittel inni en åpnet gruppe** (arbeidsordren/mockupen viste
+  «Ordre #88213», appen har ikke et eget ordre-/referansefelt per sak):
+  bruker `saksnummer` når det finnes («Sak #{saksnummer}»), ellers stadiet
+  (`STADIUM_ETIKETT`), ellers «Krav» — appens `tittel`-felt dupliserte alltid
+  kreditornavnet (samme verdi som allerede står i gruppens overskrift, se
+  `opprettKrav`/`lagreBrev`) og var derfor ubrukelig som rad-differensiator.
+- `npm run build`/`lint`/`test` (144 tester) grønne. Verifisert i browser
+  (midlertidig debug-rute med mock-data speilende mockupens tall, fjernet
+  igjen): gruppeekspansjon/kollaps, søk (filtrerer korrekt, «ingen treff»-
+  tilstand), mørk modus (kun eksisterende tokens, ingen nye farger å
+  verifisere separat), reduced motion (appens globale
+  `prefers-reduced-motion`-regel i `globals.css` nøytraliserer
+  `transition-duration` allerede — ingen egen gren nødvendig for
+  chevron-rotasjonen, samme som `Utvidbar`/`Utregning`).
+
+Valg tatt underveis:
+
+1. **Kun `aktive` grupperes, `avsluttede` er uendret** (fortsatt
+   `AvsluttedeListe`) — mockupens fotnote nevnte eksplisitt kun aktive
+   saker.
+2. **Ingen ny rute for «Se alle fra {kreditor}»**: mockupens største
+   eksempelgruppe (8 krav) viste kun 3 rader + en «+5 krav til»-lenke ved
+   ekspansjon. Bygget i stedet en gruppe som viser ALLE sine krav når åpnet
+   (ingen indre trunkering) — enklere, krever ingen ny per-kreditor-side, og
+   fullt funksjonelt (all informasjon tilgjengelig, bare uten mockupens
+   ekstra optimalisering for uvanlig store enkeltgrupper).
+3. **Ingen gruppe er forhåndsåpnet.** Mockupens statiske skjermbilde hadde
+   Klarna-gruppen åpen (for å vise hvordan den åpne tilstanden ser ut i
+   selve bildet) — tolket som en visningsdetalj for skjermbildet, ikke et
+   tiltenkt reelt standardvalg. Alle grupper lukket ved sidelast, samme
+   konvensjon som appens eksisterende `Utvidbar`.
+4. **Søket filtrerer på toppnivå** (grupper og enkeltstående etter
+   kreditornavn) — matcher ikke inni en gruppes enkeltrader, og åpner ikke
+   grupper automatisk ved treff. Mockupen viste ikke et søkeresultat, så
+   dette er den enkleste tolkningen som dekker det oppgitte søkefeltet.
 
 ---
 
