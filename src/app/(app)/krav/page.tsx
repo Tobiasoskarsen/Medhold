@@ -11,6 +11,7 @@ import { dagerTil } from "@/lib/dato";
 import { erHastende, fristChipTekst } from "@/lib/frist";
 import { STATUS_ETIKETT, type SakStatus, type SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import type { HovedstolAvvik } from "@/lib/hovedstol-konsistens";
 
 type SakRad = {
   id: string;
@@ -23,6 +24,7 @@ type SakRad = {
   status: SakStatus;
   utfall: SakUtfall | null;
   sist_endret: string;
+  hovedstol_avvik: HovedstolAvvik[] | null;
 };
 
 // Grupperingen (på kreditor) vises kun når listen faktisk er stor nok til at
@@ -51,7 +53,7 @@ export default async function KravListePage() {
       supabase
         .from("saker")
         .select(
-          "id, kreditor, tittel, opprinnelig_kreditor, saksnummer, belop_totalt, stadium, status, utfall, sist_endret",
+          "id, kreditor, tittel, opprinnelig_kreditor, saksnummer, belop_totalt, stadium, status, utfall, sist_endret, hovedstol_avvik",
         )
         .order("sist_endret", { ascending: false }),
       supabase
@@ -110,6 +112,7 @@ export default async function KravListePage() {
       status: sak.status,
       utfall: sak.utfall,
       harFunn: harFunnPerSak.get(sak.id) ?? false,
+      harHovedstolAvvik: (sak.hovedstol_avvik?.length ?? 0) > 0,
     };
   }
 

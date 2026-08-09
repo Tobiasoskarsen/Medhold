@@ -18,6 +18,10 @@ import {
 } from "@/lib/gebyr";
 import { erAlvorligSak } from "@/lib/alvorsgrense";
 import type { FristSammenligning } from "@/lib/frist";
+import {
+  finnHovedstolAvvik,
+  type HovedstolBrevInput,
+} from "@/lib/hovedstol-konsistens";
 
 // Strukturert utdata. «AI tolker, kode beslutter»: modellen trekker KUN ut det
 // som eksplisitt står i brevet. Beregnede frister lages i kode, ikke her.
@@ -640,11 +644,29 @@ export async function lagreBrev(
       gebyrsjekk: gebyrsjekk && gebyrsjekk.linjer.length > 0 ? gebyrsjekk : null,
       fristfunn: input.fristfunn,
       alvorlig: input.alvorlig,
+      belop_hovedstol: input.hovedstol,
     })
     .select("id")
     .single();
   if (brevFeil || !brev)
     return { ok: false, feil: "Kunne ikke lagre brevet. Prøv igjen." };
+
+  // 2b) Hovedstol-konsistens på tvers av saken (MEDHOLD_HOVEDSTOL_KONSISTENS-
+  // ARBEIDSORDRE §2): beregnes IKKE ved hver sidevisning — kun her, rett etter
+  // et NYTT brev er lagret på en EKSISTERENDE sak (en helt ny sak har per
+  // definisjon bare ett brev, ingenting å sammenligne). Lagret jsonb er
+  // sannheten ved visning (krav-detalj/saks-listen), rekalkuleres aldri der.
+  if (input.krav.modus === "eksisterende") {
+    const { data: alleBrev } = await supabase
+      .from("brev")
+      .select("id, brevdato, belop_hovedstol, opprettet")
+      .eq("sak_id", sakId);
+    const avvik = finnHovedstolAvvik((alleBrev ?? []) as HovedstolBrevInput[]);
+    await supabase
+      .from("saker")
+      .update({ hovedstol_avvik: avvik })
+      .eq("id", sakId);
+  }
 
   // 3) Frister (med riktig kilde) og steg.
   const frister = input.valgteFrister.filter((f) => f.forfallsdato);

@@ -18,6 +18,8 @@ import { DomMini, DomMiniFrist } from "@/components/Dom";
 import { Veivalg } from "@/components/Veivalg";
 import { Alvorsvarsel } from "@/components/Alvorsvarsel";
 import { Utregning } from "@/components/Utregning";
+import { HovedstolVarsel } from "@/components/HovedstolVarsel";
+import type { HovedstolAvvik } from "@/lib/hovedstol-konsistens";
 import { KravNavn, KravBelop } from "./KravHeader";
 import { formaterKortDato, formaterDato } from "@/lib/dato";
 import {
@@ -141,12 +143,14 @@ export default async function KravDetaljPage({
   const { data: sak } = await supabase
     .from("saker")
     .select(
-      "id, kreditor, tittel, opprinnelig_kreditor, saksnummer, belop_totalt, stadium, status, utfall, sist_endret",
+      "id, kreditor, tittel, opprinnelig_kreditor, saksnummer, belop_totalt, stadium, status, utfall, sist_endret, hovedstol_avvik",
     )
     .eq("id", id)
     .maybeSingle();
 
   if (!sak) notFound();
+
+  const hovedstolAvvik = (sak.hovedstol_avvik as HovedstolAvvik[] | null) ?? [];
 
   const lost = sak.status === "fullfort";
   const lostDato = (sak.sist_endret as string | null)?.slice(0, 10);
@@ -381,6 +385,7 @@ export default async function KravDetaljPage({
           </p>
         )
       )}
+      <HovedstolVarsel avvik={hovedstolAvvik} className="mt-1" />
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {sak.status === "venter_pa_svar" && (
