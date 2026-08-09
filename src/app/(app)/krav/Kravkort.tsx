@@ -3,6 +3,7 @@
 import { useRef, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { m } from "motion/react";
+import { TriangleAlert } from "lucide-react";
 import { Kort, useInntreden, useSekvensForsinkelse } from "@/components/ui";
 import {
   STATUS_ETIKETT,
@@ -48,6 +49,7 @@ export function Kravkort({
   status,
   utfall,
   harFunn,
+  harHovedstolAvvik = false,
 }: {
   id: string;
   navn: string;
@@ -58,6 +60,10 @@ export function Kravkort({
   status: SakStatus;
   utfall: SakUtfall | null;
   harFunn: boolean;
+  /** Hovedstolen har endret seg mellom to brev i saken (MEDHOLD_HOVEDSTOL_
+   *  KONSISTENS_ARBEIDSORDRE §3.2) — distinkt varseltrekant, ikke § (som er
+   *  forbeholdt gebyrfunn), slik at de to ikke forveksles på et lite kort. */
+  harHovedstolAvvik?: boolean;
 }) {
   const router = useRouter();
   const { start } = useViewOvergang();
@@ -131,6 +137,15 @@ export function Kravkort({
                 className="font-serif text-[13px] font-semibold leading-none text-dom-rod"
               >
                 §
+              </m.span>
+            )}
+            {harHovedstolAvvik && !avsluttet && (
+              <m.span {...merkeInntreden} role="img" aria-label="Hovedstolen har endret seg i denne saken">
+                <TriangleAlert
+                  className="size-[13px] text-dom-rod"
+                  aria-hidden
+                  strokeWidth={2.25}
+                />
               </m.span>
             )}
             {belop && (

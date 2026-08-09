@@ -24,6 +24,83 @@ etter hver fase.
 | Deling og opprydding | Delingsmetadata (OG/Twitter) + knapp-konsolidering (egen ordre) | ✅ Ferdig |
 | AI-fart | Modelloppgradering (Sonnet 5/Haiku 4.5) + streaming utkastgenerering (egen ordre) | ✅ Ferdig |
 | Gruppert saksliste | Kravlisten gruppert på kreditor over 10 aktive saker (på forespørsel, mockup) | ✅ Ferdig |
+| Hovedstol-konsistens | Varsler når hovedstolen endrer seg mellom brev i samme sak (egen ordre) | ✅ Ferdig (migrasjon 0022 IKKE kjørt ennå) |
+
+---
+
+## Hovedstol-konsistens (MEDHOLD_HOVEDSTOL_KONSISTENS_ARBEIDSORDRE, ferdig i kode)
+
+Konsistenssjekk PÅ TVERS av en saks brev — hovedstolen skal per lov holde
+seg uendret gjennom inkassoprosessen. Ren observasjon, ingen dom om årsak
+(feillesning vs. reell endring hos kreditor).
+
+- **`src/lib/hovedstol-konsistens.ts`** (+ 9 tester): `finnHovedstolAvvik()`
+  — sammenligner `belop_hovedstol` kronologisk på tvers av en saks brev,
+  hopper over brev uten oppgitt hovedstol, eksakt likhet (ingen øre-
+  toleranse). Returnerer ett `HovedstolAvvik` per overgang.
+- **Migrasjon `0022_hovedstol_konsistens.sql`** (additiv, IKKE kjørt i
+  Supabase ennå): `brev.belop_hovedstol numeric(12,2)` (ny — se «Valg» under)
+  + `saker.hovedstol_avvik jsonb`. `slett_egen_konto()` uendret — begge
+  kolonnene ligger på tabeller som allerede slettes eksplisitt.
+- **Lagring** (`legg-til-brev/actions.ts`, `lagreBrev()`): hver `brev`-rad
+  lagrer nå sin egen `belop_hovedstol` (fra `input.hovedstol`, alt fantes
+  allerede — bare aldri persistert). Rett etter et brev er lagret på en
+  EKSISTERENDE sak (`input.krav.modus === "eksisterende"`), hentes ALLE
+  sakens brev og `finnHovedstolAvvik()` kjøres på nytt; resultatet lagres på
+  `saker.hovedstol_avvik`. En helt ny sak (kun ett brev) hopper over steget
+  (ingenting å sammenligne). Rekalkuleres ALDRI ved ren sidevisning.
+- **`src/components/HovedstolVarsel.tsx`** (ny, krav-detalj §3.1): egen,
+  alltid synlig varsellinje rett under rødnote-linjen (gebyrfunn/fristfunn
+  har forrang der, men skjuler IKKE dette varselet — egen kategori). Viser
+  det NYESTE avviket; «Se detaljer» utvider (høyde/opasitet-mekanikk lånt
+  fra `Utregning`/`Veivalg`, ikke selve `Utvidbar`-komponenten — dens
+  ikon+etikett-rad passer ikke en enkel tekstlenke) og lister alle avvikene
+  kronologisk. `dom-rod`-fargefamilien, IKKE `Dom`/`DomMini` (guardrail 4 —
+  dette er ikke et gebyrfunn).
+- **`Kravkort.tsx`** (§3.2): ny valgfri `harHovedstolAvvik`-prop, rendrer et
+  `TriangleAlert`-ikon (lucide-react, dom-rod) ved siden av — men DISTINKT
+  fra — §-markøren, med `aria-label="Hovedstolen har endret seg i denne
+  saken"`. Wired gjennom `krav/page.tsx` sin `kortData()` (dekker både den
+  flate listen og enkeltstående kreditorer i den grupperte visningen — samme
+  funksjon, ingen duplisering).
+- `npm run build`/`lint`/`test` (153 tester, +9) grønne. Verifisert i
+  browser (midlertidig debug-rute, fjernet igjen): riktig avvikstekst («nyeste»
+  valgt korrekt ved flere avvik), «Se detaljer»-ekspansjon, § vs. varseltrekant
+  vises DISTINKT og SAMTIDIG på et kort med begge funn, mørk modus.
+
+Valg tatt underveis:
+
+1. **`brev.belop_hovedstol` (ny kolonne) var IKKE i arbeidsordrens
+   migrasjonsseksjon** — den nevnte kun `saker.hovedstol_avvik`, og antok
+   dermed at per-brev-hovedstol allerede fantes lagret. Den gjorde ikke:
+   `belop_hovedstol` fantes fra før KUN på `saker` (siste kjente verdi for
+   hele saken, ingen historikk) — en tidligere arbeidsordre (Substans) hadde
+   eksplisitt og bevisst valgt å IKKE persistere hovedstol per brev
+   (guardrail 4 der). Uten en per-brev-verdi er det bokstavelig talt
+   ingenting å sammenligne på tvers av brev, så hele denne leveransen hadde
+   vært umulig. Lagt til `brev.belop_hovedstol` som en nødvendig
+   forutsetning i 0022 — situasjonen har endret seg (nå finnes et konkret
+   nedstrøms behov), så den tidligere guardrailen anses ikke lenger
+   gjeldende for akkurat dette feltet.
+2. **Beregningen kjøres i `lagreBrev()`, ikke bokstavelig i
+   `etterbehandle()`** som arbeidsordren sa: `etterbehandle()` kjører under
+   ANALYSEN, FØR brevet er lagret (og uten brev-ID) — strukturelt umulig å
+   kjøre en tvers-av-brev-sammenligning der. Intensjonen («rett etter et
+   NYTT brev er lagret på en EKSISTERENDE sak») er derimot fulgt eksakt —
+   lagt i `lagreBrev()` rett etter brev-innsettingen lykkes.
+3. **`HovedstolBrevInput` fikk et `opprettet`-felt** arbeidsordrens skisserte
+   `finnHovedstolAvvik`-signatur ikke hadde — kreves av dens egen
+   sorteringsregel («fall tilbake til opprettet-tidsstempel» ved lik/
+   manglende dato).
+4. **Nye tekster til advokatgjennomgangslisten** (guardrail 6): «Hovedstolen
+   har endret seg fra {X} kr til {Y} kr mellom to brev i denne saken — verdt
+   å sjekke.»
+
+⚠ **Migrasjon 0022 må kjøres i Supabase FØR denne funksjonen virker live**
+(brevlagring feiler ikke uten den — `belop_hovedstol`/`hovedstol_avvik`
+skrives bare ikke — men ingen avvik vil noensinne oppdages eller vises før
+kolonnene finnes). `build`/`lint`/`test` grønne uavhengig av dette (ren
+kodesjekk, ingen DB-kall i testene).
 
 ---
 
