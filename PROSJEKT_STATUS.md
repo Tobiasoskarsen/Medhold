@@ -28,6 +28,91 @@ etter hver fase.
 | Designretning 2 — bento | Bento-grid, fremgangsring og delbart resultatkort (på forespørsel, tre mockups) | ✅ Ferdig |
 | Mørk modus-fiks | Kontrast/skygge/ring-farge/anbefalt-glød + kollapsbar «Sakens gang» (egen ordre + på forespørsel) | ✅ Ferdig |
 | Sakens gang-korrigering | «Sakens gang» lukket som standard (erstatter forrige økts «4 synlige + vis mer»-variant) | ✅ Ferdig |
+| Ny bunnnav | Flytende pille-navigasjon + hevet midtknapp til «Legg til brev» (på forespørsel, mockup) | ✅ Ferdig |
+
+---
+
+## Ny bunnnav — flytende pille + midtknapp (på brukerens forespørsel, mockup-drevet)
+
+Bygget etter en levert mockup med to retninger for en ny bunnnavigasjon; brukeren
+valgte eksplisitt (via oppklarende spørsmål i chat, siden de to var vesentlig
+forskjellige i omfang) **retning A**: en løsrevet, flytende pille i stedet for
+dagens dokkede bar, PLUSS en ny, hevet midtknapp med «+» som snarvei til
+«Legg til brev» — ny funksjonalitet, ikke bare en reskin.
+
+- **`src/components/ui/BunnNav.tsx`** (full omskrivning): bar-elementet er nå
+  en flytende, avrundet (`rounded-[26px]`) pille med 16px innrykk fra
+  skjermkantene, `backdrop-blur-[14px]` + `bg-flate/90`, fast høyde `66px`
+  med `items-center` (IKKE `items-end` — se «Valg» punkt 1 for hvorfor dette
+  var avgjørende for at midtknappen faktisk stikker opp over kanten).
+  Lucide-ikonene (Home/Folder/User) er byttet ut med tre nye, INLINE SVG-er
+  som gjenskaper mockupens eksakte path-data ordrett (ikke nærmeste
+  lucide-ekvivalent) for fullstendig visuell troskap — «helt likt» var
+  brukerens eksplisitte krav. Saker-ikonet er appens eget Trapp-motiv (tre
+  stigende stolper) som et lite, statisk ikon i stedet for en generisk mappe.
+- **Aktiv-indikatoren** er nå en pille-bakgrunn (`bg-aksent/15`,
+  `rounded-[13px]`) BAK ikonet i stedet for den forrige tynne streken under —
+  men bruker fortsatt SAMME `layoutId="bunnnav-indikator"`-morfingsmekanikk
+  (Motion3 §3, `INDIKATOR_FJAER`) og samme ikon-dupp
+  (`IKON_TRYKK_SKALA`→1, `FJAER`) som før — kun det visuelle uttrykket er
+  byttet, ikke bevegelsesmekanismen.
+- **Midtknappen** (`/legg-til-brev`, ny `size-[52px]` sirkel,
+  `-mt-[40px]` for å poke opp over pillens kant): gradient
+  `bg-[linear-gradient(155deg,var(--aksent-dyp),var(--aksent))]`, glød
+  via `color-mix(in oklab, var(--aksent-dyp) 35%, transparent)`, og en
+  «utstansings»-ring `0 0 0 5px var(--bakgrunn)` som matcher SIDENS
+  bakgrunn (ikke pillens egen, halvtransparente flate) — alle tre uttrykk
+  bruker eksisterende tokens, ingen nye hardkodede farger, og alle er
+  verifisert å skifte korrekt mellom lys/mørk. Lenker til det samme
+  generiske `/legg-til-brev`-inntaket som CTA-ene på Hjem/Saker/Meg allerede
+  bruker — IKKE en `krav=`-spesifikk variant. Setter bevisst IKKE
+  `FANE_NAV_NOKKEL` (ikke en fane-navigasjon — `/legg-til-brev` er en
+  fullskjermsflyt utenfor `(app)`-layouten med sin egen glid-opp-overgang).
+- **`(app)/layout.tsx`:** bunnpadding økt fra `pb-24` til `pb-32` for å gi
+  klaring til den nye, høyere flytende pillens fotavtrykk (16px margin + 66px
+  bar + midtknappens oppstikk).
+- `npm run build`/`lint`/`test` (153 tester) grønne.
+
+Valg tatt underveis:
+
+1. **Reell layout-bug fanget og fikset under egen visuell verifisering, FØR
+   commit:** første forsøk brukte `items-end` + auto-høyde + `py-2` på
+   pille-containeren (feillest fra mockupens visuelle beskrivelse i stedet
+   for å lese selve CSS-en nøye). Målt i browser: containeren vokste seg
+   like høy som midtknappen i stedet for å forbli en slank bar med
+   midtknappen synlig stikkende opp OVER kanten — «poke»-effekten var
+   praktisk talt usynlig (midtknappen lå trygt INNI pillens egen
+   bounding box). Mockupens faktiske CSS bruker `align-items:center` på en
+   FAST `height:66px`-bar — med sentrering og negativ margin-top får
+   midtknappen sin egen «margin-box» til å strekke seg over konteinerens
+   toppkant i stedet for at containeren vokser for å romme den. Fikset ved
+   å bytte til `h-[66px] items-center` (fjernet `py-2`); målt i browser
+   etterpå: midtknappen stikker nå synlig ~13px over pillens overkant.
+   `npm run build`/`lint`/`test` fanger ALDRI dette (ren visuell
+   layout-utfall, ingen statisk analyse ser forskjellen) — kun synlig ved
+   faktisk rendring, samme lærdom som flere tidligere økters CSS-cascade-
+   og RSC-boundary-bugs.
+2. **`-mt-[40px]` er justert opp fra mockupens `-30px`** etter å ha målt at
+   `-30px` i vår faktiske DOM-struktur (litt andre flex-nabo-dimensjoner enn
+   mockupens statiske skjermbilde) kun ga en ~8px synlig poke — for subtil
+   til å lese tydelig som en hevet handlingsknapp. `-40px` gir ~13px, målt
+   og bekreftet i browser før commit.
+3. **Ikonene er egne, navngitte SVG-komponenter i selve `BunnNav.tsx`**
+   (ikke en ny delt fil) — kun brukt her, ingen grunn til en egen modul for
+   tre små, ett-gangs-brukte path-sett.
+4. **Verifisert i browser** (samme midlertidige debug-rute-mønster som
+   tidligere økter, fjernet igjen sammen med det midlertidige unntaket i
+   `middleware.ts`): pillens bakgrunn/kant/blur, midtknappens gradient/
+   glød/ring-farge — alle bekreftet med `getComputedStyle` i BÅDE lys og
+   mørk modus (byttet tema direkte via `classList` siden appens tema er en
+   lagret preferanse, ikke `prefers-color-scheme`), ingen horisontal
+   overflow ved 375px, ingen konsollfeil. Selve navigasjons-klikkene (Hjem/
+   Saker/Meg-aktivering, `/legg-til-brev`-lenken) er IKKE klikk-testet med en
+   ekte innlogget bruker denne økten — `BunnNav` er kun montert innenfor den
+   autentiserte `(app)`-layouten, og debug-ruten kunne derfor kun vise
+   inaktiv-tilstanden for alle tre punktene (ingen av dem matcher
+   `/dev-bento-preview`). Anbefaling: en rask manuell sjekk av selve
+   fane-byttet + midtknapp-navigasjonen med en ekte sesjon.
 
 ---
 
