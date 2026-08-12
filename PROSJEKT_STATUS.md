@@ -26,6 +26,94 @@ etter hver fase.
 | Gruppert saksliste | Kravlisten gruppert på kreditor over 10 aktive saker (på forespørsel, mockup) | ✅ Ferdig |
 | Hovedstol-konsistens | Varsler når hovedstolen endrer seg mellom brev i samme sak (egen ordre) | ✅ Ferdig (migrasjon 0022 IKKE kjørt ennå) |
 | Designretning 2 — bento | Bento-grid, fremgangsring og delbart resultatkort (på forespørsel, tre mockups) | ✅ Ferdig |
+| Mørk modus-fiks | Kontrast/skygge/ring-farge/anbefalt-glød + kollapsbar «Sakens gang» (egen ordre + på forespørsel) | ✅ Ferdig |
+
+---
+
+## Mørk modus-fiks (MEDHOLD_MORK_MODUS_FIKS_ARBEIDSORDRE, ferdig) + kollapsbar «Sakens gang»
+
+Beslutningsfri ordre: tre presise CSS/token-justeringer, ingen strukturendring.
+Pluss ett tillegg på forespørsel i samme økt: en «Vis X til»-rad som kollapser
+de eldste hendelsene på sak-detaljens «Sakens gang»-tidslinje.
+
+**§1 Kontrast `--bakgrunn`/`--flate` i `.mork`:** de to verdiene endret til
+nøyaktig `#0d1315`/`#212e30` som ordren spesifiserte. Alle andre
+`.mork`-tokens urørt.
+
+**§2 Kort-skygge:** nye tokens `--kort-skygge` (`:root`: `none`, `.mork`:
+inset høylys + drop shadow) — `Kort.tsx` fikk `style={{ boxShadow: "var(--kort-skygge)" }}`
+på rotelementet, i tillegg til (ikke i stedet for) eksisterende className.
+Grep etter `boxShadow`/`shadow-` i resten av kodebasen fant fire treff
+(`BrevSteg.tsx`, `MetodeVeksler.tsx`, `KravMeny.tsx`, `Tidslinje.tsx`) — ingen
+av dem bruker `Kort`, så ingen dobbel-skygge-konflikt å justere for.
+
+**§3 Fremgangsring:** fylt bue byttet fra `text-aksent` til `text-aksent-dyp`
+— eneste linjeendring i komponenten, med ordrens begrunnelse som kommentar
+i koden (emfase-token i begge temaer, riktig for et dekorativt element uten
+hvit tekst oppå, i motsetning til primærknapper).
+
+**§4 Anbefalt-glød i Veivalg:** nye tokens `--anbefalt-glod` (samme
+`none`/mørk-verdi-mønster). `Veivalg.tsx`s interne `MålKnapp`-hjelper (som
+rendrer enten `Link` eller `button` avhengig av målet) manglet en
+`style`-prop for å kunne sende skyggen gjennom — lagt til (valgfri,
+`CSSProperties`, videreført til begge grenene). `VeivalgKort` setter
+`style={anbefalt ? { boxShadow: "var(--anbefalt-glod)" } : undefined}`.
+
+**Kollapsbar «Sakens gang» (på forespørsel, samme økt):**
+
+- **`SeMerTidslinje.tsx`** (ny, client, `krav/[id]/`): en «Vis X til»-rad som
+  følger tidslinjens EGET node+linje-mønster (stiplet sirkel + nedadgående
+  linje, samme venstrekolonne-oppskrift som `TidslinjeHendelse`) i stedet
+  for en fremmed knappestil — leses som en naturlig del av tidslinjen.
+  Klikk avslører de skjulte hendelsene med samme høyde/opasitet-mekanikk og
+  `VARIGHET.rolig`/`EASING`-tokens som `Utvidbar`/`Utregning`/`Veivalg`;
+  knappeteksten bytter til «Vis færre» når åpen (`ChevronDown`, roterer
+  180°). Reduced motion arves fra `Bevegelsesramme` (samme mekanisme som
+  resten av appen, ingen egen gren).
+- **`krav/[id]/page.tsx`:** ny konstant `SAKENS_GANG_SYNLIG = 4`. De
+  ferdig-bygde `TidslinjeHendelse`-elementene (samme kode som før, samme
+  `sisteHendelse={i === items.length - 1}`-logikk basert på ORIGINAL indeks
+  i hele `items`-lista — upåvirket av kollapsen) samles i ett array FØR
+  det deles i `synlige`/`skjulte` med `.slice()`. `SeMerTidslinje` rendres
+  kun når `skjulte.length > 0` — korte sakslister (≤4 hendelser) er
+  visuelt uendret, ingen knapp vises.
+- `npm run build`/`lint`/`test` (153 tester) grønne.
+
+Valg tatt underveis:
+
+1. **`SeMerTidslinje` bygger IKKE hendelsene selv** — den mottar dem som
+   allerede rendret `children` (samme trygge server→klient-mønster som
+   `Tidslinje`/`SekvensDel` selv bruker: en Server Component kan sende
+   ferdig JSX over grensen uten problemer, det er kun rå funksjons-/
+   komponent-REFERANSER — som et `LucideIcon` sendt direkte som prop — som
+   feiler, jf. `VenterPaSvarUtvidelse`s dokumenterte gotcha). Unngikk
+   dermed å måtte flytte hele `items`-databehandlingen til klientsiden.
+2. **Ingen spesialhåndtering av linja ved kollapse-kuttet:** den siste
+   SYNLIGE hendelsen (rett over «Vis X til») beholder sin vanlige
+   `sisteHendelse={false}` (siden det faktisk finnes flere hendelser etter
+   den i hele lista) — linja fortsetter dermed naturlig ned til
+   «Vis X til»-radens egen node, som igjen har sin egen linje ned mot de
+   skjulte hendelsene. Ingen egen «kunstig sluttlinje» trengtes ved kuttet;
+   CSS-flex-mekanismen som allerede tegner tidslinjen (hver rad tegner sin
+   EGEN nedadgående linje, ikke den forrige radens) løser dette gratis.
+3. **`SAKENS_GANG_SYNLIG = 4`** er et nytt, ikke ordre-spesifisert tall
+   (brukerens egen forespørsel ga ingen konkret terskel) — valgt som «nok
+   til å se den siste tiden uten scrolling, lite nok til at kollapsen
+   faktisk sparer plass» på en 390px-skjerm. Kan justeres uten
+   strukturendring hvis brukeren ønsker et annet tall.
+4. **Verifisert i browser** (samme midlertidige debug-rute-mønster som
+   forrige økt, fjernet igjen sammen med det midlertidige unntaket i
+   `src/lib/supabase/middleware.ts`): `getComputedStyle` bekreftet
+   `--bakgrunn`/`--flate`-kontrasten, `Kort`s skygge, `Fremgangsring`s
+   `aksent-dyp`-fylling (`rgb(122,176,224)`) og `Veivalg`s anbefalt-glød,
+   alle i mørk modus. «Vis X til» → «Vis færre»-toggelen testet med et
+   syntetisk 7-hendelses-array (4 synlige + 3 skjulte), avslører korrekt
+   ved klikk. Ingen horisontal overflow ved 375px. Lys modus IKKE
+   skjermdumpet av samme grunn som forrige økt (appens tema er en lagret
+   brukerpreferanse, ikke `prefers-color-scheme` — `resize_window` sin
+   `colorScheme`-parameter endrer ikke noe); alle nye tokens er eksplisitt
+   `none` i `:root`, så lys modus er kode-verifisert uendret, men ikke
+   visuelt bekreftet med et ekte skjermdump denne økten heller.
 
 ---
 

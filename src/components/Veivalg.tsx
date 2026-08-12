@@ -6,7 +6,7 @@
 // («Svar på kravet» / «Finn en måte å betale på») + en valgfri, flyktig
 // sjekkliste for den usikre brukeren. Sjekklistesvarene lagres ALDRI og
 // sendes ALDRI til utkast-prompten — ren UI-tilstand.
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, m } from "motion/react";
 import { ChevronDown, Check } from "lucide-react";
 import { NavLenke as Link } from "@/components/NavLenke";
@@ -28,15 +28,17 @@ function kr(n: number): string {
 function MålKnapp({
   mål,
   className,
+  style,
   children,
 }: {
   mål: VeivalgMål;
   className: string;
+  style?: CSSProperties;
   children: ReactNode;
 }) {
   if (mål.type === "href") {
     return (
-      <Link href={mål.href} className={className}>
+      <Link href={mål.href} className={className} style={style}>
         {children}
       </Link>
     );
@@ -47,6 +49,7 @@ function MålKnapp({
       onClick={mål.onKlikk}
       disabled={mål.deaktivert}
       className={`${className} disabled:opacity-60`}
+      style={style}
     >
       {children}
     </button>
@@ -74,6 +77,7 @@ function VeivalgKort({
       className={`trykk relative flex flex-1 flex-col gap-2 rounded-2xl border-[0.5px] bg-flate p-[13px] text-left ${
         anbefalt ? "border-aksent" : "border-strek"
       }`}
+      style={anbefalt ? { boxShadow: "var(--anbefalt-glod)" } : undefined}
     >
       {anbefalt && (
         <Pill variant="aksent" className="absolute -top-2 right-3">

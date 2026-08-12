@@ -32,6 +32,11 @@
   --gull: #a8781c;
   --gull-bg: #f6efdd;
 
+  /* Dybdesignaler som kun trengs i mørk modus (MEDHOLD_MORK_MODUS_FIKS
+     §2/§4) — `none` i lys modus holder den pikselidentisk. */
+  --kort-skygge: none;
+  --anbefalt-glod: none;
+
   --background: var(--bakgrunn);
   --foreground: var(--blekk);
 
@@ -44,8 +49,8 @@
  * alle skjermer bruker disse variablene, så hele appen følger med.
  */
 .mork {
-  --bakgrunn: #121a1b;
-  --flate: #1b2527;
+  --bakgrunn: #0d1315;
+  --flate: #212e30;
   --blekk: #eceeed;
   --dempet: #94a2a1;
   --strek: #2a3639;
@@ -60,6 +65,9 @@
   --dom-rod-bg: #3a2420;
   --gull: #d9b25e;
   --gull-bg: #35301f;
+
+  --kort-skygge: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 20px rgba(0, 0, 0, 0.28);
+  --anbefalt-glod: 0 0 0 1px var(--aksent-dyp) inset, 0 8px 24px rgba(122, 176, 224, 0.18);
 
   color-scheme: dark;
 }
