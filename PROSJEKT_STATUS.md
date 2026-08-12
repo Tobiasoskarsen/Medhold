@@ -31,6 +31,39 @@ etter hver fase.
 | Ny bunnnav | Flytende pille-navigasjon + hevet midtknapp til «Legg til brev» (på forespørsel, mockup) | ✅ Ferdig |
 | Saksliste — vis flere | Flat aktiv-liste viser 4, «Vis X til»-knapp avslører resten med stagget inntreden (på forespørsel, mockup) | ✅ Ferdig |
 | Saksliste — vis færre | Samme knapp toveis: kan skjule de avslørte kortene igjen (på forespørsel, oppfølging) | ✅ Ferdig |
+| Sakens gang — lukke-retning | La til Y-glid på lukk/åpne så lukkingen leses som «opp», ikke «ned» (brukertilbakemelding) | ⚠️ Fikset i kode, IKKE visuelt bekreftet denne økten |
+
+---
+
+## Sakens gang — lukke-retning (på brukerens forespørsel: «lukk»-bevegelsen så feil ut)
+
+Brukeren rapporterte at motion-effekten ved trykk på «Skjul» (den lukkbare
+«Sakens gang»-seksjonen, ikke saksliste-knappene over) gikk «nedover» og
+burde gå «andre veien» for å se smooth ut.
+
+- **`SakensGangSeksjon.tsx`:** `m.div`-en som åpner/lukker fikk et nytt,
+  lite `y`-element i alle tre tilstander — `initial`/`exit`: `y: -8`,
+  `animate`: `y: 0` — i tillegg til den eksisterende høyde/opasitet-
+  mekanikken (uendret ellers, samme `VARIGHET.rolig`/`EASING`-tokens som
+  Utvidbar/Utregning/Veivalg). Effekten: innholdet glir svakt NEDOVER når
+  det åpnes (naturlig — det «folder ut» fra overskriften) og svakt OPPOVER
+  når det lukkes (leses som «trekkes tilbake inn i overskriften»), i stedet
+  for en ren høyde-krymping uten retning.
+- `npm run build`/`lint`/`test` (153 tester) grønne.
+
+⚠️ **IKKE visuelt bekreftet denne økten.** Forsøkte å reprodusere/måle det
+rapporterte problemet i browser-panelet (samme midlertidige debug-rute-
+mønster som før), men panelet kompositerte ikke frames i denne økten (samme
+klasse begrensning som tidligere økter har notert for skjermdump/rAF —
+`requestAnimationFrame` fyrte aldri, og direkte DOM-avlesning rett etter et
+programmatisk klikk viste alltid den FERDIGE sluttilstanden uten synlige
+mellomsteg, uansett hvor kort tid som var gått). Fikset basert på kode-
+resonnement (identifiserte at verken høyde/opasitet-mekanikken eller noe i
+`Tidslinje`/`TidslinjeHendelse` hadde noen eksplisitt retningsangivelse i
+det hele tatt — la til en, som en velprøvd, standard løsning på akkurat
+denne klassen tilbakemelding) — IKKE en bekreftet visuell reproduksjon av
+den eksakte feilen. **Anbefaling: se etter at lukkingen nå faktisk ser
+riktig ut på ekte enhet før denne krysses av som ferdig verifisert.**
 
 ---
 
