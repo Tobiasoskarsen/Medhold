@@ -29,6 +29,54 @@ etter hver fase.
 | Mørk modus-fiks | Kontrast/skygge/ring-farge/anbefalt-glød + kollapsbar «Sakens gang» (egen ordre + på forespørsel) | ✅ Ferdig |
 | Sakens gang-korrigering | «Sakens gang» lukket som standard (erstatter forrige økts «4 synlige + vis mer»-variant) | ✅ Ferdig |
 | Ny bunnnav | Flytende pille-navigasjon + hevet midtknapp til «Legg til brev» (på forespørsel, mockup) | ✅ Ferdig |
+| Saksliste — vis flere | Flat aktiv-liste viser 4, «Vis X til»-knapp avslører resten med stagget inntreden (på forespørsel, mockup) | ✅ Ferdig |
+
+---
+
+## Saksliste — «vis flere» på den flate aktiv-listen (på brukerens forespørsel, mockup-drevet)
+
+Bygget etter en levert, interaktiv mockup: den flate aktiv-listen (brukt når
+`aktive.length ≤ GRUPPERING_TERSKEL`, altså UNDER grense for den grupperte
+visningen fra en tidligere økt) viste hittil ALLE aktive saker rett ut.
+Mockupen viser i stedet 4 kort + en stiplet «Vis X til»-knapp som avslører
+resten, med en stagget inn-toning på de nyavslørte kortene.
+
+- **`src/app/(app)/krav/AktivSaksliste.tsx`** (ny, client): samme grunnidé
+  som den allerede eksisterende `AvsluttedeListe.tsx` (§Sakslisteordre),
+  men EGEN komponent i stedet for gjenbruk — knappestilen er bevisst
+  forskjellig (stiplet boks her vs. AvsluttedeListes rene tekstlenke, ulik
+  synlig-terskel: 4 her mot 5 der), og denne mockupen ba eksplisitt om en
+  stagget inntreden-animasjon på de nyavslørte kortene, som
+  `AvsluttedeListe` ikke har. Ikke nok delt logikk (én `useState`+`.slice()`)
+  til å rettferdiggjøre en delt abstraksjon på tvers av to visuelt
+  forskjellige knapper.
+- Nyavslørte kort (`m.li`) toner inn med appens EKSISTERENDE
+  `INNTREDEN`/`STIGRING`/`VARIGHET.normal`/`EASING`-tokens (samme mønster
+  som Tidslinje/Sekvens bruker) — ingen nye bevegelsesverdier. Allerede
+  synlige kort animerer ALDRI på nytt ved utvidelse (`initial={false}` for
+  dem, kun de nye indeksene får `initial=INNTREDEN.initial`).
+- **`krav/page.tsx`:** den tidligere inline `<ul>`-mappingen i
+  `!brukGruppering`-grenen erstattet med `<AktivSaksliste
+  saker={aktiveSortert.map(kortData)} />`. Ubrukt `Kravkort`-import fjernet
+  (siste direkte bruk i denne filen).
+- `npm run build`/`lint`/`test` (153 tester) grønne. Verifisert i browser
+  (midlertidig debug-rute, fjernet igjen): 6 syntetiske saker → 4 synlige +
+  «Vis 2 til», klikk avslører alle 6 og knappen forsvinner, ingen
+  konsollfeil, ingen horisontal overflow ved 375px. Knappens stil
+  (`getComputedStyle`) bekreftet å bruke appens FAKTISKE `--strek`/
+  `--dempet`-tokens (ikke mockupens tilnærmede hex-verdier, som avvek
+  litt fra de allerede etablerte tokens).
+
+Valg tatt underveis:
+
+1. **`SYNLIG_UTEN_UTVIDELSE = 4`** — hentet direkte fra mockupens eget
+   eksempel (4 synlige + «Vis 2 til» ved 6 totalt), ikke en vilkårlig ny
+   terskel.
+2. **Ingen endring i `AvsluttedeListe.tsx`** selv om de to «vis flere»-
+   mønstrene nå ser litt forskjellige ut (stiplet boks vs. tekstlenke,
+   animert vs. instant): ikke bedt om, og de to listene tjener ulike formål
+   (aktive saker krever handling, avsluttede er arkiv) — bevisst ikke
+   forsøkt harmonisert i denne økten.
 
 ---
 

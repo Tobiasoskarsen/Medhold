@@ -2,7 +2,7 @@ import { NavLenke as Link } from "@/components/NavLenke";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp, Trapp, Sekvens, SekvensDel } from "@/components/ui";
-import { Kravkort } from "./Kravkort";
+import { AktivSaksliste } from "./AktivSaksliste";
 import { AvsluttedeListe } from "./AvsluttedeListe";
 import { GruppertSaksliste, type Gruppe, type GruppeRad } from "./GruppertSaksliste";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
@@ -233,13 +233,7 @@ export default async function KravListePage() {
                 antallKreditorer={antallKreditorer}
               />
             ) : (
-              <ul className="flex flex-col gap-2.5">
-                {aktiveSortert.map((sak) => (
-                  <li key={sak.id}>
-                    <Kravkort {...kortData(sak)} />
-                  </li>
-                ))}
-              </ul>
+              <AktivSaksliste saker={aktiveSortert.map(kortData)} />
             )}
           </div>
         </SekvensDel>
