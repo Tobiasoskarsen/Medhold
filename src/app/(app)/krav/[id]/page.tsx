@@ -56,6 +56,10 @@ import type { ReactNode } from "react";
 import { KravMeny } from "./KravMeny";
 import { LostNode } from "./LostNode";
 import { MarkerSendtKnapp } from "./MarkerSendtKnapp";
+import { SeMerTidslinje } from "./SeMerTidslinje";
+
+/** Antall «sakens gang»-hendelser vist før «Vis X til»-raden. */
+const SAKENS_GANG_SYNLIG = 4;
 
 type BrevRad = {
   id: string;
@@ -571,55 +575,69 @@ export default async function KravDetaljPage({
                 })()}
               </TidslinjeHendelse>
             )}
-            {items.map((item, i) => {
-              const kjerne = (
-                <>
-                  <p className="text-[14.5px] font-semibold text-blekk">
-                    {item.tittel}
-                  </p>
-                  {item.tekst && (
-                    <p className="mt-0.5 text-[13px] leading-snug text-dempet">
-                      {item.tekst}
+            {(() => {
+              const hendelser = items.map((item, i) => {
+                const kjerne = (
+                  <>
+                    <p className="text-[14.5px] font-semibold text-blekk">
+                      {item.tittel}
                     </p>
-                  )}
-                  {item.fristPill && (
-                    <span className="mt-1.5 inline-block rounded-full bg-varsel-bg px-2 py-1 text-[11px] font-medium text-varsel-tekst">
-                      {item.fristPill}
-                    </span>
-                  )}
-                  {item.chip && (
-                    <span className="mt-1.5 inline-block rounded-full bg-aksent/10 px-3 py-1 text-[12px] font-semibold text-aksent-dyp">
-                      {item.chip}
-                    </span>
+                    {item.tekst && (
+                      <p className="mt-0.5 text-[13px] leading-snug text-dempet">
+                        {item.tekst}
+                      </p>
+                    )}
+                    {item.fristPill && (
+                      <span className="mt-1.5 inline-block rounded-full bg-varsel-bg px-2 py-1 text-[11px] font-medium text-varsel-tekst">
+                        {item.fristPill}
+                      </span>
+                    )}
+                    {item.chip && (
+                      <span className="mt-1.5 inline-block rounded-full bg-aksent/10 px-3 py-1 text-[12px] font-semibold text-aksent-dyp">
+                        {item.chip}
+                      </span>
+                    )}
+                  </>
+                );
+                const innhold = item.fremhevet ? (
+                  <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
+                    {kjerne}
+                  </div>
+                ) : (
+                  kjerne
+                );
+                return (
+                  <TidslinjeHendelse
+                    key={item.key}
+                    dato={formaterKortDato(item.datoISO)}
+                    fremhevet={item.fremhevet}
+                    variant={item.variant}
+                    sisteHendelse={i === items.length - 1}
+                  >
+                    {item.href ? (
+                      <Link href={item.href} className="trykk block hover:opacity-80">
+                        {innhold}
+                      </Link>
+                    ) : (
+                      innhold
+                    )}
+                    {item.ekstra}
+                  </TidslinjeHendelse>
+                );
+              });
+              const synlige = hendelser.slice(0, SAKENS_GANG_SYNLIG);
+              const skjulte = hendelser.slice(SAKENS_GANG_SYNLIG);
+              return (
+                <>
+                  {synlige}
+                  {skjulte.length > 0 && (
+                    <SeMerTidslinje antall={skjulte.length}>
+                      {skjulte}
+                    </SeMerTidslinje>
                   )}
                 </>
               );
-              const innhold = item.fremhevet ? (
-                <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
-                  {kjerne}
-                </div>
-              ) : (
-                kjerne
-              );
-              return (
-                <TidslinjeHendelse
-                  key={item.key}
-                  dato={formaterKortDato(item.datoISO)}
-                  fremhevet={item.fremhevet}
-                  variant={item.variant}
-                  sisteHendelse={i === items.length - 1}
-                >
-                  {item.href ? (
-                    <Link href={item.href} className="trykk block hover:opacity-80">
-                      {innhold}
-                    </Link>
-                  ) : (
-                    innhold
-                  )}
-                  {item.ekstra}
-                </TidslinjeHendelse>
-              );
-            })}
+            })()}
           </Tidslinje>
         )}
       </div>

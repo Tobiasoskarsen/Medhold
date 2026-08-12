@@ -55,7 +55,11 @@ export function Fremgangsring({
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={omkrets}
-          className="text-aksent"
+          // aksent-dyp (ikke aksent): appens emfase-token i begge temaer —
+          // mørkere i lys modus, lysere i mørk modus. Riktig for et dekorativt
+          // fremgangselement uten hvit tekst oppå, i motsetning til
+          // primærknapper som fortsatt bruker aksent for kontrast mot hvitt.
+          className="text-aksent-dyp"
           transform={`rotate(-90 ${midt} ${midt})`}
           initial={{ strokeDashoffset: omkrets }}
           animate={{ strokeDashoffset: omkrets * (1 - klippet) }}
