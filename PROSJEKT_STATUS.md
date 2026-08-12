@@ -30,6 +30,29 @@ etter hver fase.
 | Sakens gang-korrigering | «Sakens gang» lukket som standard (erstatter forrige økts «4 synlige + vis mer»-variant) | ✅ Ferdig |
 | Ny bunnnav | Flytende pille-navigasjon + hevet midtknapp til «Legg til brev» (på forespørsel, mockup) | ✅ Ferdig |
 | Saksliste — vis flere | Flat aktiv-liste viser 4, «Vis X til»-knapp avslører resten med stagget inntreden (på forespørsel, mockup) | ✅ Ferdig |
+| Saksliste — vis færre | Samme knapp toveis: kan skjule de avslørte kortene igjen (på forespørsel, oppfølging) | ✅ Ferdig |
+
+---
+
+## Saksliste — «vis færre» igjen (på brukerens forespørsel, rett etter forrige økt)
+
+Forrige økts «Vis X til»-knapp var IKKE reversibel — når alle kortene var
+avslørt, forsvant knappen for godt (samme ett-veis mønster som den
+eksisterende `AvsluttedeListe.tsx`). Brukeren ba eksplisitt om å kunne
+skjule dem igjen også.
+
+- **`AktivSaksliste.tsx`:** knappen fjernes ikke lenger etter klikk — den
+  veksler nå `visAlle` med `setVisAlle((v) => !v)` og bytter tekst mellom
+  «Vis X til» og «Vis færre». Listen er pakket i `<AnimatePresence>` (rundt
+  `.map()`-utdataen, `<ul>` selv er uendret) slik at de fire FASTE kortene
+  aldri kan få en `exit`-animasjon (kun `initial={false}`, ingen `exit`-prop
+  — de er alltid i DOM-en), mens de «ekstra» kortene (indeks ≥ 4) får
+  `exit={INNTREDEN.initial}` (samme opasitet+y-form som inntredenen, i
+  revers) når de fjernes fra `synlige`-arrayet ved kollaps.
+- `npm run build`/`lint`/`test` (153 tester) grønne. Verifisert i browser
+  (samme midlertidige debug-rute-mønster, fjernet igjen): «Vis 2 til» →
+  alle 6 synlige + knapp blir «Vis færre» → klikk igjen → tilbake til 4
+  synlige + «Vis 2 til» gjenopprettet, ingen konsollfeil.
 
 ---
 
