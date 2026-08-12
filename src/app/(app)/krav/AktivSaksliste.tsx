@@ -7,14 +7,22 @@ import { Kravkort } from "./Kravkort";
 
 const SYNLIG_UTEN_UTVIDELSE = 4;
 
+// Skjulte kort skal IKKE bruke INNTREDEN.initial (y: 8, altså NEDOVER) som
+// sitt exit-mål — det ville fått kortene til å falle nedover idet de
+// forsvinner, motsatt av den oppadgående «trekkes tilbake inn i lista»-
+// følelsen en kollaps skal ha (brukertilbakemelding). Egen, eksplisitt
+// oppover-rettet exit-tilstand i stedet for å gjenbruke inntreden-formen.
+const SKJUL_EXIT = { opacity: 0, y: -8 } as const;
+
 /**
  * Den flate, ugrupperte aktiv-listen (under GRUPPERING_TERSKEL): viser de 4
  * første (nærmeste frist/nyest, allerede sortert av kalleren), med en
  * dempet, stiplet knapp som veksler resten av og på (ny saksliste-mockup +
  * brukerens oppfølging om å kunne skjule igjen). Nyavslørte kort toner inn
- * stagget med appens INNTREDEN/STIGRING-tokens; skjulte kort toner ut med
- * samme form i revers. Allerede synlige kort animerer aldri på nytt ved
- * (ut)utvidelse — kun de fire første er alltid `initial={false}`.
+ * stagget med appens INNTREDEN/STIGRING-tokens (nedenfra og opp); skjulte
+ * kort toner ut oppover (SKJUL_EXIT), samme retning som inntredenen endte i
+ * — ikke en reversering av den. Allerede synlige kort animerer aldri på
+ * nytt ved (ut)utvidelse — kun de fire første er alltid `initial={false}`.
  */
 export function AktivSaksliste({
   saker,
@@ -36,7 +44,7 @@ export function AktivSaksliste({
                 key={sak.id}
                 initial={utenforFasteFire ? INNTREDEN.initial : false}
                 animate={INNTREDEN.animate}
-                exit={utenforFasteFire ? INNTREDEN.initial : undefined}
+                exit={utenforFasteFire ? SKJUL_EXIT : undefined}
                 transition={{
                   duration: VARIGHET.normal,
                   ease: EASING,

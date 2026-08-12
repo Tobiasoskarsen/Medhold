@@ -32,6 +32,41 @@ etter hver fase.
 | Saksliste — vis flere | Flat aktiv-liste viser 4, «Vis X til»-knapp avslører resten med stagget inntreden (på forespørsel, mockup) | ✅ Ferdig |
 | Saksliste — vis færre | Samme knapp toveis: kan skjule de avslørte kortene igjen (på forespørsel, oppfølging) | ✅ Ferdig |
 | Sakens gang — lukke-retning | La til Y-glid på lukk/åpne så lukkingen leses som «opp», ikke «ned» (brukertilbakemelding) | ⚠️ Fikset i kode, IKKE visuelt bekreftet denne økten |
+| Saksliste vis færre — retning | Skjul-exiten falt NEDOVER (feil gjenbruk av inntreden-verdien); fikset til å gå oppover (brukertilbakemelding) | ⚠️ Fikset i kode, IKKE visuelt bekreftet denne økten |
+
+---
+
+## Saksliste vis færre — retning (på brukerens forespørsel: rett etter forrige fiks)
+
+Samme klasse tilbakemelding som forrige fiks («Sakens gang»), men på en
+ANNEN komponent — brukeren nevnte eksplisitt knappeteksten «vis færre»,
+som kun finnes på `AktivSaksliste.tsx` (saksliste-siden), IKKE på
+`SakensGangSeksjon.tsx` (som bruker «Skjul»). Denne gangen er årsaken
+konkret identifisert i koden, ikke bare resonnert frem:
+
+- **`AktivSaksliste.tsx`:** de «ekstra» kortenes `exit`-prop gjenbrukte
+  `INNTREDEN.initial` (`{ opacity: 0, y: 8 }`, POSITIV y — det samme
+  tallet inntredenen starter FRA når kortene dukker opp nedenfra). Brukt
+  som exit-MÅL betyr det at kortene beveger seg NEDOVER (y: 0 → 8) idet de
+  forsvinner — nøyaktig symptomet som ble rapportert. Ny, eksplisitt
+  `SKJUL_EXIT = { opacity: 0, y: -8 }` (NEGATIV y) i stedet — kortene
+  glir nå oppover og fader ut, samme retning som resten av bevegelsen
+  (inntredenen ENDER i y:0, exiten fortsetter videre oppover derfra, i
+  stedet for å hoppe tilbake til startpunktet og forbi det motsatt vei).
+- `npm run build`/`lint`/`test` (153 tester) grønne.
+
+⚠️ **IKKE visuelt bekreftet denne økten** — samme miljøbegrensning som
+forrige fiks (Browser-panelet kompositerte ikke frames). Denne gangen ble
+det i tillegg konkret bekreftet AT begrensningen gjelder: et element som
+skulle vært fullt synlig (`opacity:1`) etter en fullført inntreden-
+animasjon viste seg fortsatt å stå fastlåst på sin `initial`-verdi
+(`opacity:0; transform:translateY(8px)`) ved DOM-inspeksjon — motion-
+overgangene resolver rett og slett ALDRI til sin `animate`-tilstand i
+dette miljøet (ingen `requestAnimationFrame` kjører), så INGEN CSS-basert
+verifisering av retning/timing er mulig her, uansett komponent. Denne
+fiksen er likevel høy-konfidens: årsaken er en direkte, mekanisk
+identifiserbar feil (feil fortegn på en gjenbrukt konstant), ikke en
+antakelse om hva som er galt. **Anbefaling: bekreft på ekte enhet.**
 
 ---
 
