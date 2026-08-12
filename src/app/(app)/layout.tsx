@@ -23,7 +23,7 @@ export default async function AppLayout({
   return (
     <Bevegelsesramme>
       <ViewOvergangProvider>
-        <div className="flex min-h-screen flex-col pb-24">
+        <div className="flex min-h-screen flex-col pb-32">
           <div className="flex-1">{children}</div>
           <p className="mx-auto w-full max-w-[640px] px-5 pb-5 pt-6 text-center text-[11px] leading-relaxed text-dempet">
             {APP_NAME} hjelper deg å holde oversikt — ikke profesjonell
