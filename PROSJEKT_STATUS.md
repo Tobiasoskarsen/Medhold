@@ -27,6 +27,38 @@ etter hver fase.
 | Hovedstol-konsistens | Varsler når hovedstolen endrer seg mellom brev i samme sak (egen ordre) | ✅ Ferdig (migrasjon 0022 IKKE kjørt ennå) |
 | Designretning 2 — bento | Bento-grid, fremgangsring og delbart resultatkort (på forespørsel, tre mockups) | ✅ Ferdig |
 | Mørk modus-fiks | Kontrast/skygge/ring-farge/anbefalt-glød + kollapsbar «Sakens gang» (egen ordre + på forespørsel) | ✅ Ferdig |
+| Sakens gang-korrigering | «Sakens gang» lukket som standard (erstatter forrige økts «4 synlige + vis mer»-variant) | ✅ Ferdig |
+
+---
+
+## Sakens gang-korrigering (på brukerens forespørsel, rett etter forrige økt)
+
+Forrige økts «Sakens gang»-kollaps (4 nyeste hendelser synlige, en «Vis X
+til»-rad avslører resten) traff ikke det brukeren faktisk ba om — bekreftet
+ved en oppklarende spørsmål i chat: hele seksjonen skal være LUKKET som
+standard, med ÉTT trykk som åpner/utvider hele lista, ikke en delvis
+«last mer»-liste hvor de nyeste alltid ligger synlige. (Trolig usynlig i
+praksis for mange saker uansett — de fleste saker har ≤4 hendelser totalt,
+så «Vis X til»-raden vist sjelden.)
+
+- **`SeMerTidslinje.tsx` slettet**, erstattet av **`SakensGangSeksjon.tsx`**
+  (ny, client, samme mappe): selve `<h2>Sakens gang</h2>`-overskriften er nå
+  EN `<button>` inni `<h2>` (WAI-ARIA-disclosure-mønsteret — bevarer
+  heading-landemerket for skjermlesere, samtidig som hele raden er
+  trykkbar). Lukket viser kun overskriften + en liten hint
+  («Vis 6 hendelser») + en `ChevronDown` som roterer 180° ved åpning. Åpen
+  viser HELE `Tidslinje` (ingen delvis liste lenger — `items.map` er tilbake
+  til sin opprinnelige, ukuttede form).
+- **`krav/[id]/page.tsx`:** `SAKENS_GANG_SYNLIG`-konstanten og
+  slice-logikken fjernet. `SakensGangSeksjon` får et `antall`-tall
+  (`items.length` + 1 for oppfølging + 1 for lost-node, når til stede) til
+  hint-teksten. Tomme saker (ingen hendelser i det hele tatt) beholder sin
+  egen, ukollapsede gren — «Ingen hendelser ennå»-meldingen er alltid synlig
+  direkte, kollaps gir ingen mening der.
+- `npm run build`/`lint`/`test` (153 tester) grønne. Verifisert i browser
+  (samme midlertidige debug-rute-mønster, fjernet igjen): lukket som
+  standard med korrekt hint-tall, ett klikk åpner og viser alle hendelser,
+  knappeteksten bytter til «Skjul».
 
 ---
 
