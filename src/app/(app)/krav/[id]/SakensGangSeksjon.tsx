@@ -11,7 +11,11 @@ import { VARIGHET, EASING } from "@/lib/bevegelse";
  * ikke en fristilt knapp under). Antallet hendelser vises som en liten hint
  * ved siden av pilen slik at man ser om det er noe å hente uten å åpne.
  * Samme høyde/opasitet-mekanikk og VARIGHET.rolig/EASING-tokens som
- * Utvidbar/Utregning/Veivalg. `children` er allerede ferdig rendret av
+ * Utvidbar/Utregning/Veivalg, med ett tillegg: innholdet glir også noen px
+ * i Y — NED ved åpning, OPP ved lukking — så lukkingen tydelig leses som
+ * «trekkes tilbake opp mot overskriften», ikke bare en høyde-krymping uten
+ * retning (brukertilbakemelding: uten dette lignet lukkingen på bevegelse
+ * NEDOVER i stedet for oppover). `children` er allerede ferdig rendret av
  * kalleren (Server Component) — trygt over server→klient-grensen, samme
  * mønster som Tidslinje/SekvensDel selv bruker.
  */
@@ -53,9 +57,9 @@ export function SakensGangSeksjon({
         {åpen && (
           <m.div
             key="sakens-gang-innhold"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0, opacity: 0, y: -8 }}
+            animate={{ height: "auto", opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: -8 }}
             transition={{ duration: VARIGHET.rolig, ease: EASING }}
             style={{ overflow: "hidden" }}
           >
