@@ -34,6 +34,29 @@ export const STADIUM_ETIKETT: Record<Stadium, string> = {
   avsluttet: "avsluttet",
 };
 
+/** De fire trinn-etikettene i Trapp/StadiumRing (eskaleringens hovedsteg). */
+export const TRAPP_ETIKETTER = ["Varsel", "Oppfordring", "Forliksråd", "Namsmann"] as const;
+
+/** Hvilket av de fire trinnene som er «nå» (1–4). Tidlige stadier og selve
+ *  inkassovarselet ligger på trinn 1; nedbetaling/avsluttet på siste. Delt
+ *  mellom Trapp (søyler) og StadiumRing (sirkel, bento sak-detalj). */
+export function trappTrinn(stadium: Stadium): number {
+  switch (stadium) {
+    case "faktura":
+    case "purring":
+    case "inkassovarsel":
+      return 1;
+    case "betalingsoppfordring":
+      return 2;
+    case "forliksrad":
+      return 3;
+    case "namsmann":
+    case "nedbetaling":
+    case "avsluttet":
+      return 4;
+  }
+}
+
 /**
  * De fem segmentene i StadiumIndikator (3.3). Det siste segmentet dekker
  * både forliksråd og namsmann. Returnerer antall fylte segmenter (1–5).

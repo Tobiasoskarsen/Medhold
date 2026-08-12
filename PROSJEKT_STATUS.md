@@ -25,6 +25,150 @@ etter hver fase.
 | AI-fart | Modelloppgradering (Sonnet 5/Haiku 4.5) + streaming utkastgenerering (egen ordre) | ✅ Ferdig |
 | Gruppert saksliste | Kravlisten gruppert på kreditor over 10 aktive saker (på forespørsel, mockup) | ✅ Ferdig |
 | Hovedstol-konsistens | Varsler når hovedstolen endrer seg mellom brev i samme sak (egen ordre) | ✅ Ferdig (migrasjon 0022 IKKE kjørt ennå) |
+| Designretning 2 — bento | Bento-grid, fremgangsring og delbart resultatkort (på forespørsel, tre mockups) | ✅ Ferdig |
+
+---
+
+## Designretning 2 — bento, ring, delbart kort (på brukerens forespørsel, mockup-drevet)
+
+Bygget etter tre lokale mockup-filer (`medhold_designretning2_mockup_1.html` +
+`medhold_sak_bento_mockup.html`, levert som lokale filer — samme
+«mockup er visuell fasit»-mønster som Gruppert saksliste). Tre uavhengige
+leveranser: bento-Hjem, et delbart resultatkort, og sak-detalj i bento-stil.
+
+**Hjem i bento-stil:**
+
+- **`src/components/ui/Fremgangsring.tsx`** (ny): gjenbrukbar sirkulær
+  fremgangsindikator (SVG, fylles fra tom til `fraction` én gang ved mount,
+  samme «fyll ved mount»-prinsipp som `StadiumIndikator`/`Trapp`).
+  `text-strek`/`text-aksent` + `stroke="currentColor"` — ingen nye farger.
+  Tar valgfrie `children`, sentrert oppå ringen.
+- **Hjem (`src/app/(app)/page.tsx`):** ny «reisen din»-metrikk
+  (`reiseFraction = antallAvsluttet / totalSaker`, ren avledning av
+  eksisterende tall — ingen ny sporing). Den gamle 3-veis stat-`Kort`-raden
+  erstattet med et bento-grid: ringen (spenner to rader) + inntil to
+  statplater (samlet aktivt krav, funnet over sats — begge betinget),
+  med egen håndtering for 0/1/2 statplater (`col-span-2`/`row-span-2` etter
+  antall). «Normal»-grenens header ble en horisontal hero-rad
+  (kreditor+beløp venstre, frist-pille høyre) — resten av kortet
+  (handlingstittel/Trapp/gebyr-hint/CTA) er uendret under. Gull-seierbanneret
+  er nå en klikkbar lenke til `/krav/{id}/del`.
+
+**Delbart resultatkort:**
+
+- **`src/app/(app)/krav/[id]/del/page.tsx`** (ny): auth+eierskap-sjekk, vises
+  KUN når `status==='fullfort' && utfall==='medhold'` (samme «seier»-
+  definisjon som Hjem). Viser en `<img>`-forhåndsvisning av det genererte
+  bildet + `DelKnapp`.
+- **`DelKnapp.tsx`** (ny, client): Web Share API med selve bildet som
+  vedlegg (mobil), faller tilbake til direkte nedlasting (desktop). Avbrutt
+  deling tvinger IKKE frem nedlasting.
+- **`del/bilde/route.tsx`** (ny — `.tsx` fordi den bruker `ImageResponse`,
+  samme mønster som `opengraph-image.tsx`): autentisert GET, henter sak +
+  nyeste brevs gebyrsjekk, regner ut «over sats»-differansen, genererer et
+  1080×1920 story-format PNG. Viser aldri et oppdiktet tall — «kravet ble
+  frafalt» uten beløp hvis det ikke finnes et lagret gebyrfunn. Bevisst
+  INGEN kreditornavn/sak-detaljer i selve bildet (personvern — trygt å dele
+  videre).
+
+**Sak-detalj i bento-stil (`src/app/(app)/krav/[id]/page.tsx`):**
+
+- **`StadiumRing.tsx`** (ny, `src/components/ui/`): bento-tile-erstatning
+  for `Trapp` på DENNE ene siden — samme fire trinn (Varsel → Oppfordring →
+  Forliksråd → Namsmann) som en fylt `Fremgangsring` («2/4» inni ringen) i
+  stedet for stigende søyler, med «Steg X av 4» + stadienavnet under. `Trapp`
+  selv er UENDRET og fortsatt i bruk (kompakt) på Hjem og saksliste.
+- **`lib/gjeld.ts`** fikk `TRAPP_ETIKETTER` og `trappTrinn()` flyttet inn fra
+  `Trapp.tsx` (delt, ren logikk — se «Valg» under for hvorfor dette var
+  nødvendig, ikke bare en opprydding).
+- **`Nedtelling.tsx`** omgjort fra en horisontal rad (dato venstre, tall
+  høyre) til en vertikal bento-tile (dato+tittel øverst, stort tall under) —
+  trygt fordi grep bekreftet komponenten KUN brukes på denne ene siden.
+  Rendres nå side om side med `StadiumRing` i et 2-kolonners grid; gridet
+  faller tilbake til én kolonne når bare én av de to finnes (`stadium` eller
+  `nesteFrist` mangler) — ingen tom halvcelle.
+- **`Veivalg.tsx`** sine to valgkort gikk fra en stablet, horisontal
+  rad-layout (ikon+tekst+chevron i én linje) til to kort SIDE VED SIDE, hvert
+  med ikonet øverst og teksten under (mockupens layout) — chevronen fjernet
+  (hele kortet er allerede trykkbart). Komponenten er DELT med
+  `legg-til-brev` steg 3 — samme visuelle endring gjelder der også, ingen ny
+  variant-prop trengs (samme 390px-rammebredde begge steder).
+- `DomMini`/`DomMiniFrist`, `Tidslinje`, `Alvorsvarsel`, hovedstol-
+  avviksvarselet, «venter på svar»-kortet og `KravMeny` er alle UENDRET —
+  mockupens banner/tidslinje matchet allerede eksisterende komponenter godt
+  nok til at ingen restyling var nødvendig der.
+- `npm run build`/`lint`/`test` (153 tester) grønne.
+
+Valg tatt underveis:
+
+1. **Reell RSC-boundary-bug fanget og fikset under verifisering** (samme
+   klasse feil som Motion3- og Sakstatus-øktene tidligere har dokumentert,
+   men denne gangen ved en FUNKSJON i stedet for en komponent/prop):
+   `trappTrinn()` lå først som en vanlig eksportert funksjon i `Trapp.tsx`,
+   som har `"use client"` øverst. `StadiumRing` (en Server Component) kalte
+   `trappTrinn(stadium)` direkte — feiler i praksis
+   («Attempted to call trappTrinn() from the server but trappTrinn is on
+   the client»), fordi ALT som eksporteres fra en `"use client"`-fil blir en
+   klient-referanse når den importeres inn i serverkode, uansett om
+   eksporten faktisk er en komponent eller bare en ren funksjon.
+   `npm run build`/`lint`/`test`/`tsc` fanger IKKE dette (ren
+   modul-grense-feil, ingen typefeil) — kun synlig ved faktisk RSC-rendring.
+   Fikset ved å flytte `trappTrinn`/`TRAPP_ETIKETTER` til `lib/gjeld.ts`
+   (ingen `"use client"`, samme sted som resten av stadium-logikken bor);
+   `Trapp.tsx` importerer dem nå tilbake i stedet for å eie dem. **Lærdom,
+   samme som tidligere økter:** ren logikk som en Server Component trenger å
+   kalle direkte må aldri bo i en `"use client"`-fil, selv om den ikke
+   selv bruker noen klient-API-er — flytt den til en delt, direktivfri
+   modul.
+2. **Verifiseringsgotcha, ny i denne økten:** Browser-panelets forhåndsvisnings-
+   tjener var bundet til FEIL git-arbeidstre — en tidligere, uendret worktree
+   (`peaceful-kalam-442966`) i stedet for den denne økten faktisk jobbet i
+   (`sweet-raman-57cf8f`, dit sesjonen ble byttet via `EnterWorktree` fordi
+   forrige økts ukommitterte arbeid lå der). `preview_start` respekterer
+   tydeligvis IKKE et `EnterWorktree`-bytte — den starter fortsatt fra
+   sesjonens opprinnelige launch-katalog. Bekreftet med
+   `Get-CimInstance Win32_Process`: den kjørende node-prosessen på port 3000
+   pekte på `peaceful-kalam-442966\node_modules\next\...`. Fikset ved å
+   starte en egen `npm run dev` manuelt på port 3001 inni riktig worktree og
+   peke Browser-panelet direkte på `http://localhost:3001` (`preview_start`
+   sin `{url}`-form, ingen launch.json involvert). **Lærdom:** etter
+   `EnterWorktree`, ikke stol på at `preview_start`/launch.json-baserte
+   dev-servere kjører i den nye worktreen — verifiser prosessens faktiske
+   arbeidskatalog (`Get-CimInstance Win32_Process -Filter
+   "ProcessId=<pid>"`) før man stoler på browser-verifisering, eller start
+   dev-serveren manuelt på en alternativ port og pek panelet dit med
+   `{url}`.
+3. **Visuell verifisering gjort via en midlertidig debug-rute
+   (`/dev-bento-preview`, fjernet igjen) + et midlertidig, også reversert
+   unntak i `src/lib/supabase/middleware.ts`** (samme «bygg egen isolert
+   test-rute»-mønster som Gruppert saksliste/Sakstatus-øktene): rendret
+   `StadiumRing`/`Nedtelling`/`Veivalg`/`DomMini` med syntetiske data (ingen
+   ekte innlogget bruker eller sak nødvendig). Bekreftet strukturelt
+   (tekstinnhold, DOM) OG via computed styles (`getComputedStyle`):
+   `bg-flate`/`border-strek`/`rounded-2xl` løser korrekt i mørk modus, de to
+   bento-kortene får identisk bredde i 2-kolonners gridet, ingen horisontal
+   overflow ved 375px mobilbredde. **Ekte skjermdump (`computer
+   {action:"screenshot"}`) var IKKE tilgjengelig denne økten** («the Browser
+   pane is not displayed, so the page is not compositing frames») — samme
+   klasse begrensning som tidligere økter har notert for
+   compositing/hydrering, men denne gangen spesifikt for selve
+   skjermdump-funksjonen. Lys modus ble heller ikke visuelt bekreftet:
+   appens tema styres av en lagret brukerpreferanse (`Tema.tsx`,
+   localStorage), ikke av `prefers-color-scheme`, så
+   `resize_window`-verktøyets `colorScheme`-parameter endret ikke noe (siden
+   var allerede tvunget til `mork` uavhengig av OS-innstilling) — ikke en
+   bug i denne leveransen, bare et hull i denne øktens
+   verifiseringsdekning. **Anbefaling:** en rask visuell sjekk (ekte
+   skjermdump, begge temaer) neste gang noen har et Browser-panel som
+   faktisk komposiiterer.
+4. **Ring-tallet inni `StadiumRing` («2/4») er en bevisst utvidelse utover
+   selve mockupen**, som kun viste tallet under ringen (`Steg 2 av 4` +
+   stadienavn, begge utenfor sirkelen). Fulgte i stedet det etablerte
+   mønsteret fra Hjems ring (forrige leveranse i samme økt), som viser
+   tallet INNI ringen via `Fremgangsring`s `children`-prop, og teksten under
+   som en beskrivende bildetekst — konsistent med det mønsteret appen
+   allerede har for akkurat denne komponenten, fremfor å kopiere mockupens
+   bokstavelige DOM-struktur ett-til-ett på nytt.
 
 ---
 

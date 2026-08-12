@@ -8,7 +8,7 @@
 // sendes ALDRI til utkast-prompten — ren UI-tilstand.
 import { useState, type ReactNode } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { ChevronDown, ChevronRight, Check } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { Pill } from "@/components/ui";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
@@ -71,7 +71,7 @@ function VeivalgKort({
   return (
     <MålKnapp
       mål={mål}
-      className={`trykk relative flex w-full items-center gap-3 rounded-2xl border-[0.5px] bg-flate px-4 py-4 text-left ${
+      className={`trykk relative flex flex-1 flex-col gap-2 rounded-2xl border-[0.5px] bg-flate p-[13px] text-left ${
         anbefalt ? "border-aksent" : "border-strek"
       }`}
     >
@@ -81,19 +81,18 @@ function VeivalgKort({
         </Pill>
       )}
       <span
-        className={`flex size-10 shrink-0 items-center justify-center rounded-full ${ikonBg}`}
+        className={`flex size-[30px] shrink-0 items-center justify-center rounded-[9px] ${ikonBg}`}
       >
         {ikon}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-blekk">
+      <span className="min-w-0">
+        <span className="block text-[13px] font-semibold leading-tight text-blekk">
           {tittel}
         </span>
-        <span className="mt-0.5 block text-[12px] leading-snug text-dempet">
+        <span className="mt-0.5 block text-[11px] leading-snug text-dempet">
           {undertekst}
         </span>
       </span>
-      <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
     </MålKnapp>
   );
 }
@@ -186,7 +185,7 @@ export function Veivalg({
         fra.
       </p>
 
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="mt-4 flex gap-2.5">
         <VeivalgKort
           ikon={
             <span className="font-serif text-[17px] font-semibold text-dom-rod">

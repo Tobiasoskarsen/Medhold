@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { createClient } from "@/lib/supabase/server";
+import { ChevronRight } from "lucide-react";
 import {
   Skjermramme,
   Kort,
@@ -9,6 +9,7 @@ import {
   Trapp,
   Sekvens,
   SekvensDel,
+  Fremgangsring,
 } from "@/components/ui";
 import { FristChip } from "./FristChip";
 import { formaterKortDato, fristNærhet } from "@/lib/dato";
@@ -173,6 +174,12 @@ export default async function HjemPage() {
     gebyrsjekk: gebyrsjekkPerSak.get(s.id) ?? null,
   }));
   const oversikt = beregnOversikt(sakOppsummeringer);
+  // «Reisen din» (designretning 2): andel av ALLE saker (aktive + avsluttede)
+  // som er løst — ikke tidligere et tall appen viste. Ren avledning av tall
+  // appen allerede har (saker.length, oversikt.antallAvsluttet), ingen ny
+  // datakilde.
+  const totalSaker = saker.length;
+  const reiseFraction = totalSaker > 0 ? oversikt.antallAvsluttet / totalSaker : 0;
   const historikkLedd = [
     oversikt.antallMedhold > 0 ? `${oversikt.antallMedhold} medhold` : null,
     oversikt.antallAvtale > 0 ? `${oversikt.antallAvtale} avtaler` : null,
@@ -257,45 +264,60 @@ export default async function HjemPage() {
       </h1>
       </SekvensDel>
 
-      {oversikt.antallAktive > 0 && (
-        <SekvensDel>
-          <Kort className="mt-5">
-            <div className="flex items-stretch text-center">
-              <div className="flex-1">
-                <p className="font-serif text-[22px] font-medium tabular-nums text-blekk">
-                  {oversikt.antallAktive}
+      {totalSaker > 0 && (() => {
+        const visSamletKrav = oversikt.antallAktive > 0;
+        const visOverSats = oversikt.antallAktive > 0 && oversikt.funnetOverSats > 0;
+        const antallStatplater = [visSamletKrav, visOverSats].filter(Boolean).length;
+        return (
+          <SekvensDel>
+            <div className="mt-5 grid grid-cols-2 gap-2.5">
+              <div
+                className={`flex flex-col items-center justify-center rounded-2xl border-[0.5px] border-strek bg-flate p-4 ${
+                  antallStatplater === 0 ? "col-span-2" : "row-span-2"
+                }`}
+              >
+                <Fremgangsring fraction={reiseFraction}>
+                  <span className="font-serif text-[22px] font-semibold tabular-nums text-blekk">
+                    {oversikt.antallAvsluttet}/{totalSaker}
+                  </span>
+                </Fremgangsring>
+                <p className="mt-2 text-center text-[11px] leading-snug text-dempet">
+                  saker løst
+                  <br />
+                  på reisen din
                 </p>
-                <p className="eyebrow mt-1">aktive saker</p>
               </div>
-              <div className="w-px bg-strek" />
-              <div className="flex-1">
-                <Belop
-                  verdi={oversikt.samletKravAktive}
-                  className="font-serif text-[22px] font-medium tabular-nums text-blekk"
-                />
-                <p className="eyebrow mt-1">samlet krav</p>
-              </div>
-              {oversikt.funnetOverSats > 0 && (
-                <>
-                  <div className="w-px bg-strek" />
-                  <div className="flex-1">
-                    <Belop
-                      verdi={oversikt.funnetOverSats}
-                      className="font-serif text-[22px] font-medium tabular-nums text-dom-rod"
-                    />
-                    <p className="eyebrow mt-1">over lovlig sats</p>
-                  </div>
-                </>
+              {visSamletKrav && (
+                <div
+                  className={`flex flex-col justify-center rounded-2xl border-[0.5px] border-strek bg-flate p-3.5 ${
+                    antallStatplater === 1 ? "row-span-2" : ""
+                  }`}
+                >
+                  <Belop
+                    verdi={oversikt.samletKravAktive}
+                    className="font-serif text-[20px] font-semibold tabular-nums text-blekk"
+                  />
+                  <p className="mt-0.5 text-[11px] text-dempet">samlet aktivt krav</p>
+                </div>
+              )}
+              {visOverSats && (
+                <div className="flex flex-col justify-center rounded-2xl border-[0.5px] border-strek bg-flate p-3.5">
+                  <Belop
+                    verdi={oversikt.funnetOverSats}
+                    className="font-serif text-[20px] font-semibold tabular-nums text-dom-rod"
+                  />
+                  <p className="mt-0.5 text-[11px] text-dempet">funnet over sats</p>
+                </div>
               )}
             </div>
-          </Kort>
-          {historikkLedd.length > 0 && (
-            <p className="mt-2 text-center text-[12px] text-dempet">
-              Så langt: {historikkLedd.join(" · ")}
-            </p>
-          )}
-        </SekvensDel>
-      )}
+            {historikkLedd.length > 0 && (
+              <p className="mt-2 text-center text-[12px] text-dempet">
+                Så langt: {historikkLedd.join(" · ")}
+              </p>
+            )}
+          </SekvensDel>
+        );
+      })()}
 
       <SekvensDel>
       {!harKrav ? (
@@ -308,20 +330,24 @@ export default async function HjemPage() {
           </div>
         </Kort>
       ) : seierSak ? (
-        <div className="mt-6 flex items-center gap-3.5 rounded-2xl border-[0.5px] border-gull/40 bg-gull-bg px-4 py-4">
+        <Link
+          href={`/krav/${seierSak.id}/del`}
+          className="trykk mt-6 flex items-center gap-3.5 rounded-2xl border-[0.5px] border-gull/40 bg-gull-bg px-4 py-4 transition hover:border-gull/70"
+        >
           <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gull font-serif text-[22px] font-semibold text-white">
             ✓
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="font-serif text-[18px] font-semibold text-gull">
               Medhold.
             </p>
             <p className="mt-0.5 text-[13px] text-blekk">
               {seierSak.kreditor ?? seierSak.tittel} — kravet ble frafalt etter
-              innsigelsen din. Saken er lukket.
+              innsigelsen din. Del gjerne resultatet.
             </p>
           </div>
-        </div>
+          <ChevronRight className="size-4 shrink-0 text-gull" aria-hidden />
+        </Link>
       ) : !topSak ? (
         <Kort className="mt-6">
           <p className="text-[15px] leading-relaxed text-blekk">
@@ -386,39 +412,35 @@ export default async function HjemPage() {
               </>
             ) : (
               <>
-                {topFrist && (
-                  <FristChip>
-                    Frist {fristNærhet(topFrist.forfallsdato).toLowerCase()}
-                  </FristChip>
-                )}
-                <p className="mt-3 text-[17px] font-medium text-blekk">
+                {/* Bento-hero-rad (designretning 2): kreditor + beløp venstre,
+                    frist-pille høyre — samme FristChip/fristNærhet-tekst som
+                    før, kun omplassert. Den fulle datoen («frist 24. juli»)
+                    er ikke lenger en egen linje her — pillen dekker det
+                    samme (hvor mange dager), og datoen finnes uansett på
+                    Nedtelling-kortet på selve sak-siden. */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-dempet">
+                      {topSak?.kreditor ?? topSak?.tittel}
+                    </p>
+                    {topSak?.belop_totalt != null && (
+                      <p className="mt-0.5">
+                        <Belop
+                          verdi={topSak.belop_totalt}
+                          className="font-serif text-[28px] font-medium tracking-[-0.02em] tabular-nums text-blekk"
+                        />
+                      </p>
+                    )}
+                  </div>
+                  {topFrist && (
+                    <FristChip>
+                      Frist {fristNærhet(topFrist.forfallsdato).toLowerCase()}
+                    </FristChip>
+                  )}
+                </div>
+                <p className="mt-3 text-[15px] font-medium text-blekk">
                   {handlingstittel(topSak?.stadium ?? null)}
                 </p>
-                <p className="mt-0.5 text-[13px] text-dempet">
-                  {(() => {
-                    const deler: ReactNode[] = [];
-                    const navn = topSak?.kreditor ?? topSak?.tittel;
-                    if (navn) deler.push(navn);
-                    if (topFrist)
-                      deler.push(
-                        `frist ${formaterKortDato(topFrist.forfallsdato)}`,
-                      );
-                    return deler.map((d, i) => (
-                      <span key={i}>
-                        {i > 0 ? " · " : ""}
-                        {d}
-                      </span>
-                    ));
-                  })()}
-                </p>
-                {topSak?.belop_totalt != null && (
-                  <p className="mt-2">
-                    <Belop
-                      verdi={topSak.belop_totalt}
-                      className="font-serif text-[30px] font-medium tracking-[-0.02em] tabular-nums text-blekk"
-                    />
-                  </p>
-                )}
                 {hjemHarOverGebyr && (
                   <p className="mt-1 text-[13px] text-dempet">
                     Gebyrsjekken fant et beløp over maksimalsats — god grunn til
