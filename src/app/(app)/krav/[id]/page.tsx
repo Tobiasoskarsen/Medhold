@@ -6,7 +6,7 @@ import {
   Skjermramme,
   Kort,
   Pillknapp,
-  Trapp,
+  StadiumRing,
   Nedtelling,
   Tidslinje,
   TidslinjeHendelse,
@@ -405,22 +405,22 @@ export default async function KravDetaljPage({
       </div>
       </SekvensDel>
 
-      {stadium && (
+      {(stadium || nesteFrist) && (
         <SekvensDel>
-          <div className="mt-5">
-            <Trapp stadium={stadium} />
+          <div
+            className={`mt-5 grid gap-2.5 ${
+              stadium && nesteFrist ? "grid-cols-2" : "grid-cols-1"
+            }`}
+          >
+            {stadium && <StadiumRing stadium={stadium} />}
+            {nesteFrist && (
+              <Nedtelling
+                forfallsdato={nesteFrist.forfallsdato}
+                tittel={nesteFrist.tittel}
+              />
+            )}
           </div>
-        </SekvensDel>
-      )}
-
-      {nesteFrist && (
-        <SekvensDel>
-          <Nedtelling
-            forfallsdato={nesteFrist.forfallsdato}
-            tittel={nesteFrist.tittel}
-            className="mt-4"
-          />
-          {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
+          {nesteFrist && nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
             <Utregning
               className="mt-2"
               rader={[
@@ -447,7 +447,7 @@ export default async function KravDetaljPage({
                 ) : undefined
               }
             />
-          ) : nesteFrist.kilde !== "beregnet" ? (
+          ) : nesteFrist && nesteFrist.kilde !== "beregnet" ? (
             <p className="mt-2 text-[12px] text-dempet">
               Fristen står oppgitt i brevet.
             </p>

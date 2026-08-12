@@ -1,7 +1,7 @@
 "use client";
 
 import { m } from "motion/react";
-import type { Stadium } from "@/lib/gjeld";
+import { TRAPP_ETIKETTER, trappTrinn, type Stadium } from "@/lib/gjeld";
 import { EASING, VARIGHET, TRAPP_STIGRING } from "@/lib/bevegelse";
 import { useSekvensForsinkelse } from "./Sekvens";
 
@@ -20,28 +20,9 @@ import { useSekvensForsinkelse } from "./Sekvens";
  *
  * Presentasjon — endrer ikke gjeld-logikken (fylteSegmenter står urørt).
  */
-const ETIKETTER = ["Varsel", "Oppfordring", "Forliksråd", "Namsmann"] as const;
+const ETIKETTER = TRAPP_ETIKETTER;
 const HOYDER = ["h-[9px]", "h-[15px]", "h-[21px]", "h-[26px]"];
 const HOYDER_KOMPAKT = ["h-[8px]", "h-[13px]", "h-[18px]", "h-[22px]"];
-
-/** Hvilket av de fire trinnene som er «nå» (1–4). Tidlige stadier og selve
- *  inkassovarselet ligger på trinn 1; nedbetaling/avsluttet på siste. */
-function naaTrinn(stadium: Stadium): number {
-  switch (stadium) {
-    case "faktura":
-    case "purring":
-    case "inkassovarsel":
-      return 1;
-    case "betalingsoppfordring":
-      return 2;
-    case "forliksrad":
-      return 3;
-    case "namsmann":
-    case "nedbetaling":
-    case "avsluttet":
-      return 4;
-  }
-}
 
 export function Trapp({
   stadium,
@@ -50,7 +31,7 @@ export function Trapp({
   stadium: Stadium;
   kompakt?: boolean;
 }) {
-  const naa = naaTrinn(stadium);
+  const naa = trappTrinn(stadium);
   const hoyder = kompakt ? HOYDER_KOMPAKT : HOYDER;
   const kjedet = useSekvensForsinkelse();
 

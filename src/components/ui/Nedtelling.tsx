@@ -15,9 +15,9 @@ function langDato(iso: string): string {
 }
 
 /**
- * Nedtelling — fristkort: dato i serif venstre + hva fristen gjelder, antall
- * dager i stor serif høyre. Tallet er `dom-rod` KUN når ≤10 dager gjenstår
- * (eller fristen er passert); ellers `blekk`.
+ * Nedtelling — fristkort (bento-tile, designretning 2): dato + hva fristen
+ * gjelder øverst, antall dager i stor serif under. Tallet er `dom-rod` KUN
+ * når ≤10 dager gjenstår (eller fristen er passert); ellers `blekk`.
  */
 export function Nedtelling({
   forfallsdato,
@@ -47,21 +47,19 @@ export function Nedtelling({
 
   return (
     <div
-      className={`flex items-center justify-between gap-4 rounded-2xl border-[0.5px] border-strek bg-flate px-4 py-3.5 ${className}`}
+      className={`flex flex-col justify-center rounded-2xl border-[0.5px] border-strek bg-flate p-3.5 ${className}`}
     >
-      <div className="min-w-0">
-        <p className="font-serif text-[19px] font-semibold text-blekk">
-          {langDato(forfallsdato)}
-        </p>
-        <p className="mt-0.5 text-[12px] text-dempet">{tittel}</p>
-      </div>
-      <div className="shrink-0 text-right">
+      <p className="text-[11px] font-semibold text-dempet">
+        Frist {langDato(forfallsdato)}
+      </p>
+      <p className="mt-0.5 text-[10.5px] leading-snug text-dempet">{tittel}</p>
+      <div className="mt-2">
         {d < 0 ? (
-          <p className={`font-serif text-[26px] font-semibold ${tallFarge}`}>
+          <p className={`font-serif text-[26px] font-semibold leading-none ${tallFarge}`}>
             Utløpt
           </p>
         ) : d === 0 ? (
-          <p className={`font-serif text-[26px] font-semibold ${tallFarge}`}>
+          <p className={`font-serif text-[26px] font-semibold leading-none ${tallFarge}`}>
             I dag
           </p>
         ) : (
@@ -72,7 +70,7 @@ export function Nedtelling({
             >
               {d}
             </span>
-            <span className="mt-0.5 block text-[12px] font-semibold text-dempet">
+            <span className="mt-0.5 block text-[11px] font-semibold text-dempet">
               {d === 1 ? "dag igjen" : "dager igjen"}
             </span>
           </>
