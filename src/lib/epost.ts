@@ -68,7 +68,7 @@ function byggHtml(frister: FristVarsel[]): string {
 <html lang="nb">
 <body style="margin:0;background:#f8fafc;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
   <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
-    <div style="font-size:18px;font-weight:700;color:#0E7C66;margin-bottom:24px;">${APP_NAME}</div>
+    <div style="font-size:18px;font-weight:700;color:#1f4d3d;margin-bottom:24px;">${APP_NAME}</div>
     <h1 style="font-size:20px;margin:0 0 8px;">Du har frister som nærmer seg</h1>
     <p style="color:#475569;font-size:15px;line-height:1.5;margin:0 0 20px;">
       Her er en rolig påminnelse om det som ligger foran deg. Ta det steg for steg.
@@ -77,7 +77,7 @@ function byggHtml(frister: FristVarsel[]): string {
       ${rader}
     </table>
     <div style="margin:24px 0;">
-      <a href="${url}/" style="display:inline-block;background:#0E7C66;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;">Åpne ${APP_NAME}</a>
+      <a href="${url}/" style="display:inline-block;background:#1f4d3d;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;">Åpne ${APP_NAME}</a>
     </div>
     <p style="color:#94a3b8;font-size:12px;line-height:1.5;margin:24px 0 0;border-top:1px solid #e2e8f0;padding-top:16px;">
       ${APP_NAME} er et organiseringsverktøy — ikke profesjonell rådgivning. Sjekk viktige ting med rett instans (NAV, lege, advokat, kommune).<br><br>
@@ -130,21 +130,21 @@ export async function sendOppfolging(
 
   const html = `<!doctype html>
 <html lang="nb">
-<body style="margin:0;background:#f7f7f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c2b33;">
+<body style="margin:0;background:#fafaf8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#191919;">
   <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
-    <div style="font-size:18px;font-weight:700;color:#0E7C66;margin-bottom:24px;">${APP_NAME}</div>
+    <div style="font-size:18px;font-weight:700;color:#1f4d3d;margin-bottom:24px;">${APP_NAME}</div>
     <h1 style="font-size:20px;margin:0 0 12px;">Har du hørt fra ${hvem}?</h1>
     <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 12px;">
       Det er en stund siden du sendte svaret ditt. To ting det kan være verdt å vite:
     </p>
-    <p style="color:#1c2b33;font-size:15px;line-height:1.6;margin:0 0 8px;font-weight:600;">Har du fått svar?</p>
+    <p style="color:#191919;font-size:15px;line-height:1.6;margin:0 0 8px;font-weight:600;">Har du fått svar?</p>
     <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 16px;">
       Legg inn brevet i ${APP_NAME}, så hjelper vi deg å forstå hva det betyr.
     </p>
     <div style="margin:0 0 20px;">
-      <a href="${url}/legg-til-brev" style="display:inline-block;background:#0E7C66;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;">Legg til brevet</a>
+      <a href="${url}/legg-til-brev" style="display:inline-block;background:#1f4d3d;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;">Legg til brevet</a>
     </div>
-    <p style="color:#1c2b33;font-size:15px;line-height:1.6;margin:0 0 8px;font-weight:600;">Ikke hørt noe?</p>
+    <p style="color:#191919;font-size:15px;line-height:1.6;margin:0 0 8px;font-weight:600;">Ikke hørt noe?</p>
     <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 20px;">
       Det er vanlig at det tar tid. Du trenger ikke gjøre noe nå — men ta vare på kvitteringen på at du sendte det.
     </p>
@@ -259,13 +259,13 @@ export async function sendKodeEpost(
 
   const html = `<!doctype html>
 <html lang="nb">
-<body style="margin:0;background:#f7f7f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c2b33;">
+<body style="margin:0;background:#fafaf8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#191919;">
   <div style="max-width:480px;margin:0 auto;padding:32px 20px;">
-    <div style="font-size:18px;font-weight:700;color:#0E7C66;margin-bottom:24px;">${APP_NAME}</div>
+    <div style="font-size:18px;font-weight:700;color:#1f4d3d;margin-bottom:24px;">${APP_NAME}</div>
     <h1 style="font-size:18px;margin:0 0 8px;">Din engangskode</h1>
-    <p style="color:#5c6b73;font-size:15px;line-height:1.5;margin:0 0 20px;">Skriv inn denne koden i appen for å logge inn:</p>
-    <p style="font-size:32px;font-weight:700;letter-spacing:6px;color:#1c2b33;margin:0 0 20px;">${kode}</p>
-    <p style="color:#5c6b73;font-size:13px;line-height:1.5;margin:0;">Koden er gyldig i én time. Har du ikke bedt om den, kan du se bort fra denne e-posten.</p>
+    <p style="color:#6b6b68;font-size:15px;line-height:1.5;margin:0 0 20px;">Skriv inn denne koden i appen for å logge inn:</p>
+    <p style="font-size:32px;font-weight:700;letter-spacing:6px;color:#191919;margin:0 0 20px;">${kode}</p>
+    <p style="color:#6b6b68;font-size:13px;line-height:1.5;margin:0;">Koden er gyldig i én time. Har du ikke bedt om den, kan du se bort fra denne e-posten.</p>
   </div>
 </body>
 </html>`;

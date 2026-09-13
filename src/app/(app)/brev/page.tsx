@@ -2,6 +2,7 @@ import { NavLenke as Link } from "@/components/NavLenke";
 import { ChevronLeft, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp } from "@/components/ui";
+import { DokumentHake } from "@/components/illustrasjoner/DokumentHake";
 import { formaterKortDato } from "@/lib/dato";
 import { STADIUM_ETIKETT, type BrevType } from "@/lib/gjeld";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
@@ -80,7 +81,8 @@ export default async function BrevArkivPage() {
       <div className="mt-5">
         {brev.length === 0 ? (
           <Kort>
-            <p className="text-[15px] leading-relaxed text-blekk">
+            <DokumentHake className="size-14 text-blekk" />
+            <p className="mt-4 text-[15px] leading-relaxed text-blekk">
               Ingen brev ennå. Legg inn ditt første brev, så samler vi dem her.
             </p>
             <div className="mt-4">

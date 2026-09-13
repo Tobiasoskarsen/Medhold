@@ -1,6 +1,6 @@
 import { Bell, Mail, FileText, ShieldCheck, LogOut, Scale } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
+import { Skjermramme, Sekvens, SekvensDel, Ordmerke } from "@/components/ui";
 import SlettKonto from "@/components/SlettKonto";
 import VarselInnstilling from "@/components/VarselInnstilling";
 import { APP_NAME, APP_VERSJON, SUPPORT_EPOST } from "@/lib/brand";
@@ -102,10 +102,10 @@ export default async function MegPage() {
 
       <SekvensDel>
       <div className="mt-[18px] flex flex-col items-center gap-1.5 text-center">
-        <p className="font-serif text-[13px] italic text-dempet">
-          {APP_NAME} {APP_VERSJON}
+        <Ordmerke className="h-4 w-auto text-dempet" />
+        <p className="text-[11px] text-dempet">
+          {APP_VERSJON} · Ikke profesjonell rådgivning
         </p>
-        <p className="text-[11px] text-dempet">Ikke profesjonell rådgivning</p>
         <SlettKonto />
       </div>
       </SekvensDel>

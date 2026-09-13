@@ -460,7 +460,15 @@ export default async function KravDetaljPage({
         (harFristfunn && sisteBrev?.fristfunn)) && (
         <SekvensDel>
           {harOverGebyr && sisteBrev?.gebyrsjekk && (
-            <DomMini resultat={sisteBrev.gebyrsjekk} className="mt-4" />
+            <DomMini
+              resultat={sisteBrev.gebyrsjekk}
+              utkastHref={
+                stotterUtkast(stadium)
+                  ? `/krav/${sak.id}/utkast?type=innsigelse`
+                  : undefined
+              }
+              className="mt-4"
+            />
           )}
           {harFristfunn && sisteBrev?.fristfunn && (
             <DomMiniFrist

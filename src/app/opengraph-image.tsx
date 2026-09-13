@@ -15,21 +15,21 @@ export default function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          background: "#f7f7f5",
+          background: "#fafaf8",
           fontFamily: "serif",
         }}
       >
         {/* Trapp-motivet: tre stigende søyler, siste i gull — samme
             geometri som Trapp-komponenten og app-ikonet, ikke en ny form. */}
         <div style={{ display: "flex", alignItems: "flex-end", gap: 14 }}>
-          <div style={{ width: 34, height: 70, background: "#c3cfdd", borderRadius: 6 }} />
-          <div style={{ width: 34, height: 110, background: "#21456e", borderRadius: 6 }} />
+          <div style={{ width: 34, height: 70, background: "#c9d6ce", borderRadius: 6 }} />
+          <div style={{ width: 34, height: 110, background: "#1f4d3d", borderRadius: 6 }} />
           <div style={{ width: 34, height: 150, background: "#a8781c", borderRadius: 6 }} />
         </div>
-        <div style={{ marginTop: 36, fontSize: 64, color: "#1c2b33", fontWeight: 600 }}>
+        <div style={{ marginTop: 36, fontSize: 64, color: "#191919", fontWeight: 600 }}>
           {APP_NAME}
         </div>
-        <div style={{ marginTop: 12, fontSize: 28, color: "#5c6b73" }}>
+        <div style={{ marginTop: 12, fontSize: 28, color: "#6b6b68" }}>
           Forstå brevet. Sjekk gebyrene. Svar riktig.
         </div>
       </div>

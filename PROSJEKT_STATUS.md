@@ -33,6 +33,197 @@ etter hver fase.
 | Saksliste — vis færre | Samme knapp toveis: kan skjule de avslørte kortene igjen (på forespørsel, oppfølging) | ✅ Ferdig |
 | Sakens gang — lukke-retning | La til Y-glid på lukk/åpne så lukkingen leses som «opp», ikke «ned» (brukertilbakemelding) | ⚠️ Fikset i kode, IKKE visuelt bekreftet denne økten |
 | Saksliste vis færre — retning | Skjul-exiten falt NEDOVER (feil gjenbruk av inntreden-verdien); fikset til å gå oppover (brukertilbakemelding) | ⚠️ Fikset i kode, IKKE visuelt bekreftet denne økten |
+| Komplett-ordre Del 1 | Palett-migrering: krem/navy → hvit/skoggrønn (egen ordre) | ✅ Ferdig |
+| Komplett-ordre Del A | Ordmerke (inline SVG, currentColor + fast gull) (egen ordre) | ✅ Ferdig |
+| Komplett-ordre Del B | Illustrasjonsspråk: TomKonvolutt/RoligFigur/DokumentHake (egen ordre) | ✅ Ferdig |
+| Komplett-ordre Del C | Fullskjerm-Dom, åpnes fra DomMini (egen ordre) | ✅ Ferdig |
+
+---
+
+## MEDHOLD_KOMPLETT_ARBEIDSORDRE — palett + identitet (ferdig)
+
+Beslutningsfri ordre, to uavhengige deler levert sammen: Del 1 (palett-
+migrering) måtte gjøres først siden Del 2s nye komponenter bygger på de
+migrerte tokenene.
+
+### Del 1 — Palett-migrering
+
+Full token-erstatning i `globals.css` (`:root` og `.mork`) etter ordrens
+eksakte hex-verdier: krem bakgrunn (`#f7f7f5`) → nøytral nesten-hvit
+(`#fafaf8`), navyblå `--aksent` (`#21456e`) → dyp skoggrønn (`#1f4d3d`),
+`--trygg` flyttet til blågrønn (`#14708a`/`#4ca8c9`) for å holde den
+visuelt atskilt fra den nye grønne aksenten, `--dom-rod` marginalt
+justert varmere/dypere. `--gull`/`--gull-bg` urørt (guardrail 2).
+
+- **Grep-verifisering (§2) kjørt CASE-INSENSITIVT** (ordrens eget
+  grep-mønster var case-sensitivt og ville MISSET `#0E7C66` i
+  `lib/epost.ts`, som er skrevet med stor forbokstav) — fant flere avvik
+  utover det ordren selv nevnte:
+  - `src/app/(app)/krav/[id]/del/bilde/route.tsx`: det delbare story-
+    bildets gradient-bakgrunn brukte de gamle navy-hexene direkte
+    (samme mønster som `opengraph-image.tsx`, men ikke nevnt eksplisitt i
+    §3) — oppdatert til de nye grønne verdiene (`#153529`→`#1f4d3d`→
+    `#2f6e56`, sistnevnte er faktisk `.mork` sin `--aksent`-verdi, gjenbrukt
+    som naturlig lysere tredje gradient-stopp).
+  - `src/lib/epost.ts`: TRE transaksjons-e-postmaler (fristpåminnelse,
+    oppfølging, engangskode) hadde hardkodet gammel `--bakgrunn`/`--blekk`/
+    `--dempet`/`--trygg` (`#f7f7f5`, `#1c2b33`, `#5c6b73`, `#0E7C66`) — kan
+    ikke lese CSS-variabler (statisk HTML i innbokser), samme situasjon som
+    manifest/OG-bilde. Oppdatert til de nye literal-verdiene. `#0E7C66`
+    (gammel `--trygg`) var brukt som merke-/knappefarge — semantisk feil
+    plassering selv FØR denne ordren (primærknapper/merkenavn hører til
+    `--aksent`, ikke `--trygg`, jf. guardrail 3s ferske skille) — rettet til
+    ny `--aksent`-verdi (`#1f4d3d`), ikke ny `--trygg`. Fristpåminnelse-
+    malen bruker for øvrig en HELT ANNEN, allerede eksisterende slate-
+    palett (`#0f172a`/`#475569`/`#64748b`/`#e2e8f0`) for det meste av
+    innholdet — utenfor denne ordrens scope, urørt, kun dens ene
+    `#0E7C66`-forekomst fikset.
+  - `src/components/Logo.tsx` (`Medholdmerke`/`Logo`, ubrukt død kode —
+    grep bekreftet ingen importører noe sted): hardkodet gammel navy
+    (`#21456E`) i sin egen SVG. Fikset fargen (samme mønster som resten av
+    §2), IKKE slettet komponenten — denne ordren er «kun token-verdier»
+    (guardrail 1), ikke opprydding.
+- **§3 (manifest/OG-bilde/viewport):** alle tre oppdatert som spesifisert.
+  `opengraph-image.tsx` fikk i tillegg sin `#1c2b33`/`#5c6b73`-tekst
+  (gammel blekk/dempet) og sin lyseblå første Trapp-stolpe (`#c3cfdd`, en
+  hardkodet lys-tint, ikke et reelt token) oppdatert til nye tilsvarende
+  verdier (`#191919`/`#6b6b68`/`#c9d6ce`) — nevnt i §1.1/§1.2 sin ånd
+  («samme geometri/tekst, kun farger»), ikke bokstavelig i §3s egen liste,
+  men åpenbart tiltenkt.
+- **§4 (valgfri opprydding):** `--varsel-bg`/`--varsel-tekst` er FORTSATT i
+  bruk utover frist-chips (en generisk `Pill`-variant, og en advarselboks
+  på `/personvern` som ikke er fristrelatert) — la dem stå urørt, som
+  ordren selv ba om i dette tilfellet.
+- WCAG AA-kontroll (guardrail 5, beregnet manuelt): hvit tekst på
+  `--aksent` (9,6:1 lys / 6,0:1 mørk), `--blekk` på `--bakgrunn` (begge
+  >15:1), `--dom-rod` på `--dom-rod-bg` (6,3:1 lys / 6,0:1 mørk) — alle
+  godt over 4,5:1-grensen, ingen justering nødvendig utover ordrens egne
+  §1.4-verdier.
+- `npm run build`/`lint`/`test` (153 tester, upåvirket) grønne.
+
+### Del A — Ordmerke
+
+**`src/components/ui/Ordmerke.tsx`** (ny): valgte den INLINE-SVG-varianten
+A.2 selv foretrakk (`currentColor` for tekst + de to første trappetrinnene,
+arver `text-blekk` fra forelder — følger tema automatisk) FREMFOR å
+opprette `public/ordmerke-lys.svg`/`ordmerke-mork.svg` som to separate
+filer (A.1s markup ble brukt som kilde til selve komponenten i stedet,
+eksplisitt tillatt: «Endelig valg overlates til implementering, begge
+tilnærminger er akseptable»). Gull-stolpen bruker `style={{fill:
+"var(--gull)"}}` (ikke en bar presentasjonsattributt — pålitelig CSS-
+variabel-oppslag i alle nettlesere) og er ALDRI temaavhengig — appens
+ENESTE unntak fra «gull kun ved medhold»-regelen, fordi det er en del av
+selve merket/logotypen, ikke et statusuttrykk i UI (guardrail 2, notert
+her eksplisitt som ordren ba om).
+
+**A.3 — erstatt eksisterende logobruk, med en tvetydighet løst underveis:**
+ordren antok eksisterende `<img src="logo.svg">`/`logo-morkt.svg`-
+referanser i tre navngitte filer — grep bekreftet at INGEN slike
+referanser faktisk finnes noe sted i `src` (de to filene ligger urørt i
+`public/`, men ingenting importerer dem). De tre filene ble derfor
+håndtert etter ordrens TYDELIGE INTENSJON (et synlig ordmerke der appen
+først/sist viser seg frem), ikke dens bokstavelige premiss:
+- **`meg/page.tsx`** (klar, eksakt match — «kolofonen»): plain-tekst
+  `{APP_NAME} {APP_VERSJON}` erstattet med `<Ordmerke />` + versjonstall
+  ved siden av (versjonstallet er reell informasjon, ikke ren merkevare —
+  beholdt som egen tekstlinje under).
+- **`BrevSteg.tsx`** (onboarding steg 1 — appens FØRSTE skjermbilde):
+  `<Ordmerke />` lagt til over H1-en («Fått et brev du gruer deg for?»),
+  egen inntreden (opacity+y, `VARIGHET.normal`) FØR H1s egen
+  `ORKESTER_STIGRING`-forsinkelse. Det opprinnelige `{APP_NAME}`-nevnet
+  midt i brødteksten («... Medhold leser det for deg ...») er UENDRET —
+  det er prosa, ikke et logo-øyeblikk.
+- **`velkommen/page.tsx`** har ingen egen JSX utover `<Onboarding />` —
+  ingen egen ordmerke-plassering trengtes der; BrevSteg (rendret derfra,
+  alltid appens første steg) dekker intensjonen.
+- Lesbarhet ned til 40 %: viewBox `0 0 220 64` er uendret fra mockupen,
+  skalerer rent (kun `className`-basert størrelse, ingen fastlåst
+  pikselbredde).
+
+### Del B — Illustrasjonsspråk
+
+Tre nye komponenter i `src/components/illustrasjoner/` (`TomKonvolutt`,
+`RoligFigur`, `DokumentHake`) — eksakt SVG-geometri fra ordren, men
+`stroke="#1c2b33"` → `stroke="currentColor"` og gull/hvit-flekker →
+`style={{fill/stroke: "var(--gull)"/"var(--flate)"}}` (samme pålitelig-
+CSS-var-i-style-mønster som Ordmerkets gullstolpe), slik B.1 ba om.
+
+- **`TomKonvolutt`** erstatter `<Trapp stadium="faktura" kompakt />` på
+  tom saksliste (`krav/page.tsx`) — `Trapp`-importen der ble ubrukt og
+  fjernet.
+- **`RoligFigur`** lagt til i `BrevSteg.tsx` SOM SUPPLEMENT (B.2s eget
+  krav) til brevkort-scenen, ikke i stedet for den — liten (`size-10`),
+  plassert i det motsatte hjørnet av lupen, egen forsinket inntreden
+  (etter lupen, før teksten er ferdig).
+- **`DokumentHake`** (valgfritt per B.2) brukt på tomt brevarkiv
+  (`/brev`-siden), som ordren selv foreslo som eksempel.
+- B.3-prinsippet (kun to strektykkelser, aldri ansikter, ingen skygge/
+  gradient i selve illustrasjonen) er strukturelt umulig å bryte her — hver
+  fil er en direkte oversettelse av ordrens egen, allerede-konforme
+  SVG-geometri.
+
+### Del C — Fullskjerm-Dom
+
+**`src/lib/gebyrfunn-visning.ts`** (ny, ikke eksplisitt bedt om, men
+nødvendig): `overLinjer`/`totalOver`/`funnOrd`/`kr` var private funksjoner
+i `Dom.tsx` — C.1 ba om å gjenbruke akkurat disse i en NY, separat fil
+(`DomFullskjerm.tsx`). Å eksportere dem direkte fra `Dom.tsx` og importere
+tilbake fra `DomFullskjerm.tsx` (som `Dom.tsx` i sin tur må importere for å
+kunne ÅPNE den) hadde gitt en sirkulær import mellom de to modulene —
+flyttet i stedet den rene utledningslogikken til en tredje, nøytral fil
+begge importerer fra. Ren flytting, ingen endring i selve logikken.
+
+- **`src/components/DomFullskjerm.tsx`** (ny): eksakte tall fra ordren —
+  fast bakgrunn `#16324f` (den opprinnelige mørke aksent-dyp-verdien FØR
+  Del 1, IKKE koblet til nye grønne tokens — grep-et i §2 fanger fortsatt
+  opp denne ene, BEVISST unntatte forekomsten, jf. guardrail 3), gull-segl
+  (120×120px, `border:3px solid #d9b25e`) med `SEGL_FJAER`-fjæring
+  (`scale(0) rotate(-25deg)` → `scale(1) rotate(-8deg)`), kaskaderende
+  tekst med eksakte forsinkelser 0,35/0,5/0,65/0,8s (IKKE
+  `ORKESTER_STIGRING` — egen, bevisst tregere tallrekke, som ordren
+  eksplisitt ba om å ikke gjenoppfinne fra `bevegelse.ts`). `funnOrd()`
+  brukes i forklaringslinjen («Gebyrsjekken fant {funnOrd} over lovlig
+  sats...»), som C.1 spesifikt ba om.
+- **`SEGL_FJAER`** lagt til i `bevegelse.ts`: `{ type: "spring", stiffness:
+  260, damping: 18 }` — motion-ekvivalenten av ordrens CSS-verdi, brukt
+  KUN her, ikke standard `FJAER`.
+- **`DomMini`** (i `Dom.tsx`) er nå en `<button>` (var en ren `<div>`) med
+  `aria-label="Se gebyrfunnet i fullskjerm"`, egen `åpen`-tilstand, og en
+  ny valgfri `utkastHref`-prop videreført til `DomFullskjerm`s «Bruk i
+  svaret →»-CTA. Fokus flyttes til `DomFullskjerm` sin «Lukk»-knapp ved
+  åpning og TILBAKE til `DomMini`-knappen ved lukking (egen `ref`,
+  verifisert i browser — se under), som C.3 krevde.
+- **Kun ÉN reell bruksplass funnet** (`krav/[id]/page.tsx`, linje ~463,
+  slik ordren selv anga) — ordrens formulering «og tilsvarende på
+  brev-detalj» stemmer IKKE med koden: grep bekreftet at `DomMini` ikke
+  brukes noe annet sted. Wired kun den ene, faktiske plassen;
+  `utkastHref` beregnes der med samme `stotterUtkast(stadium)`-sjekk og
+  URL-mønster som `Veivalg` på samme side allerede bruker.
+- Lukking: knapp («Lukk»), utenfor-trykk (sjekker `e.target ===
+  e.currentTarget`, unngår at klikk INNI innholdet lukker), og Esc
+  (`window`-lytter, ryddet opp i `useEffect`-cleanup) — alle tre
+  verifisert fungerende i browser (se under).
+- Reduced motion: seglet hopper rett til sluttilstand
+  (`{opacity:1}`/`0.3s`, ingen skala/rotasjon), all kaskadeforsinkelse
+  nullstilles (alle fire tekstelementer + knapperad blir synlige samtidig)
+  — egen `redusert`-gren i komponenten, ingen avhengighet av
+  `Bevegelsesramme`s `MotionConfig` siden dette overlayet EKSPLISITT skal
+  se identisk ut uansett tema/kontekst (samme begrunnelse som den faste
+  bakgrunnsfargen).
+- `npm run build`/`lint`/`test` (153 tester) grønne. **Verifisert i
+  browser** (midlertidig debug-rute, fjernet igjen sammen med det
+  midlertidige unntaket i `middleware.ts`): palett-swatcher bekreftet
+  pikselnøyaktig i BEGGE temaer (`getComputedStyle`, alle åtte
+  hovedtokens), Ordmerkets gullstolpe (`rgb(168,120,28)` = `#a8781c`,
+  uendret av tema), DomMini→DomFullskjerm-klikk åpner med riktig beløp
+  (50 kr) og tekst, fokus flyttes korrekt begge veier, alle tre
+  lukkemetoder (knapp/utenfor-trykk/Esc) fungerer, fast `#16324f`-bakgrunn
+  bekreftet uavhengig av gjeldende tema, ingen konsollfeil, ingen
+  horisontal overflow ved 375px. Selve KASKADE-TIMINGEN (de fire
+  forsinkelsene) og seglets sprett-animasjon er IKKE bildeverifisert
+  (samme miljøbegrensning som tidligere økter — Browser-panelet
+  kompositerer ikke animasjonsrammer) — kode-verifisert mot ordrens
+  eksakte tall, ikke sett i bevegelse.
 
 ---
 

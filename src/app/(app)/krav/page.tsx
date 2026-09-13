@@ -1,7 +1,8 @@
 import { NavLenke as Link } from "@/components/NavLenke";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Kort, Primærknapp, Trapp, Sekvens, SekvensDel } from "@/components/ui";
+import { Skjermramme, Kort, Primærknapp, Sekvens, SekvensDel } from "@/components/ui";
+import { TomKonvolutt } from "@/components/illustrasjoner/TomKonvolutt";
 import { AktivSaksliste } from "./AktivSaksliste";
 import { AvsluttedeListe } from "./AvsluttedeListe";
 import { GruppertSaksliste, type Gruppe, type GruppeRad } from "./GruppertSaksliste";
@@ -212,7 +213,7 @@ export default async function KravListePage() {
       {saker.length === 0 && (
         <SekvensDel>
           <Kort className="mt-6">
-            <Trapp stadium="faktura" kompakt />
+            <TomKonvolutt className="size-14 text-blekk" />
             <p className="mt-4 text-[15px] leading-relaxed text-blekk">
               Legg inn ditt første brev, så holder Medhold oversikten.
             </p>

@@ -12,23 +12,26 @@
  */
 
 :root {
-  /* Designtokens (seksjon 2.1) */
-  --bakgrunn: #f7f7f5; /* app-bakgrunn */
+  /* Designtokens (seksjon 2.1). Palett migrert fra krem/navy til nøytral
+     hvit + skoggrønn (MEDHOLD_KOMPLETT_ARBEIDSORDRE Del 1) — se PROSJEKT_
+     STATUS.md for begrunnelse (krem+navy identifisert som en gjenkjennelig
+     «AI-designet app»-signatur). */
+  --bakgrunn: #fafaf8; /* app-bakgrunn — nøytral, ikke varm/krem */
   --flate: #ffffff; /* kort, bunn-nav */
-  --blekk: #1c2b33; /* primærtekst */
-  --dempet: #5c6b73; /* sekundærtekst */
-  --strek: #e4e4df; /* kanter, delelinjer */
-  --aksent: #21456e; /* HANDLING: primærknapp, aktiv nav, lenker, tidslinje */
+  --blekk: #191919; /* primærtekst — nøytral nær-svart, ikke blåtonet */
+  --dempet: #6b6b68; /* sekundærtekst — nøytral grå, ikke blåtonet */
+  --strek: #e6e5e1; /* kanter, delelinjer */
+  --aksent: #1f4d3d; /* HANDLING: primærknapp, aktiv nav, lenker, tidslinje — dyp skoggrønn */
   --aksent-lys: #17a085; /* (ubrukt token, beholdt) */
-  --aksent-dyp: #16324f; /* serif-kursiv i overskrifter, nåværende trapptrinn */
-  --trygg: #0e7c66; /* TRYGT/INNENFOR: suksess-piller, «lagret»-bekreftelser */
+  --aksent-dyp: #153529; /* serif-kursiv i overskrifter, nåværende trapptrinn — mørkere skoggrønn */
+  --trygg: #14708a; /* TRYGT/INNENFOR: suksess-piller, «lagret»-bekreftelser — blågrønn, atskilt fra aksent */
   --varsel-bg: #f6e7de; /* frist-pill bakgrunn */
   --varsel-tekst: #8a3f20; /* frist-pill tekst */
 
   /* Saksinnhold-farger (designordre §1.2). KUN gebyrfunn, hastende frister
      (≤10 dager) og medhold/seier — aldri på verktøysider. */
-  --dom-rod: #8a2b1d;
-  --dom-rod-bg: #f7e9e5;
+  --dom-rod: #9a3324; /* noe varmere/dypere enn originalen — avstand til ny grønn */
+  --dom-rod-bg: #fbebe6;
   --gull: #a8781c;
   --gull-bg: #f6efdd;
 
@@ -54,20 +57,20 @@
   --blekk: #eceeed;
   --dempet: #94a2a1;
   --strek: #2a3639;
-  --aksent: #4a7fb5;
+  --aksent: #2f6e56; /* medium skoggrønn — beholder kontrast mot hvit knappetekst */
   --aksent-lys: #19a88b;
-  --aksent-dyp: #7ab0e0;
-  --trygg: #19a88b;
+  --aksent-dyp: #7dd3ae; /* LYS mintgrønn — kun dekorativt (ring/lenker), ALDRI bak hvit tekst */
+  --trygg: #4ca8c9; /* blågrønn, atskilt fra aksent */
   --varsel-bg: #382a21;
   --varsel-tekst: #e8bda4;
 
-  --dom-rod: #e08a76;
+  --dom-rod: #e0967e;
   --dom-rod-bg: #3a2420;
   --gull: #d9b25e;
   --gull-bg: #35301f;
 
   --kort-skygge: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 20px rgba(0, 0, 0, 0.28);
-  --anbefalt-glod: 0 0 0 1px var(--aksent-dyp) inset, 0 8px 24px rgba(122, 176, 224, 0.18);
+  --anbefalt-glod: 0 0 0 1px var(--aksent-dyp) inset, 0 8px 24px rgba(125, 211, 174, 0.18);
 
   color-scheme: dark;
 }

@@ -2,38 +2,14 @@
 
 // Dommen — signaturøyeblikket ved et gebyrfunn (designordre §2.1). Ren
 // presentasjon av det lagrede gebyrsjekk-resultatet; ingen vurderingslogikk her.
+import { useRef, useState } from "react";
 import { m } from "motion/react";
 import { Primærknapp } from "@/components/ui";
-import type { GebyrsjekkResultat, Kostnadstype, LinjeResultat } from "@/lib/gebyr";
+import { DomFullskjerm } from "@/components/DomFullskjerm";
+import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { formaterDato } from "@/lib/dato";
 import { FJAER } from "@/lib/bevegelse";
-
-const TYPE_ORD: Record<Kostnadstype, string> = {
-  purregebyr: "purregebyr",
-  inkassovarselgebyr: "inkassovarselgebyr",
-  betalingsoppfordringsgebyr: "betalingsoppfordringsgebyr",
-  salaer: "salær",
-  forsinkelsesrente: "forsinkelsesrente",
-  rettsgebyr: "rettsgebyr",
-  annet: "beløp",
-};
-
-function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
-}
-
-function overLinjer(resultat: GebyrsjekkResultat): LinjeResultat[] {
-  return resultat.linjer.filter((l) => l.vurdering === "over");
-}
-
-function totalOver(linjer: LinjeResultat[]): number {
-  return linjer.reduce((sum, l) => sum + (l.differanse ?? 0), 0);
-}
-
-/** Ordet for funnet: kostnadstypen når det er ett funn, ellers «beløp». */
-function funnOrd(linjer: LinjeResultat[]): string {
-  return linjer.length === 1 ? TYPE_ORD[linjer[0].linje.type] : "beløp";
-}
+import { kr, overLinjer, totalOver, funnOrd } from "@/lib/gebyrfunn-visning";
 
 /**
  * Dom (full) — hvit flate, dom-rød ramme, stempel-etikett, differansen i stor
@@ -100,37 +76,60 @@ export function Dom({
 
 /**
  * DomMini — kompakt variant på krav-detalj: §-tegn + kort setning på
- * dom-rød bakgrunn.
+ * dom-rød bakgrunn. Klikkbar (Del C): åpner DomFullskjerm som en
+ * fullskjerm-avsløring — ren visuell tilstand, ingen ny rute/navigasjon.
+ * Fokus flyttes tilbake hit ved lukking (C.3).
  */
 export function DomMini({
   resultat,
+  utkastHref,
   className = "",
 }: {
   resultat: GebyrsjekkResultat;
+  /** Videreført til DomFullskjerm sin «Bruk i svaret →»-CTA når stadiet støtter utkast. */
+  utkastHref?: string;
   className?: string;
 }) {
+  const [åpen, setÅpen] = useState(false);
+  const knappRef = useRef<HTMLButtonElement>(null);
   const linjer = overLinjer(resultat);
   if (linjer.length === 0) return null;
   const total = totalOver(linjer);
 
   return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl border-[0.5px] border-dom-rod/40 bg-dom-rod-bg px-3.5 py-3 ${className}`}
-    >
-      <span
-        aria-hidden
-        className="select-none font-serif text-[24px] font-semibold leading-none text-dom-rod"
+    <>
+      <button
+        type="button"
+        ref={knappRef}
+        onClick={() => setÅpen(true)}
+        aria-label="Se gebyrfunnet i fullskjerm"
+        className={`trykk flex w-full items-center gap-3 rounded-2xl border-[0.5px] border-dom-rod/40 bg-dom-rod-bg px-3.5 py-3 text-left ${className}`}
       >
-        §
-      </span>
-      <p className="text-[13px] leading-snug text-blekk">
-        Gebyrsjekken fant {funnOrd(linjer)}{" "}
-        <b className="font-semibold text-dom-rod">
-          {kr(total)} kr over maksimalsats
-        </b>
-        . Funnet er lagt klart til innsigelsen.
-      </p>
-    </div>
+        <span
+          aria-hidden
+          className="select-none font-serif text-[24px] font-semibold leading-none text-dom-rod"
+        >
+          §
+        </span>
+        <p className="text-[13px] leading-snug text-blekk">
+          Gebyrsjekken fant {funnOrd(linjer)}{" "}
+          <b className="font-semibold text-dom-rod">
+            {kr(total)} kr over maksimalsats
+          </b>
+          . Funnet er lagt klart til innsigelsen.
+        </p>
+      </button>
+      {åpen && (
+        <DomFullskjerm
+          resultat={resultat}
+          utkastHref={utkastHref}
+          onLukk={() => {
+            setÅpen(false);
+            knappRef.current?.focus();
+          }}
+        />
+      )}
+    </>
   );
 }
 
