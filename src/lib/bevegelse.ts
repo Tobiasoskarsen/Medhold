@@ -79,3 +79,9 @@ export const INDIKATOR_FJAER = { type: "spring", stiffness: 600, damping: 42 } a
 // Skala BunnNav-ikonet dupper til (→ 1 med FJAER) når fanen aktiveres
 // (Motion3 §3) — kun ved bytte, aldri loop.
 export const IKON_TRYKK_SKALA = 0.92;
+
+// Seglets inntreden i DomFullskjerm (MEDHOLD_KOMPLETT_ARBEIDSORDRE Del C) —
+// motion-ekvivalenten av CSS cubic-bezier(.2,1.4,.4,1): mykere/mer lekent,
+// bevisst forskjellig fra standard FJAER, siden dette ER det ene stedet
+// appen har lov til å være dristig (ett øyeblikk, ikke gjentatt).
+export const SEGL_FJAER = { type: "spring", stiffness: 260, damping: 18 } as const;

@@ -3,6 +3,8 @@
 import type { CSSProperties } from "react";
 import { m } from "motion/react";
 import { APP_NAME } from "@/lib/brand";
+import { Ordmerke } from "@/components/ui";
+import { RoligFigur } from "@/components/illustrasjoner/RoligFigur";
 import { EASING, FJAER, ORKESTER_STIGRING, VARIGHET } from "@/lib/bevegelse";
 
 /**
@@ -59,10 +61,32 @@ export function BrevSteg({
           >
             <span className="absolute -bottom-[11px] -right-[2px] h-[5px] w-5 rotate-45 rounded-[3px] bg-aksent" />
           </m.div>
+          {/* RoligFigur — supplerer brevkort-scenen (Del B), står ikke i
+              stedet for den. Liten, i motsatt hjørne av lupen. */}
+          <m.div
+            className="absolute -bottom-1 -left-2 text-blekk"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: VARIGHET.normal,
+              ease: EASING,
+              delay: 2 * ORKESTER_STIGRING,
+            }}
+          >
+            <RoligFigur className="size-10" />
+          </m.div>
         </m.div>
       </div>
 
       <div style={tekstStil}>
+        <m.div
+          className="mb-4 flex justify-center text-blekk"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: VARIGHET.normal, ease: EASING }}
+        >
+          <Ordmerke className="h-6 w-auto" />
+        </m.div>
         <m.h1
           className="mt-[26px] font-serif text-[25px] font-medium leading-[1.25] tracking-[-0.01em] text-blekk"
           initial={{ opacity: 0, y: 8 }}

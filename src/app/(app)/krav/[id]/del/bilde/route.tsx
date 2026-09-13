@@ -66,7 +66,7 @@ export async function GET(
           alignItems: "center",
           justifyContent: "center",
           padding: 100,
-          background: "linear-gradient(160deg, #16324f 0%, #21456e 55%, #2d5a8a 100%)",
+          background: "linear-gradient(160deg, #153529 0%, #1f4d3d 55%, #2f6e56 100%)",
           fontFamily: "serif",
           textAlign: "center",
           position: "relative",

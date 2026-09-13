@@ -15,3 +15,4 @@ export { Tidslinje, TidslinjeHendelse } from "./Tidslinje";
 export { Sekvens, SekvensDel, useSekvensForsinkelse, useInntreden } from "./Sekvens";
 export { Fremgangsring } from "./Fremgangsring";
 export { StadiumRing } from "./StadiumRing";
+export { Ordmerke } from "./Ordmerke";
