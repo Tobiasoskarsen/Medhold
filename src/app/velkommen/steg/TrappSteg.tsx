@@ -54,10 +54,10 @@ export function TrappSteg({
       </div>
 
       <div style={tekstStil}>
-        <h1 className="mt-[26px] font-serif text-[25px] font-medium leading-[1.25] tracking-[-0.01em] text-blekk">
+        <h1 className="tittel-s mt-[26px] text-blekk">
           Vi finner ut
           <br />
-          <em className="italic text-aksent-dyp">hvor du står</em>
+          hvor du står
         </h1>
         <p className="mt-2.5 max-w-[270px] text-sm leading-[1.6] text-dempet">
           Fristen din regnes ut automatisk, og vi viser nøyaktig hvor i

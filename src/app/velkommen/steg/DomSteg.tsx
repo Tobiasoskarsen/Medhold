@@ -37,10 +37,10 @@ export function DomSteg({
             }
             transition={FJAER}
           >
-            <span className="font-serif text-[52px] font-semibold leading-none text-dom-rod">
+            <span className="tall-xl text-dom-rod">
               §
             </span>
-            <span className="font-serif text-[22px] font-semibold text-dom-rod">
+            <span className="tall-s text-dom-rod">
               Gebyrsjekk
             </span>
           </m.div>
@@ -48,10 +48,10 @@ export function DomSteg({
       </div>
 
       <div style={tekstStil}>
-        <h1 className="mt-[26px] font-serif text-[25px] font-medium leading-[1.25] tracking-[-0.01em] text-blekk">
+        <h1 className="tittel-s mt-[26px] text-blekk">
           Vi sjekker om
           <br />
-          <em className="italic text-aksent-dyp">gebyrene stemmer</em>
+          gebyrene stemmer
         </h1>
         <p className="mt-2.5 max-w-[270px] text-sm leading-[1.6] text-dempet">
           Alle beløp kontrolleres automatisk mot lovens maksimalsatser. Finner

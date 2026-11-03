@@ -1,7 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { beregnOversikt, type SakOppsummering } from "./oversikt.ts";
+import {
+  beregnOversikt,
+  hjemIngress,
+  type HjemIngressInput,
+  type SakOppsummering,
+} from "./oversikt.ts";
 import type { GebyrsjekkResultat, LinjeResultat, Vurdering } from "./gebyr.ts";
 
 function linje(vurdering: Vurdering, differanse: number | null): LinjeResultat {
@@ -116,6 +121,60 @@ test("over-linjer summeres i funnetOverSats, kun for aktive saker", () => {
   ]);
   assert.equal(res.funnetOverSats, 80);
   assert.equal(res.antallSakerMedFunn, 2);
+});
+
+// --- hjemIngress (Retning B §5.1) ---
+
+function ingress(over: Partial<HjemIngressInput>): string {
+  return hjemIngress({
+    antallSaker: 3,
+    antallAktive: 2,
+    antallUtlopteFrister: 0,
+    sakerMedFristDenneUka: 0,
+    toppVenter: false,
+    ...over,
+  });
+}
+
+test("hjemIngress regel 1: ingen aktive, men løste saker finnes", () => {
+  assert.equal(
+    ingress({ antallSaker: 2, antallAktive: 0 }),
+    "Ingen aktive saker. Godt jobbet.",
+  );
+});
+
+test("hjemIngress regel 2: ingen saker i det hele tatt", () => {
+  assert.equal(
+    ingress({ antallSaker: 0, antallAktive: 0 }),
+    "Ett brev om gangen. Vi tar det rolig.",
+  );
+});
+
+test("hjemIngress regel 3: utløpt frist går foran frister denne uka", () => {
+  assert.equal(
+    ingress({ antallUtlopteFrister: 1, sakerMedFristDenneUka: 2, toppVenter: true }),
+    "En frist har gått ut. Se hva du kan gjøre.",
+  );
+});
+
+test("hjemIngress regel 4: frister denne uka, entall og flertall", () => {
+  assert.equal(ingress({ sakerMedFristDenneUka: 1 }), "Én sak trenger deg denne uka.");
+  assert.equal(ingress({ sakerMedFristDenneUka: 3 }), "3 saker trenger deg denne uka.");
+});
+
+test("hjemIngress regel 5: toppsaken venter på svar", () => {
+  assert.equal(ingress({ toppVenter: true }), "Du venter på svar. Vi følger med.");
+});
+
+test("hjemIngress regel 6: aktive saker uten frister denne uka, entall og flertall", () => {
+  assert.equal(
+    ingress({ antallAktive: 1 }),
+    "Én aktiv sak. Ingen frister denne uka.",
+  );
+  assert.equal(
+    ingress({ antallAktive: 4 }),
+    "4 aktive saker. Ingen frister denne uka.",
+  );
 });
 
 test("null-beløp teller som 0 i samletKravAktive", () => {

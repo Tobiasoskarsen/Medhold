@@ -38,7 +38,7 @@ export function SakensGangSeksjon({
           aria-expanded={åpen}
           className="trykk flex w-full items-center justify-between gap-2 py-1 text-left"
         >
-          <span className="font-serif text-[19px] font-semibold text-blekk">
+          <span className="seksjonstittel text-blekk">
             Sakens gang
           </span>
           <span className="flex items-center gap-1 text-[13px] font-medium text-dempet">

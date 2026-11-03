@@ -63,7 +63,7 @@ export function GruppertSaksliste({
 
   return (
     <div>
-      <div className="flex items-center gap-2 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5">
+      <div className="flex items-center gap-2 rounded-[16px] border border-kant bg-flate px-3.5 py-2.5">
         <Search className="size-4 shrink-0 text-dempet" aria-hidden />
         <input
           value={sok}
@@ -74,7 +74,7 @@ export function GruppertSaksliste({
       </div>
 
       {!q && (
-        <p className="eyebrow mb-2 mt-4">
+        <p className="mb-2 mt-4 text-[13px] text-dempet">
           Gruppert på kreditor · {antallKreditorer}{" "}
           {antallKreditorer === 1 ? "kreditor" : "kreditorer"}
         </p>
@@ -87,7 +87,7 @@ export function GruppertSaksliste({
             return (
               <div
                 key={g.navn}
-                className="overflow-hidden rounded-2xl border-[0.5px] border-strek bg-flate"
+                className="overflow-hidden rounded-[20px] border border-kant bg-flate"
               >
                 <button
                   type="button"
@@ -95,7 +95,7 @@ export function GruppertSaksliste({
                   aria-expanded={åpen}
                   className="trykk flex w-full items-center gap-3 px-3.5 py-3 text-left"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-aksent/10 font-serif text-[15px] font-semibold text-aksent-dyp">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] bg-flate-2 text-[15px] font-bold text-blekk">
                     {g.navn.charAt(0).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -104,7 +104,7 @@ export function GruppertSaksliste({
                       {g.harFunn && (
                         <span
                           aria-hidden
-                          className="font-serif text-[13px] font-semibold leading-none text-dom-rod"
+                          className="text-[13px] font-bold leading-none text-dom-rod"
                         >
                           §
                         </span>
@@ -120,7 +120,7 @@ export function GruppertSaksliste({
                     )}
                   </span>
                   {g.samletBelop != null && (
-                    <span className="shrink-0 font-serif text-[17px] font-semibold tabular-nums text-blekk">
+                    <span className="tall-s shrink-0 text-blekk">
                       {formaterBelop(g.samletBelop)} kr
                     </span>
                   )}
@@ -133,17 +133,17 @@ export function GruppertSaksliste({
                 </button>
 
                 {åpen && (
-                  <div className="border-t-[0.5px] border-strek">
+                  <div className="border-t border-strek">
                     {g.saker.map((s) => (
                       <Link
                         key={s.id}
                         href={`/krav/${s.id}`}
-                        className="trykk flex items-center justify-between gap-3 border-b-[0.5px] border-strek px-3.5 py-2.5 text-[13px] last:border-none hover:bg-bakgrunn"
+                        className="trykk flex items-center justify-between gap-3 border-b border-strek px-3.5 py-2.5 text-[13px] last:border-none hover:bg-bakgrunn"
                       >
                         <span className="min-w-0">
                           <span className="flex items-center gap-1 font-medium text-blekk">
                             {s.harFunn && (
-                              <span aria-hidden className="font-serif text-dom-rod">
+                              <span aria-hidden className="font-bold text-dom-rod">
                                 §
                               </span>
                             )}
@@ -176,8 +176,8 @@ export function GruppertSaksliste({
 
       {filtrerteEnkelt.length > 0 && (
         <div className="mt-6">
-          <p className="eyebrow mb-2">Enkeltstående (1 krav)</p>
-          <ul className="flex flex-col gap-2.5">
+          <h2 className="seksjonstittel mb-2.5 text-blekk">Enkeltstående (1 krav)</h2>
+          <ul className="rounded-[20px] border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
             {filtrerteEnkelt.map((sak) => (
               <li key={sak.id}>
                 <Kravkort {...sak} />

@@ -34,11 +34,11 @@ export function ProfilKort({
   return (
     <div>
       <div className="flex flex-col items-center pb-5 pt-3">
-        <div className="flex size-16 items-center justify-center rounded-full bg-aksent/10 font-serif text-[27px] font-semibold text-aksent-dyp">
+        <div className="flex size-16 items-center justify-center rounded-full bg-blekk text-[27px] font-bold text-bakgrunn mork:bg-flate-2 mork:text-blekk">
           {initial}
         </div>
         {fornavn && (
-          <p className="mt-2.5 font-serif text-[22px] font-medium text-blekk">
+          <p className="tittel-s mt-2.5 text-blekk">
             {fornavn}
           </p>
         )}
@@ -47,7 +47,7 @@ export function ProfilKort({
           type="button"
           onClick={() => setRediger((r) => !r)}
           aria-expanded={rediger}
-          className="trykk mt-2.5 rounded-full border-[0.5px] border-strek bg-flate px-3.5 py-1.5 text-[13px] font-medium text-blekk"
+          className="trykk mt-2.5 rounded-full border border-strek bg-flate px-3.5 py-1.5 text-[13px] font-medium text-blekk"
         >
           Rediger profil
         </button>

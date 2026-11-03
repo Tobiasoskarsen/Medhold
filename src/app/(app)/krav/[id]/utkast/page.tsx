@@ -84,7 +84,7 @@ export default async function UtkastPage({
         {sak.kreditor ?? sak.tittel}
       </Link>
 
-      <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+      <h1 className="tittel-s text-blekk">
         Lag et utkast
       </h1>
       <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">

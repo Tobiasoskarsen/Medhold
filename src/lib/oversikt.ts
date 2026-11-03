@@ -5,6 +5,42 @@
 import type { SakStatus, SakUtfall } from "./types";
 import type { GebyrsjekkResultat } from "./gebyr";
 
+export type HjemIngressInput = {
+  /** Totalt antall saker (aktive + avsluttede). */
+  antallSaker: number;
+  /** Saker som ikke er fullført. */
+  antallAktive: number;
+  /** Åpne frister på aktive saker som allerede er passert. */
+  antallUtlopteFrister: number;
+  /** Aktive saker med minst én åpen frist innen 0–7 dager. */
+  sakerMedFristDenneUka: number;
+  /** Hjem sin toppsak står i «venter på svar». */
+  toppVenter: boolean;
+};
+
+/**
+ * Ingressen under «Hei, {navn}» på Hjem (Retning B §5.1). Første regel som
+ * treffer gjelder. Ren kode, ingen AI — og ingen løfter på kreditors vegne.
+ */
+export function hjemIngress(i: HjemIngressInput): string {
+  if (i.antallAktive === 0 && i.antallSaker > 0) {
+    return "Ingen aktive saker. Godt jobbet.";
+  }
+  if (i.antallSaker === 0) return "Ett brev om gangen. Vi tar det rolig.";
+  if (i.antallUtlopteFrister > 0) {
+    return "En frist har gått ut. Se hva du kan gjøre.";
+  }
+  if (i.sakerMedFristDenneUka > 0) {
+    return i.sakerMedFristDenneUka === 1
+      ? "Én sak trenger deg denne uka."
+      : `${i.sakerMedFristDenneUka} saker trenger deg denne uka.`;
+  }
+  if (i.toppVenter) return "Du venter på svar. Vi følger med.";
+  return i.antallAktive === 1
+    ? "Én aktiv sak. Ingen frister denne uka."
+    : `${i.antallAktive} aktive saker. Ingen frister denne uka.`;
+}
+
 export type SakOppsummering = {
   id: string;
   status: SakStatus;

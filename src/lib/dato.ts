@@ -58,7 +58,7 @@ export function fristNærhet(isoDato: string): string {
 }
 
 export const HASTEGRAD_STIL: Record<Hastegrad, string> = {
-  overtid: "bg-red-50 text-red-700 ring-red-200",
-  snart: "bg-amber-50 text-amber-700 ring-amber-200",
-  senere: "bg-slate-100 text-slate-600 ring-slate-200",
+  overtid: "bg-dom-rod-bg text-dom-rod ring-dom-rod/25",
+  snart: "bg-varsel-bg text-varsel-tekst ring-varsel-tekst/25",
+  senere: "bg-flate-2 text-dempet ring-strek",
 };

@@ -66,7 +66,7 @@ export function VeierUtFlyt({
   }
 
   const feltKlasse =
-    "mt-2 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+    "mt-2 w-full rounded-[14px] border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
   // Kjeder kortenes egen liste-stagger etter SekvensDel sin forsinkelse
   // (Motion3 §2.2) — 0 utenfor en Sekvens, helt uendret oppførsel da.
@@ -150,7 +150,7 @@ export function VeierUtFlyt({
         {forslag && (
           <div className="mt-3 rounded-xl bg-aksent/5 px-3.5 py-3">
             <p className="text-sm text-blekk">
-              <span className="font-serif text-[19px] font-semibold tabular-nums">
+              <span className="tall-s">
                 {formaterBelop(forslag.manedsbelop)} kr/mnd
               </span>{" "}
               i {forslag.antallMandeder}{" "}

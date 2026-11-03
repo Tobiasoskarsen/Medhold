@@ -74,9 +74,7 @@ function VeivalgKort({
   return (
     <MålKnapp
       mål={mål}
-      className={`trykk relative flex flex-1 flex-col gap-2 rounded-2xl border-[0.5px] bg-flate p-[13px] text-left ${
-        anbefalt ? "border-aksent" : "border-strek"
-      }`}
+      className="trykk relative flex flex-1 flex-col gap-2 rounded-[20px] border border-kant bg-flate p-[13px] text-left"
       style={anbefalt ? { boxShadow: "var(--anbefalt-glod)" } : undefined}
     >
       {anbefalt && (
@@ -85,7 +83,7 @@ function VeivalgKort({
         </Pill>
       )}
       <span
-        className={`flex size-[30px] shrink-0 items-center justify-center rounded-[9px] ${ikonBg}`}
+        className={`flex size-[30px] shrink-0 items-center justify-center rounded-[10px] ${ikonBg}`}
       >
         {ikon}
       </span>
@@ -135,9 +133,9 @@ function Spørsmålsrad<T extends string>({
               onVelg(v.verdi);
             }}
             aria-pressed={valgt === v.verdi}
-            className={`trykk flex-1 rounded-[10px] border-[0.5px] px-3 py-2.5 text-[13px] font-medium transition ${
+            className={`trykk flex-1 rounded-[12px] border px-3 py-2.5 text-[13px] font-medium transition ${
               valgt === v.verdi
-                ? "border-aksent bg-aksent/10 text-aksent-dyp"
+                ? "border-blekk bg-blekk text-bakgrunn"
                 : "border-strek text-blekk hover:border-dempet/40"
             }`}
           >
@@ -181,7 +179,7 @@ export function Veivalg({
 
   return (
     <div className={className}>
-      <h2 className="font-serif text-[19px] font-semibold text-blekk">
+      <h2 className="seksjonstittel text-blekk">
         Hva vil du gjøre?
       </h2>
       <p className="mt-1 text-[13px] leading-relaxed text-dempet">
@@ -192,7 +190,7 @@ export function Veivalg({
       <div className="mt-4 flex gap-2.5">
         <VeivalgKort
           ikon={
-            <span className="font-serif text-[17px] font-semibold text-dom-rod">
+            <span className="text-[17px] font-bold text-dom-rod">
               §
             </span>
           }
@@ -243,7 +241,7 @@ export function Veivalg({
             transition={{ duration: VARIGHET.rolig, ease: EASING }}
             style={{ overflow: "hidden" }}
           >
-            <div className="mt-4 flex flex-col gap-4 rounded-2xl border-[0.5px] border-strek bg-flate p-4">
+            <div className="mt-4 flex flex-col gap-4 rounded-[20px] border border-kant bg-flate p-4">
               <Spørsmålsrad
                 spørsmål="Har du bestilt eller avtalt det kravet gjelder?"
                 valg={JA_NEI_VETIKKE}

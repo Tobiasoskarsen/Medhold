@@ -30,7 +30,7 @@ export function FeilVisning({
   return (
     <Skjermramme className="pt-10">
       <Kort className="flex flex-col items-center gap-1 text-center">
-        <h1 className="font-serif text-[22px] font-medium tracking-[-0.01em] text-blekk">
+        <h1 className="tittel-s text-blekk">
           {tittel}
         </h1>
         <p className="mt-1 text-[13px] leading-relaxed text-dempet">{tekst}</p>

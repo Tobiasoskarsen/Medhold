@@ -18,7 +18,7 @@ export default function PlussPage() {
 
   return (
     <Skjermramme className="pt-6">
-      <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+      <h1 className="tittel-s text-blekk">
         {APP_NAME} Pluss
       </h1>
 

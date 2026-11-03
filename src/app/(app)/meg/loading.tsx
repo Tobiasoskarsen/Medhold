@@ -13,7 +13,7 @@ export default function Loading() {
       {[0, 1].map((g) => (
         <div
           key={g}
-          className="mb-[18px] flex flex-col gap-0 divide-y divide-strek overflow-hidden rounded-2xl border-[0.5px] border-strek bg-flate"
+          className="mb-[18px] flex flex-col gap-0 divide-y divide-strek overflow-hidden rounded-[20px] border border-kant bg-flate"
         >
           {[0, 1].map((r) => (
             <div key={r} className="p-[14px]">

@@ -6,8 +6,8 @@ import {
   Skjermramme,
   Kort,
   Pillknapp,
-  StadiumRing,
-  Nedtelling,
+  StadiumLinje,
+  FristRad,
   Tidslinje,
   TidslinjeHendelse,
   Sekvens,
@@ -346,20 +346,22 @@ export default async function KravDetaljPage({
 
   return (
     <Skjermramme className="pt-5" animerInn={false}>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-[18px] flex items-center justify-between">
         <Link
           href="/krav"
-          className="flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
+          aria-label="Tilbake til saker"
+          className="trykk flex size-9 items-center justify-center rounded-full border border-kant bg-flate text-blekk"
         >
-          <ChevronLeft className="size-5" aria-hidden />
-          Krav
+          <ChevronLeft className="size-[18px]" aria-hidden />
         </Link>
         <KravMeny kravId={sak.id} lost={lost} />
       </div>
 
       <Sekvens>
       <SekvensDel>
-      {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
+      {eyebrow && (
+        <p className="text-[13px] font-medium text-dempet">{eyebrow}</p>
+      )}
       <KravNavn
         navn={hovednavn}
         delId={sak.id}
@@ -367,24 +369,13 @@ export default async function KravDetaljPage({
       />
 
       {sak.belop_totalt != null && (
-        <p className="mt-2">
+        <p className="mt-1">
           <KravBelop
             verdi={sak.belop_totalt}
             delId={sak.id}
-            className="font-serif text-[38px] font-medium tracking-[-0.02em] tabular-nums text-blekk"
+            className="tall-xl text-blekk"
           />
         </p>
-      )}
-      {harOverGebyr ? (
-        <p className="mt-1 text-[12.5px] font-semibold text-dom-rod">
-          {kr(overDiff)} kr av dette er over lovlig sats.
-        </p>
-      ) : (
-        harFristfunn && (
-          <p className="mt-1 text-[12.5px] font-semibold text-dom-rod">
-            Fristen i brevet kan være for kort.
-          </p>
-        )
       )}
       <HovedstolVarsel avvik={hovedstolAvvik} className="mt-1" />
 
@@ -406,22 +397,43 @@ export default async function KravDetaljPage({
       </div>
       </SekvensDel>
 
-      {(stadium || nesteFrist) && (
+      {stadium && (
         <SekvensDel>
-          <div
-            className={`mt-5 grid gap-2.5 ${
-              stadium && nesteFrist ? "grid-cols-2" : "grid-cols-1"
-            }`}
-          >
-            {stadium && <StadiumRing stadium={stadium} />}
-            {nesteFrist && (
-              <Nedtelling
-                forfallsdato={nesteFrist.forfallsdato}
-                tittel={nesteFrist.tittel}
+          <StadiumLinje stadium={stadium} className="mt-[18px]" />
+        </SekvensDel>
+      )}
+
+      {((harOverGebyr && sisteBrev?.gebyrsjekk) ||
+        (harFristfunn && sisteBrev?.fristfunn)) && (
+        <SekvensDel>
+          <div className="mt-5 flex flex-col gap-2.5">
+            {harOverGebyr && sisteBrev?.gebyrsjekk && (
+              <DomMini
+                resultat={sisteBrev.gebyrsjekk}
+                utkastHref={
+                  stotterUtkast(stadium)
+                    ? `/krav/${sak.id}/utkast?type=innsigelse`
+                    : undefined
+                }
+              />
+            )}
+            {harFristfunn && sisteBrev?.fristfunn && (
+              <DomMiniFrist
+                differanseDager={Math.abs(sisteBrev.fristfunn.differanseDager ?? 0)}
               />
             )}
           </div>
-          {nesteFrist && nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
+        </SekvensDel>
+      )}
+
+      {nesteFrist && (
+        <SekvensDel>
+          <FristRad
+            forfallsdato={nesteFrist.forfallsdato}
+            tittel={nesteFrist.tittel}
+            className="mt-2.5"
+          />
+          {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
             <Utregning
               className="mt-2"
               rader={[
@@ -448,7 +460,7 @@ export default async function KravDetaljPage({
                 ) : undefined
               }
             />
-          ) : nesteFrist && nesteFrist.kilde !== "beregnet" ? (
+          ) : nesteFrist.kilde !== "beregnet" ? (
             <p className="mt-2 text-[12px] text-dempet">
               Fristen står oppgitt i brevet.
             </p>
@@ -456,39 +468,16 @@ export default async function KravDetaljPage({
         </SekvensDel>
       )}
 
-      {((harOverGebyr && sisteBrev?.gebyrsjekk) ||
-        (harFristfunn && sisteBrev?.fristfunn)) && (
-        <SekvensDel>
-          {harOverGebyr && sisteBrev?.gebyrsjekk && (
-            <DomMini
-              resultat={sisteBrev.gebyrsjekk}
-              utkastHref={
-                stotterUtkast(stadium)
-                  ? `/krav/${sak.id}/utkast?type=innsigelse`
-                  : undefined
-              }
-              className="mt-4"
-            />
-          )}
-          {harFristfunn && sisteBrev?.fristfunn && (
-            <DomMiniFrist
-              differanseDager={Math.abs(sisteBrev.fristfunn.differanseDager ?? 0)}
-              className={harOverGebyr ? "mt-3" : "mt-4"}
-            />
-          )}
-        </SekvensDel>
-      )}
-
       {erSakAlvorlig && !lost ? (
         <SekvensDel>
-          <Alvorsvarsel signalord={signalord as string} className="mt-5" />
+          <Alvorsvarsel signalord={signalord as string} className="mt-6" />
         </SekvensDel>
       ) : (
         stotterUtkast(stadium) &&
         !lost && (
           <SekvensDel>
             <Veivalg
-              className="mt-5"
+              className="mt-6"
               harGebyrfunn={harOverGebyr}
               gebyrDifferanse={overDiff}
               svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
@@ -521,7 +510,7 @@ export default async function KravDetaljPage({
       <SekvensDel>
       {items.length === 0 && !lost && !oppfolgingTilstandVerdi ? (
         <>
-          <h2 className="mb-4 mt-8 font-serif text-[19px] font-semibold text-blekk">
+          <h2 className="seksjonstittel mb-4 mt-8 text-blekk">
             Sakens gang
           </h2>
           <p className="text-sm text-dempet">
@@ -577,7 +566,7 @@ export default async function KravDetaljPage({
                           : { tittel: "Sak løst", under: null, farge: "text-blekk" };
                   return (
                     <>
-                      <p className={`font-serif text-[16px] font-semibold ${s.farge}`}>
+                      <p className={`text-[16px] font-bold ${s.farge}`}>
                         {s.tittel}
                       </p>
                       {s.under && (

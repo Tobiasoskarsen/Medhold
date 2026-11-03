@@ -46,7 +46,7 @@ export default async function DelPage({
         Tilbake
       </Link>
 
-      <h1 className="font-serif text-[22px] font-medium tracking-[-0.01em] text-blekk">
+      <h1 className="tittel-s text-blekk">
         Del resultatet
       </h1>
       <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">

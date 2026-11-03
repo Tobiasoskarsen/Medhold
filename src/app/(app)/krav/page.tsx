@@ -1,4 +1,3 @@
-import { NavLenke as Link } from "@/components/NavLenke";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Primærknapp, Sekvens, SekvensDel } from "@/components/ui";
@@ -200,13 +199,11 @@ export default async function KravListePage() {
     <Skjermramme className="pt-6" animerInn={false}>
       <Sekvens>
       <SekvensDel>
-      <h1 className="font-serif text-[26px] font-medium tracking-[-0.01em] text-blekk">
-        Sakene dine
-      </h1>
+      <h1 className="tittel text-blekk">Saker</h1>
       </SekvensDel>
       {stripe && (
         <SekvensDel>
-          <p className="eyebrow mt-1.5">{stripe}</p>
+          <p className="mt-1.5 text-[14px] text-dempet">{stripe}</p>
         </SekvensDel>
       )}
 
@@ -226,7 +223,9 @@ export default async function KravListePage() {
       {aktive.length > 0 && (
         <SekvensDel>
           <div className="mt-6">
-            {avsluttede.length > 0 && <p className="eyebrow mb-2">Aktive</p>}
+            {avsluttede.length > 0 && (
+              <h2 className="seksjonstittel mb-2.5 text-blekk">Aktive</h2>
+            )}
             {brukGruppering ? (
               <GruppertSaksliste
                 grupper={grupper}
@@ -242,20 +241,19 @@ export default async function KravListePage() {
       {avsluttede.length > 0 && (
         <SekvensDel>
           <div className="mt-8">
-            <p className="eyebrow mb-2">Avsluttet</p>
+            <h2 className="seksjonstittel mb-2.5 text-blekk">Avsluttet</h2>
             <AvsluttedeListe saker={avsluttede.map(kortData)} />
           </div>
         </SekvensDel>
       )}
       </Sekvens>
 
-      <Link
-        href="/krav/ny"
-        className="trykk mt-6 flex w-full items-center justify-center gap-2 rounded-[10px] border-[0.5px] border-aksent/40 bg-flate px-3 py-3 text-sm font-medium text-aksent transition hover:bg-aksent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
-      >
-        <Plus className="size-4" aria-hidden />
-        Opprett nytt krav
-      </Link>
+      <div className="mt-6">
+        <Primærknapp href="/krav/ny" variant="rolig">
+          <Plus className="-mt-0.5 mr-1.5 inline size-4" aria-hidden />
+          Opprett nytt krav
+        </Primærknapp>
+      </div>
     </Skjermramme>
   );
 }

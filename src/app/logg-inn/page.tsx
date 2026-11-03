@@ -227,7 +227,7 @@ function LoggInn() {
   }
 
   const feltKlasse =
-    "mt-1.5 w-full rounded-xl border-[1.5px] border-strek bg-flate px-[15px] py-3.5 text-[15.5px] text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+    "mt-1.5 w-full rounded-[14px] border border-strek bg-flate px-[15px] py-3.5 text-[15.5px] text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
   // Steg-overgang (opacity + translateX) — samme mønster som onboardingen.
   function stegStil(denneSteg: Steg): CSSProperties {
@@ -284,7 +284,7 @@ function LoggInn() {
           aria-hidden={steg !== "inntast"}
         >
           <div style={inntredenStil(0)}>
-            <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+            <h1 className="tittel-s text-blekk">
               Logg inn i Medhold
             </h1>
             <p className="mt-2 text-[13.5px] leading-[1.55] text-dempet">
@@ -357,7 +357,7 @@ function LoggInn() {
             {melding && (
               <p className="mt-4 text-[13px] text-aksent">{melding}</p>
             )}
-            {feil && <p className="mt-4 text-[13px] text-red-700">{feil}</p>}
+            {feil && <p className="mt-4 text-[13px] text-dom-rod">{feil}</p>}
             <div className="mt-[18px]">
               <Primærknapp type="submit" disabled={laster}>
                 {laster ? "Sender …" : "Send meg en kode"}
@@ -377,7 +377,7 @@ function LoggInn() {
           style={stegStil("kode")}
           aria-hidden={steg !== "kode"}
         >
-          <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+          <h1 className="tittel-s text-blekk">
             Skriv inn koden
           </h1>
           <p className="mt-2.5 text-[13.5px] text-dempet">
@@ -400,7 +400,7 @@ function LoggInn() {
                 onPaste={håndterLim}
                 aria-label={`Siffer ${i + 1}`}
                 tabIndex={steg === "kode" ? 0 : -1}
-                className={`flex h-[56px] w-[44px] items-center justify-center rounded-xl border-[1.5px] bg-flate text-center font-serif text-[24px] font-semibold text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30 ${
+                className={`flex h-[56px] w-[44px] items-center justify-center rounded-[16px] border bg-flate text-center text-[24px] font-bold tabular-nums text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30 ${
                   s ? "border-aksent" : "border-strek"
                 }`}
                 style={{
@@ -420,7 +420,7 @@ function LoggInn() {
           </div>
 
           {feil && (
-            <p className="mt-4 text-center text-[13px] text-red-700">
+            <p className="mt-4 text-center text-[13px] text-dom-rod">
               {feil}
             </p>
           )}

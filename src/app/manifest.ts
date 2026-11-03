@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Brev, frister og krav — samlet på ett sted, med hjelp til å svare riktig og i tide.",
     start_url: "/",
     display: "standalone",
-    background_color: "#fafaf8",
-    theme_color: "#1f4d3d",
+    background_color: "#f3f0e9",
+    theme_color: "#f3f0e9",
     lang: "nb",
     icons: [
       { src: "/ikon-192.png", sizes: "192x192", type: "image/png" },

@@ -11,7 +11,7 @@ export function Gruppe({
   return (
     <section className="mb-[18px]">
       {tittel && <p className="eyebrow mb-1.5 px-1">{tittel}</p>}
-      <div className="flex flex-col divide-y divide-strek overflow-hidden rounded-2xl border-[0.5px] border-strek bg-flate">
+      <div className="flex flex-col divide-y divide-strek overflow-hidden rounded-[20px] border border-kant bg-flate">
         {children}
       </div>
     </section>

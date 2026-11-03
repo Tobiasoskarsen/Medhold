@@ -294,7 +294,7 @@ export function LeggTilBrevFlyt({
   }
 
   const feltKlasse =
-    "mt-1.5 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+    "mt-1.5 w-full rounded-[14px] border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
   return (
     <Bevegelsesramme>
@@ -339,7 +339,7 @@ export function LeggTilBrevFlyt({
           exit={{ opacity: 0 }}
           transition={{ duration: VARIGHET.rolig, ease: EASING }}
           className="flex flex-1 flex-col">
-          <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+          <h1 className="tittel-s text-blekk">
             Legg til brev
           </h1>
 
@@ -368,7 +368,7 @@ export function LeggTilBrevFlyt({
                   onClick={() => setInntak("tekst")}
                 />
               </div>
-              {feil && <p className="mt-4 text-[13px] text-red-700">{feil}</p>}
+              {feil && <p className="mt-4 text-[13px] text-dom-rod">{feil}</p>}
             </>
           )}
 
@@ -382,9 +382,9 @@ export function LeggTilBrevFlyt({
                 onChange={(e) => setTekst(e.target.value)}
                 rows={12}
                 placeholder="Lim inn teksten fra brevet her …"
-                className="mt-4 w-full flex-1 resize-none rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+                className="mt-4 w-full flex-1 resize-none rounded-[14px] border border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
               />
-              {feil && <p className="mt-3 text-[13px] text-red-700">{feil}</p>}
+              {feil && <p className="mt-3 text-[13px] text-dom-rod">{feil}</p>}
               <div className="mt-4 pb-8">
                 <Primærknapp onClick={lesTekst} disabled={tekst.trim().length < 10}>
                   Les brevet
@@ -411,7 +411,7 @@ export function LeggTilBrevFlyt({
                       onClick={() =>
                         setBilder((prev) => prev.filter((_, n) => n !== i))
                       }
-                      className="text-dempet transition hover:text-red-700"
+                      className="text-dempet transition hover:text-dom-rod"
                     >
                       <Trash2 className="size-4" aria-hidden />
                     </button>
@@ -427,7 +427,7 @@ export function LeggTilBrevFlyt({
                   </button>
                 )}
               </div>
-              {feil && <p className="mt-3 text-[13px] text-red-700">{feil}</p>}
+              {feil && <p className="mt-3 text-[13px] text-dom-rod">{feil}</p>}
               <div className="mt-4 pb-8">
                 <Primærknapp onClick={lesBilder} disabled={bilder.length === 0}>
                   Les brevet
@@ -460,7 +460,7 @@ export function LeggTilBrevFlyt({
           transition={{ duration: VARIGHET.rolig, ease: EASING }}
           className="flex flex-1 flex-col pb-8"
         >
-          <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+          <h1 className="tittel-s text-blekk">
             Slik forstår vi brevet
           </h1>
 
@@ -588,7 +588,7 @@ export function LeggTilBrevFlyt({
                       setValgtKrav(e.target.value);
                       setKravModus("eksisterende");
                     }}
-                    className="rounded-[10px] border-[0.5px] border-strek bg-flate px-3 py-2 text-sm text-blekk outline-none focus:border-aksent"
+                    className="rounded-[14px] border border-strek bg-flate px-3 py-2 text-sm text-blekk outline-none focus:border-aksent"
                   >
                     {krav.map((k) => (
                       <option key={k.id} value={k.id}>
@@ -753,7 +753,7 @@ export function LeggTilBrevFlyt({
             </div>
           )}
 
-          {feil && <p className="mt-4 text-[13px] text-red-700">{feil}</p>}
+          {feil && <p className="mt-4 text-[13px] text-dom-rod">{feil}</p>}
 
           <div className="mt-6">
             <Veivalg
@@ -804,7 +804,7 @@ function InntakKort({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3.5 rounded-2xl border-[0.5px] border-strek bg-flate px-4 py-4 text-left transition hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+      className="flex items-center gap-3.5 rounded-[14px] border border-strek bg-flate px-4 py-4 text-left transition hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-aksent/10 text-aksent">
         {ikon}

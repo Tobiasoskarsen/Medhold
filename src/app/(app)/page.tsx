@@ -1,22 +1,23 @@
 import { NavLenke as Link } from "@/components/NavLenke";
 import { createClient } from "@/lib/supabase/server";
-import { ChevronRight } from "lucide-react";
 import {
   Skjermramme,
   Kort,
   Primærknapp,
   Belop,
-  Trapp,
   Sekvens,
   SekvensDel,
-  Fremgangsring,
+  Heltekort,
+  HeltChip,
 } from "@/components/ui";
-import { FristChip } from "./FristChip";
-import { formaterKortDato, fristNærhet } from "@/lib/dato";
-import { handlingstittel, stotterUtkast, type Stadium } from "@/lib/gjeld";
+import { dagerTil, fristNærhet } from "@/lib/dato";
+import { erHastende, fristChipTekst } from "@/lib/frist";
+import { formaterBelop } from "@/lib/format";
+import { STADIUM_ETIKETT, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus, SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
-import { beregnOversikt, type SakOppsummering } from "@/lib/oversikt";
+import { hjemIngress } from "@/lib/oversikt";
+import { kr, overLinjer, totalOver } from "@/lib/gebyrfunn-visning";
 import {
   dagerTilOppfolging,
   oppfolgingTilstand,
@@ -41,7 +42,9 @@ type AapenFrist = {
   saker: SakKobling | null;
 };
 
-/** Dagens dato som eyebrow: «Torsdag 16. juli» (norsk tid — se dato.ts). */
+const ANDRE_SAKER_MAKS = 3;
+
+/** Dagens dato: «Tirsdag 3. november» (norsk tid — se dato.ts). */
 function idagEyebrow(): string {
   const s = new Date().toLocaleDateString("nb-NO", {
     timeZone: "Europe/Oslo",
@@ -52,37 +55,13 @@ function idagEyebrow(): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/**
- * Deterministisk H1 (designordre §3.1) — [tekst, siste ledd]. Siste ledd
- * settes i kursiv serif. Ren kode, ingen AI.
- */
-function hjemH1(
-  aktive: number,
-  antallFrister: number,
-  handlingUtfort: boolean,
-  harLoste: boolean,
-): [string, string] {
-  if (aktive === 0) {
-    return harLoste
-      ? ["Ingen aktive saker.", "Godt jobbet."]
-      : ["Ett brev om gangen.", "Vi tar det rolig."];
-  }
-  const ord = aktive === 1 ? "sak" : "saker";
-  if (antallFrister > 0) {
-    const fristLedd = antallFrister === 1 ? "Én frist." : `${antallFrister} frister.`;
-    return [
-      `${aktive} ${ord}. ${fristLedd}`,
-      handlingUtfort ? "Du ligger foran." : "Neste steg er klart.",
-    ];
-  }
-  return [`${aktive} ${ord}.`, "Alt under kontroll."];
+function stor(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 /**
- * Ventetid som synlig aktivitet (§5), kortform på Hjem sitt handlingskort —
- * inkassoselskapet nevnes ikke her (står alt i tittelen «Venter på svar fra
- * {kreditor}»). Er e-postpåminnelser av, loves ingen e-post appen ikke
- * sender.
+ * Ventetid som synlig aktivitet (§5), kortform på Hjem sitt heltekort. Er
+ * e-postpåminnelser av, loves ingen e-post appen ikke sender.
  */
 function oppfolgingTekstKort(
   tilstand: OppfolgingTilstand,
@@ -108,6 +87,9 @@ export default async function HjemPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const varslerPa = user?.user_metadata?.varsler_paa !== false;
+  const fornavn =
+    (user?.user_metadata?.fornavn as string | undefined)?.trim() || null;
+  const avatarBokstav = (fornavn?.[0] ?? user?.email?.[0] ?? "M").toUpperCase();
 
   const [{ data: sakData }, { data: fristData }, { data: brevData }] =
     await Promise.all([
@@ -123,21 +105,18 @@ export default async function HjemPage() {
           "id, sak_id, tittel, forfallsdato, saker(id, kreditor, tittel, belop_totalt, stadium, status, utfall)",
         )
         .eq("fullfort", false),
-      // Nyeste brev per sak (gebyrsjekk-summeringen + alvorsgrensen, §B.5) —
-      // ÉN spørring, ingen N+1, samme mønster som /krav (Kravkort sin
-      // §-markør).
+      // Nyeste brev per sak (alvorsgrensen, §B.5) — ÉN spørring, ingen N+1.
       supabase
         .from("brev")
-        .select("sak_id, opprettet, gebyrsjekk, alvorlig")
+        .select("sak_id, opprettet, alvorlig")
         .order("opprettet", { ascending: false }),
     ]);
 
   const saker = (sakData ?? []) as (SakKobling & { sist_endret: string })[];
   // Verken markerLost eller markerUtkastSendt lukker sakens åpne frister
-  // automatisk når status endres (til fullfort/venter_pa_svar) — filtrer
-  // bort frister som tilhører en sak som ikke lenger er aktiv, så Hjem ikke
-  // lar en gjenglemt frist overstyre «venter på svar»-kortet eller dra en
-  // løst sak tilbake på forsidekortet.
+  // automatisk når status endres — filtrer bort frister som tilhører en sak
+  // som ikke lenger er aktiv, så en gjenglemt frist ikke overstyrer «venter
+  // på svar» eller drar en løst sak tilbake på heltekortet.
   const frister = ((fristData ?? []) as unknown as AapenFrist[]).filter(
     (f) => f.saker?.status === "aktiv",
   );
@@ -150,50 +129,46 @@ export default async function HjemPage() {
 
   const harKrav = saker.length > 0;
   const aktiveSaker = saker.filter((s) => s.status !== "fullfort");
-  const aktive = aktiveSaker.length;
-  const harLoste = saker.some((s) => s.status === "fullfort");
 
-  // Nyeste brev sin gebyrsjekk/alvorlighet per sak (DB-sortert nyeste først
-  // → første treff per sak_id holdes) — grunnlaget for oversiktspanelet og
-  // alvorsvarselet (§B.5) under.
-  const gebyrsjekkPerSak = new Map<string, GebyrsjekkResultat | null>();
+  // Nyeste brev sin alvorlighet per sak (DB-sortert nyeste først → første
+  // treff per sak_id holdes).
   const alvorligPerSak = new Map<string, boolean>();
   for (const b of brevData ?? []) {
-    if (gebyrsjekkPerSak.has(b.sak_id)) continue;
-    gebyrsjekkPerSak.set(
-      b.sak_id,
-      (b.gebyrsjekk as GebyrsjekkResultat | null) ?? null,
-    );
+    if (alvorligPerSak.has(b.sak_id)) continue;
     alvorligPerSak.set(b.sak_id, !!b.alvorlig);
   }
-  const sakOppsummeringer: SakOppsummering[] = saker.map((s) => ({
-    id: s.id,
-    status: s.status,
-    utfall: s.utfall ?? null,
-    belopTotalt: s.belop_totalt,
-    gebyrsjekk: gebyrsjekkPerSak.get(s.id) ?? null,
-  }));
-  const oversikt = beregnOversikt(sakOppsummeringer);
-  // «Reisen din» (designretning 2): andel av ALLE saker (aktive + avsluttede)
-  // som er løst — ikke tidligere et tall appen viste. Ren avledning av tall
-  // appen allerede har (saker.length, oversikt.antallAvsluttet), ingen ny
-  // datakilde.
-  const totalSaker = saker.length;
-  const reiseFraction = totalSaker > 0 ? oversikt.antallAvsluttet / totalSaker : 0;
-  const historikkLedd = [
-    oversikt.antallMedhold > 0 ? `${oversikt.antallMedhold} medhold` : null,
-    oversikt.antallAvtale > 0 ? `${oversikt.antallAvtale} avtaler` : null,
-    oversikt.antallOppgjort > 0 ? `${oversikt.antallOppgjort} oppgjort` : null,
-  ].filter(Boolean);
+
+  // Tidligste åpne frist per sak (frister er allerede sortert på dato).
+  const nesteFristPerSak = new Map<string, string>();
+  for (const f of frister) {
+    if (!nesteFristPerSak.has(f.sak_id)) nesteFristPerSak.set(f.sak_id, f.forfallsdato);
+  }
+
   const topFrist = frister[0] ?? null;
   const topSak = topFrist?.saker ?? aktiveSaker[0] ?? null;
-  const kommende = frister.slice(topFrist ? 1 : 0, topFrist ? 4 : 3);
   const venter = !!topSak && topSak.status === "venter_pa_svar" && !topFrist;
   const topSakAlvorlig = topSak ? (alvorligPerSak.get(topSak.id) ?? false) : false;
 
-  // Ventetid som synlig aktivitet (§5), kortform på handlingskortet. Samme
-  // definisjon av «siste aktivitet» som krav-detalj/cron-en: nyeste av
-  // (utkast.sendt_at, brev.opprettet).
+  // Ingressens grunnlag (§5.1).
+  const sakerDenneUka = new Set(
+    frister
+      .filter((f) => {
+        const d = dagerTil(f.forfallsdato);
+        return d >= 0 && d <= 7;
+      })
+      .map((f) => f.sak_id),
+  );
+  const ingress = hjemIngress({
+    antallSaker: saker.length,
+    antallAktive: aktiveSaker.length,
+    antallUtlopteFrister: frister.filter((f) => dagerTil(f.forfallsdato) < 0).length,
+    sakerMedFristDenneUka: sakerDenneUka.size,
+    toppVenter: topSak?.status === "venter_pa_svar",
+  });
+
+  // Ventetid som synlig aktivitet (§5). Samme definisjon av «siste
+  // aktivitet» som krav-detalj/cron-en: nyeste av (utkast.sendt_at,
+  // brev.opprettet).
   let oppfolgingTilstandVerdi: OppfolgingTilstand | null = null;
   if (venter && topSak) {
     const brevOpprettetDatoer = (brevData ?? [])
@@ -223,13 +198,6 @@ export default async function HjemPage() {
     }
   }
 
-  const [h1Tekst, h1Ledd] = hjemH1(
-    aktive,
-    frister.length,
-    topSak?.status === "venter_pa_svar",
-    harLoste,
-  );
-
   // Seier: nyeste sak er løst med medhold, og ingen presserende frist.
   const seierSak =
     !topFrist &&
@@ -238,8 +206,9 @@ export default async function HjemPage() {
       ? saker[0]
       : null;
 
-  // Gebyrsjekk-hint på handlingskortet (uendret logikk).
-  let hjemHarOverGebyr = false;
+  // Gebyrsjekk på heltekortet: samme nyeste brev som før, nå også totalen
+  // til «{n} kr for mye»-chipen (ingen ny spørring).
+  let gebyrOver = 0;
   if (topSak && stotterUtkast(topSak.stadium ?? null)) {
     const { data: nyesteBrev } = await supabase
       .from("brev")
@@ -249,259 +218,232 @@ export default async function HjemPage() {
       .order("opprettet", { ascending: false })
       .limit(1)
       .maybeSingle();
-    hjemHarOverGebyr =
-      ((nyesteBrev?.gebyrsjekk as GebyrsjekkResultat | null)?.antallOver ?? 0) > 0;
+    const gs = nyesteBrev?.gebyrsjekk as GebyrsjekkResultat | null;
+    if ((gs?.antallOver ?? 0) > 0 && gs) gebyrOver = totalOver(overLinjer(gs));
   }
+  const hjemHarOverGebyr = gebyrOver > 0;
+
+  // «Andre saker» (§5.3): aktive unntatt toppsaken. Med åpen frist først
+  // (etter dato), deretter resten etter sist_endret (spørringen er allerede
+  // nyeste først — stabil sort beholder det).
+  const andreSaker = aktiveSaker
+    .filter((s) => s.id !== topSak?.id)
+    .sort((a, b) => {
+      const fa = nesteFristPerSak.get(a.id);
+      const fb = nesteFristPerSak.get(b.id);
+      if (fa && fb) return fa < fb ? -1 : fa > fb ? 1 : 0;
+      if (fa) return -1;
+      if (fb) return 1;
+      return 0;
+    })
+    .slice(0, ANDRE_SAKER_MAKS);
+
+  const navnPa = (s: SakKobling) => s.kreditor ?? s.tittel;
+  const kreditorLinje = (s: SakKobling) => (
+    <p className="mt-3 text-[15px] font-semibold text-helt-dempet">{navnPa(s)}</p>
+  );
+  const belopLinje = (s: SakKobling) =>
+    s.belop_totalt != null ? (
+      <p className="mt-1">
+        <Belop verdi={s.belop_totalt} className="tall-l" />
+      </p>
+    ) : null;
 
   return (
     <Skjermramme className="pt-6" animerInn={false}>
       <Sekvens>
       <SekvensDel>
-      <p className="eyebrow mb-2">{idagEyebrow()}</p>
-      <h1 className="font-serif text-[30px] font-medium leading-[1.15] tracking-[-0.01em] text-blekk">
-        {h1Tekst}{" "}
-        <em className="italic text-aksent-dyp">{h1Ledd}</em>
-      </h1>
+        <div className="mb-[22px] flex items-center justify-between">
+          <p className="text-[13px] font-medium text-dempet">{idagEyebrow()}</p>
+          <Link
+            href="/meg"
+            aria-label="Meg"
+            className="trykk flex size-[34px] items-center justify-center rounded-full bg-blekk text-[14px] font-bold text-bakgrunn mork:border mork:border-kant mork:bg-flate-2 mork:text-blekk"
+          >
+            {avatarBokstav}
+          </Link>
+        </div>
+        <h1 className="tittel text-blekk">{fornavn ? `Hei, ${fornavn}` : "Hei"}</h1>
+        <p className="mt-1.5 text-[14px] text-dempet">{ingress}</p>
       </SekvensDel>
-
-      {totalSaker > 0 && (() => {
-        const visSamletKrav = oversikt.antallAktive > 0;
-        const visOverSats = oversikt.antallAktive > 0 && oversikt.funnetOverSats > 0;
-        const antallStatplater = [visSamletKrav, visOverSats].filter(Boolean).length;
-        return (
-          <SekvensDel>
-            <div className="mt-5 grid grid-cols-2 gap-2.5">
-              <div
-                className={`flex flex-col items-center justify-center rounded-2xl border-[0.5px] border-strek bg-flate p-4 ${
-                  antallStatplater === 0 ? "col-span-2" : "row-span-2"
-                }`}
-              >
-                <Fremgangsring fraction={reiseFraction}>
-                  <span className="font-serif text-[22px] font-semibold tabular-nums text-blekk">
-                    {oversikt.antallAvsluttet}/{totalSaker}
-                  </span>
-                </Fremgangsring>
-                <p className="mt-2 text-center text-[11px] leading-snug text-dempet">
-                  saker løst
-                  <br />
-                  på reisen din
-                </p>
-              </div>
-              {visSamletKrav && (
-                <div
-                  className={`flex flex-col justify-center rounded-2xl border-[0.5px] border-strek bg-flate p-3.5 ${
-                    antallStatplater === 1 ? "row-span-2" : ""
-                  }`}
-                >
-                  <Belop
-                    verdi={oversikt.samletKravAktive}
-                    className="font-serif text-[20px] font-semibold tabular-nums text-blekk"
-                  />
-                  <p className="mt-0.5 text-[11px] text-dempet">samlet aktivt krav</p>
-                </div>
-              )}
-              {visOverSats && (
-                <div className="flex flex-col justify-center rounded-2xl border-[0.5px] border-strek bg-flate p-3.5">
-                  <Belop
-                    verdi={oversikt.funnetOverSats}
-                    className="font-serif text-[20px] font-semibold tabular-nums text-dom-rod"
-                  />
-                  <p className="mt-0.5 text-[11px] text-dempet">funnet over sats</p>
-                </div>
-              )}
-            </div>
-            {historikkLedd.length > 0 && (
-              <p className="mt-2 text-center text-[12px] text-dempet">
-                Så langt: {historikkLedd.join(" · ")}
-              </p>
-            )}
-          </SekvensDel>
-        );
-      })()}
 
       <SekvensDel>
-      {!harKrav ? (
-        <Kort className="mt-6">
-          <p className="text-[15px] leading-relaxed text-blekk">
-            Legg inn ditt første brev, så holder Medhold oversikten.
-          </p>
-          <div className="mt-4">
-            <Primærknapp href="/legg-til-brev">Legg til brev</Primærknapp>
-          </div>
-        </Kort>
-      ) : seierSak ? (
-        <Link
-          href={`/krav/${seierSak.id}/del`}
-          className="trykk mt-6 flex items-center gap-3.5 rounded-2xl border-[0.5px] border-gull/40 bg-gull-bg px-4 py-4 transition hover:border-gull/70"
-        >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gull font-serif text-[22px] font-semibold text-white">
-            ✓
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-serif text-[18px] font-semibold text-gull">
-              Medhold.
-            </p>
-            <p className="mt-0.5 text-[13px] text-blekk">
-              {seierSak.kreditor ?? seierSak.tittel} — kravet ble frafalt etter
-              innsigelsen din. Del gjerne resultatet.
-            </p>
-          </div>
-          <ChevronRight className="size-4 shrink-0 text-gull" aria-hidden />
-        </Link>
-      ) : !topSak ? (
-        <Kort className="mt-6">
-          <p className="text-[15px] leading-relaxed text-blekk">
-            Ingen aktive saker akkurat nå. Godt jobbet.
-          </p>
-        </Kort>
-      ) : (
-          <Kort className="mt-6">
-            {topSakAlvorlig ? (
-              <>
-                <p className="text-[17px] font-medium text-blekk">
-                  {topSak?.kreditor ?? topSak?.tittel}
-                </p>
-                <p className="mt-0.5 text-[13px] font-medium text-dom-rod">
-                  Alvorlig varsel — søk hjelp
-                </p>
-                {topSak?.belop_totalt != null && (
-                  <p className="mt-2">
-                    <Belop
-                      verdi={topSak.belop_totalt}
-                      className="font-serif text-[30px] font-medium tracking-[-0.02em] tabular-nums text-blekk"
-                    />
-                  </p>
-                )}
-                {topSak && (
-                  <p className="mt-3 text-center text-[13px] text-dempet">
-                    <Link
-                      href={`/krav/${topSak.id}`}
-                      className="transition hover:text-blekk"
-                    >
-                      Se hele saken
-                    </Link>
-                  </p>
-                )}
-              </>
-            ) : venter ? (
-              <>
-                <p className="text-[17px] font-medium text-blekk">
-                  Venter på svar
-                  {topSak?.kreditor ? ` fra ${topSak.kreditor}` : ""}
-                </p>
-                <p className="mt-0.5 text-[13px] text-dempet">
+        <div className="mt-5">
+          {!harKrav ? (
+            <Heltekort
+              etikett="Kom i gang"
+              knapp={
+                <Primærknapp href="/legg-til-brev" variant="lys">
+                  Legg til brev
+                </Primærknapp>
+              }
+            >
+              <p className="tittel-s mt-3">Legg inn ditt første brev</p>
+              <p className="mt-1.5 text-[14px] text-helt-dempet">
+                Ta bilde av brevet, så sjekker vi gebyrer og frister.
+              </p>
+            </Heltekort>
+          ) : seierSak ? (
+            <Heltekort
+              etikett="Medhold"
+              variant="gull"
+              href={`/krav/${seierSak.id}`}
+              knapp={
+                <Primærknapp href={`/krav/${seierSak.id}/del`} variant="gull">
+                  Del resultatet
+                </Primærknapp>
+              }
+            >
+              <p className="mt-3 text-[15px] font-semibold">{navnPa(seierSak)}</p>
+              <p className="tall-m mt-1 text-gull">Medhold.</p>
+              <p className="mt-2 text-[13px]">
+                Kravet ble frafalt etter innsigelsen din.
+              </p>
+            </Heltekort>
+          ) : !topSak ? (
+            <Kort>
+              <p className="text-[15px] leading-relaxed text-blekk">
+                Ingen aktive saker akkurat nå.
+              </p>
+              <div className="mt-4">
+                <Primærknapp href="/legg-til-brev" variant="rolig">
+                  Legg til brev
+                </Primærknapp>
+              </div>
+            </Kort>
+          ) : topSakAlvorlig ? (
+            <Heltekort
+              etikett="Viktig"
+              href={`/krav/${topSak.id}`}
+              knapp={
+                <Primærknapp href={`/krav/${topSak.id}`} variant="lys">
+                  Se hva du bør gjøre
+                </Primærknapp>
+              }
+            >
+              {kreditorLinje(topSak)}
+              {belopLinje(topSak)}
+              <div className="mt-3.5 flex flex-wrap gap-1.5">
+                <HeltChip variant="funn">Alvorlig varsel</HeltChip>
+              </div>
+            </Heltekort>
+          ) : venter ? (
+            <Heltekort
+              etikett="Venter på svar"
+              href={`/krav/${topSak.id}`}
+              knapp={
+                <Primærknapp href="/legg-til-brev" variant="lys">
+                  Fått svar? Legg til brevet
+                </Primærknapp>
+              }
+            >
+              {kreditorLinje(topSak)}
+              {belopLinje(topSak)}
+              <div className="mt-3.5 flex flex-wrap gap-1.5">
+                <HeltChip variant="noytral">
                   {oppfolgingTilstandVerdi
                     ? oppfolgingTekstKort(oppfolgingTilstandVerdi, varslerPa)
-                    : "Ta vare på kvitteringen på at du sendte det."}
-                </p>
-                <div className="mt-4">
-                  <Primærknapp href="/legg-til-brev">
-                    Fått svar? Legg til brevet
+                    : "Ta vare på kvitteringen"}
+                </HeltChip>
+              </div>
+            </Heltekort>
+          ) : (
+            <Heltekort
+              etikett="Neste steg"
+              href={`/krav/${topSak.id}`}
+              knapp={
+                stotterUtkast(topSak.stadium ?? null) ? (
+                  <Primærknapp
+                    href={`/krav/${topSak.id}/utkast${
+                      hjemHarOverGebyr ? "?type=innsigelse" : ""
+                    }`}
+                    variant="lys"
+                  >
+                    Lag svar
                   </Primærknapp>
-                </div>
-                {topSak && (
-                  <p className="mt-3 text-center text-[13px] text-dempet">
-                    <Link
-                      href={`/krav/${topSak.id}`}
-                      className="transition hover:text-blekk"
-                    >
-                      Se hele saken
-                    </Link>
-                  </p>
-                )}
-              </>
-            ) : (
-              <>
-                {/* Bento-hero-rad (designretning 2): kreditor + beløp venstre,
-                    frist-pille høyre — samme FristChip/fristNærhet-tekst som
-                    før, kun omplassert. Den fulle datoen («frist 24. juli»)
-                    er ikke lenger en egen linje her — pillen dekker det
-                    samme (hvor mange dager), og datoen finnes uansett på
-                    Nedtelling-kortet på selve sak-siden. */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-dempet">
-                      {topSak?.kreditor ?? topSak?.tittel}
-                    </p>
-                    {topSak?.belop_totalt != null && (
-                      <p className="mt-0.5">
-                        <Belop
-                          verdi={topSak.belop_totalt}
-                          className="font-serif text-[28px] font-medium tracking-[-0.02em] tabular-nums text-blekk"
-                        />
-                      </p>
-                    )}
-                  </div>
-                  {topFrist && (
-                    <FristChip>
-                      Frist {fristNærhet(topFrist.forfallsdato).toLowerCase()}
-                    </FristChip>
+                ) : (
+                  <Primærknapp href={`/krav/${topSak.id}`} variant="lys">
+                    Se saken
+                  </Primærknapp>
+                )
+              }
+            >
+              {kreditorLinje(topSak)}
+              {belopLinje(topSak)}
+              {(topFrist || hjemHarOverGebyr) && (
+                <div className="mt-3.5 flex flex-wrap gap-1.5">
+                  {topFrist &&
+                    (dagerTil(topFrist.forfallsdato) < 0 ? (
+                      <HeltChip variant="funn">Frist utløpt</HeltChip>
+                    ) : (
+                      <HeltChip variant="noytral">
+                        Frist {fristNærhet(topFrist.forfallsdato).toLowerCase()}
+                      </HeltChip>
+                    ))}
+                  {hjemHarOverGebyr && (
+                    <HeltChip variant="funn">{kr(gebyrOver)} kr for mye</HeltChip>
                   )}
                 </div>
-                <p className="mt-3 text-[15px] font-medium text-blekk">
-                  {handlingstittel(topSak?.stadium ?? null)}
-                </p>
-                {hjemHarOverGebyr && (
-                  <p className="mt-1 text-[13px] text-dempet">
-                    Gebyrsjekken fant et beløp over maksimalsats — god grunn til
-                    å svare.
-                  </p>
-                )}
-                {topSak?.stadium && (
-                  <div className="mt-4">
-                    <Trapp stadium={topSak.stadium} kompakt />
-                  </div>
-                )}
-                {topSak &&
-                  (stotterUtkast(topSak.stadium ?? null) ? (
-                    <>
-                      <div className="mt-4">
-                        <Primærknapp href={`/krav/${topSak.id}/utkast`}>
-                          Lag utkast til svar
-                        </Primærknapp>
-                      </div>
-                      <p className="mt-3 text-center text-[13px] text-dempet">
-                        <Link
-                          href={`/krav/${topSak.id}`}
-                          className="transition hover:text-blekk"
-                        >
-                          Se hele saken
-                        </Link>
-                      </p>
-                    </>
-                  ) : (
-                    <div className="mt-4">
-                      <Primærknapp href={`/krav/${topSak.id}`}>
-                        Se saken
-                      </Primærknapp>
-                    </div>
-                  ))}
-              </>
-            )}
-          </Kort>
-      )}
+              )}
+            </Heltekort>
+          )}
+        </div>
       </SekvensDel>
 
-      {harKrav && !seierSak && topSak && kommende.length > 0 && (
+      {andreSaker.length > 0 && (
         <SekvensDel>
-          <p className="eyebrow mb-1 mt-6">Kommende</p>
-          <ul>
-            {kommende.map((f, i) => (
-              <li
-                key={f.id}
-                className={`flex items-center gap-2.5 py-[11px] ${
-                  i < kommende.length - 1 ? "border-b-[0.5px] border-strek" : ""
-                }`}
-              >
-                <span className="min-w-[46px] text-xs text-dempet">
-                  {formaterKortDato(f.forfallsdato)}
-                </span>
-                <span className="text-sm text-blekk">
-                  {f.tittel}
-                  {f.saker?.kreditor ? ` — ${f.saker.kreditor}` : ""}
-                </span>
-              </li>
-            ))}
+          <div className="mb-2.5 mt-6 flex items-baseline justify-between px-0.5">
+            <h2 className="seksjonstittel text-blekk">Andre saker</h2>
+            <Link
+              href="/krav"
+              className="text-[13px] font-semibold text-dempet transition hover:text-blekk"
+            >
+              Se alle
+            </Link>
+          </div>
+          <ul className="rounded-[20px] border border-kant bg-flate px-4">
+            {andreSaker.map((s, i) => {
+              const frist = nesteFristPerSak.get(s.id);
+              const dager = frist ? dagerTil(frist) : null;
+              const [undertekst, hastende] =
+                s.status === "venter_pa_svar"
+                  ? ["Venter på svar", false]
+                  : dager != null
+                    ? [fristChipTekst(dager), erHastende(dager)]
+                    : [s.stadium ? stor(STADIUM_ETIKETT[s.stadium]) : "", false];
+              const belop = formaterBelop(s.belop_totalt);
+              return (
+                <li key={s.id} className={i > 0 ? "border-t border-strek" : ""}>
+                  <Link
+                    href={`/krav/${s.id}`}
+                    className="trykk flex items-center gap-3 py-[13px]"
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] bg-flate-2 text-[14px] font-bold text-blekk">
+                      {navnPa(s).charAt(0).toUpperCase()}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] font-semibold text-blekk">
+                        {navnPa(s)}
+                      </span>
+                      {undertekst && (
+                        <span
+                          className={`block text-[12px] ${
+                            hastende ? "font-semibold text-dom-rod" : "text-dempet"
+                          }`}
+                        >
+                          {undertekst}
+                        </span>
+                      )}
+                    </span>
+                    {belop && (
+                      <span className="shrink-0 text-[15px] font-bold tabular-nums text-blekk">
+                        {belop} kr
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </SekvensDel>
       )}

@@ -3,9 +3,8 @@
 // DomFullskjerm — fullskjerm-avsløring av gebyrfunnet, åpnet fra DomMini
 // (MEDHOLD_KOMPLETT_ARBEIDSORDRE Del C). Ren presentasjon av et allerede
 // lagret GebyrsjekkResultat — ingen ny vurderingslogikk. Bakgrunnen er
-// ALLTID #16324f (den opprinnelige mørke aksent-dyp-verdien, FØR palett-
-// migreringen i Del 1) — en bevisst, fast farge uavhengig av appens tema
-// eller palett (guardrail 3), i likhet med gull (#d9b25e), som også er fast.
+// ALLTID #103c38 (Retning B sin fjordgrønne helt-farge) — en bevisst, fast
+// farge uavhengig av appens tema, i likhet med gull (#d9b25e).
 import { useEffect, useRef } from "react";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { kr, overLinjer, totalOver, funnOrd } from "@/lib/gebyrfunn-visning";
@@ -56,7 +55,7 @@ export function DomFullskjerm({
         aria-modal="true"
         aria-label="Gebyrfunn"
         className="fixed inset-0 z-50 flex flex-col items-center justify-center px-8 text-center"
-        style={{ background: "#16324f" }}
+        style={{ background: "#103c38" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -77,14 +76,14 @@ export function DomFullskjerm({
               : { scale: 1, rotate: -8, opacity: 1 }
           }
           transition={redusert ? { duration: 0.3 } : SEGL_FJAER}
-          className="flex size-[120px] items-center justify-center rounded-full font-serif text-[44px] font-semibold"
+          className="flex size-[120px] items-center justify-center rounded-full text-[44px] font-bold"
           style={{ border: "3px solid #d9b25e", color: "#d9b25e" }}
         >
           §
         </m.div>
 
         <m.p
-          className="mt-6 font-serif text-[15px] font-semibold uppercase tracking-[0.02em]"
+          className="mt-6 text-[13px] font-bold uppercase tracking-[0.08em]"
           style={{ color: "#d9b25e" }}
           initial={{ opacity: redusert ? 1 : 0 }}
           animate={{ opacity: 1 }}
@@ -94,7 +93,7 @@ export function DomFullskjerm({
         </m.p>
 
         <m.p
-          className="mt-2 font-serif text-[46px] font-semibold text-white"
+          className="tall-xl mt-2 text-white"
           initial={{ opacity: redusert ? 1 : 0, y: redusert ? 0 : 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: delay.belop }}

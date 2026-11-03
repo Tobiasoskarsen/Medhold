@@ -17,7 +17,7 @@ export default function SlettKonto() {
       <button
         type="button"
         onClick={() => setBekreft(true)}
-        className="text-[13px] text-red-700/80 transition hover:text-red-700"
+        className="text-[13px] text-dom-rod/80 transition hover:text-dom-rod"
       >
         Slett kontoen min
       </button>
@@ -30,7 +30,7 @@ export default function SlettKonto() {
         Dette sletter alle krav, brev, frister og selve kontoen.{" "}
         <strong className="text-blekk">Kan ikke angres.</strong>
       </p>
-      {feil && <p className="mt-2 text-[13px] text-red-700">{feil}</p>}
+      {feil && <p className="mt-2 text-[13px] text-dom-rod">{feil}</p>}
       <div className="mt-3 flex items-center gap-4">
         <button
           type="button"
@@ -42,7 +42,7 @@ export default function SlettKonto() {
               if (r?.feil) setFeil(r.feil);
             })
           }
-          className="rounded-[10px] bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-60"
+          className="rounded-[10px] bg-dom-rod px-4 py-2.5 text-sm font-medium text-bakgrunn transition hover:opacity-90 disabled:opacity-60"
         >
           {venter ? "Sletter …" : "Ja, slett alt"}
         </button>
