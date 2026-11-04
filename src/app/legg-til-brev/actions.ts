@@ -29,7 +29,11 @@ import {
   type Bilde,
 } from "@/lib/brevanalyse";
 
-export type { Bilde };
+// NB: ingen re-eksport av typer herfra. En «use server»-fil gjør hver eksport
+// om til en server action-referanse — `export type { Bilde }` ble kompilert
+// til en kjøretidsreferanse som ikke finnes, og HELE modulen feilet ved
+// lasting («ReferenceError: Bilde is not defined»). Klienten importerer
+// typen direkte fra @/lib/brevanalyse.
 
 /**
  * Et eksisterende krav brevet KAN høre til — et forslag brukeren bekrefter,
