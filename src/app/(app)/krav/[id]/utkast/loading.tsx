@@ -8,7 +8,7 @@ export default function Loading() {
       <Skjelett className="mt-3 h-4 w-full" />
       <div className="mt-6 flex flex-col gap-2">
         {[0, 1, 2, 3].map((i) => (
-          <Skjelett key={i} className="h-[60px] w-full rounded-xl" />
+          <Skjelett key={i} className="h-[60px] w-full rounded-kontroll" />
         ))}
       </div>
       <Skjelett className="mt-5 h-[130px] w-full rounded-kontroll" />

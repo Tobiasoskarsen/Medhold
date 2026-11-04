@@ -128,7 +128,7 @@ function Spørsmålsrad<T extends string>({
               onVelg(v.verdi);
             }}
             aria-pressed={valgt === v.verdi}
-            className={`trykk flex-1 rounded-[12px] border px-3 py-2.5 text-hjelp font-medium transition ${
+            className={`trykk flex-1 rounded-kontroll border px-3 py-2.5 text-hjelp font-medium transition ${
               valgt === v.verdi
                 ? "border-blekk bg-blekk text-bakgrunn"
                 : "border-strek text-blekk hover:border-dempet/40"
@@ -271,7 +271,7 @@ export function Veivalg({
                   >
                     <div
                       aria-live="polite"
-                      className={`rounded-xl p-3.5 text-[13.5px] leading-relaxed text-blekk ${
+                      className={`rounded-kontroll p-3.5 text-[13.5px] leading-relaxed text-blekk ${
                         anbefaling === "svar" ? "bg-dom-rod-bg" : "bg-trygg/10"
                       }`}
                     >

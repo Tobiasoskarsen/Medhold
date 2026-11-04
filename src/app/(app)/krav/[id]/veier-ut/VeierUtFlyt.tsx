@@ -95,7 +95,7 @@ export function VeierUtFlyt({
         </p>
 
         {betaltBekreft ? (
-          <div className="mt-3 rounded-xl border-[0.5px] border-strek bg-bakgrunn p-3.5">
+          <div className="mt-3 rounded-kontroll border-[0.5px] border-strek bg-bakgrunn p-3.5">
             <p className="text-hjelp font-medium text-blekk">
               Har du betalt hele beløpet til kontonummeret i brevet?
             </p>
@@ -148,7 +148,7 @@ export function VeierUtFlyt({
         </label>
 
         {forslag && (
-          <div className="mt-3 rounded-xl bg-aksent/5 px-3.5 py-3">
+          <div className="mt-3 rounded-kontroll bg-aksent/5 px-3.5 py-3">
             <p className="text-sm text-blekk">
               <span className="tall-s">
                 {formaterBelop(forslag.manedsbelop)} kr/mnd

@@ -95,7 +95,7 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
             <button
               type="button"
               onClick={() => setModus("meny")}
-              className="trykk w-full rounded-[16px] px-4 py-3 text-brod font-medium text-blekk"
+              className="trykk w-full rounded-kontroll px-4 py-3 text-brod font-medium text-blekk"
             >
               Avbryt
             </button>

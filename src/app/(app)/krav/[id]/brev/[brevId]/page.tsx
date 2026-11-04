@@ -173,7 +173,7 @@ export default async function BrevPage({
           <AnnotertBrev
             tekst={brev.original_tekst}
             annoteringer={annoteringer}
-            className="rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-hjelp leading-relaxed text-dempet"
+            className="rounded-kort border-[0.5px] border-strek bg-flate p-4 text-hjelp leading-relaxed text-dempet"
           />
         </div>
       </details>

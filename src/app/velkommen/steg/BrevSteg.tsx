@@ -35,7 +35,7 @@ export function BrevSteg({
           transition={FJAER}
         >
           <m.div
-            className="flex h-[150px] w-[118px] flex-col gap-2 rounded-2xl border-[1.5px] border-strek bg-flate p-4 shadow-[0_10px_24px_rgba(28,43,51,0.10)]"
+            className="flex h-[150px] w-[118px] flex-col gap-2 rounded-kort border-[1.5px] border-strek bg-flate p-4 shadow-[0_10px_24px_rgba(28,43,51,0.10)]"
             initial={{ y: 12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: VARIGHET.rolig, ease: EASING }}

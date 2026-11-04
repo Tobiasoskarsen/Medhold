@@ -349,7 +349,7 @@ export function UtkastFlyt({
       {fase === "skjema" ? (
         <>
           {harOverGebyr && (
-            <p className="mb-3 rounded-xl bg-dom-rod-bg px-3.5 py-2.5 text-hjelp leading-relaxed text-dom-rod">
+            <p className="mb-3 rounded-kontroll bg-dom-rod-bg px-3.5 py-2.5 text-hjelp leading-relaxed text-dom-rod">
               Gebyrsjekken fant et beløp over maksimalsats — dette tas med i
               utkastet.
             </p>
@@ -358,7 +358,7 @@ export function UtkastFlyt({
             {UTKAST_TYPER.map((t) => (
               <label
                 key={t}
-                className={`flex items-start gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm transition ${
+                className={`flex items-start gap-2.5 rounded-kontroll border-[0.5px] px-3.5 py-3 text-sm transition ${
                   type === t
                     ? "border-aksent bg-aksent/5 text-blekk"
                     : "border-strek text-blekk"
@@ -397,7 +397,7 @@ export function UtkastFlyt({
                 ).map(([verdi, etikett]) => (
                   <label
                     key={verdi}
-                    className={`flex items-center gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm text-blekk transition ${
+                    className={`flex items-center gap-2.5 rounded-kontroll border-[0.5px] px-3.5 py-3 text-sm text-blekk transition ${
                       omfangValg === verdi ? "border-aksent bg-aksent/5" : "border-strek"
                     }`}
                   >
@@ -416,7 +416,8 @@ export function UtkastFlyt({
           )}
 
           <label className="mt-5 block text-hjelp font-medium text-blekk">
-            {UTKAST_SPORSMAL[type]}
+            {/* Omfanget spør allerede «Hva er du uenig i?» — ikke spør to ganger. */}
+            {visOmfang ? "Hvorfor er du uenig?" : UTKAST_SPORSMAL[type]}
             <textarea
               value={detaljer}
               onChange={(e) => setDetaljer(e.target.value)}

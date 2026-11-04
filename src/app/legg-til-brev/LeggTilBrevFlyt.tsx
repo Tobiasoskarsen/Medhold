@@ -513,7 +513,7 @@ export function LeggTilBrevFlyt({
                 {bilder.map((b, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3"
+                    className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-3"
                   >
                     <span className="truncate text-sm text-blekk">{b.navn}</span>
                     <button
@@ -532,7 +532,7 @@ export function LeggTilBrevFlyt({
                   <button
                     type="button"
                     onClick={() => filInput.current?.click()}
-                    className="rounded-xl border-[0.5px] border-dashed border-strek px-3.5 py-3 text-sm text-dempet transition hover:border-aksent hover:text-blekk"
+                    className="rounded-kontroll border-[0.5px] border-dashed border-strek px-3.5 py-3 text-sm text-dempet transition hover:border-aksent hover:text-blekk"
                   >
                     + Legg til bilde
                   </button>
@@ -608,7 +608,7 @@ export function LeggTilBrevFlyt({
             onStemmerLikevel={setStemmerLikevel}
           />
 
-          <div className="mt-4 rounded-2xl border-[0.5px] border-strek bg-flate p-4">
+          <div className="mt-4 rounded-kort border-[0.5px] border-strek bg-flate p-4">
             <p className="whitespace-pre-line text-sm leading-relaxed text-blekk">
               {analyse.forklaring}
             </p>
@@ -695,7 +695,7 @@ export function LeggTilBrevFlyt({
                   setValgtKrav(kravForslag.id);
                   haptikk("lett");
                 }}
-                className="trykk mt-2 flex w-full items-center justify-between gap-3 rounded-xl border-[0.5px] border-aksent/40 bg-aksent/5 px-3.5 py-3 text-left"
+                className="trykk mt-2 flex w-full items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-aksent/40 bg-aksent/5 px-3.5 py-3 text-left"
               >
                 <span className="text-hjelp text-blekk">
                   Ligner kravet «{kravForslag.navn}» —{" "}
@@ -760,7 +760,7 @@ export function LeggTilBrevFlyt({
                 {UTFALL_VALGBARE.map((u) => (
                   <label
                     key={u}
-                    className={`flex items-center gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm transition ${
+                    className={`flex items-center gap-2.5 rounded-kontroll border-[0.5px] px-3.5 py-3 text-sm transition ${
                       utfall === u
                         ? "border-aksent bg-aksent/5 text-blekk"
                         : "border-strek text-blekk"
@@ -795,7 +795,7 @@ export function LeggTilBrevFlyt({
               <div className="mt-2 flex flex-col gap-2">
                 {kanLagre && fristSammenligning &&
                   (fristSammenligning.status === "avvik_kortere" ? (
-                    <label className="flex items-start justify-between gap-3 rounded-xl border-[0.5px] border-dom-rod bg-dom-rod-bg px-3.5 py-2.5">
+                    <label className="flex items-start justify-between gap-3 rounded-kontroll border-[0.5px] border-dom-rod bg-dom-rod-bg px-3.5 py-2.5">
                       <span className="min-w-0">
                         <span className="block text-sm font-medium text-dom-rod">
                           {formaterKortDato(fristSammenligning.visForfallsdato)}
@@ -815,7 +815,7 @@ export function LeggTilBrevFlyt({
                       />
                     </label>
                   ) : (
-                    <label className="flex items-center justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5">
+                    <label className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5">
                       <span className="min-w-0">
                         <span className="block truncate text-sm text-blekk">
                           {fristSammenligning.visTittel}
@@ -833,7 +833,7 @@ export function LeggTilBrevFlyt({
                 {fristForslag.map((f, i) => (
                   <label
                     key={i}
-                    className="flex items-center justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
+                    className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm text-blekk">
@@ -866,7 +866,7 @@ export function LeggTilBrevFlyt({
                 {analyse.foreslatte_steg.map((s, i) => (
                   <label
                     key={i}
-                    className="flex items-start justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
+                    className="flex items-start justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
                   >
                     <span className="text-sm text-blekk">{s}</span>
                     <Avkrysning

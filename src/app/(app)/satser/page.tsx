@@ -63,7 +63,7 @@ export default function SatserPage() {
         </SekvensDel>
 
         <SekvensDel>
-          <div className="mt-5 rounded-2xl border-[0.5px] border-strek bg-flate p-[18px]">
+          <div className="mt-5 rounded-kort border-[0.5px] border-strek bg-flate p-[18px]">
             <p className="eyebrow mb-3">
               Gjelder {formaterDato(sats.gyldigFra)} –{" "}
               {formaterDato(sats.gyldigTil)}
@@ -122,7 +122,7 @@ export default function SatserPage() {
             ).map((tabell) => (
               <div
                 key={tabell.bokstav}
-                className="mt-3 overflow-hidden rounded-2xl border-[0.5px] border-strek bg-flate"
+                className="mt-3 overflow-hidden rounded-kort border-[0.5px] border-strek bg-flate"
               >
                 <p className="border-b-[0.5px] border-strek px-3.5 py-2.5 text-hjelp font-medium text-blekk">
                   Tabell {tabell.bokstav}{" "}

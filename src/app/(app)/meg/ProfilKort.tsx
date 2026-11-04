@@ -64,7 +64,7 @@ export function ProfilKort({
             transition={{ duration: VARIGHET.rolig, ease: EASING }}
             style={{ overflow: "hidden" }}
           >
-            <div className="mb-[18px] flex flex-col gap-4 rounded-2xl border-[0.5px] border-strek bg-flate p-[18px]">
+            <div className="mb-[18px] flex flex-col gap-4 rounded-kort border-[0.5px] border-strek bg-flate p-[18px]">
               <Brevnavn start={navn} />
               <Telefon start={telefon} />
             </div>

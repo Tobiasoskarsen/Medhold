@@ -84,7 +84,7 @@ export default function PersonvernPage() {
           </p>
         </section>
 
-        <section className="rounded-xl bg-varsel-bg px-4 py-3 text-varsel-tekst">
+        <section className="rounded-kontroll bg-varsel-bg px-4 py-3 text-varsel-tekst">
           <h2 className="mb-1 font-medium">Ikke profesjonell rådgivning</h2>
           <p>
             {APP_NAME} hjelper deg å holde oversikt. Det er ikke en offentlig

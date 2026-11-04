@@ -70,7 +70,7 @@ export function BrevSamtale({
             <div
               key={i}
               dir="auto"
-              className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+              className={`max-w-[85%] rounded-kort px-3.5 py-2.5 text-sm leading-relaxed ${
                 m.rolle === "bruker"
                   ? "self-end bg-aksent text-aksent-tekst"
                   : "self-start border-[0.5px] border-strek bg-flate text-blekk"

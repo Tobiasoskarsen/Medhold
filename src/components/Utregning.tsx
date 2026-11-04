@@ -55,7 +55,7 @@ export function Utregning({
             transition={{ duration: VARIGHET.rolig, ease: EASING }}
             style={{ overflow: "hidden" }}
           >
-            <dl className="mt-3 flex flex-col gap-2 rounded-xl border-[0.5px] border-strek bg-flate p-3.5">
+            <dl className="mt-3 flex flex-col gap-2 rounded-kontroll border-[0.5px] border-strek bg-flate p-3.5">
               {rader.map((r, i) => (
                 <div
                   key={i}

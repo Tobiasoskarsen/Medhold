@@ -63,7 +63,7 @@ export function GruppertSaksliste({
 
   return (
     <div>
-      <div className="flex items-center gap-2 rounded-[16px] border border-kant bg-flate px-3.5 py-2.5">
+      <div className="flex items-center gap-2 rounded-kontroll border border-kant bg-flate px-3.5 py-2.5">
         <Search className="size-4 shrink-0 text-dempet" aria-hidden />
         <input
           value={sok}
@@ -95,7 +95,7 @@ export function GruppertSaksliste({
                   aria-expanded={åpen}
                   className="trykk flex w-full items-center gap-3 px-3.5 py-3 text-left"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] bg-flate-2 text-brod font-bold text-blekk">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-kontroll bg-flate-2 text-brod font-bold text-blekk">
                     {g.navn.charAt(0).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1">

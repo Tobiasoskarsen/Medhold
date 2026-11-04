@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   Skjermramme,
   Kort,
-  Pillknapp,
+  Primærknapp,
   StadiumLinje,
   FristRad,
   Tidslinje,
@@ -445,7 +445,7 @@ export default async function KravDetaljPage({
         </>
       );
       const innhold = item.fremhevet ? (
-        <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
+        <div className="rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-3">
           {kjerne}
         </div>
       ) : (
@@ -687,11 +687,11 @@ export default async function KravDetaljPage({
       </SekvensDel>
       </Sekvens>
 
-      <div className="my-6 flex justify-center">
-        <Pillknapp href={`/legg-til-brev?krav=${sak.id}`}>
-          <Plus className="size-4" aria-hidden />
-          Legg til brev
-        </Pillknapp>
+      <div className="my-seksjon">
+        <Primærknapp href={`/legg-til-brev?krav=${sak.id}`} variant="rolig">
+          <Plus className="-mt-0.5 mr-1.5 inline size-4" aria-hidden />
+          Legg til brev i saken
+        </Primærknapp>
       </div>
     </Skjermramme>
   );

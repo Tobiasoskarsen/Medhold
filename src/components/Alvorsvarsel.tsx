@@ -22,7 +22,7 @@ function HjelpeLenke({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="trykk flex items-center gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3"
+      className="trykk flex items-center gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-3"
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-dom-rod/10 text-dom-rod">
         {ikon}
@@ -46,7 +46,7 @@ export function Alvorsvarsel({
 }) {
   return (
     <div
-      className={`rounded-2xl border-[1.5px] border-dom-rod bg-dom-rod-bg p-[18px] ${className}`}
+      className={`rounded-kort border-[1.5px] border-dom-rod bg-dom-rod-bg p-[18px] ${className}`}
     >
       <h2 className="seksjonstittel text-dom-rod">
         Dette bør du få hjelp med nå
