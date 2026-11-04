@@ -408,7 +408,7 @@ export function LeggTilBrevFlyt({
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: VARIGHET.rolig, ease: EASING }}
-      className="mx-auto flex min-h-screen w-full max-w-[640px] flex-col px-5 pt-4">
+      className="mx-auto flex min-h-dvh w-full max-w-[640px] flex-col px-5 pt-4">
       <div className="mb-4 flex items-center justify-between gap-4">
         <button
           type="button"

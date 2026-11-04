@@ -52,6 +52,8 @@
 
   --kort-skygge: none;
   --skjelett-lys: #ffffff99;
+  /* Den ene hevede skyggen (bunnmeny, ark, flytende knapper). */
+  --skygge-hevet: 0 8px 24px -12px rgb(18 22 20 / 0.3);
   --anbefalt-glod: inset 0 0 0 1.5px var(--aksent);
 
   --background: var(--bakgrunn);
@@ -105,6 +107,7 @@
 
   --kort-skygge: inset 0 1px 0 #ffffff0a;
   --skjelett-lys: #ffffff0f;
+  --skygge-hevet: 0 8px 24px -12px rgb(0 0 0 / 0.7);
   --anbefalt-glod: inset 0 0 0 1px #8fe3bf, 0 8px 24px #8fe3bf1f;
 
   color-scheme: dark;
@@ -157,9 +160,52 @@
   --color-nav-aktiv: var(--nav-aktiv);
 
   --font-sans: var(--font-schibsted);
+
+  /* Designsystemet (redesign-ordren §0A) — bruk disse framfor tallverdier:
+     rounded-liten/-kontroll/-kort/-helt, text-meta/-hjelp/-brod,
+     mt-seksjon (mellom seksjoner), mt-gruppe (innad i en seksjon). */
+  --radius-liten: 10px; /* ikonruter, små flater */
+  --radius-kontroll: 14px; /* felt, knapper */
+  --radius-kort: 20px; /* kort, lister */
+  --radius-helt: 26px; /* heltekort, ark */
+  --text-meta: 12px;
+  --text-hjelp: 13px;
+  --text-brod: 15px;
+  --spacing-seksjon: 28px;
+  --spacing-gruppe: 12px;
+}
+
+/* Mobilrammen (§0B): én felles beregning for bunnmenyen. --nav-plass er
+   avstanden innhold må holde for å kunne scrolles helt over menyen. */
+:root {
+  --nav-hoyde: 62px;
+  --nav-luft: max(12px, env(safe-area-inset-bottom, 0px));
+  --nav-plass: calc(var(--nav-hoyde) + var(--nav-luft) + 24px);
+}
+
+/* Synlig tastaturfokus overalt. I base-laget, så komponenter med egen ring
+   (focus-visible:outline-none + ring) fortsatt vinner. */
+@layer base {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--aksent);
+    outline-offset: 2px;
+  }
+}
+
+/* Under 16 px zoomer iOS Safari inn ved fokus. Kun på berøringsskjerm, så
+   tettere skjemaer beholder størrelsen på desktop. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
 }
 
 body {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
   font-family: var(--font-schibsted), system-ui, sans-serif;
   font-feature-settings: "tnum" 0;
   background: var(--bakgrunn);
@@ -178,7 +224,10 @@ body {
 /* Typografiklasser (§1.3) — én skrift, store tall. */
 .tittel { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.08; }
 .tittel-s { font-size: 24px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; }
-.seksjonstittel { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.seksjonstittel { font-size: 17px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.25; }
+/* Rader i lister: én tittel, én undertekst. */
+.radtittel { font-size: 15px; font-weight: 600; letter-spacing: -0.005em; line-height: 1.3; }
+.radtekst { font-size: 13px; line-height: 1.35; color: var(--dempet); }
 .tall-xl { font-size: 48px; font-weight: 700; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; }
 .tall-l { font-size: 44px; font-weight: 700; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; }
 .tall-m { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }

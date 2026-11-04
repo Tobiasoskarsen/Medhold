@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { usePathname } from "next/navigation";
 import { m } from "motion/react";
@@ -88,25 +89,25 @@ function NavPunktKnapp({
     <Link
       href={href}
       aria-current={aktiv ? "page" : undefined}
-      onPointerDown={() => {
-        haptikk("lett");
-        if (!aktiv) {
-          try {
-            sessionStorage.setItem(FANE_NAV_NOKKEL, "1");
-          } catch {
-            /* privat modus e.l. — ignorer */
-          }
+      onPointerDown={() => haptikk("lett")}
+      // onClick, ikke onPointerDown: da virker fane-flagget også med tastatur.
+      onClick={() => {
+        if (aktiv) return;
+        try {
+          sessionStorage.setItem(FANE_NAV_NOKKEL, "1");
+        } catch {
+          /* privat modus e.l. — ignorer */
         }
       }}
-      className={`trykk flex flex-col items-center gap-1 px-1 py-1 ${
+      className={`trykk flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 px-1 ${
         aktiv ? "text-nav-aktiv" : "text-nav-tekst"
       }`}
     >
-      <span className="relative flex h-[26px] w-10 items-center justify-center">
+      <span className="relative flex h-[26px] w-11 items-center justify-center">
         {aktiv && (
           <m.span
             layoutId="bunnnav-indikator"
-            className="absolute inset-0 rounded-[12px] bg-white/10"
+            className="absolute inset-0 rounded-liten bg-white/8"
             transition={INDIKATOR_FJAER}
           />
         )}
@@ -148,12 +149,35 @@ export function BunnNav() {
   const pathname = usePathname() ?? "/";
   const [venstre, hoyre] = [PUNKTER.slice(0, 2), PUNKTER.slice(2)];
 
+  // Mens et tekstfelt har fokus er tastaturet oppe: menyen viker, så den aldri
+  // ligger over feltet eller handlingene under det.
+  const [skrivFokus, setSkrivFokus] = useState(false);
+  useEffect(() => {
+    const erFelt = (m: EventTarget | null) =>
+      m instanceof HTMLTextAreaElement ||
+      m instanceof HTMLSelectElement ||
+      (m instanceof HTMLInputElement &&
+        !["checkbox", "radio", "button", "submit", "file"].includes(m.type));
+    const inn = (e: FocusEvent) => setSkrivFokus(erFelt(e.target));
+    const ut = () => setSkrivFokus(false);
+    document.addEventListener("focusin", inn);
+    document.addEventListener("focusout", ut);
+    return () => {
+      document.removeEventListener("focusin", inn);
+      document.removeEventListener("focusout", ut);
+    };
+  }, []);
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10">
-      <div className="mx-auto max-w-[640px] px-[18px] pb-[18px]">
+    <nav
+      className={`fixed inset-x-0 bottom-0 z-10 transition-[transform,opacity] duration-200 ${
+        skrivFokus ? "pointer-events-none translate-y-full opacity-0" : ""
+      }`}
+    >
+      <div className="mx-auto max-w-[640px] px-[18px] pb-[var(--nav-luft)]">
         <div
-          className="flex h-[62px] items-center justify-around rounded-[22px] border border-nav-kant bg-nav-bg/90 px-2 shadow-[0_10px_28px_-14px_rgb(0_0_0/0.45)] backdrop-blur-[14px] backdrop-saturate-150"
-          style={{ boxShadow: "0 12px 30px rgba(18,22,20,.22)" }}
+          className="flex h-[var(--nav-hoyde)] items-center justify-around rounded-[22px] border border-nav-kant bg-nav-bg/90 px-2 backdrop-blur-[14px] backdrop-saturate-150"
+          style={{ boxShadow: "var(--skygge-hevet)" }}
         >
           {venstre.map((punkt) => (
             <NavPunktKnapp key={punkt.href} punkt={punkt} aktiv={erAktiv(pathname, punkt)} />

@@ -80,7 +80,7 @@ export function Onboarding() {
   // Samme markup på server og klient inntil avgjørelsen er tatt (null) eller
   // vi omdirigerer bort (true) — en tom, bakgrunnsfarget flate. Unngår at
   // server og klientens første render noensinne kan avvike strukturelt.
-  if (hoppOverAlt !== false) return <main className="min-h-screen bg-bakgrunn" />;
+  if (hoppOverAlt !== false) return <main className="min-h-dvh bg-bakgrunn" />;
 
   // Parallakse ved steg-bytte (Motion3 §4.3): illustrasjonen glir `faktor`
   // ganger STEG_GLID, tekstblokken kun STEG_GLID — samme varighet/easing som
@@ -106,7 +106,7 @@ export function Onboarding() {
 
   return (
     <Bevegelsesramme>
-      <main className="relative mx-auto flex min-h-screen w-full max-w-[420px] flex-col">
+      <main className="relative mx-auto flex min-h-dvh w-full max-w-[420px] flex-col">
         {i < SISTE && (
           <button
             type="button"

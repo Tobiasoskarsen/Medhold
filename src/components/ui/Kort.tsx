@@ -16,7 +16,7 @@ export function Kort({
 }) {
   return (
     <div
-      className={`rounded-[20px] border border-kant bg-flate p-[18px] ${
+      className={`rounded-kort border border-kant bg-flate p-[18px] ${
         klikkbar ? "trykk" : ""
       } ${className}`}
       style={{ boxShadow: "var(--kort-skygge)" }}

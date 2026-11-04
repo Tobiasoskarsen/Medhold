@@ -39,7 +39,7 @@ export function Heltekort({
   );
   return (
     <div
-      className={`rounded-[26px] border px-5 pb-[18px] pt-5 ${
+      className={`rounded-helt border px-5 pb-[18px] pt-5 ${
         gull
           ? "border-gull/30 bg-gull-bg text-blekk"
           : // Et svakt lys øverst til høyre gir flaten dybde uten å bli

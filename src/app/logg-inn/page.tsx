@@ -236,7 +236,7 @@ function LoggInn() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[420px] flex-col">
+    <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col">
       <div className="flex min-h-10 items-center px-6 pt-6">
         <button
           type="button"

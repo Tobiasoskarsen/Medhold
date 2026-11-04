@@ -49,6 +49,11 @@ export const viewport: Viewport = {
   themeColor: "#f3f0e9",
   width: "device-width",
   initialScale: 1,
+  // Innholdet går under iPhone-kanten; safe-area-tilleggene i globals.css og
+  // BunnNav holder alt interaktivt fritt av den.
+  viewportFit: "cover",
+  // Tastaturet krymper layouten, så faste elementer ikke havner bak det.
+  interactiveWidget: "resizes-content",
 };
 
 // Settes før paint (ingen FOUC): leser lagret tema og legger .mork på <html>
