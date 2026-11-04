@@ -1,4 +1,6 @@
 import { Plus } from "lucide-react";
+import { NavLenke as Link } from "@/components/NavLenke";
+import { brukGruppering, saksGrupper } from "@/lib/oversikt";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Primærknapp, Sekvens, SekvensDel } from "@/components/ui";
 import { TomKonvolutt } from "@/components/illustrasjoner/TomKonvolutt";
@@ -27,17 +29,13 @@ type SakRad = {
   hovedstol_avvik: HovedstolAvvik[] | null;
 };
 
-// Grupperingen (på kreditor) vises kun når listen faktisk er stor nok til at
-// den hjelper — med få saker er den vanlige, flate listen mer oversiktlig.
-const GRUPPERING_TERSKEL = 10;
-
-/** «{N} aktive · {M} venter på svar · {K} avsluttet» — ledd med 0 utelates. */
+/** «{N} trenger handling · {M} venter på svar · {K} avsluttet» — ledd med 0 utelates. */
 function oversiktsstripe(saker: SakRad[]): string {
   const aktiv = saker.filter((s) => s.status === "aktiv").length;
   const venter = saker.filter((s) => s.status === "venter_pa_svar").length;
   const avsluttet = saker.filter((s) => s.status === "fullfort").length;
   return [
-    aktiv > 0 ? `${aktiv} aktive` : null,
+    aktiv > 0 ? `${aktiv} trenger handling` : null,
     venter > 0 ? `${venter} venter på svar` : null,
     avsluttet > 0 ? `${avsluttet} avsluttet` : null,
   ]
@@ -87,19 +85,19 @@ export default async function KravListePage() {
     );
   }
 
-  const aktive = saker.filter((s) => s.status !== "fullfort");
-  const avsluttede = saker.filter((s) => s.status === "fullfort");
-
   // Nærmeste åpne frist først; saker uten frist etter, sortert på sist_endret
-  // (stabil sort — aktive er allerede i sist_endret-rekkefølge fra spørringen).
-  const aktiveSortert = [...aktive].sort((a, b) => {
+  // (stabil sort — sakene er allerede i sist_endret-rekkefølge fra spørringen).
+  const etterFrist = (a: SakRad, b: SakRad) => {
     const fa = nesteFrist.get(a.id);
     const fb = nesteFrist.get(b.id);
     if (fa && fb) return fa < fb ? -1 : 1;
     if (fa) return -1;
     if (fb) return 1;
     return 0;
-  });
+  };
+  const { trengerHandling, venter, avsluttet: avsluttede } = saksGrupper(saker);
+  const aktiveSortert = [...trengerHandling].sort(etterFrist);
+  const venterSortert = [...venter].sort(etterFrist);
 
   function kortData(sak: SakRad) {
     return {
@@ -147,13 +145,13 @@ export default async function KravListePage() {
   }
 
   // Gruppering på kreditor (§ mockup «gruppert saksliste») — kun over
-  // GRUPPERING_TERSKEL aktive saker. Rekkefølgen inni hver gruppe arves fra
+  // GRUPPERING_TERSKEL saker som trenger handling. Rekkefølgen inni hver gruppe arves fra
   // aktiveSortert (nærmeste frist først); selve gruppene sorteres på samlet
   // beløp (høyest øverst).
-  const brukGruppering = aktive.length > GRUPPERING_TERSKEL;
+  const gruppert = brukGruppering(trengerHandling.length);
   const grupper: Gruppe[] = [];
   const enkeltstaendeSaker: SakRad[] = [];
-  if (brukGruppering) {
+  if (gruppert) {
     const perKreditor = new Map<string, SakRad[]>();
     for (const sak of aktiveSortert) {
       const navn = sak.kreditor ?? sak.tittel;
@@ -221,21 +219,33 @@ export default async function KravListePage() {
           </div>
         </SekvensDel>
       )}
-      {aktive.length > 0 && (
+      {trengerHandling.length > 0 && (
         <SekvensDel>
           <div className="mt-6">
-            {avsluttede.length > 0 && (
-              <h2 className="seksjonstittel mb-gruppe text-blekk">Aktive</h2>
-            )}
-            {brukGruppering ? (
+            <h2 className="seksjonstittel mb-gruppe text-blekk">Trenger handling</h2>
+            {gruppert ? (
               <GruppertSaksliste
                 grupper={grupper}
                 enkeltstaende={enkeltstaendeSaker.map(kortData)}
                 antallKreditorer={antallKreditorer}
               />
             ) : (
-              <AktivSaksliste saker={aktiveSortert.map(kortData)} />
+              <AktivSaksliste
+                gruppe="trenger handling"
+                saker={aktiveSortert.map(kortData)}
+              />
             )}
+          </div>
+        </SekvensDel>
+      )}
+      {venterSortert.length > 0 && (
+        <SekvensDel>
+          <div className="mt-seksjon">
+            <h2 className="seksjonstittel mb-gruppe text-blekk">Venter på svar</h2>
+            <AktivSaksliste
+              gruppe="venter på svar"
+              saker={venterSortert.map(kortData)}
+            />
           </div>
         </SekvensDel>
       )}
@@ -249,15 +259,14 @@ export default async function KravListePage() {
       )}
       </Sekvens>
 
-      <div className="mt-seksjon">
-        <Primærknapp href="/krav/ny" variant="rolig">
-          <Plus className="-mt-0.5 mr-1.5 inline size-4" aria-hidden />
-          Opprett nytt krav
-        </Primærknapp>
-        {/* Forskjellen fra + i bunnmenyen, som leser et brev for deg. */}
-        <p className="mt-2 text-center text-hjelp text-dempet">
-          Uten brev kan du opprette kravet selv. Har du brevet, bruk + nederst.
-        </p>
+      <div className="mt-5 flex justify-center">
+        <Link
+          href="/krav/ny"
+          className="trykk flex min-h-11 items-center gap-1.5 px-2 text-hjelp font-medium text-dempet transition hover:text-blekk"
+        >
+          <Plus className="size-4" aria-hidden />
+          Opprett krav manuelt
+        </Link>
       </div>
     </Skjermramme>
   );

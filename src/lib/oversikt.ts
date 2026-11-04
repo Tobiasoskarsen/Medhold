@@ -39,10 +39,31 @@ export function hjemIngress(i: HjemIngressInput): string {
       ? "Én sak trenger deg denne uka."
       : `${i.sakerMedFristDenneUka} saker trenger deg denne uka.`;
   }
-  if (i.toppVenter) return "Du venter på svar. Vi følger med.";
+  if (i.toppVenter) return "Du venter på svar.";
   return i.antallAktive === 1
     ? "Én aktiv sak. Ingen frister denne uka."
     : `${i.antallAktive} aktive saker. Ingen frister denne uka.`;
+}
+
+// Kreditorgruppering vises først når «Trenger handling» er stor nok til at den
+// hjelper; med få saker er den flate listen mest oversiktlig.
+export const GRUPPERING_TERSKEL = 10;
+
+export function brukGruppering(antallTrengerHandling: number): boolean {
+  return antallTrengerHandling > GRUPPERING_TERSKEL;
+}
+
+/**
+ * Deler saker i visningsgruppene på Saker. Gruppetitlene er bare etiketter for
+ * eksisterende status — ingen vurdering av hva en sak juridisk krever. Beholder
+ * rekkefølgen fra kalleren.
+ */
+export function saksGrupper<T extends { status: SakStatus }>(saker: T[]) {
+  return {
+    trengerHandling: saker.filter((s) => s.status === "aktiv"),
+    venter: saker.filter((s) => s.status === "venter_pa_svar"),
+    avsluttet: saker.filter((s) => s.status === "fullfort"),
+  };
 }
 
 export type SakOppsummering = {

@@ -97,7 +97,13 @@ export function Kravkort({
   // Underteksten (Retning B §5.3) — første regel som treffer.
   const [undertekst, hastende] =
     status === "venter_pa_svar"
-      ? [STATUS_ETIKETT.venter_pa_svar, false]
+      ? // Gruppen heter allerede «Venter på svar»: vis stadiet i stedet.
+        [
+          stadiumEtikett
+            ? stadiumEtikett.charAt(0).toUpperCase() + stadiumEtikett.slice(1)
+            : STATUS_ETIKETT.venter_pa_svar,
+          false,
+        ]
       : dagerIgjen != null
         ? [fristChipTekst(dagerIgjen), erHastende(dagerIgjen)]
         : [
@@ -129,13 +135,10 @@ export function Kravkort({
         transitionTimingFunction: "var(--bevegelse-easing)",
       }}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-liten bg-flate-2 text-[14px] font-bold text-blekk">
-        {navn.charAt(0).toUpperCase()}
-      </span>
       <span className="min-w-0 flex-1">
         <span
           ref={navnRef}
-          className="radtittel block truncate text-blekk"
+          className="radtittel line-clamp-2 text-blekk"
         >
           {navn}
         </span>
@@ -151,38 +154,30 @@ export function Kravkort({
             <m.span
               {...merkeInntreden}
               className={`radtekst block ${
-                hastende
-                  ? "font-semibold !text-dom-rod"
-                  : status === "venter_pa_svar"
-                    ? "font-medium !text-trygg"
-                    : ""
+                hastende ? "font-semibold !text-dom-rod" : ""
               }`}
             >
               {undertekst}
             </m.span>
           )
         )}
-      </span>
-      <span className="flex shrink-0 items-center gap-1.5">
-        {harFunn && !avsluttet && (
+        {/* Markørene med ord, ikke bare symbol: de forklarer seg selv. */}
+        {!avsluttet && (harFunn || harHovedstolAvvik) && (
           <m.span
             {...merkeInntreden}
-            role="img"
-            aria-label="Gebyrfunn i denne saken"
-            className="text-hjelp font-bold leading-none text-dom-rod"
+            className="mt-0.5 flex flex-wrap gap-x-2 text-meta font-semibold text-dom-rod"
           >
-            §
+            {harFunn && <span>§ Gebyrfunn</span>}
+            {harHovedstolAvvik && (
+              <span className="inline-flex items-center gap-1">
+                <TriangleAlert className="size-3" aria-hidden strokeWidth={2.25} />
+                Hovedstol endret
+              </span>
+            )}
           </m.span>
         )}
-        {harHovedstolAvvik && !avsluttet && (
-          <m.span {...merkeInntreden} role="img" aria-label="Hovedstolen har endret seg i denne saken">
-            <TriangleAlert
-              className="size-[13px] text-dom-rod"
-              aria-hidden
-              strokeWidth={2.25}
-            />
-          </m.span>
-        )}
+      </span>
+      <span className="flex shrink-0 items-center gap-1.5">
         {belop && (
           <span
             ref={belopRef}

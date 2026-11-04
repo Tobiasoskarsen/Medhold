@@ -43,6 +43,53 @@ etter hver fase.
 
 ---
 
+## UI/UX-forbedring, runde 2 (arbeidsordre, ferdig i kode)
+
+Før/etter-bilder (390 px, samme anonymiserte testdata) ligger i `docs/design/runde-2/`, også mørk modus, desktop og ferdig utkast. Backend, API, database, autentisering, abonnement, juridiske beregninger og AI-protokoller er urørt.
+
+- **Hjem:**
+  - Rekkefølgen er kompakt velkomst, viktigste sak, andre saker (rett under, uten initialer, navn over to linjer), to snarveier og kort forklaring.
+  - Fristen vises som «5 dager igjen · 9. november», og samme språk brukes på Saker. Gebyrfunnet står skilt fra kravbeløpet.
+  - Knappen er «Lag svar» bare ved gebyrfunn og utkaststøtte, ellers «Se saken». Alvorlig varsel, venting og medhold har sine eksisterende innganger.
+  - Uten saker: «Forstå brevet ditt», tre steg og diskret hjelpelenke.
+  - «Få hjelp» åpner et bunnark med eksisterende lenker (`HjelpKnapp.tsx`). Satsene ligger fortsatt under Meg.
+- **Saken:**
+  - Frist og kilde ligger rett under status. Rekkefølgen er varsel/ventekort, valg, «Funn i brevet», siste brev, historikk.
+  - Valgene heter «Svar på kravet» og «Finn en betalingsløsning». «Anbefalt» står med begrunnelse fra funndataene.
+- **Saker:**
+  - Grupper: «Trenger handling», «Venter på svar» og «Avsluttet» (`saksGrupper`, 3 nye tester). Dette er visningsetiketter for eksisterende status.
+  - Lange navn får to linjer. Funn vises med ord («§ Gebyrfunn», «Hovedstol endret»).
+  - Knappene heter «Vis alle N»/«Vis færre» med gruppe i tilgjengelig navn. «Opprett krav manuelt» er en rolig lenke.
+- **Utkast:** Kommer brukeren med valgt type, vises den som oppsummering med «Endre». Valgfrie felt er merket, og sendingen har egen seksjon.
+- **Intro:** Tre steg med ett dokumentmotiv (`DokumentMotiv.tsx`), fast logo og stabil tekststart. `TrappSteg.tsx` er fjernet.
+- **Innlogging:** Kompakt merke, e-post/telefon først, Google som alternativ, én hjelpetekst.
+- **Desktop:** Hjem får to kolonner fra `lg` når det finnes andre saker, med samme rekkefølge i DOM. Bunnmenyen er maks 480 px.
+
+**Språk rettet:**
+1. **«Vi purrer {kreditor} for deg» var misvisende.** Cron-jobben (`sendOppfolging`) sender e-post til brukeren, ikke til kreditor. Teksten er nå «Vi minner deg på å følge opp …», og Hjem sier «Påminnelse om N dager».
+2. «Vi følger med» og «vi følger opp om det drøyer» er fjernet eller presisert («Medhold sender ikke noe selv»).
+3. «Jeg har betalt» er blitt «Registrer at du har betalt», «Ja, betalt» er blitt «Ja, registrer betalingen», og «Lag forslaget»/«Skriv forespørselen» er blitt «Lag et utkast».
+4. Intro-løftene «under et minutt», «ingen overraskelser», «nøyaktig hvor i prosessen» og «følger opp til den er løst» er borte.
+
+**Valg tatt underveis:**
+1. `fristChipTekst(1)` gir nå «I morgen» i stedet for «1 dag igjen», som i ordrens eksempel.
+2. Kreditorgruppering utløses av antall i «Trenger handling» (>10), siden ventende saker nå har egen gruppe. Terskelen er uendret.
+3. Avataren er fjernet fra Hjem, siden Meg ligger i bunnmenyen. Initialene er fjernet fra saksradene.
+4. Gebyrfunnets tall er «32 kr over maksimalsats» i stedet for «32 kr for mye», samme på Hjem og i funnraden. Fullskjermvisningen er uendret.
+5. Ventekortet står før handlingsvalgene, siden det er sakens viktigste situasjon.
+6. Rader i «Venter på svar» viser stadium i stedet for å gjenta gruppenavnet.
+7. **Nye tekster til advokatgjennomgang:** «Vi minner deg på å følge opp …», de tre intro-tekstene, «Anbefalt: gebyrsjekken fant …» og «De {x} kr over maksimalsats kan du fortsatt ta opp».
+
+**Kontroller:** `lint`, `test` (214) og `build` er grønne. Skjermbilder av Hjem med null, én og mange saker; Saker med 5 aktive pluss ventende og avsluttet, og 11 (gruppert); ventende sak, alvorlig varsel og gammelt brev; ferdig utkast; intro; innlogging. Bredde 320, 390 og 1280 px, lys og mørk.
+
+**Begrensninger:**
+- Bildene er prerendret HTML uten JavaScript. Preview-verktøyet bygger fortsatt fra en annen worktree, så animasjoner, bunnark, tastatur, større tekst, systemtema, Google-innlogging og utkastgenerering er **ikke** prøvd i kjørende app.
+- 430 px og nettbrett er ikke fotografert (samme én-kolonnes layout som 390 px, to kolonner først fra 1024 px).
+- 10 saker er dekket av test, ikke bilde.
+- Viktigste sak velges som før, så en utløpt frist fra et gammelt brev kan stå øverst på Hjem (ordren sier at prioriteringen beholdes).
+
+---
+
 ## Redesign — ny komposisjon på Hjem og saksdetaljer (arbeidsordre, ferdig i kode)
 
 Før/etter-bilder (390 px, lys, samme anonymiserte testdata) ligger i `docs/design/redesign/`. Mørk modus: `hjem-mork-etter.jpg` og `sak-mork-etter.jpg`.

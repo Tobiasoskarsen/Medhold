@@ -1,17 +1,9 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { m } from "motion/react";
-import { FJAER } from "@/lib/bevegelse";
-import { useForstegangsvisning } from "./useForstegangsvisning";
+import { DokumentMotiv } from "./DokumentMotiv";
 
-/**
- * Steg 3 — rødbrun paragrafboks («§» + «Gebyrsjekk»), samme token-par som
- * DomMini (border-dom-rod/40 + bg-dom-rod-bg). Tekst ordrett fra mockup.
- *
- * Gjenbruker Dom-stempelets eksakte verdier (Dom.tsx: skala 1.04→1, rotasjon
- * −0.6°→0, FJAER — Motion3 §4.2) idet steget vises for første gang.
- */
+/** Steg 2 av 3: gebyr og dato markeres i samme brev. */
 export function DomSteg({
   aktiv,
   illustrasjonStil,
@@ -21,41 +13,18 @@ export function DomSteg({
   illustrasjonStil: CSSProperties;
   tekstStil: CSSProperties;
 }) {
-  const vist = useForstegangsvisning(aktiv);
-
   return (
     <>
       <div style={illustrasjonStil}>
-        <div className="flex size-[180px] items-center justify-center">
-          <m.div
-            className="flex size-[150px] flex-col items-center justify-center gap-0.5 rounded-kort border-[1.5px] border-dom-rod/40 bg-dom-rod-bg"
-            initial={{ scale: 1.04, rotate: -0.6, opacity: 0 }}
-            animate={
-              vist
-                ? { scale: 1, rotate: 0, opacity: 1 }
-                : { scale: 1.04, rotate: -0.6, opacity: 0 }
-            }
-            transition={FJAER}
-          >
-            <span className="tall-xl text-dom-rod">
-              §
-            </span>
-            <span className="tall-s text-dom-rod">
-              Gebyrsjekk
-            </span>
-          </m.div>
-        </div>
+        <DokumentMotiv fase={1} aktiv={aktiv} />
       </div>
-
       <div style={tekstStil}>
-        <h1 className="tittel-s mt-[26px] text-blekk">
-          Vi sjekker om
-          <br />
-          gebyrene stemmer
+        <h1 className="tittel-s mt-8 text-blekk">
+          Få oversikt over gebyrer og frister
         </h1>
-        <p className="mt-2.5 max-w-[270px] text-sm leading-[1.6] text-dempet">
-          Alle beløp kontrolleres automatisk mot lovens maksimalsatser. Finner
-          vi noe, hjelper vi deg å si ifra.
+        <p className="mx-auto mt-2.5 max-w-[290px] text-sm leading-[1.6] text-dempet">
+          Vi sjekker støttede gebyrer mot maksimalsatsene og viser aktuelle
+          frister. Du kontrollerer opplysningene mot brevet.
         </p>
       </div>
     </>

@@ -1,6 +1,6 @@
 import { NavLenke as Link } from "@/components/NavLenke";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   Skjermramme,
@@ -125,14 +125,14 @@ function oppfolgingTekst(
   switch (tilstand.type) {
     case "kommer":
       return varslerPa
-        ? `Vi purrer${navn ? ` ${navn}` : ""} for deg om ${tilstand.dager} dager`
+        ? `Vi minner deg på å følge opp${navn ? ` ${navn}` : ""} om ${tilstand.dager} dager`
         : `Følg opp selv om ${tilstand.dager} dager`;
     case "i_dag":
-      return varslerPa ? "Vi purrer for deg i dag" : "Følg opp selv i dag";
+      return varslerPa ? "Vi minner deg på å følge opp i dag" : "Følg opp selv i dag";
     case "sendt":
-      return "Oppfølging er sendt";
+      return "Påminnelsen er sendt til deg";
     case "na":
-      return varslerPa ? "Vi følger opp nå" : "Følg opp selv nå";
+      return varslerPa ? "Vi sender deg en påminnelse snart" : "Følg opp selv nå";
   }
 }
 
@@ -492,7 +492,7 @@ export default async function KravDetaljPage({
       </Toppstripe>
 
       <Sekvens>
-      {/* 1. Kreditor, beløp og status. */}
+      {/* Kreditor, beløp og status. */}
       <SekvensDel>
       {inkassoselskap && (
         <p className="text-hjelp font-medium text-dempet">Sak hos {inkassoselskap}</p>
@@ -532,74 +532,14 @@ export default async function KravDetaljPage({
       </div>
       </SekvensDel>
 
-      {/* 2. Viktigste varsel eller neste handling. Alvorsvarsel overstyrer
-          vanlige handlingsvalg (uendret betingelse). */}
-      {sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
-        <SekvensDel>
-          <GammeltBrevKort
-            brevId={sisteBrev.id}
-            kravId={sak.id}
-            datoTekst={formaterDagManed(sisteBrevDato)}
-            uker={Math.floor(
-              brevAlderDager(sisteBrev.brevdato, sisteBrev.opprettet, idag) / 7,
-            )}
-            className="mt-seksjon"
-          />
-        </SekvensDel>
-      )}
-
-      {erSakAlvorlig && !lost ? (
-        <SekvensDel>
-          <Alvorsvarsel signalord={signalord as string} className="mt-seksjon" />
-        </SekvensDel>
-      ) : (
-        stotterUtkast(stadium) &&
-        !lost && (
-          <SekvensDel>
-            <Veivalg
-              className="mt-seksjon"
-              harGebyrfunn={harOverGebyr}
-              gebyrDifferanse={overDiff}
-              svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
-              betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
-            />
-          </SekvensDel>
-        )
-      )}
-
-      {sak.status === "venter_pa_svar" && oppfolgingTilstandVerdi && (
-        <SekvensDel>
-          <Kort className="mt-seksjon">
-            <p className="text-[14.5px] font-semibold text-blekk">
-              Venter på svar fra {inkassoselskap ?? sak.kreditor ?? sak.tittel}
-            </p>
-            <p className="mt-0.5 text-hjelp text-dempet">
-              {oppfolgingTekst(
-                oppfolgingTilstandVerdi,
-                inkassoselskap ?? sak.kreditor ?? sak.tittel,
-                varslerPa,
-              )}
-            </p>
-            <div className="-mx-[18px] -mb-[18px] mt-3 border-t-[0.5px] border-strek">
-              <VenterPaSvarUtvidelse kravId={sak.id} />
-            </div>
-          </Kort>
-        </SekvensDel>
-      )}
-
-      {/* 3. Frist og kort funnoppsummering. Detaljer åpnes fra hver rad. */}
-      {(nesteFrist || harFunnListe) && (
-        <SekvensDel>
-          <h2 className="seksjonstittel mt-seksjon text-blekk">Frist og funn</h2>
-        </SekvensDel>
-      )}
+      {/* Registrert stadium/status og relevant frist: situasjonen før valgene. */}
       {nesteFrist && (
         <SekvensDel>
           <FristRad
             forfallsdato={nesteFrist.forfallsdato}
             tittel={nesteFrist.tittel}
             gammeltBrev={fristBrevGammelt}
-            className="mt-gruppe"
+            className="mt-3"
           />
           {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
             <Utregning
@@ -635,9 +575,67 @@ export default async function KravDetaljPage({
           ) : null}
         </SekvensDel>
       )}
+
+      {sak.status === "venter_pa_svar" && oppfolgingTilstandVerdi && (
+        <SekvensDel>
+          <Kort className="mt-seksjon">
+            <p className="text-[14.5px] font-semibold text-blekk">
+              Venter på svar fra {inkassoselskap ?? sak.kreditor ?? sak.tittel}
+            </p>
+            <p className="mt-0.5 text-hjelp text-dempet">
+              {oppfolgingTekst(
+                oppfolgingTilstandVerdi,
+                inkassoselskap ?? sak.kreditor ?? sak.tittel,
+                varslerPa,
+              )}
+            </p>
+            <div className="-mx-[18px] -mb-[18px] mt-3 border-t-[0.5px] border-strek">
+              <VenterPaSvarUtvidelse kravId={sak.id} />
+            </div>
+          </Kort>
+        </SekvensDel>
+      )}
+
+      {/* Viktigste varsel eller handlingsvalg. Alvorsvarsel overstyrer
+          vanlige handlingsvalg (uendret betingelse). */}
+      {sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
+        <SekvensDel>
+          <GammeltBrevKort
+            brevId={sisteBrev.id}
+            kravId={sak.id}
+            datoTekst={formaterDagManed(sisteBrevDato)}
+            uker={Math.floor(
+              brevAlderDager(sisteBrev.brevdato, sisteBrev.opprettet, idag) / 7,
+            )}
+            className="mt-seksjon"
+          />
+        </SekvensDel>
+      )}
+
+      {erSakAlvorlig && !lost ? (
+        <SekvensDel>
+          <Alvorsvarsel signalord={signalord as string} className="mt-seksjon" />
+        </SekvensDel>
+      ) : (
+        stotterUtkast(stadium) &&
+        !lost && (
+          <SekvensDel>
+            <Veivalg
+              className="mt-seksjon"
+              harGebyrfunn={harOverGebyr}
+              gebyrDifferanse={overDiff}
+              svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
+              betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
+            />
+          </SekvensDel>
+        )
+      )}
+
+      {/* Detaljer om funn. */}
       {harFunnListe && (
         <SekvensDel>
-          <FunnListe className="mt-2.5">
+          <h2 className="seksjonstittel mt-seksjon text-blekk">Funn i brevet</h2>
+          <FunnListe className="mt-gruppe">
             {harOverGebyr && sisteBrev?.gebyrsjekk && (
               <DomMini
                 resultat={sisteBrev.gebyrsjekk}
@@ -663,7 +661,42 @@ export default async function KravDetaljPage({
         </SekvensDel>
       )}
 
-      {/* 4. Dokumenter og historikk. */}
+
+      {/* Siste brev: egen inngang før historikken. */}
+      {sisteBrev && (
+        <SekvensDel>
+          <Link
+            href={`/krav/${sak.id}/brev/${sisteBrev.id}`}
+            className="trykk mt-seksjon flex min-h-[60px] items-center gap-3 rounded-kort border border-kant bg-flate px-4 py-3"
+          >
+            <span
+              aria-hidden
+              className="flex size-9 shrink-0 items-center justify-center rounded-liten bg-flate-2 text-dempet"
+            >
+              <FileText className="size-[18px]" strokeWidth={2} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="radtittel block text-blekk">
+                Siste brev: {brevtypeEtikett(sisteBrev.brevtype).toLowerCase()}
+              </span>
+              <span className="radtekst block truncate">
+                {[
+                  sisteBrev.avsender,
+                  sisteBrev.brevdato ? formaterKortDato(sisteBrev.brevdato) : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            </span>
+            <span className="shrink-0 text-hjelp font-semibold text-aksent-dyp">
+              Åpne brevet
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
+          </Link>
+        </SekvensDel>
+      )}
+
+      {/* Historikk. */}
       <SekvensDel>
       {hendelser.length === 0 ? (
         <>

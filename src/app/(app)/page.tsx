@@ -11,8 +11,9 @@ import {
   HeltChip,
   Snarvei,
 } from "@/components/ui";
-import { FilePlus2, FolderOpen, Scale, CircleHelp } from "lucide-react";
-import { dagerTil, fristNærhet, formaterTallDato, idagOslo } from "@/lib/dato";
+import { ChevronRight, FilePlus2 } from "lucide-react";
+import { HjelpKnapp } from "./HjelpKnapp";
+import { dagerTil, formaterDagManed, formaterTallDato, idagOslo } from "@/lib/dato";
 import { erHastende, erGammeltBrev, fristChipTekst } from "@/lib/frist";
 import { formaterBelop } from "@/lib/format";
 import { STADIUM_ETIKETT, stotterUtkast, type Stadium } from "@/lib/gjeld";
@@ -73,14 +74,14 @@ function oppfolgingTekstKort(
   switch (tilstand.type) {
     case "kommer":
       return varslerPa
-        ? `Purrer om ${tilstand.dager} dager`
+        ? `Påminnelse om ${tilstand.dager} dager`
         : `Følg opp selv om ${tilstand.dager} dager`;
     case "i_dag":
-      return varslerPa ? "Purrer i dag" : "Følg opp selv i dag";
+      return varslerPa ? "Påminnelse i dag" : "Følg opp selv i dag";
     case "sendt":
-      return "Oppfølging er sendt";
+      return "Påminnelsen er sendt";
     case "na":
-      return varslerPa ? "Vi følger opp nå" : "Følg opp selv nå";
+      return varslerPa ? "Påminnelse på vei" : "Følg opp selv nå";
   }
 }
 
@@ -99,7 +100,6 @@ export default async function HjemPage() {
     )
       ?.trim()
       .split(/\s+/)[0] || null;
-  const avatarBokstav = (fornavn?.[0] ?? user?.email?.[0] ?? "M").toUpperCase();
 
   const [{ data: sakData }, { data: fristData }, { data: brevData }] =
     await Promise.all([
@@ -266,43 +266,36 @@ export default async function HjemPage() {
 
   const navnPa = (s: SakKobling) => s.kreditor ?? s.tittel;
   const kreditorLinje = (s: SakKobling) => (
-    <p className="mt-3 text-brod font-semibold text-helt-dempet">{navnPa(s)}</p>
+    <p className="mt-2 text-brod font-semibold text-helt-tekst">{navnPa(s)}</p>
   );
   const belopLinje = (s: SakKobling) =>
     s.belop_totalt != null ? (
-      <p className="mt-1">
+      <p className="mt-0.5">
         <Belop verdi={s.belop_totalt} className="tall-l" />
       </p>
     ) : null;
 
+  // Med flere saker på brede skjermer: viktigste sak til venstre, øvrige til
+  // høyre. Samme rekkefølge i DOM og på mobil.
+  const toKolonner = andreSaker.length > 0;
+  const forstegang = !harKrav;
+
   return (
-    <Skjermramme className="pt-6" animerInn={false}>
+    <Skjermramme className="pt-5" animerInn={false} bred={toKolonner}>
+      <div className={toKolonner ? "lg:grid lg:grid-cols-2 lg:gap-x-8" : ""}>
       <Sekvens>
-      <SekvensDel>
-        {/* Kompakt velkomst: dato og navn til venstre, profil til høyre. */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-hjelp font-medium text-dempet">{idagEyebrow()}</p>
-            <h1 className="tittel mt-1 text-blekk">
-              {fornavn ? `Hei, ${fornavn}` : "Hei"}
-            </h1>
-          </div>
-          <Link
-            href="/meg"
-            aria-label="Meg"
-            className="trykk -mr-1 flex size-11 shrink-0 items-center justify-center"
-          >
-            <span className="flex size-9 items-center justify-center rounded-full bg-aksent text-[14px] font-bold text-aksent-tekst">
-              {avatarBokstav}
-            </span>
-          </Link>
-        </div>
-        <p className="mt-1.5 text-[14px] text-dempet">{ingress}</p>
+      <SekvensDel className="lg:col-span-2">
+        {/* Kompakt velkomst: dato, navn og situasjon. Profilen ligger i menyen. */}
+        <p className="text-hjelp font-medium text-dempet">{idagEyebrow()}</p>
+        <h1 className="tittel mt-0.5 text-blekk">
+          {fornavn ? `Hei, ${fornavn}` : "Hei"}
+        </h1>
+        <p className="mt-1 text-[14px] text-dempet">{ingress}</p>
       </SekvensDel>
 
-      <SekvensDel>
-        <div className="mt-5">
-          {!harKrav ? (
+      <SekvensDel className="lg:col-start-1">
+        <div className="mt-4">
+          {forstegang ? (
             <Heltekort
               etikett="Kom i gang"
               knapp={
@@ -311,9 +304,9 @@ export default async function HjemPage() {
                 </Primærknapp>
               }
             >
-              <p className="tittel-s mt-3">Legg inn ditt første brev</p>
-              <p className="mt-1.5 text-[14px] text-helt-dempet">
-                Ta bilde av brevet, så sjekker vi gebyrer og frister.
+              <p className="tittel-s mt-2">Forstå brevet ditt</p>
+              <p className="mt-1 text-[14px] text-helt-dempet">
+                Ta bilde av brevet, last opp en fil eller lim inn teksten.
               </p>
             </Heltekort>
           ) : seierSak ? (
@@ -327,7 +320,7 @@ export default async function HjemPage() {
                 </Primærknapp>
               }
             >
-              <p className="mt-3 text-brod font-semibold">{navnPa(seierSak)}</p>
+              <p className="mt-2 text-brod font-semibold">{navnPa(seierSak)}</p>
               <p className="tall-m mt-1 text-gull">Medhold.</p>
               <p className="mt-2 text-hjelp">
                 Kravet ble frafalt etter innsigelsen din.
@@ -356,7 +349,7 @@ export default async function HjemPage() {
             >
               {kreditorLinje(topSak)}
               {belopLinje(topSak)}
-              <div className="mt-3.5 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 <HeltChip variant="funn">Alvorlig varsel</HeltChip>
               </div>
             </Heltekort>
@@ -372,7 +365,7 @@ export default async function HjemPage() {
             >
               {kreditorLinje(topSak)}
               {belopLinje(topSak)}
-              <div className="mt-3.5 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 <HeltChip variant="noytral">
                   {oppfolgingTilstandVerdi
                     ? oppfolgingTekstKort(oppfolgingTilstandVerdi, varslerPa)
@@ -382,14 +375,14 @@ export default async function HjemPage() {
             </Heltekort>
           ) : (
             <Heltekort
-              etikett="Neste steg"
+              etikett="Viktigste sak"
               href={`/krav/${topSak.id}`}
               knapp={
-                stotterUtkast(topSak.stadium ?? null) ? (
+                // «Lag svar» bare når det finnes et funn å svare med; ellers
+                // inn i saken først, der valgene forklares.
+                hjemHarOverGebyr && stotterUtkast(topSak.stadium ?? null) ? (
                   <Primærknapp
-                    href={`/krav/${topSak.id}/utkast${
-                      hjemHarOverGebyr ? "?type=innsigelse" : ""
-                    }`}
+                    href={`/krav/${topSak.id}/utkast?type=innsigelse`}
                     variant="lys"
                   >
                     Lag svar
@@ -403,71 +396,46 @@ export default async function HjemPage() {
             >
               {kreditorLinje(topSak)}
               {belopLinje(topSak)}
-              {(topFrist || hjemHarOverGebyr) && (
-                <div className="mt-3.5 flex flex-wrap gap-1.5">
-                  {topFrist &&
-                    (dagerTil(topFrist.forfallsdato) < 0 &&
-                    topFrist.brev_id &&
-                    fraGammeltBrev(topFrist) ? (
-                      <HeltChip variant="noytral">
-                        Brev fra{" "}
-                        {formaterTallDato(brevDatoPerId.get(topFrist.brev_id) ?? "")}
-                      </HeltChip>
-                    ) : dagerTil(topFrist.forfallsdato) < 0 ? (
-                      <HeltChip variant="funn">Frist utløpt</HeltChip>
-                    ) : (
-                      <HeltChip variant="noytral">
-                        Frist {fristNærhet(topFrist.forfallsdato).toLowerCase()}
-                      </HeltChip>
-                    ))}
-                  {hjemHarOverGebyr && (
-                    <HeltChip variant="funn">{kr(gebyrOver)} kr for mye</HeltChip>
+              {topFrist && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {dagerTil(topFrist.forfallsdato) < 0 &&
+                  topFrist.brev_id &&
+                  fraGammeltBrev(topFrist) ? (
+                    <HeltChip variant="noytral">
+                      Brev fra{" "}
+                      {formaterTallDato(brevDatoPerId.get(topFrist.brev_id) ?? "")}
+                    </HeltChip>
+                  ) : dagerTil(topFrist.forfallsdato) < 0 ? (
+                    <HeltChip variant="funn">
+                      Frist utløpt · {formaterDagManed(topFrist.forfallsdato)}
+                    </HeltChip>
+                  ) : (
+                    <HeltChip variant="noytral">
+                      {fristChipTekst(dagerTil(topFrist.forfallsdato))} ·{" "}
+                      {formaterDagManed(topFrist.forfallsdato)}
+                    </HeltChip>
                   )}
                 </div>
+              )}
+              {/* Funnet er noe annet enn det registrerte kravbeløpet. */}
+              {hjemHarOverGebyr && (
+                <p className="mt-3 border-t border-helt-chip pt-2.5 text-hjelp font-semibold text-helt-tekst">
+                  Gebyrsjekk: {kr(gebyrOver)} kr over maksimalsats
+                </p>
               )}
             </Heltekort>
           )}
         </div>
       </SekvensDel>
 
-      {/* Snarveier: alltid nyttig innhold, også med null eller én sak. */}
-      <SekvensDel>
-        <h2 className="seksjonstittel mt-seksjon text-blekk">Hva vil du gjøre?</h2>
-        <div className="mt-gruppe grid grid-cols-2 gap-2.5">
-          <Snarvei
-            ikon={FilePlus2}
-            tittel="Legg til brev"
-            tekst="Få brevet lest og sjekket"
-            href="/legg-til-brev"
-          />
-          <Snarvei
-            ikon={FolderOpen}
-            tittel="Se saker"
-            tekst="Alle brev og krav samlet"
-            href="/krav"
-          />
-          <Snarvei
-            ikon={Scale}
-            tittel="Satsene vi bruker"
-            tekst="Offentlige maksimalsatser"
-            href="/satser"
-          />
-          <Snarvei
-            ikon={CircleHelp}
-            tittel="Få hjelp"
-            tekst="Kontakt og personvern"
-            href="/meg"
-          />
-        </div>
-      </SekvensDel>
-
+      {/* Andre saker kommer rett etter hovedkortet (før generelle snarveier). */}
       {andreSaker.length > 0 && (
-        <SekvensDel>
-          <div className="mb-gruppe mt-seksjon flex items-baseline justify-between">
+        <SekvensDel className="lg:col-start-2 lg:row-span-3 lg:row-start-2">
+          <div className="mb-gruppe mt-seksjon flex items-baseline justify-between lg:mt-4">
             <h2 className="seksjonstittel text-blekk">Andre saker</h2>
             <Link
               href="/krav"
-              className="text-hjelp font-semibold text-dempet transition hover:text-blekk"
+              className="-my-3 py-3 text-hjelp font-semibold text-dempet transition hover:text-blekk"
             >
               Se alle
             </Link>
@@ -487,13 +455,10 @@ export default async function HjemPage() {
                 <li key={s.id} className={i > 0 ? "border-t border-strek" : ""}>
                   <Link
                     href={`/krav/${s.id}`}
-                    className="trykk flex items-center gap-3 py-[13px]"
+                    className="trykk flex min-h-[60px] items-center gap-3 py-3"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-liten bg-flate-2 text-[14px] font-bold text-blekk">
-                      {navnPa(s).charAt(0).toUpperCase()}
-                    </span>
                     <span className="min-w-0 flex-1">
-                      <span className="radtittel block truncate text-blekk">
+                      <span className="radtittel line-clamp-2 text-blekk">
                         {navnPa(s)}
                       </span>
                       {undertekst && (
@@ -511,6 +476,7 @@ export default async function HjemPage() {
                         {belop} kr
                       </span>
                     )}
+                    <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
                   </Link>
                 </li>
               );
@@ -519,20 +485,49 @@ export default async function HjemPage() {
         </SekvensDel>
       )}
 
-      {/* Kort forklaring av flyten ved få saker — samme flyt som finnes, ingen
-          nye løfter. Forsvinner når brukeren har flere saker å forholde seg til. */}
-      {aktiveSaker.length <= 1 && (
+      {forstegang ? (
         <SekvensDel>
-          <div className="mt-seksjon rounded-kort bg-flate-2 p-4">
-            <p className="radtittel text-blekk">Slik fungerer Medhold</p>
-            <p className="mt-1 text-hjelp leading-relaxed text-dempet">
-              Legg til brevet og sjekk tallene mot det. Vi kontrollerer gebyrer og
-              frister, og lager et utkast du kan endre. Du sender det selv.
-            </p>
+          {/* Førstegangstilstand: hva som skjer, ingen tom saksoversikt. */}
+          <h2 className="seksjonstittel mt-seksjon text-blekk">Slik fungerer det</h2>
+          <ol className="mt-gruppe flex flex-col gap-3">
+            {[
+              "Legg til brevet.",
+              "Sjekk opplysningene.",
+              "Velg neste steg.",
+            ].map((steg, i) => (
+              <li key={steg} className="flex items-center gap-3 text-brod text-blekk">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-flate-2 text-hjelp font-bold tabular-nums">
+                  {i + 1}
+                </span>
+                {steg}
+              </li>
+            ))}
+          </ol>
+          <div className="mt-5 flex justify-center">
+            <HjelpKnapp variant="lenke" />
+          </div>
+        </SekvensDel>
+      ) : (
+        <SekvensDel className="lg:col-start-1">
+          <div className="mt-seksjon grid grid-cols-2 gap-2 lg:mt-4">
+            <Snarvei ikon={FilePlus2} tittel="Legg til brev" href="/legg-til-brev" />
+            <HjelpKnapp />
           </div>
         </SekvensDel>
       )}
+
+      {/* Kort forklaring ved få saker — samme flyt som finnes, ingen nye løfter. */}
+      {!forstegang && aktiveSaker.length <= 1 && (
+        <SekvensDel className="lg:col-start-1">
+          <p className="mt-5 px-1 text-hjelp leading-relaxed text-dempet">
+            Legg til brevet og sjekk tallene mot det. Vi kontrollerer støttede
+            gebyrer og frister, og lager et utkast du kan redigere. Du sender
+            brevet selv.
+          </p>
+        </SekvensDel>
+      )}
       </Sekvens>
+      </div>
     </Skjermramme>
   );
 }

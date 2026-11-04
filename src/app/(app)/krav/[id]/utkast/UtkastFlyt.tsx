@@ -68,6 +68,7 @@ export function UtkastFlyt({
   kreditor,
   saksnummer,
   starttype,
+  typeValgt,
   harOverGebyr,
   gebyrDiff,
   ubestridt,
@@ -81,6 +82,8 @@ export function UtkastFlyt({
   kreditor: string;
   saksnummer: string | null;
   starttype: UtkastType;
+  /** Brukeren kom hit med valgt type: vis den som oppsummering med «Endre». */
+  typeValgt: boolean;
   harOverGebyr: boolean;
   /** Sum kr over lovlig sats i brevet (0 = ingen gebyrfunn). */
   gebyrDiff: number;
@@ -91,6 +94,7 @@ export function UtkastFlyt({
 }) {
   const router = useRouter();
   const [type, setType] = useState<UtkastType>(starttype);
+  const [visTyper, setVisTyper] = useState(!typeValgt);
   const [detaljer, setDetaljer] = useState("");
   const [navn, setNavn] = useState(navnStart);
   // «Hva er du uenig i?» (§D.1): kun for innsigelse med gebyrfunn, og da er
@@ -354,6 +358,24 @@ export function UtkastFlyt({
               utkastet.
             </p>
           )}
+          {!visTyper && (
+            <div className="flex items-center justify-between gap-3 rounded-kort border border-kant bg-flate px-4 py-3">
+              <span className="min-w-0">
+                <span className="radtekst block">Brevtype</span>
+                <span className="radtittel block text-blekk">{UTKAST_ETIKETT[type]}</span>
+                <span className="radtekst block">{UTKAST_UNDERTEKST[type]}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setVisTyper(true)}
+                aria-label={`Endre brevtype, valgt er ${UTKAST_ETIKETT[type]}`}
+                className="trykk flex min-h-11 shrink-0 items-center px-1 text-hjelp font-semibold text-aksent-dyp"
+              >
+                Endre
+              </button>
+            </div>
+          )}
+          {visTyper && (
           <div className="flex flex-col gap-2">
             {UTKAST_TYPER.map((t) => (
               <label
@@ -382,6 +404,7 @@ export function UtkastFlyt({
               </label>
             ))}
           </div>
+          )}
 
           {visOmfang && (
             <fieldset className="mt-5">
@@ -418,6 +441,9 @@ export function UtkastFlyt({
           <label className="mt-5 block text-hjelp font-medium text-blekk">
             {/* Omfanget spør allerede «Hva er du uenig i?» — ikke spør to ganger. */}
             {visOmfang ? "Hvorfor er du uenig?" : UTKAST_SPORSMAL[type]}
+            {!UTKAST_SPORSMAL[type].includes("valgfritt") && (
+              <span className="font-normal text-dempet"> (valgfritt)</span>
+            )}
             <textarea
               value={detaljer}
               onChange={(e) => setDetaljer(e.target.value)}
@@ -449,10 +475,10 @@ export function UtkastFlyt({
               {genererer ? (
                 <span className="inline-flex items-center justify-center gap-2">
                   <Loader2 className="size-4 animate-spin" aria-hidden />
-                  Lag utkast
+                  Lag et utkast
                 </span>
               ) : (
-                "Lag utkast"
+                "Lag et utkast"
               )}
             </Primærknapp>
           </div>
@@ -549,7 +575,8 @@ export function UtkastFlyt({
                 </Kort>
               )}
 
-              <div className="mt-4">
+              <h2 className="seksjonstittel mt-seksjon text-blekk">Send brevet selv</h2>
+              <div className="mt-gruppe">
                 {forLangtForMailto ? (
                   <Primærknapp onClick={apneEpost}>
                     <span className="inline-flex items-center gap-2">
@@ -624,8 +651,8 @@ export function UtkastFlyt({
                   </Primærknapp>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-dempet">
-                  Da settes saken til «Venter på svar», og vi følger opp om
-                  det drøyer.
+                  Da settes saken til «Venter på svar». Medhold sender ikke noe
+                  selv, men minner deg på å følge opp hvis det drøyer.
                 </p>
               </div>
             </>

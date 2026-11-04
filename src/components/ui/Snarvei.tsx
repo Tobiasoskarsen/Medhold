@@ -1,30 +1,27 @@
 import type { LucideIcon } from "lucide-react";
 import { NavLenke as Link } from "@/components/NavLenke";
 
+/** Felles utseende, så en snarvei som knapp (Få hjelp) ser lik ut som en lenke. */
+export const SNARVEI_KLASSE =
+  "trykk flex min-h-[52px] w-full items-center gap-2.5 rounded-kontroll border border-kant bg-flate px-3.5 py-2.5 text-left text-sm font-semibold text-blekk";
+
 /**
- * Snarvei — én rute i rutenettet «Hva vil du gjøre?» på Hjem: ikon, kort
- * tittel, én linje forklaring. Bare til eksisterende mål (ingen nye løfter).
+ * Snarvei — kompakt handling på Hjem: ikon og kort tittel på én rad. Bare til
+ * eksisterende mål (ingen nye løfter).
  */
 export function Snarvei({
   ikon: Ikon,
   tittel,
-  tekst,
   href,
 }: {
   ikon: LucideIcon;
   tittel: string;
-  tekst: string;
   href: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="trykk flex min-h-[92px] flex-col rounded-kort border border-kant bg-flate p-3.5"
-      style={{ boxShadow: "var(--kort-skygge)" }}
-    >
-      <Ikon className="size-[22px] text-aksent-dyp" strokeWidth={1.75} aria-hidden />
-      <span className="radtittel mt-2 text-blekk">{tittel}</span>
-      <span className="radtekst mt-0.5">{tekst}</span>
+    <Link href={href} className={SNARVEI_KLASSE}>
+      <Ikon className="size-5 shrink-0 text-aksent-dyp" strokeWidth={1.75} aria-hidden />
+      {tittel}
     </Link>
   );
 }
