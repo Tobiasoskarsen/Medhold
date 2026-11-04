@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medhold – B mot C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--side:#e8e6e1;--side-blekk:#1b1d1c;--side-dempet:#6b6d69}
+  body{background:var(--side);font-family:'Schibsted Grotesk',system-ui,sans-serif;color:var(--side-blekk);
+       padding:48px 16px 80px;-webkit-font-smoothing:antialiased}
+  .side-hode{max-width:1180px;margin:0 auto 40px}
+  .side-hode h1{font-size:30px;font-weight:700;letter-spacing:-.02em}
+  .side-hode p{font-size:15px;color:var(--side-dempet);margin-top:8px;max-width:640px;line-height:1.5}
+  .retninger{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:64px}
+  .retninger section{display:grid;grid-template-columns:300px 1fr;gap:40px;align-items:start}
+  @media (max-width:980px){.retninger section{grid-template-columns:1fr}}
+  @media (max-width:860px){.retninger{grid-template-columns:1fr}}
+  .retning-hode{margin-bottom:18px}
+  .retning-hode .bokstav{display:inline-flex;width:30px;height:30px;border-radius:50%;background:var(--side-blekk);
+       color:#fff;align-items:center;justify-content:center;font-weight:700;font-size:14px;margin-right:10px;vertical-align:middle}
+  .retning-hode h2{display:inline;font-size:20px;font-weight:700;letter-spacing:-.01em;vertical-align:middle}
+  .retning-hode p{font-size:13.5px;color:var(--side-dempet);margin-top:8px;line-height:1.5}
+  .telefoner{display:flex;gap:28px;flex-wrap:wrap;justify-content:flex-start}
+  .tlf{width:320px;height:690px;border-radius:40px;overflow:hidden;position:relative;
+       box-shadow:0 30px 60px -20px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06)}
+  @media (max-width:360px){.tlf{width:100%}}
+  .skjerm{height:100%;overflow:hidden;padding:18px 18px 0;position:relative}
+  .status{display:flex;justify-content:space-between;font-size:12px;font-weight:600;padding:2px 6px 14px}
+  .tall{font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+
+  /* ================= B: Lys skandinavisk fintech ================= */
+  .B{--bg:#f3f0e9;--flate:#ffffff;--blekk:#121614;--dempet:#6d706a;--strek:#e6e1d6;
+     --fjord:#103c38;--fjord-tekst:#eef3ef;--mint:#c9ead9;--funn:#b8400f;--funn-bg:#fbe9df;--gull:#a77a22}
+  .B .skjerm{background:var(--bg);color:var(--blekk)}
+  .B .topp{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+  .B .dato{font-size:13px;color:var(--dempet);font-weight:500}
+  .B .avatar{width:34px;height:34px;border-radius:50%;background:var(--blekk);color:#fff;font-weight:700;
+       font-size:14px;display:flex;align-items:center;justify-content:center}
+  .B .hilsen{font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.05;margin-bottom:6px}
+  .B .ingress{font-size:14px;color:var(--dempet);margin-bottom:20px}
+  .B .helt{background:var(--fjord);color:var(--fjord-tekst);border-radius:26px;padding:20px 20px 18px}
+  .B .helt-etikett{font-size:12px;font-weight:600;opacity:.7;text-transform:uppercase;letter-spacing:.08em}
+  .B .helt-navn{font-size:15px;font-weight:600;margin-top:12px}
+  .B .helt-belop{font-size:44px;font-weight:700;line-height:1;margin-top:4px}
+  .B .helt-belop small{font-size:20px;font-weight:600;opacity:.6}
+  .B .helt-chips{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  .B .chip{font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px}
+  .B .chip-frist{background:#ffffff1f;color:var(--fjord-tekst)}
+  .B .chip-funn{background:#ffd9c6;color:#7a2a08}
+  .B .knapp{display:block;width:100%;border:none;border-radius:16px;padding:15px;font:inherit;font-size:15px;
+       font-weight:700;margin-top:16px;cursor:pointer}
+  .B .knapp-lys{background:var(--fjord-tekst);color:var(--fjord)}
+  .B .knapp-mork{background:var(--blekk);color:#fff}
+  .B .knapp-rolig{background:transparent;color:var(--blekk);border:1.5px solid var(--strek);margin-top:10px}
+  .B .seksjon{display:flex;justify-content:space-between;align-items:baseline;margin:24px 2px 10px}
+  .B .seksjon h3{font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .B .seksjon a{font-size:13px;color:var(--dempet);font-weight:600;text-decoration:none}
+  .B .liste{background:var(--flate);border-radius:20px;padding:4px 16px}
+  .B .rad{display:flex;align-items:center;gap:12px;padding:13px 0}
+  .B .rad+.rad{border-top:1px solid var(--strek)}
+  .B .ikon{width:36px;height:36px;border-radius:12px;background:var(--bg);display:flex;align-items:center;
+       justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+  .B .rad-midt{flex:1;min-width:0}
+  .B .rad-navn{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .B .rad-sub{font-size:12px;color:var(--dempet);margin-top:1px}
+  .B .rad-sub.haster{color:var(--funn);font-weight:600}
+  .B .rad-belop{font-size:15px;font-weight:700}
+  .B .nav{position:absolute;left:18px;right:18px;bottom:18px;height:62px;border-radius:22px;background:var(--blekk);
+       display:flex;align-items:center;justify-content:space-around;padding:0 8px}
+  .B .nav span{color:#ffffff80;font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .B .nav span.paa{color:#fff}
+  .B .nav .pluss{width:44px;height:44px;border-radius:15px;background:var(--mint);color:var(--fjord);
+       font-size:24px;font-weight:500;justify-content:center}
+  /* B sak */
+  .B .tilbake{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .B .rund{width:36px;height:36px;border-radius:50%;background:var(--flate);display:flex;align-items:center;justify-content:center;font-size:16px}
+  .B .sak-navn{font-size:14px;color:var(--dempet);font-weight:600}
+  .B .sak-belop{font-size:48px;font-weight:700;line-height:1;margin-top:4px}
+  .B .sak-belop small{font-size:22px;color:var(--dempet);font-weight:600}
+  .B .trinn{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:18px}
+  .B .trinn i{height:6px;border-radius:3px;background:var(--strek)}
+  .B .trinn i.ferdig{background:#103c3866}
+  .B .trinn i.naa{background:var(--fjord)}
+  .B .trinn-tekst{display:flex;justify-content:space-between;font-size:11px;color:var(--dempet);margin-top:6px;font-weight:500}
+  .B .trinn-tekst b{color:var(--blekk);font-weight:700}
+  .B .funn{background:var(--funn-bg);border-radius:22px;padding:18px;margin-top:20px}
+  .B .funn-topp{display:flex;justify-content:space-between;align-items:center}
+  .B .funn-etikett{font-size:12px;font-weight:700;color:var(--funn);text-transform:uppercase;letter-spacing:.08em}
+  .B .funn-tall{font-size:34px;font-weight:700;color:var(--funn);line-height:1;margin-top:8px}
+  .B .funn-tekst{font-size:13.5px;line-height:1.45;margin-top:8px}
+  .B .funn-kilde{font-size:11.5px;color:var(--dempet);margin-top:8px}
+  .B .frist-rad{display:flex;justify-content:space-between;align-items:center;background:var(--flate);border-radius:18px;
+       padding:14px 16px;margin-top:10px}
+  .B .frist-rad .v{font-size:12px;color:var(--dempet);font-weight:500}
+  .B .frist-rad .h{font-size:14px;font-weight:700;margin-top:1px}
+  .B .dager{font-size:13px;font-weight:700;color:var(--funn);background:var(--funn-bg);padding:6px 11px;border-radius:999px}
+
+  /* ================= C: Sofistikert mørk ================= */
+  .C{--bg:#0a0c0c;--flate:#131716;--flate2:#1a1f1e;--strek:#ffffff12;--blekk:#f1f4f2;--dempet:#8b938f;
+     --aksent:#8fe3bf;--aksent-dyp:#0f2a22;--funn:#ff9a78;--funn-bg:#ff9a7814}
+  .C .skjerm{background:var(--bg);color:var(--blekk)}
+  .C .skjerm::before{content:"";position:absolute;top:-120px;left:-60px;width:360px;height:320px;
+       background:radial-gradient(closest-side,#8fe3bf1f,transparent);pointer-events:none}
+  .C .topp{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;position:relative}
+  .C .dato{font-size:13px;color:var(--dempet);font-weight:500}
+  .C .avatar{width:34px;height:34px;border-radius:50%;background:var(--flate2);border:1px solid var(--strek);
+       color:var(--blekk);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+  .C .hilsen{font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.05;margin-bottom:6px;position:relative}
+  .C .ingress{font-size:14px;color:var(--dempet);margin-bottom:20px}
+  .C .helt{background:linear-gradient(180deg,#171c1b,#111514);border:1px solid var(--strek);border-radius:26px;
+       padding:20px 20px 18px;position:relative;overflow:hidden}
+  .C .helt::after{content:"";position:absolute;inset:0;border-radius:26px;pointer-events:none;
+       box-shadow:inset 0 1px 0 #ffffff14}
+  .C .helt-etikett{font-size:12px;font-weight:600;color:var(--aksent);text-transform:uppercase;letter-spacing:.08em}
+  .C .helt-navn{font-size:15px;font-weight:600;margin-top:12px;color:var(--dempet)}
+  .C .helt-belop{font-size:44px;font-weight:700;line-height:1;margin-top:4px}
+  .C .helt-belop small{font-size:20px;font-weight:600;color:var(--dempet)}
+  .C .helt-chips{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  .C .chip{font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px}
+  .C .chip-frist{background:var(--flate2);color:var(--blekk);border:1px solid var(--strek)}
+  .C .chip-funn{background:var(--funn-bg);color:var(--funn);border:1px solid #ff9a7833}
+  .C .knapp{display:block;width:100%;border:none;border-radius:16px;padding:15px;font:inherit;font-size:15px;
+       font-weight:700;margin-top:16px;cursor:pointer}
+  .C .knapp-aksent{background:var(--aksent);color:#06231a}
+  .C .knapp-rolig{background:transparent;color:var(--blekk);border:1px solid var(--strek);margin-top:10px}
+  .C .seksjon{display:flex;justify-content:space-between;align-items:baseline;margin:24px 2px 10px}
+  .C .seksjon h3{font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .C .seksjon a{font-size:13px;color:var(--dempet);font-weight:600;text-decoration:none}
+  .C .liste{background:var(--flate);border:1px solid var(--strek);border-radius:20px;padding:4px 16px}
+  .C .rad{display:flex;align-items:center;gap:12px;padding:13px 0}
+  .C .rad+.rad{border-top:1px solid var(--strek)}
+  .C .ikon{width:36px;height:36px;border-radius:12px;background:var(--flate2);display:flex;align-items:center;
+       justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;color:var(--dempet)}
+  .C .rad-midt{flex:1;min-width:0}
+  .C .rad-navn{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .C .rad-sub{font-size:12px;color:var(--dempet);margin-top:1px}
+  .C .rad-sub.haster{color:var(--funn);font-weight:600}
+  .C .rad-belop{font-size:15px;font-weight:700}
+  .C .nav{position:absolute;left:18px;right:18px;bottom:18px;height:62px;border-radius:22px;
+       background:#1a1f1ecc;backdrop-filter:blur(14px);border:1px solid var(--strek);
+       display:flex;align-items:center;justify-content:space-around;padding:0 8px}
+  .C .nav span{color:#ffffff66;font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .C .nav span.paa{color:var(--blekk)}
+  .C .nav .pluss{width:44px;height:44px;border-radius:15px;background:var(--aksent);color:#06231a;
+       font-size:24px;font-weight:500;justify-content:center}
+  /* C sak */
+  .C .tilbake{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative}
+  .C .rund{width:36px;height:36px;border-radius:50%;background:var(--flate);border:1px solid var(--strek);
+       display:flex;align-items:center;justify-content:center;font-size:16px}
+  .C .sak-navn{font-size:14px;color:var(--dempet);font-weight:600;position:relative}
+  .C .sak-belop{font-size:48px;font-weight:700;line-height:1;margin-top:4px;position:relative}
+  .C .sak-belop small{font-size:22px;color:var(--dempet);font-weight:600}
+  .C .trinn{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:18px}
+  .C .trinn i{height:6px;border-radius:3px;background:var(--flate2)}
+  .C .trinn i.ferdig{background:#8fe3bf55}
+  .C .trinn i.naa{background:var(--aksent);box-shadow:0 0 12px #8fe3bf66}
+  .C .trinn-tekst{display:flex;justify-content:space-between;font-size:11px;color:var(--dempet);margin-top:6px;font-weight:500}
+  .C .trinn-tekst b{color:var(--blekk);font-weight:700}
+  .C .funn{background:var(--funn-bg);border:1px solid #ff9a7829;border-radius:22px;padding:18px;margin-top:20px}
+  .C .funn-etikett{font-size:12px;font-weight:700;color:var(--funn);text-transform:uppercase;letter-spacing:.08em}
+  .C .funn-tall{font-size:34px;font-weight:700;color:var(--funn);line-height:1;margin-top:8px}
+  .C .funn-tekst{font-size:13.5px;line-height:1.45;margin-top:8px;color:#d9dedb}
+  .C .funn-kilde{font-size:11.5px;color:var(--dempet);margin-top:8px}
+  .C .frist-rad{display:flex;justify-content:space-between;align-items:center;background:var(--flate);border:1px solid var(--strek);
+       border-radius:18px;padding:14px 16px;margin-top:10px}
+  .C .frist-rad .v{font-size:12px;color:var(--dempet);font-weight:500}
+  .C .frist-rad .h{font-size:14px;font-weight:700;margin-top:1px}
+  .C .dager{font-size:13px;font-weight:700;color:var(--funn);background:var(--funn-bg);padding:6px 11px;border-radius:999px}
+
+  .hva{max-width:1180px;margin:56px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  @media (max-width:860px){.hva{grid-template-columns:1fr}}
+  .hva div{background:#fff;border-radius:20px;padding:22px}
+  .hva h4{font-size:15px;font-weight:700;margin-bottom:10px}
+  .hva li{font-size:13.5px;line-height:1.55;color:#3c3f3c;margin-left:18px}
+  .felles{max-width:1180px;margin:24px auto 0;background:#1b1d1c;color:#eceeec;border-radius:20px;padding:22px}
+  .felles h4{font-size:15px;font-weight:700;margin-bottom:10px}
+  .felles li{font-size:13.5px;line-height:1.6;margin-left:18px;color:#cfd3d0}
+</style>
+</head>
+<body>
+
+<header class="side-hode">
+  <h1>Medhold, B mot C</h1>
+  <p>Begge retningene viser de samme to skjermene med de samme dataene. Den eneste forskjellen er uttrykket. Velg den du helst vil åpne hver dag.</p>
+</header>
+
+<main class="retninger">
+
+  <!-- ===================== B ===================== -->
+  <section>
+    <div class="retning-hode">
+      <span class="bokstav">B</span><h2>Lys skandinavisk fintech</h2>
+      <p>Varm, lys bakgrunn. Ett mørkt fjordkort bærer hele skjermen. Svart navigasjon og store tall, som hos en etablert nordisk bank.</p>
+    </div>
+    <div class="telefoner">
+
+      <!-- B Hjem -->
+      <div class="tlf B"><div class="skjerm">
+        <div class="status"><span>20:41</span><span>●●● ▮</span></div>
+        <div class="topp"><span class="dato">Tirsdag 3. november</span><span class="avatar">T</span></div>
+        <p class="hilsen">Hei, Tobias</p>
+        <p class="ingress">Én sak trenger deg denne uka.</p>
+
+        <div class="helt">
+          <p class="helt-etikett">Neste steg</p>
+          <p class="helt-navn">Fjordkreditt Inkasso</p>
+          <p class="helt-belop tall">3 243<small>,20 kr</small></p>
+          <div class="helt-chips">
+            <span class="chip chip-frist">Frist om 8 dager</span>
+            <span class="chip chip-funn">50 kr for mye</span>
+          </div>
+          <button class="knapp knapp-lys">Lag svar</button>
+        </div>
+
+        <div class="seksjon"><h3>Andre saker</h3><a href="#">Se alle</a></div>
+        <div class="liste">
+          <div class="rad"><span class="ikon">S</span><div class="rad-midt"><p class="rad-navn">Sørlandet Dyreklinikk</p><p class="rad-sub haster">Frist utløpt</p></div><span class="rad-belop tall">289 kr</span></div>
+          <div class="rad"><span class="ikon">K</span><div class="rad-midt"><p class="rad-navn">Kjøpnå AS</p><p class="rad-sub">Venter på svar</p></div><span class="rad-belop tall">1 120 kr</span></div>
+        </div>
+
+        <nav class="nav"><span class="paa">⌂<br>Hjem</span><span>▤<br>Saker</span><span class="pluss">+</span><span>◯<br>Meg</span></nav>
+      </div></div>
+
+      <!-- B Sak -->
+      <div class="tlf B"><div class="skjerm">
+        <div class="status"><span>20:41</span><span>●●● ▮</span></div>
+        <div class="tilbake"><span class="rund">←</span><span class="rund">⋯</span></div>
+        <p class="sak-navn">Fjordkreditt Inkasso</p>
+        <p class="sak-belop tall">3 243<small>,20 kr</small></p>
+        <div class="trinn"><i class="ferdig"></i><i class="ferdig"></i><i class="naa"></i><i></i></div>
+        <div class="trinn-tekst"><span>Purring</span><span>Varsel</span><b>Oppfordring</b><span>Rettslig</span></div>
+
+        <div class="funn">
+          <p class="funn-etikett">Gebyrsjekk</p>
+          <p class="funn-tall tall">50 kr for mye</p>
+          <p class="funn-tekst">Salæret er 800 kr. Loven tillater maks 750 kr for et krav på denne størrelsen.</p>
+          <p class="funn-kilde">Inkassoforskriften § 2-2 · satser fra 1.1.2026</p>
+        </div>
+
+        <div class="frist-rad">
+          <div><p class="v">Svar innen</p><p class="h">11. november</p></div>
+          <span class="dager">8 dager</span>
+        </div>
+
+        <button class="knapp knapp-mork">Lag svar med funnet</button>
+        <button class="knapp knapp-rolig">Kravet stemmer, vis veiene ut</button>
+      </div></div>
+
+    </div>
+  </section>
+
+  <!-- ===================== C ===================== -->
+  <section>
+    <div class="retning-hode">
+      <span class="bokstav">C</span><h2>Sofistikert mørk</h2>
+      <p>Nesten svart, med lag i stedet for flate farger. Mint er eneste aksent, og funn får en varm korall. Glassnavigasjon. Det mørke uttrykket du har i dag, men voksent.</p>
+    </div>
+    <div class="telefoner">
+
+      <!-- C Hjem -->
+      <div class="tlf C"><div class="skjerm">
+        <div class="status"><span>20:41</span><span>●●● ▮</span></div>
+        <div class="topp"><span class="dato">Tirsdag 3. november</span><span class="avatar">T</span></div>
+        <p class="hilsen">Hei, Tobias</p>
+        <p class="ingress">Én sak trenger deg denne uka.</p>
+
+        <div class="helt">
+          <p class="helt-etikett">Neste steg</p>
+          <p class="helt-navn">Fjordkreditt Inkasso</p>
+          <p class="helt-belop tall">3 243<small>,20 kr</small></p>
+          <div class="helt-chips">
+            <span class="chip chip-frist">Frist om 8 dager</span>
+            <span class="chip chip-funn">50 kr for mye</span>
+          </div>
+          <button class="knapp knapp-aksent">Lag svar</button>
+        </div>
+
+        <div class="seksjon"><h3>Andre saker</h3><a href="#">Se alle</a></div>
+        <div class="liste">
+          <div class="rad"><span class="ikon">S</span><div class="rad-midt"><p class="rad-navn">Sørlandet Dyreklinikk</p><p class="rad-sub haster">Frist utløpt</p></div><span class="rad-belop tall">289 kr</span></div>
+          <div class="rad"><span class="ikon">K</span><div class="rad-midt"><p class="rad-navn">Kjøpnå AS</p><p class="rad-sub">Venter på svar</p></div><span class="rad-belop tall">1 120 kr</span></div>
+        </div>
+
+        <nav class="nav"><span class="paa">⌂<br>Hjem</span><span>▤<br>Saker</span><span class="pluss">+</span><span>◯<br>Meg</span></nav>
+      </div></div>
+
+      <!-- C Sak -->
+      <div class="tlf C"><div class="skjerm">
+        <div class="status"><span>20:41</span><span>●●● ▮</span></div>
+        <div class="tilbake"><span class="rund">←</span><span class="rund">⋯</span></div>
+        <p class="sak-navn">Fjordkreditt Inkasso</p>
+        <p class="sak-belop tall">3 243<small>,20 kr</small></p>
+        <div class="trinn"><i class="ferdig"></i><i class="ferdig"></i><i class="naa"></i><i></i></div>
+        <div class="trinn-tekst"><span>Purring</span><span>Varsel</span><b>Oppfordring</b><span>Rettslig</span></div>
+
+        <div class="funn">
+          <p class="funn-etikett">Gebyrsjekk</p>
+          <p class="funn-tall tall">50 kr for mye</p>
+          <p class="funn-tekst">Salæret er 800 kr. Loven tillater maks 750 kr for et krav på denne størrelsen.</p>
+          <p class="funn-kilde">Inkassoforskriften § 2-2 · satser fra 1.1.2026</p>
+        </div>
+
+        <div class="frist-rad">
+          <div><p class="v">Svar innen</p><p class="h">11. november</p></div>
+          <span class="dager">8 dager</span>
+        </div>
+
+        <button class="knapp knapp-aksent">Lag svar med funnet</button>
+        <button class="knapp knapp-rolig">Kravet stemmer, vis veiene ut</button>
+      </div></div>
+
+    </div>
+  </section>
+</main>
+
+<section class="hva">
+  <div>
+    <h4>B passer hvis…</h4>
+    <ul>
+      <li>du vil at appen skal føles som en bank, ikke som en app</li>
+      <li>målgruppen er stresset, og lyst og rolig skal dempe stresset</li>
+      <li>du vil vekk fra «AI-app»-looken (mørkt med grønn glød er det mange AI-apper som har)</li>
+    </ul>
+  </div>
+  <div>
+    <h4>C passer hvis…</h4>
+    <ul>
+      <li>du liker det mørke uttrykket og vil beholde det</li>
+      <li>målgruppen er unge (TikTok), der mørkt føles mer moderne</li>
+      <li>det blir lettere å bygge, siden mørk modus allerede er hovedmodusen din</li>
+    </ul>
+  </div>
+</section>
+
+<section class="felles">
+  <h4>Det som endres uansett hvilken du velger</h4>
+  <ul>
+    <li><b>Én skrift.</b> Schibsted Grotesk, en norsk skrift laget for Schibsted, erstatter Newsreader og Inter. Serif sammen med Inter er en stor del av grunnen til at det ser «Claude-laget» ut.</li>
+    <li><b>Ett heltekort på Hjem.</b> Ingen ring, ingen bento og ingen statistikk. Bare den saken som haster, og resten som en rolig liste.</li>
+    <li><b>Store tall.</b> Beløpet er det viktigste på skjermen og skal se sånn ut.</li>
+    <li><b>Svevende bunnmeny</b> med +-knapp i midten for å legge til brev.</li>
+    <li><b>Kortere tekst.</b> «50 kr for mye» i stedet for «50 kr over lovlig sats».</li>
+  </ul>
+</section>
+
+</body>
+</html>

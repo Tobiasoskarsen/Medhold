@@ -93,7 +93,9 @@ export default async function MegPage() {
             type="submit"
             className="trykk flex w-full items-center gap-2.5 px-[14px] py-3 text-left text-sm text-blekk"
           >
-            <LogOut className="size-[17px] shrink-0 text-dempet" aria-hidden />
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-flate-2">
+              <LogOut className="size-[17px] text-dempet" aria-hidden />
+            </span>
             Logg ut
           </button>
         </form>

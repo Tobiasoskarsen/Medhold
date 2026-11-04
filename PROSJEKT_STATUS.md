@@ -37,6 +37,136 @@ etter hver fase.
 | Komplett-ordre Del A | Ordmerke (inline SVG, currentColor + fast gull) (egen ordre) | ✅ Ferdig |
 | Komplett-ordre Del B | Illustrasjonsspråk: TomKonvolutt/RoligFigur/DokumentHake (egen ordre) | ✅ Ferdig |
 | Komplett-ordre Del C | Fullskjerm-Dom, åpnes fra DomMini (egen ordre) | ✅ Ferdig |
+| Retning B | Én skrift, ny B/C-palett, heltekort, radlister — hele appen (egen ordre) | ✅ Ferdig |
+| Hjem-forenkling | MEDHOLD_HJEM_FORENKLING_ARBEIDSORDRE — aldri sendt | ⏭️ Erstattet av Retning B |
+
+---
+
+## MEDHOLD_RETNING_B_ARBEIDSORDRE — én skrift, ny palett, heltekort (ferdig)
+
+Fasit: `docs/design/medhold_retning_B_vs_C.html` (lagt inn i repoet). B er
+lys modus, C er mørk. Ordren erstatter MEDHOLD_HJEM_FORENKLING_ARBEIDSORDRE
+(aldri sendt). Ingen forretningslogikk, migrasjoner eller nye avhengigheter.
+
+**§1 Skrift.** Schibsted Grotesk (`next/font/google`, variabel, ingen vekter
+oppgitt) erstatter Newsreader og Inter. Nye typografiklasser i
+`globals.css`: `tittel`, `tittel-s`, `seksjonstittel`, `tall-xl/l/m/s`.
+`.eyebrow` justert. Alle `font-serif` og all kursiv i overskrifter er fjernet
+(grep gir 0 treff utenom `del/bilde/route.tsx`, der `fontStyle: italic` også
+er fjernet). **Ordmerket** er nå én `<text>` («Medhold», 800, letterSpacing
+-1.5, 42 px). Tekstbredden er målt med `getBBox()` i nettleseren til
+**175,77 → 176**; Trapp-gruppen står på `translate(184, 10)` og viewBox er
+**211 × 64**.
+
+**§2 Farger.** `:root`/`.mork` erstattet med ordrens verdier, inkludert alle
+nye tokens (`flate-2`, `kant`, `aksent-tekst`, `knapp`, `helt-*`, `mint`,
+`nav-*`, `gull-tekst`). Ny `@custom-variant mork`. Svakt lys øverst i mørk
+modus. Slate-remap-blokken er fjernet, og alle `slate/teal/red/emerald/
+amber/violet`-klasser er byttet (grep gir 0 treff). `STATUS_STIL`/
+`UTFALL_STIL` følger ordren — **medhold er nå gull, ikke grønn**. `Pill`
+`feil`/`aksent` oppdatert. `bg-aksent` + `text-white` → `text-aksent-tekst`
+der det fantes (BrevSamtale). `text-white` finnes nå bare i DomFullskjerm.
+
+**§3 Standardtema.** Ny bruker uten lagret tema får lys (`TEMA_SKRIPT`,
+`Tema.tsx`, `TemaRad.tsx`). System er fortsatt et valg. `themeColor`,
+`background_color` og `theme_color` er `#f3f0e9`.
+
+**§4 Grunnkomponenter.** `Kort`, `Primærknapp` (varianter), `Pillknapp`,
+`BunnNav` (mørk pille, flat mint +-knapp, `layoutId`-indikator beholdt),
+og nye `Heltekort`/`HeltChip`, `StadiumLinje` og `FristRad`.
+`StadiumRing`, `Nedtelling` og `Fremgangsring` er slettet (grep bekreftet
+ingen brukere). `(app)/FristChip.tsx` er også slettet — den ble ubrukt da
+Hjem fikk heltekortet.
+
+**§5 Hjem.** Dato + avatar (lenke til Meg), «Hei, {fornavn}», ingress fra ny
+ren funksjon `hjemIngress()` i `lib/oversikt.ts` (6 nye tester, én per
+regel), heltekort i alle seks tilstander, og «Andre saker» som én liste
+(maks 3, åpen frist først). Bento, ring, statistikkplater, Trapp i kortet,
+handlingstittel og «Kommende» er fjernet. Gebyrtotalen til «{n} kr for
+mye»-chipen regnes fra det samme nyeste brevet som før — ingen ny spørring.
+
+**§6 Saker.** H1 «Saker», stripen som ingress, `seksjonstittel` på gruppene.
+`Kravkort` er nå en rad (initialrute, navn, undertekst, beløp) i én samlet
+liste. View Transition-logikken (`navnRef`/`belopRef`, flagg) er urørt.
+`GruppertSaksliste` justert.
+
+**§7 Saken.** Runde toppknapper (`ChevronLeft`, `MoreHorizontal`), navn +
+`tall-xl`-beløp, de to røde notatlinjene fjernet, `StadiumLinje`, nytt
+funnkort (`DomMini` er fortsatt en knapp til DomFullskjerm, `DomMiniFrist`
+samme ramme men ikke klikkbar), `FristRad` + Utregning, Veivalg beholdt
+med ny stil. DomFullskjerm-bakgrunn er `#103c38`.
+
+**§8 Resten.** Meg (ProfilKort, Gruppe, ikonruter i radene — også i
+`Utvidbar` og «Logg ut»-raden for konsistens), logg inn (GoogleKnapp,
+kodefelt), alle tekstfelt `rounded-[14px] border border-strek`,
+VeierUtFlyt-beløp `tall-s`, skjeletter med nye radier.
+`Logo.tsx` og `public/logo*.svg` har fått nye farger og Schibsted Grotesk
+800 i ordmerkene. `opengraph-image.tsx` og delingsbildet har nye farger.
+
+Ikonene `public/ikon-192.png`, `ikon-512.png` og `src/app/favicon.ico` er
+laget på nytt fra `logo-ikon.svg` med et midlertidig skript (ikke i
+repoet) som bruker `sharp` — som allerede ligger i `node_modules` som
+transitiv avhengighet av `next`, så ingenting er lagt til i `package.json`.
+favicon pakkes som én 32×32 PNG i en ICO-container, samme metode som
+Finpuss-ordren.
+
+`npm run build`, `npm run lint` og `npm test` (**159 tester**, 6 nye) er grønne.
+
+### Skjermbilder (`docs/design/retning-b/`, 390 px)
+
+| Skjerm | Lys | Mørk |
+|---|---|---|
+| Hjem | `hjem-lys.jpg` | `hjem-mork.jpg` |
+| Saker | `saker-lys.jpg` | `saker-mork.jpg` |
+| Saken (gebyrfunn) | `sak-lys.jpg` | `sak-mork.jpg` |
+| Meg | `meg-lys.jpg` | `meg-mork.jpg` |
+| Logg inn | `logg-inn-lys.jpg` | `logg-inn-mork.jpg` |
+| Velkommen | `velkommen-lys.jpg` | `velkommen-mork.jpg` |
+| DomFullskjerm | `domfullskjerm.jpg` (fast farge) | — |
+
+Logg inn og Velkommen er de ekte sidene. Hjem, Saker, Saken, Meg og
+DomFullskjerm er tatt fra en midlertidig debug-rute med de ekte
+komponentene og mockdata (testbrev 2-scenariet: salær 800 mot 750,
+50 kr for mye), siden innlogging mot ekte data ikke har vært mulig i
+dette miljøet. Ruten og middleware-unntaket er fjernet igjen. Bildene er
+tatt med Browser-panelet, ikke Playwright — Playwright er ikke installert,
+og å installere det ville vært en ny avhengighet.
+
+Verifisert i samme runde: DomMini åpner DomFullskjerm med riktig beløp,
+kaskaden spilles (bekreftet visuelt for første gang — tidligere økter
+kunne ikke se animasjonsrammer), fokus flyttes til «Lukk» og tilbake ved
+Esc. E-postbryteren i mørk modus har mint bane og mørk knott.
+
+### Valg tatt underveis
+
+1. **`Primærknapp` fikk en fjerde variant, `gull`.** Ordren sier «standard
+   med klassen `bg-gull text-gull-tekst`» for «Del resultatet». En
+   `bg-gull`-className vinner ikke pålitelig over `bg-knapp` i Tailwinds
+   genererte CSS (samme lærdom som i Deling og opprydding), så fargen
+   velges som en hel variant i stedet.
+2. **`Heltekort` fikk to props utover signaturen i §4.4: `href` og
+   `knapp`.** §5.2 krever at øvre del (etikett til og med chips) er én
+   lenke og at knappen ligger utenfor. Etiketten rendres inne i
+   komponenten, så den kunne ikke lenkes fra utsiden uten disse.
+3. **Knappen nederst på Saker heter fortsatt «Opprett nytt krav» og går
+   til `/krav/ny`.** Ordren kaller den «Legg til brev», men den
+   eksisterende knappen er manuell opprettelse av krav, ikke brevinntak
+   (det dekker +-knappen i bunnmenyen). Stilen er byttet til
+   `Primærknapp variant="rolig"` med Plus-ikon; funksjonen er ikke fjernet.
+4. **`favicon.ico` er også laget på nytt**, i tillegg til de to PNG-ene
+   ordren nevner — ellers hadde nettleserfanen beholdt det gamle,
+   blå ikonet.
+5. **`VarselInnstilling`s knott** brukte `bg-white`. Den er nå
+   `bg-aksent-tekst` når på og `bg-flate`/`mork:bg-dempet` når av, så den
+   har kontrast mot mint-banen i mørk modus. **`LostNode`** hadde
+   hardkodet `stroke="#fff"`; den bruker nå `currentColor` med en
+   tekstfarge per utfall.
+6. **`KATEGORI_STIL` og `STATUS_STIL.aktiv`** i `types.ts` brukte
+   `rose/orange/blue`, som grep-mønsteret i §2 ikke fanger. De er satt til
+   nøytrale tokens (`bg-flate-2 text-dempet ring-strek`) så ingen gamle
+   Tailwind-farger ligger igjen.
+7. **Kontrast (guardrail 5).** Ingen av ordrens fargeverdier er endret, så
+   de forhåndsberegnede verdiene i §9 gjelder.
 
 ---
 
