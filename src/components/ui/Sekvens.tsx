@@ -85,9 +85,11 @@ export function useInntreden(delay = 0, varighet: number = VARIGHET.normal) {
 export function SekvensDel({
   children,
   indeks = 0,
+  className,
 }: {
   children: ReactNode;
   indeks?: number;
+  className?: string;
 }) {
   const redusert = useReducedMotion();
   const delay = Math.min(indeks, MAKS_STAGGER - 1) * ORKESTER_STIGRING;
@@ -101,7 +103,7 @@ export function SekvensDel({
 
   return (
     <SekvensForsinkelseContext.Provider value={effektivDelay}>
-      <m.div {...props}>{children}</m.div>
+      <m.div {...props} className={className}>{children}</m.div>
     </SekvensForsinkelseContext.Provider>
   );
 }

@@ -181,14 +181,14 @@ export function DomMini({
         type="button"
         ref={knappRef}
         onClick={() => setÅpen(true)}
-        aria-label={`Gebyrsjekk: ${kr(total)} kr for mye. Se detaljer`}
+        aria-label={`Gebyrsjekk: ${kr(total)} kr over maksimalsats. Se detaljer`}
         className={`trykk flex w-full items-start gap-3 p-4 text-left ${className}`}
       >
         <FunnIkon historisk={historisk}>§</FunnIkon>
         <span className="min-w-0 flex-1">
           <FunnHode
             etikett="Gebyrsjekk"
-            tall={`${kr(total)} kr for mye`}
+            tall={`${kr(total)} kr over maksimalsats`}
             historiskFra={historisk ? brevdato : undefined}
           />
           <span className="mt-1 block text-hjelp leading-[1.4] text-blekk">

@@ -6,7 +6,7 @@
 // («Svar på kravet» / «Finn en måte å betale på») + en valgfri, flyktig
 // sjekkliste for den usikre brukeren. Sjekklistesvarene lagres ALDRI og
 // sendes ALDRI til utkast-prompten — ren UI-tilstand.
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useId, useState, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, m } from "motion/react";
 import { ChevronDown, ChevronRight, Check } from "lucide-react";
 import { NavLenke as Link } from "@/components/NavLenke";
@@ -62,6 +62,7 @@ function VeivalgKort({
   tittel,
   undertekst,
   anbefalt,
+  begrunnelse,
   mål,
 }: {
   ikon: ReactNode;
@@ -69,6 +70,8 @@ function VeivalgKort({
   tittel: string;
   undertekst: string;
   anbefalt: boolean;
+  /** Hvorfor valget anbefales, vist tett på handlingen. */
+  begrunnelse?: string;
   mål: VeivalgMål;
 }) {
   return (
@@ -83,11 +86,14 @@ function VeivalgKort({
         {ikon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="radtittel text-blekk">{tittel}</span>
-          {anbefalt && <Pill variant="aksent">Anbefalt</Pill>}
-        </span>
+        <span className="radtittel block text-blekk">{tittel}</span>
         <span className="radtekst mt-0.5 block">{undertekst}</span>
+        {anbefalt && begrunnelse && (
+          <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-meta font-medium text-blekk">
+            <Pill variant="aksent">Anbefalt</Pill>
+            {begrunnelse}
+          </span>
+        )}
       </span>
       <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
     </MålKnapp>
@@ -162,6 +168,7 @@ export function Veivalg({
   className?: string;
 }) {
   const [åpen, setÅpen] = useState(false);
+  const sjekklisteId = useId();
   const [svar, setSvar] = useState<Partial<VeivalgSvar>>({});
 
   const komplett =
@@ -178,8 +185,7 @@ export function Veivalg({
         Hva vil du gjøre?
       </h2>
       <p className="mt-1 text-hjelp leading-relaxed text-dempet">
-        Du kan ombestemme deg når som helst — ingenting sendes før du sier
-        fra.
+        Du kan ombestemme deg når som helst. Du sender brevet selv.
       </p>
 
       <div className="mt-gruppe flex flex-col gap-2">
@@ -191,19 +197,20 @@ export function Veivalg({
           }
           ikonBg="bg-dom-rod-bg"
           tittel="Svar på kravet"
-          undertekst={
-            harGebyrfunn
-              ? "Bruk gebyrfunnet — vi skriver brevet"
-              : "Vi skriver brevet — du godkjenner før noe sendes"
-          }
+          undertekst="Lag et utkast du kan redigere og sende selv."
           anbefalt={harGebyrfunn}
+          begrunnelse={
+            gebyrDifferanse
+              ? `Gebyrsjekken fant ${kr(gebyrDifferanse)} kr over maksimalsats.`
+              : "Gebyrsjekken fant et beløp over maksimalsats."
+          }
           mål={svarMål}
         />
         <VeivalgKort
           ikon={<Check className="size-[18px] text-trygg" aria-hidden />}
           ikonBg="bg-trygg/10"
-          tittel="Finn en måte å betale på"
-          undertekst="Betal alt, utsett, eller foreslå nedbetaling"
+          tittel="Finn en betalingsløsning"
+          undertekst="Se alternativer for betaling, utsettelse og avdrag."
           anbefalt={false}
           mål={betaleMål}
         />
@@ -213,7 +220,10 @@ export function Veivalg({
         type="button"
         onClick={() => setÅpen((o) => !o)}
         aria-expanded={åpen}
-        className="trykk mt-1 flex min-h-11 items-center gap-1 text-hjelp font-medium text-dempet transition hover:text-blekk"
+        aria-controls={sjekklisteId}
+        className={`trykk mt-1 flex min-h-11 items-center gap-1 rounded-liten text-hjelp font-medium transition hover:text-blekk ${
+          åpen ? "text-blekk" : "text-dempet"
+        }`}
       >
         Usikker? Hjelp meg å velge
         <ChevronDown
@@ -230,6 +240,7 @@ export function Veivalg({
         {åpen && (
           <m.div
             key="sjekkliste"
+            id={sjekklisteId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -279,15 +290,15 @@ export function Veivalg({
                         <p>
                           Da er det god grunn til å svare på kravet.{" "}
                           {harGebyrfunn
-                            ? "Det du har fortalt — sammen med gebyrfunnet — er akkurat det et innsigelsesbrev bygges av."
-                            : "Det du har fortalt er akkurat det et innsigelsesbrev bygges av."}
+                            ? "Det du har fortalt, sammen med gebyrfunnet, kan du bruke i en innsigelse."
+                            : "Det du har fortalt kan du bruke i en innsigelse."}
                         </p>
                       ) : (
                         <p>
                           Da ser kravet ut til å stemme. Det er helt greit — nå
-                          handler det om å finne veien ut som passer deg.
+                          handler det om å finne en løsning som passer deg.
                           {harGebyrfunn && gebyrDifferanse
-                            ? ` Salæret på ${kr(gebyrDifferanse)} kr over sats tar vi med uansett.`
+                            ? ` De ${kr(gebyrDifferanse)} kr over maksimalsats kan du fortsatt ta opp.`
                             : ""}
                         </p>
                       )}
@@ -298,8 +309,8 @@ export function Veivalg({
                         }`}
                       >
                         {anbefaling === "svar"
-                          ? "Start svaret →"
-                          : "Se veiene ut →"}
+                          ? "Lag et utkast →"
+                          : "Se alternativene →"}
                       </MålKnapp>
                     </div>
                   </m.div>

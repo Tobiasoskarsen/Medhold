@@ -6,6 +6,7 @@ import { INNTREDEN, STIGRING, MAKS_STAGGER, FJAER } from "@/lib/bevegelse";
 
 /**
  * Skjermramme — sentrert kolonne, maks-bredde 640px, side-padding 20px.
+ * `bred` slipper bredden på store skjermer (Hjem med to kolonner).
  * Med `animerInn` (default true) toner direktebarna inn i sekvens (stagger),
  * maks 8 forsinkelser slik at lange lister ikke drypper lenge.
  */
@@ -13,12 +14,14 @@ export function Skjermramme({
   children,
   className = "",
   animerInn = true,
+  bred = false,
 }: {
   children: ReactNode;
   className?: string;
   animerInn?: boolean;
+  bred?: boolean;
 }) {
-  const ramme = `mx-auto w-full max-w-[640px] px-5 ${className}`;
+  const ramme = `mx-auto w-full max-w-[640px] px-5 ${bred ? "lg:max-w-[1040px]" : ""} ${className}`;
 
   if (!animerInn) {
     return <div className={ramme}>{children}</div>;

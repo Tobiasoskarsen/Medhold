@@ -41,9 +41,9 @@ export function HovedstolVarsel({
         <TriangleAlert className="size-[18px]" strokeWidth={2} />
       </span>
       <div className="min-w-0 flex-1">
-      <p className="radtekst font-medium">Hovedstol</p>
+      <p className="radtekst font-medium">Hovedstolendring</p>
       <p className="mt-0.5 text-[17px] font-bold leading-tight tracking-[-0.01em] text-dom-rod">
-        Har endret seg
+        Hovedstolen er endret
       </p>
       <p className="mt-1 text-hjelp leading-[1.4] text-blekk">
         Fra {kr(nyeste.forrigeHovedstol)} kr til {kr(nyeste.hovedstol)} kr mellom

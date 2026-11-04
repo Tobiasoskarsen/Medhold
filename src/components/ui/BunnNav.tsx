@@ -174,7 +174,7 @@ export function BunnNav() {
         skrivFokus ? "pointer-events-none translate-y-full opacity-0" : ""
       }`}
     >
-      <div className="mx-auto max-w-[640px] px-[18px] pb-[var(--nav-luft)]">
+      <div className="mx-auto max-w-[480px] px-[18px] pb-[var(--nav-luft)]">
         <div
           className="flex h-[var(--nav-hoyde)] items-center justify-around rounded-[22px] border border-nav-kant bg-nav-bg/90 px-2 backdrop-blur-[14px] backdrop-saturate-150"
           style={{ boxShadow: "var(--skygge-hevet)" }}
