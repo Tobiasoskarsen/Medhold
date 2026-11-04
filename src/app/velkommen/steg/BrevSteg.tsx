@@ -20,7 +20,7 @@ export function BrevSteg({
       </div>
       <div style={tekstStil}>
         <h1 className="tittel-s mt-8 text-blekk">Forstå brevet ditt</h1>
-        <p className="mt-2.5 max-w-[290px] text-sm leading-[1.6] text-dempet">
+        <p className="mx-auto mt-2.5 max-w-[290px] text-sm leading-[1.6] text-dempet">
           Ta bilde, last opp en fil eller lim inn teksten. Medhold hjelper deg å
           lese brevet.
         </p>

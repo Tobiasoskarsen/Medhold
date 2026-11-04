@@ -576,6 +576,26 @@ export default async function KravDetaljPage({
         </SekvensDel>
       )}
 
+      {sak.status === "venter_pa_svar" && oppfolgingTilstandVerdi && (
+        <SekvensDel>
+          <Kort className="mt-seksjon">
+            <p className="text-[14.5px] font-semibold text-blekk">
+              Venter på svar fra {inkassoselskap ?? sak.kreditor ?? sak.tittel}
+            </p>
+            <p className="mt-0.5 text-hjelp text-dempet">
+              {oppfolgingTekst(
+                oppfolgingTilstandVerdi,
+                inkassoselskap ?? sak.kreditor ?? sak.tittel,
+                varslerPa,
+              )}
+            </p>
+            <div className="-mx-[18px] -mb-[18px] mt-3 border-t-[0.5px] border-strek">
+              <VenterPaSvarUtvidelse kravId={sak.id} />
+            </div>
+          </Kort>
+        </SekvensDel>
+      )}
+
       {/* Viktigste varsel eller handlingsvalg. Alvorsvarsel overstyrer
           vanlige handlingsvalg (uendret betingelse). */}
       {sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
@@ -609,26 +629,6 @@ export default async function KravDetaljPage({
             />
           </SekvensDel>
         )
-      )}
-
-      {sak.status === "venter_pa_svar" && oppfolgingTilstandVerdi && (
-        <SekvensDel>
-          <Kort className="mt-seksjon">
-            <p className="text-[14.5px] font-semibold text-blekk">
-              Venter på svar fra {inkassoselskap ?? sak.kreditor ?? sak.tittel}
-            </p>
-            <p className="mt-0.5 text-hjelp text-dempet">
-              {oppfolgingTekst(
-                oppfolgingTilstandVerdi,
-                inkassoselskap ?? sak.kreditor ?? sak.tittel,
-                varslerPa,
-              )}
-            </p>
-            <div className="-mx-[18px] -mb-[18px] mt-3 border-t-[0.5px] border-strek">
-              <VenterPaSvarUtvidelse kravId={sak.id} />
-            </div>
-          </Kort>
-        </SekvensDel>
       )}
 
       {/* Detaljer om funn. */}

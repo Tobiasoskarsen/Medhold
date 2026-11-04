@@ -55,7 +55,7 @@ export function SakensGangSeksjon({
           aria-expanded={åpen}
           className="trykk flex min-h-11 items-center gap-1 text-hjelp font-medium text-dempet transition hover:text-blekk"
         >
-          {åpen ? "Vis færre" : `Vis alle (${antall})`}
+          {åpen ? "Vis færre" : `Vis alle ${antall}`}
           <ChevronDown
             className={`size-[15px] shrink-0 transition-transform duration-200 ${
               åpen ? "rotate-180" : ""

@@ -22,7 +22,7 @@ export function DomSteg({
         <h1 className="tittel-s mt-8 text-blekk">
           Få oversikt over gebyrer og frister
         </h1>
-        <p className="mt-2.5 max-w-[290px] text-sm leading-[1.6] text-dempet">
+        <p className="mx-auto mt-2.5 max-w-[290px] text-sm leading-[1.6] text-dempet">
           Vi sjekker støttede gebyrer mot maksimalsatsene og viser aktuelle
           frister. Du kontrollerer opplysningene mot brevet.
         </p>

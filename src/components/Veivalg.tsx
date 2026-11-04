@@ -10,7 +10,6 @@ import { useId, useState, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, m } from "motion/react";
 import { ChevronDown, ChevronRight, Check } from "lucide-react";
 import { NavLenke as Link } from "@/components/NavLenke";
-import { Pill } from "@/components/ui";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
 import { anbefalVei, type VeivalgSvar, type Anbefaling } from "@/lib/veivalg";
@@ -89,9 +88,8 @@ function VeivalgKort({
         <span className="radtittel block text-blekk">{tittel}</span>
         <span className="radtekst mt-0.5 block">{undertekst}</span>
         {anbefalt && begrunnelse && (
-          <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-meta font-medium text-blekk">
-            <Pill variant="aksent">Anbefalt</Pill>
-            {begrunnelse}
+          <span className="mt-1 block text-meta font-semibold text-aksent-dyp">
+            Anbefalt: {begrunnelse}
           </span>
         )}
       </span>
@@ -201,8 +199,8 @@ export function Veivalg({
           anbefalt={harGebyrfunn}
           begrunnelse={
             gebyrDifferanse
-              ? `Gebyrsjekken fant ${kr(gebyrDifferanse)} kr over maksimalsats.`
-              : "Gebyrsjekken fant et beløp over maksimalsats."
+              ? `gebyrsjekken fant ${kr(gebyrDifferanse)} kr over maksimalsats.`
+              : "gebyrsjekken fant et beløp over maksimalsats."
           }
           mål={svarMål}
         />

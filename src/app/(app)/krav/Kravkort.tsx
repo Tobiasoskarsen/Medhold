@@ -97,7 +97,13 @@ export function Kravkort({
   // Underteksten (Retning B §5.3) — første regel som treffer.
   const [undertekst, hastende] =
     status === "venter_pa_svar"
-      ? [STATUS_ETIKETT.venter_pa_svar, false]
+      ? // Gruppen heter allerede «Venter på svar»: vis stadiet i stedet.
+        [
+          stadiumEtikett
+            ? stadiumEtikett.charAt(0).toUpperCase() + stadiumEtikett.slice(1)
+            : STATUS_ETIKETT.venter_pa_svar,
+          false,
+        ]
       : dagerIgjen != null
         ? [fristChipTekst(dagerIgjen), erHastende(dagerIgjen)]
         : [
@@ -148,11 +154,7 @@ export function Kravkort({
             <m.span
               {...merkeInntreden}
               className={`radtekst block ${
-                hastende
-                  ? "font-semibold !text-dom-rod"
-                  : status === "venter_pa_svar"
-                    ? "font-medium !text-trygg"
-                    : ""
+                hastende ? "font-semibold !text-dom-rod" : ""
               }`}
             >
               {undertekst}

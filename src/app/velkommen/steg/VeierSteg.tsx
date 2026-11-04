@@ -20,7 +20,7 @@ export function VeierSteg({
       </div>
       <div style={tekstStil}>
         <h1 className="tittel-s mt-8 text-blekk">Velg neste steg</h1>
-        <p className="mt-2.5 max-w-[290px] text-sm leading-[1.6] text-dempet">
+        <p className="mx-auto mt-2.5 max-w-[290px] text-sm leading-[1.6] text-dempet">
           Få hjelp til å lage et svar eller foreslå en betalingsløsning. Du kan
           redigere utkastet og sende det selv.
         </p>
