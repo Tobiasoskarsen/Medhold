@@ -53,7 +53,7 @@ export default async function VeierUtPage({
       <Sekvens>
       <SekvensDel>
       <p className="eyebrow mb-1">{eyebrow}</p>
-      <h1 className="font-serif text-[26px] font-medium leading-[1.15] tracking-[-0.01em] text-blekk">
+      <h1 className="tittel-s text-blekk">
         Veiene ut
       </h1>
       <p className="mt-2 text-[13px] leading-relaxed text-dempet">

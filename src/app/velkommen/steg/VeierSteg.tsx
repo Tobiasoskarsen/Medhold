@@ -7,7 +7,7 @@ import { useForstegangsvisning } from "./useForstegangsvisning";
 
 /**
  * Steg 4 — tre rader (innsigelse / nedbetaling / betal). Tekst ordrett fra
- * mockup. Ingen italic H1-klausul her (avviker bevisst fra steg 2/3 — matcher
+ * mockup. Ingen fremhevet H1-klausul her (avviker bevisst fra steg 2/3 — matcher
  * mockupens rene h1 uten <em>).
  *
  * Radene kaskaderer inn med liste-STIGRING (Motion3 §4.2) idet steget vises
@@ -56,7 +56,7 @@ export function VeierSteg({
       </div>
 
       <div style={tekstStil}>
-        <h1 className="mt-[26px] font-serif text-[25px] font-medium leading-[1.25] tracking-[-0.01em] text-blekk">
+        <h1 className="tittel-s mt-[26px] text-blekk">
           Uansett hva som
           <br />
           er riktig for deg

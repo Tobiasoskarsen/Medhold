@@ -14,7 +14,7 @@ export default function NyttKravPage() {
         Krav
       </Link>
 
-      <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+      <h1 className="tittel-s text-blekk">
         Nytt krav
       </h1>
       <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">

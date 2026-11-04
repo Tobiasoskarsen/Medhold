@@ -88,7 +88,7 @@ export function BrevSteg({
           <Ordmerke className="h-6 w-auto" />
         </m.div>
         <m.h1
-          className="mt-[26px] font-serif text-[25px] font-medium leading-[1.25] tracking-[-0.01em] text-blekk"
+          className="tittel-s mt-[26px] text-blekk"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: VARIGHET.normal, ease: EASING, delay: ORKESTER_STIGRING }}

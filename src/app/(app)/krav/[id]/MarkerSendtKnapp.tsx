@@ -39,7 +39,7 @@ export function MarkerSendtKnapp({ utkastId }: { utkastId: string }) {
         <Check className="size-3.5" aria-hidden />
         {venter ? "Lagrer …" : "Jeg har sendt det"}
       </button>
-      {feil && <p className="mt-1 text-xs text-red-700">{feil}</p>}
+      {feil && <p className="mt-1 text-xs text-dom-rod">{feil}</p>}
     </div>
   );
 }

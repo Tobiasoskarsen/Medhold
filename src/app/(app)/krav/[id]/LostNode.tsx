@@ -7,12 +7,12 @@ import { haptikk } from "@/lib/haptikk";
 import type { SakUtfall } from "@/lib/types";
 
 // Nodefarge per utfall (samme animasjon). Gull er eksklusivt for medhold
-// (fargeregelen); avtale = trygt-grønn, oppgjort = nøytral, ellers handling.
+// (fargeregelen); avtale = trygt-blågrønn, oppgjort = nøytral, ellers handling.
 function nodeFarge(utfall?: SakUtfall | null): string {
-  if (utfall === "medhold" || utfall === "delvis_medhold") return "bg-gull";
-  if (utfall === "nedbetalingsavtale") return "bg-trygg";
-  if (utfall === "oppgjort") return "bg-dempet";
-  return "bg-aksent";
+  if (utfall === "medhold" || utfall === "delvis_medhold") return "bg-gull text-gull-tekst";
+  if (utfall === "nedbetalingsavtale") return "bg-trygg text-bakgrunn";
+  if (utfall === "oppgjort") return "bg-dempet text-bakgrunn";
+  return "bg-aksent text-aksent-tekst";
 }
 
 /**
@@ -68,7 +68,7 @@ export function LostNode({
       <svg viewBox="0 0 16 16" className="size-2.5" fill="none" aria-hidden>
         <m.path
           d="M4 8.5 L6.8 11 L12 5"
-          stroke="#fff"
+          stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"

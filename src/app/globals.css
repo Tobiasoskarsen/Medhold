@@ -1,44 +1,57 @@
 @import "tailwindcss";
 
+/* Mørk modus som Tailwind-variant: `mork:`-prefiks (klassen .mork står på <html>). */
+@custom-variant mork (&:where(.mork, .mork *));
+
 /*
- * Medhold designsystem.
- *
- * Nye skjermer bruker token-variablene under (--bakgrunn, --blekk, --aksent …)
- * via Tailwind-utilities som `bg-bakgrunn`, `text-blekk`, `border-strek`.
- *
- * Den gamle slate-remappingen beholdes inntil videre fordi de eksisterende
- * skjermene (dashbord, saksside) fortsatt bruker slate-/teal-klasser. Den
- * fjernes når disse skjermene erstattes i Fase 2.
+ * Medhold designsystem — Retning B (lys) / Retning C (mørk),
+ * MEDHOLD_RETNING_B_ARBEIDSORDRE §2. Skjermene bruker KUN tokenene under via
+ * Tailwind-utilities (`bg-bakgrunn`, `text-blekk`, `border-kant` …).
+ * Fargeregler: gull KUN ved medhold (+ ordmerkets siste trinn), dom-rod KUN
+ * for funn og hastende frister, heltekortet er fjordgrønt og aldri rødt.
  */
 
 :root {
-  /* Designtokens (seksjon 2.1). Palett migrert fra krem/navy til nøytral
-     hvit + skoggrønn (MEDHOLD_KOMPLETT_ARBEIDSORDRE Del 1) — se PROSJEKT_
-     STATUS.md for begrunnelse (krem+navy identifisert som en gjenkjennelig
-     «AI-designet app»-signatur). */
-  --bakgrunn: #fafaf8; /* app-bakgrunn — nøytral, ikke varm/krem */
-  --flate: #ffffff; /* kort, bunn-nav */
-  --blekk: #191919; /* primærtekst — nøytral nær-svart, ikke blåtonet */
-  --dempet: #6b6b68; /* sekundærtekst — nøytral grå, ikke blåtonet */
-  --strek: #e6e5e1; /* kanter, delelinjer */
-  --aksent: #1f4d3d; /* HANDLING: primærknapp, aktiv nav, lenker, tidslinje — dyp skoggrønn */
-  --aksent-lys: #17a085; /* (ubrukt token, beholdt) */
-  --aksent-dyp: #153529; /* serif-kursiv i overskrifter, nåværende trapptrinn — mørkere skoggrønn */
-  --trygg: #14708a; /* TRYGT/INNENFOR: suksess-piller, «lagret»-bekreftelser — blågrønn, atskilt fra aksent */
-  --varsel-bg: #f6e7de; /* frist-pill bakgrunn */
-  --varsel-tekst: #8a3f20; /* frist-pill tekst */
+  --bakgrunn: #f3f0e9;
+  --flate: #ffffff;
+  --flate-2: #ece8df;
+  --blekk: #121614;
+  --dempet: #64675f;
+  --strek: #e6e1d6;
+  --kant: transparent;
+  --aksent: #103c38;
+  --aksent-tekst: #ffffff;
+  --aksent-lys: #17a085;
+  --aksent-dyp: #103c38;
+  --knapp: #121614;
+  --knapp-tekst: #ffffff;
+  --trygg: #14708a;
+  --dom-rod: #b8400f;
+  --dom-rod-bg: #fbe9df;
+  --varsel-bg: #fbe9df;
+  --varsel-tekst: #b8400f;
+  --gull: #86601a;
+  --gull-bg: #f5ecd8;
+  --gull-tekst: #ffffff;
+  --helt-bg: #103c38;
+  --helt-kant: transparent;
+  --helt-tekst: #eef3ef;
+  --helt-dempet: #eef3efa6;
+  --helt-etikett: #eef3efb3;
+  --helt-knapp: #eef3ef;
+  --helt-knapp-tekst: #103c38;
+  --helt-chip: #ffffff1f;
+  --helt-funn-bg: #ffd9c6;
+  --helt-funn-tekst: #7a2a08;
+  --mint: #c9ead9;
+  --mint-tekst: #103c38;
+  --nav-bg: #121614;
+  --nav-kant: transparent;
+  --nav-tekst: #ffffff80;
+  --nav-aktiv: #ffffff;
 
-  /* Saksinnhold-farger (designordre §1.2). KUN gebyrfunn, hastende frister
-     (≤10 dager) og medhold/seier — aldri på verktøysider. */
-  --dom-rod: #9a3324; /* noe varmere/dypere enn originalen — avstand til ny grønn */
-  --dom-rod-bg: #fbebe6;
-  --gull: #a8781c;
-  --gull-bg: #f6efdd;
-
-  /* Dybdesignaler som kun trengs i mørk modus (MEDHOLD_MORK_MODUS_FIKS
-     §2/§4) — `none` i lys modus holder den pikselidentisk. */
   --kort-skygge: none;
-  --anbefalt-glod: none;
+  --anbefalt-glod: inset 0 0 0 1.5px var(--aksent);
 
   --background: var(--bakgrunn);
   --foreground: var(--blekk);
@@ -48,89 +61,126 @@
 
 /*
  * Mørkt tema. Klassen `.mork` settes på <html> av tema-skriptet i layout
- * (før paint, ingen FOUC) og av tema-velgeren på Meg. Kun tokens overstyres —
- * alle skjermer bruker disse variablene, så hele appen følger med.
+ * (før paint, ingen FOUC) og av tema-velgeren på Meg. Kun tokens overstyres.
  */
 .mork {
-  --bakgrunn: #0d1315;
-  --flate: #212e30;
-  --blekk: #eceeed;
-  --dempet: #94a2a1;
-  --strek: #2a3639;
-  --aksent: #2f6e56; /* medium skoggrønn — beholder kontrast mot hvit knappetekst */
+  --bakgrunn: #0a0c0c;
+  --flate: #131716;
+  --flate-2: #1a1f1e;
+  --blekk: #f1f4f2;
+  --dempet: #8b938f;
+  --strek: #232a28;
+  --kant: #ffffff12;
+  --aksent: #8fe3bf;
+  --aksent-tekst: #06231a;
   --aksent-lys: #19a88b;
-  --aksent-dyp: #7dd3ae; /* LYS mintgrønn — kun dekorativt (ring/lenker), ALDRI bak hvit tekst */
-  --trygg: #4ca8c9; /* blågrønn, atskilt fra aksent */
-  --varsel-bg: #382a21;
-  --varsel-tekst: #e8bda4;
-
-  --dom-rod: #e0967e;
-  --dom-rod-bg: #3a2420;
+  --aksent-dyp: #8fe3bf;
+  --knapp: #8fe3bf;
+  --knapp-tekst: #06231a;
+  --trygg: #4ca8c9;
+  --dom-rod: #ff9a78;
+  --dom-rod-bg: #2a1913;
+  --varsel-bg: #2a1913;
+  --varsel-tekst: #ff9a78;
   --gull: #d9b25e;
-  --gull-bg: #35301f;
+  --gull-bg: #2b2516;
+  --gull-tekst: #1a1408;
+  --helt-bg: #151a19;
+  --helt-kant: #ffffff14;
+  --helt-tekst: #f1f4f2;
+  --helt-dempet: #8b938f;
+  --helt-etikett: #8fe3bf;
+  --helt-knapp: #8fe3bf;
+  --helt-knapp-tekst: #06231a;
+  --helt-chip: #1a1f1e;
+  --helt-funn-bg: #ff9a781f;
+  --helt-funn-tekst: #ff9a78;
+  --mint: #8fe3bf;
+  --mint-tekst: #06231a;
+  --nav-bg: #1a1f1ecc;
+  --nav-kant: #ffffff12;
+  --nav-tekst: #ffffff66;
+  --nav-aktiv: #f1f4f2;
 
-  --kort-skygge: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 20px rgba(0, 0, 0, 0.28);
-  --anbefalt-glod: 0 0 0 1px var(--aksent-dyp) inset, 0 8px 24px rgba(125, 211, 174, 0.18);
+  --kort-skygge: inset 0 1px 0 #ffffff0a;
+  --anbefalt-glod: inset 0 0 0 1px #8fe3bf, 0 8px 24px #8fe3bf1f;
 
   color-scheme: dark;
+}
+
+/* Mørk modus får et svakt lys øverst. */
+.mork body {
+  background-image: radial-gradient(360px 300px at 20% -60px, #8fe3bf14, transparent);
+  background-repeat: no-repeat;
 }
 
 @theme inline {
   /* Gjør tokens tilgjengelige som Tailwind-farger (bg-*, text-*, border-*). */
   --color-bakgrunn: var(--bakgrunn);
   --color-flate: var(--flate);
+  --color-flate-2: var(--flate-2);
   --color-blekk: var(--blekk);
   --color-dempet: var(--dempet);
   --color-strek: var(--strek);
+  --color-kant: var(--kant);
   --color-aksent: var(--aksent);
+  --color-aksent-tekst: var(--aksent-tekst);
   --color-aksent-lys: var(--aksent-lys);
   --color-aksent-dyp: var(--aksent-dyp);
+  --color-knapp: var(--knapp);
+  --color-knapp-tekst: var(--knapp-tekst);
   --color-trygg: var(--trygg);
-  --color-varsel-bg: var(--varsel-bg);
-  --color-varsel-tekst: var(--varsel-tekst);
   --color-dom-rod: var(--dom-rod);
   --color-dom-rod-bg: var(--dom-rod-bg);
+  --color-varsel-bg: var(--varsel-bg);
+  --color-varsel-tekst: var(--varsel-tekst);
   --color-gull: var(--gull);
   --color-gull-bg: var(--gull-bg);
+  --color-gull-tekst: var(--gull-tekst);
+  --color-helt-bg: var(--helt-bg);
+  --color-helt-kant: var(--helt-kant);
+  --color-helt-tekst: var(--helt-tekst);
+  --color-helt-dempet: var(--helt-dempet);
+  --color-helt-etikett: var(--helt-etikett);
+  --color-helt-knapp: var(--helt-knapp);
+  --color-helt-knapp-tekst: var(--helt-knapp-tekst);
+  --color-helt-chip: var(--helt-chip);
+  --color-helt-funn-bg: var(--helt-funn-bg);
+  --color-helt-funn-tekst: var(--helt-funn-tekst);
+  --color-mint: var(--mint);
+  --color-mint-tekst: var(--mint-tekst);
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-kant: var(--nav-kant);
+  --color-nav-tekst: var(--nav-tekst);
+  --color-nav-aktiv: var(--nav-aktiv);
 
-  --font-sans: var(--font-inter);
-  --font-serif: var(--font-newsreader);
-}
-
-/*
- * Varm nøytral palett for eldre skjermer. Vi remapper hele `slate`-skalaen
- * fra kald blågrå til en rolig, varm sand/stein-tone. Fjernes i Fase 2.
- */
-@theme {
-  --color-slate-50: #f7f4ee;
-  --color-slate-100: #f0ebe1;
-  --color-slate-200: #e6dfcd;
-  --color-slate-300: #d8cfbd;
-  --color-slate-400: #aba290;
-  --color-slate-500: #837b6b;
-  --color-slate-600: #635c4e;
-  --color-slate-700: #4b453a;
-  --color-slate-800: #332f27;
-  --color-slate-900: #26221c;
+  --font-sans: var(--font-schibsted);
 }
 
 body {
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-schibsted), system-ui, sans-serif;
+  font-feature-settings: "tnum" 0;
   background: var(--bakgrunn);
   color: var(--blekk);
 }
 
-/*
- * Eyebrow — liten, sperret, uppercase, dempet etikett (datolinje på Hjem,
- * sakskontekst på krav-siden, gruppetitler på Meg). Designordre §1.1.
- */
+/* Eyebrow — liten, uppercase, dempet etikett (gruppetitler på Meg m.m.). */
 .eyebrow {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--dempet);
 }
+
+/* Typografiklasser (§1.3) — én skrift, store tall. */
+.tittel { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.08; }
+.tittel-s { font-size: 24px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; }
+.seksjonstittel { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.tall-xl { font-size: 48px; font-weight: 700; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; }
+.tall-l { font-size: 44px; font-weight: 700; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; }
+.tall-m { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.tall-s { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
 /*
  * Bevegelses-tokens for CSS-transitions (speiler src/lib/bevegelse.ts).

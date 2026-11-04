@@ -26,13 +26,13 @@ export function TemaVelger({
 }: {
   onEndring?: (t: Tema) => void;
 }) {
-  const [tema, setTema] = useState<Tema>("system");
+  const [tema, setTema] = useState<Tema>("lys");
 
   // Les lagret valg først på klienten (localStorage finnes ikke ved SSR).
   useEffect(() => {
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTema((localStorage.getItem(NOKKEL) as Tema | null) ?? "system");
+      setTema((localStorage.getItem(NOKKEL) as Tema | null) ?? "lys");
     } catch {
       /* ignorer */
     }

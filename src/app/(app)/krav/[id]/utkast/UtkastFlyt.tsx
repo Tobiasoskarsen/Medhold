@@ -273,7 +273,7 @@ export function UtkastFlyt({
       {fase === "skjema" ? (
         <>
           {harOverGebyr && (
-            <p className="mb-3 rounded-xl bg-red-50 px-3.5 py-2.5 text-[13px] leading-relaxed text-red-700">
+            <p className="mb-3 rounded-xl bg-dom-rod-bg px-3.5 py-2.5 text-[13px] leading-relaxed text-dom-rod">
               Gebyrsjekken fant et beløp over maksimalsats — dette tas med i
               utkastet.
             </p>
@@ -314,7 +314,7 @@ export function UtkastFlyt({
               onChange={(e) => setDetaljer(e.target.value)}
               rows={5}
               placeholder="Skriv kort med egne ord. La stå tomt om du er usikker."
-              className="mt-1.5 w-full resize-none rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+              className="mt-1.5 w-full resize-none rounded-[14px] border border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
             />
           </label>
 
@@ -328,12 +328,12 @@ export function UtkastFlyt({
                 value={navn}
                 onChange={(e) => setNavn(e.target.value)}
                 placeholder="Fullt navn"
-                className="mt-1.5 w-full rounded-[10px] border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+                className="mt-1.5 w-full rounded-[14px] border border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
               />
             </label>
           )}
 
-          {feil && <p className="mt-3 text-[13px] text-red-700">{feil}</p>}
+          {feil && <p className="mt-3 text-[13px] text-dom-rod">{feil}</p>}
 
           <div className="mt-5">
             <Primærknapp onClick={generer} disabled={genererer}>
@@ -355,7 +355,7 @@ export function UtkastFlyt({
               value={tekst}
               onChange={(e) => setTekst(e.target.value)}
               rows={16}
-              className="w-full resize-none rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+              className="w-full resize-none rounded-[14px] border border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
             />
           ) : (
             <>
@@ -416,7 +416,7 @@ export function UtkastFlyt({
                 <button
                   type="button"
                   onClick={kopier}
-                  className="trykk inline-flex items-center gap-2 rounded-[10px] border-[0.5px] border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+                  className="trykk inline-flex items-center gap-2 rounded-[14px] border border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
                 >
                   {kopiert ? (
                     <Check className="size-4 text-trygg" aria-hidden />
@@ -430,7 +430,7 @@ export function UtkastFlyt({
                 </p>
               </div>
 
-              {feil && <p className="mt-3 text-[13px] text-red-700">{feil}</p>}
+              {feil && <p className="mt-3 text-[13px] text-dom-rod">{feil}</p>}
 
               <div className="mt-6 border-t-[0.5px] border-strek pt-4">
                 <button

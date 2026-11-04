@@ -19,7 +19,7 @@ export function AvsluttedeListe({
 
   return (
     <>
-      <ul className="flex flex-col gap-2.5">
+      <ul className="rounded-[20px] border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
         {synlige.map((sak) => (
           <li key={sak.id}>
             <Kravkort {...sak} />

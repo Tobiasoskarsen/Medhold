@@ -2,19 +2,19 @@
 
 // Dommen — signaturøyeblikket ved et gebyrfunn (designordre §2.1). Ren
 // presentasjon av det lagrede gebyrsjekk-resultatet; ingen vurderingslogikk her.
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { m } from "motion/react";
 import { Primærknapp } from "@/components/ui";
 import { DomFullskjerm } from "@/components/DomFullskjerm";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { formaterDato } from "@/lib/dato";
 import { FJAER } from "@/lib/bevegelse";
-import { kr, overLinjer, totalOver, funnOrd } from "@/lib/gebyrfunn-visning";
+import { kr, overLinjer, totalOver } from "@/lib/gebyrfunn-visning";
 
 /**
- * Dom (full) — hvit flate, dom-rød ramme, stempel-etikett, differansen i stor
- * serif, forklaring, kilde og (når stadiet støtter utkast) CTA til innsigelsen.
- * Dekorativt §-tegn øverst til høyre (aria-hidden).
+ * Dom (full) — hvit flate, dom-rød ramme, stempel-etikett, differansen som
+ * stort tall, forklaring, kilde og (når stadiet støtter utkast) CTA til
+ * innsigelsen. Dekorativt §-tegn øverst til høyre (aria-hidden).
  */
 export function Dom({
   resultat,
@@ -36,11 +36,11 @@ export function Dom({
       initial={{ scale: 1.04, rotate: -0.6, opacity: 0 }}
       animate={{ scale: 1, rotate: 0, opacity: 1 }}
       transition={FJAER}
-      className={`relative overflow-hidden rounded-2xl border-[1.5px] border-dom-rod bg-flate p-[18px] ${className}`}
+      className={`relative overflow-hidden rounded-[22px] border-[1.5px] border-dom-rod bg-flate p-[18px] ${className}`}
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-1.5 -top-7 select-none font-serif text-[130px] font-semibold leading-none text-dom-rod opacity-[0.07]"
+        className="pointer-events-none absolute -right-1.5 -top-7 select-none text-[130px] font-bold leading-none text-dom-rod opacity-[0.07]"
       >
         §
       </span>
@@ -49,11 +49,9 @@ export function Dom({
         Gebyrsjekk · funn
       </span>
 
-      <p className="relative mt-3 font-serif font-semibold leading-none text-dom-rod">
-        <span className="text-[44px] tracking-[-0.02em] tabular-nums">
-          {kr(total)}
-        </span>
-        <span className="text-[20px] font-medium"> kr over lovlig sats</span>
+      <p className="relative mt-3 text-dom-rod">
+        <span className="tall-xl">{kr(total)}</span>
+        <span className="text-[20px] font-semibold"> kr over lovlig sats</span>
       </p>
 
       <p className="relative mt-2 text-[14px] leading-relaxed text-blekk">
@@ -74,11 +72,34 @@ export function Dom({
   );
 }
 
+// Felles ramme for DomMini/DomMiniFrist (Retning B §7.1).
+const FUNNKORT =
+  "block w-full rounded-[22px] bg-dom-rod-bg p-[18px] text-left mork:border mork:border-dom-rod/20";
+
+function Funninnhold({
+  etikett,
+  tall,
+  children,
+}: {
+  etikett: string;
+  tall: string;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <span className="block text-[12px] font-bold uppercase tracking-[0.08em] text-dom-rod">
+        {etikett}
+      </span>
+      <span className="tall-m mt-2 block text-dom-rod">{tall}</span>
+      {children}
+    </>
+  );
+}
+
 /**
- * DomMini — kompakt variant på krav-detalj: §-tegn + kort setning på
- * dom-rød bakgrunn. Klikkbar (Del C): åpner DomFullskjerm som en
+ * DomMini — funnkortet på krav-detalj. Klikkbar: åpner DomFullskjerm som en
  * fullskjerm-avsløring — ren visuell tilstand, ingen ny rute/navigasjon.
- * Fokus flyttes tilbake hit ved lukking (C.3).
+ * Fokus flyttes tilbake hit ved lukking.
  */
 export function DomMini({
   resultat,
@@ -95,6 +116,10 @@ export function DomMini({
   const linjer = overLinjer(resultat);
   if (linjer.length === 0) return null;
   const total = totalOver(linjer);
+  const forklaring =
+    linjer.length === 1
+      ? linjer[0].forklaring
+      : `Gebyrsjekken fant ${linjer.length} beløp over maksimalsats.`;
 
   return (
     <>
@@ -103,21 +128,20 @@ export function DomMini({
         ref={knappRef}
         onClick={() => setÅpen(true)}
         aria-label="Se gebyrfunnet i fullskjerm"
-        className={`trykk flex w-full items-center gap-3 rounded-2xl border-[0.5px] border-dom-rod/40 bg-dom-rod-bg px-3.5 py-3 text-left ${className}`}
+        className={`trykk ${FUNNKORT} ${className}`}
       >
-        <span
-          aria-hidden
-          className="select-none font-serif text-[24px] font-semibold leading-none text-dom-rod"
-        >
-          §
-        </span>
-        <p className="text-[13px] leading-snug text-blekk">
-          Gebyrsjekken fant {funnOrd(linjer)}{" "}
-          <b className="font-semibold text-dom-rod">
-            {kr(total)} kr over maksimalsats
-          </b>
-          . Funnet er lagt klart til innsigelsen.
-        </p>
+        <Funninnhold etikett="Gebyrsjekk" tall={`${kr(total)} kr for mye`}>
+          <span className="mt-2 block text-[13.5px] leading-[1.45] text-blekk">
+            {forklaring} Funnet er lagt klart til svaret ditt.
+          </span>
+          <span className="mt-2 block text-[11.5px] text-dempet">
+            Kontrollert mot inkassoforskriften · satser fra{" "}
+            {formaterDato(resultat.satsGyldigFra)}
+          </span>
+          <span className="mt-3 block text-[13px] font-semibold text-dom-rod">
+            Se detaljer →
+          </span>
+        </Funninnhold>
       </button>
       {åpen && (
         <DomFullskjerm
@@ -134,10 +158,10 @@ export function DomMini({
 }
 
 /**
- * DomMiniFrist — samme kompakte stil som DomMini, for et fristfunn
- * (MEDHOLD_FRIST_OG_ALVOR_ARBEIDSORDRE §A.3): brevets frist er kortere enn
- * loven krever. `differanseDager` skal være et POSITIVT tall (antall dager
- * kortere — bruk Math.abs på FristSammenligning sin negative differanse).
+ * DomMiniFrist — samme ramme som DomMini, for et fristfunn
+ * (MEDHOLD_FRIST_OG_ALVOR_ARBEIDSORDRE §A.3), men ikke klikkbar.
+ * `differanseDager` skal være et POSITIVT tall (antall dager kortere — bruk
+ * Math.abs på FristSammenligning sin negative differanse).
  */
 export function DomMiniFrist({
   differanseDager,
@@ -147,22 +171,13 @@ export function DomMiniFrist({
   className?: string;
 }) {
   return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl border-[0.5px] border-dom-rod/40 bg-dom-rod-bg px-3.5 py-3 ${className}`}
-    >
-      <span
-        aria-hidden
-        className="select-none font-serif text-[24px] font-semibold leading-none text-dom-rod"
-      >
-        §
-      </span>
-      <p className="text-[13px] leading-snug text-blekk">
-        Fristen i brevet er kortere enn loven krever. Loven gir deg{" "}
-        <b className="font-semibold text-dom-rod">
-          minst {differanseDager} dager til
-        </b>
-        .
-      </p>
+    <div className={`${FUNNKORT} ${className}`}>
+      <Funninnhold etikett="Fristsjekk" tall={`${differanseDager} dager for kort`}>
+        <p className="mt-2 text-[13.5px] leading-[1.45] text-blekk">
+          Fristen i brevet er kortere enn loven krever. Loven gir deg minst{" "}
+          {differanseDager} dager til.
+        </p>
+      </Funninnhold>
     </div>
   );
 }

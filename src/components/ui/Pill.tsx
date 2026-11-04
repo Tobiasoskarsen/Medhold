@@ -5,12 +5,11 @@ type Variant = "noytral" | "varsel" | "suksess" | "feil" | "aksent";
 const varianter: Record<Variant, string> = {
   noytral: "bg-strek text-dempet",
   varsel: "bg-varsel-bg text-varsel-tekst",
-  // Grønn = «trygt/innenfor»-token (rollesplitt: aksent er nå handling/blå).
-  // Rød = appens etablerte feilfarge (samme som HASTEGRAD_STIL.overtid).
+  // Blågrønn = «trygt/innenfor». Rød = funnfargen (dom-rod).
   suksess: "bg-trygg/10 text-trygg",
-  feil: "bg-red-50 text-red-700",
-  // Fylt aksent — «ANBEFALT»-merket i Veivalg, samme fylte stil som knapper.
-  aksent: "bg-aksent text-white",
+  feil: "bg-dom-rod-bg text-dom-rod",
+  // «ANBEFALT»-merket i Veivalg — blekk-fylt (Retning B §2).
+  aksent: "bg-blekk text-bakgrunn",
 };
 
 /**

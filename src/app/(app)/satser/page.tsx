@@ -29,7 +29,7 @@ export default function SatserPage() {
 
       <Sekvens>
         <SekvensDel>
-          <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+          <h1 className="tittel-s text-blekk">
             Satsene vi bruker
           </h1>
           <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
@@ -80,7 +80,7 @@ export default function SatserPage() {
 
         <SekvensDel>
           <div className="mt-5">
-            <h2 className="font-serif text-[17px] font-semibold text-blekk">
+            <h2 className="seksjonstittel text-blekk">
               Salærtrinn for forbruker
             </h2>
             <p className="mt-1 text-[12.5px] leading-relaxed text-dempet">

@@ -30,7 +30,9 @@ export function Rad({
   const innhold = (
     <>
       <span className="flex items-center gap-2.5 text-sm text-blekk">
-        <Ikon className="size-[17px] shrink-0 text-dempet" aria-hidden />
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-flate-2">
+          <Ikon className="size-[17px] text-dempet" aria-hidden />
+        </span>
         {etikett}
       </span>
       <span className="flex items-center gap-1.5">

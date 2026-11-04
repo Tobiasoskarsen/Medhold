@@ -14,12 +14,12 @@ const ETIKETT: Record<Tema, string> = {
 /** «Tema»-rad: viser nåværende valg og ekspanderer til den eksisterende
  *  TemaVelger. SSR-fallback «System» (localStorage finnes ikke ved SSR). */
 export function TemaRad() {
-  const [tema, setTema] = useState<Tema>("system");
+  const [tema, setTema] = useState<Tema>("lys");
 
   useEffect(() => {
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTema((localStorage.getItem(NOKKEL) as Tema | null) ?? "system");
+      setTema((localStorage.getItem(NOKKEL) as Tema | null) ?? "lys");
     } catch {
       /* ignorer */
     }

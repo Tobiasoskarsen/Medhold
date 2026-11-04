@@ -4,10 +4,9 @@ import { useRef, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { m } from "motion/react";
 import { TriangleAlert } from "lucide-react";
-import { Kort, useInntreden, useSekvensForsinkelse } from "@/components/ui";
+import { useInntreden, useSekvensForsinkelse } from "@/components/ui";
 import {
   STATUS_ETIKETT,
-  STATUS_STIL,
   UTFALL_ETIKETT,
   UTFALL_STIL,
   type SakStatus,
@@ -25,7 +24,7 @@ import { dagerTil } from "@/lib/dato";
 import { erHastende, fristChipTekst } from "@/lib/frist";
 
 /**
- * Ett kort i kravlisten. Ved trykk settes `view-transition-name` på nettopp
+ * Én rad i kravlisten (Retning B §6 — rad, ikke kort). Ved trykk settes `view-transition-name` på nettopp
  * dette kortets navn/beløp (så KUN de morfer til krav-detaljens header, ikke
  * alle kortene), et flagg som forteller detaljens beløp at det kom via en delt
  * overgang (skal ikke telle opp), og navigasjonen kjøres inne i en
@@ -35,9 +34,9 @@ import { erHastende, fristChipTekst } from "@/lib/frist";
  * tekstene er garantert like (ingen opprinnelig_kreditor) — ellers ville
  * teksten «hoppe» til noe annet midt i overgangen.
  *
- * `status === "fullfort"` → avsluttet-variant: dempet flate (opacity-70),
- * ingen hover-heving, utfallspill i stedet for venter_pa_svar-pill/nedtellings-
- * chip/funn-markør (Sakslisteordre §2.3).
+ * `status === "fullfort"` → avsluttet-variant: hele raden opacity-70, og
+ * utfallspillen erstatter underteksten (frist/venter/stadium). Ingen
+ * funn-markør på avsluttede (Sakslisteordre §2.3).
  */
 export function Kravkort({
   id,
@@ -95,8 +94,18 @@ export function Kravkort({
   }
 
   const dagerIgjen = !avsluttet && frist ? dagerTil(frist) : null;
-  const chipRod = dagerIgjen != null && erHastende(dagerIgjen);
-  const visUnderlinje = !!stadiumEtikett || dagerIgjen != null;
+  // Underteksten (Retning B §5.3) — første regel som treffer.
+  const [undertekst, hastende] =
+    status === "venter_pa_svar"
+      ? [STATUS_ETIKETT.venter_pa_svar, false]
+      : dagerIgjen != null
+        ? [fristChipTekst(dagerIgjen), erHastende(dagerIgjen)]
+        : [
+            stadiumEtikett
+              ? stadiumEtikett.charAt(0).toUpperCase() + stadiumEtikett.slice(1)
+              : null,
+            false,
+          ];
 
   // Frist-chip/status-piller/§-markør lander et blunk etter kortet sitt eget
   // (SekvensDel) — kjedet via useSekvensForsinkelse, 0 utenfor en Sekvens
@@ -112,86 +121,73 @@ export function Kravkort({
       href={href}
       onClick={klikk}
       onPointerDown={startTrykk}
-      className="block"
+      className={`trykk flex items-center gap-3 py-[13px] ${avsluttet ? "opacity-70" : ""}`}
       style={{
-        opacity: aktiv ? PENDING_OPASITET : 1,
+        opacity: aktiv ? PENDING_OPASITET : undefined,
         transitionProperty: "opacity",
         transitionDuration: "var(--bevegelse-hurtig)",
         transitionTimingFunction: "var(--bevegelse-easing)",
       }}
     >
-      <Kort
-        klikkbar
-        className={avsluttet ? "opacity-70" : "hover:border-dempet/40"}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <span ref={navnRef} className="text-sm font-medium text-blekk">
-            {navn}
-          </span>
-          <span className="flex shrink-0 items-center gap-1.5">
-            {harFunn && !avsluttet && (
-              <m.span
-                {...merkeInntreden}
-                role="img"
-                aria-label="Gebyrfunn i denne saken"
-                className="font-serif text-[13px] font-semibold leading-none text-dom-rod"
-              >
-                §
-              </m.span>
-            )}
-            {harHovedstolAvvik && !avsluttet && (
-              <m.span {...merkeInntreden} role="img" aria-label="Hovedstolen har endret seg i denne saken">
-                <TriangleAlert
-                  className="size-[13px] text-dom-rod"
-                  aria-hidden
-                  strokeWidth={2.25}
-                />
-              </m.span>
-            )}
-            {belop && (
-              <span
-                ref={belopRef}
-                className={`text-sm font-medium ${avsluttet ? "text-dempet" : "text-blekk"}`}
-              >
-                {belop} kr
-              </span>
-            )}
-          </span>
-        </div>
-        {visUnderlinje && (
-          <div className="mt-1 flex items-center justify-between gap-2">
-            {stadiumEtikett && (
-              <p className="text-xs text-dempet">{stadiumEtikett}</p>
-            )}
-            {dagerIgjen != null && (
-              <m.span
-                {...merkeInntreden}
-                className={`shrink-0 text-[11px] font-medium ${
-                  chipRod ? "text-dom-rod" : "text-dempet"
-                }`}
-              >
-                {fristChipTekst(dagerIgjen)}
-              </m.span>
-            )}
-          </div>
-        )}
-        {!avsluttet && status === "venter_pa_svar" && (
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] bg-flate-2 text-[14px] font-bold text-blekk">
+        {navn.charAt(0).toUpperCase()}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span
+          ref={navnRef}
+          className="block truncate text-[14px] font-semibold text-blekk"
+        >
+          {navn}
+        </span>
+        {avsluttet && utfall ? (
           <m.span
             {...merkeInntreden}
-            className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
-          >
-            {STATUS_ETIKETT.venter_pa_svar}
-          </m.span>
-        )}
-        {avsluttet && utfall && (
-          <m.span
-            {...merkeInntreden}
-            className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
+            className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
           >
             {UTFALL_ETIKETT[utfall]}
           </m.span>
+        ) : (
+          undertekst && (
+            <m.span
+              {...merkeInntreden}
+              className={`block text-[12px] ${
+                hastende ? "font-semibold text-dom-rod" : "text-dempet"
+              }`}
+            >
+              {undertekst}
+            </m.span>
+          )
         )}
-      </Kort>
+      </span>
+      <span className="flex shrink-0 items-center gap-1.5">
+        {harFunn && !avsluttet && (
+          <m.span
+            {...merkeInntreden}
+            role="img"
+            aria-label="Gebyrfunn i denne saken"
+            className="text-[13px] font-bold leading-none text-dom-rod"
+          >
+            §
+          </m.span>
+        )}
+        {harHovedstolAvvik && !avsluttet && (
+          <m.span {...merkeInntreden} role="img" aria-label="Hovedstolen har endret seg i denne saken">
+            <TriangleAlert
+              className="size-[13px] text-dom-rod"
+              aria-hidden
+              strokeWidth={2.25}
+            />
+          </m.span>
+        )}
+        {belop && (
+          <span
+            ref={belopRef}
+            className={`text-[15px] font-bold tabular-nums ${avsluttet ? "text-dempet" : "text-blekk"}`}
+          >
+            {belop} kr
+          </span>
+        )}
+      </span>
     </a>
   );
 }

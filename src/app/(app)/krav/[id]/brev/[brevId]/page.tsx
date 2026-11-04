@@ -114,7 +114,7 @@ export default async function BrevPage({
 
       <Sekvens>
       <SekvensDel>
-      <h1 className="font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+      <h1 className="tittel-s text-blekk">
         {tittel}
       </h1>
       <p className="mt-0.5 text-[13px] text-dempet">

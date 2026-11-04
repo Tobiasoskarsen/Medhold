@@ -48,7 +48,7 @@ export function Alvorsvarsel({
     <div
       className={`rounded-2xl border-[1.5px] border-dom-rod bg-dom-rod-bg p-[18px] ${className}`}
     >
-      <h2 className="font-serif text-[17px] font-semibold text-dom-rod">
+      <h2 className="seksjonstittel text-dom-rod">
         Dette bør du få hjelp med nå
       </h2>
       <p className="mt-2 text-[13.5px] leading-relaxed text-blekk">

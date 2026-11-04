@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Check } from "lucide-react";
+import { MoreHorizontal, Check } from "lucide-react";
 import { slettKrav } from "../actions";
 import { UtfallVelger } from "./UtfallVelger";
 
 /** Meny oppe til høyre på kravsiden: marker som løst (med valgfritt utfall) +
- *  sletting, bak et MoreVertical-ikon. */
+ *  sletting, bak et MoreHorizontal-ikon. */
 export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
   const [åpen, setÅpen] = useState(false);
   const [modus, setModus] = useState<"meny" | "utfall" | "slett">("meny");
@@ -24,15 +24,15 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
         aria-haspopup="menu"
         aria-expanded={åpen}
         onClick={apne}
-        className="rounded-full p-1.5 text-dempet transition hover:bg-strek/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+        className="trykk flex size-9 items-center justify-center rounded-full border border-kant bg-flate text-blekk focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blekk"
       >
-        <MoreVertical className="size-5" aria-hidden />
+        <MoreHorizontal className="size-[18px]" aria-hidden />
       </button>
 
       {åpen && (
         <div
           role="menu"
-          className="absolute right-0 z-10 mt-1 w-56 overflow-hidden rounded-xl border-[0.5px] border-strek bg-flate py-1 shadow-lg"
+          className="absolute right-0 z-10 mt-1 w-56 overflow-hidden rounded-[16px] border border-kant bg-flate py-1 shadow-lg"
         >
           {modus === "meny" && (
             <>
@@ -51,7 +51,7 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
                 type="button"
                 role="menuitem"
                 onClick={() => setModus("slett")}
-                className="block w-full px-4 py-2.5 text-left text-sm text-red-700 transition hover:bg-strek/40"
+                className="block w-full px-4 py-2.5 text-left text-sm text-dom-rod transition hover:bg-strek/40"
               >
                 Slett kravet
               </button>
@@ -75,7 +75,7 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
               <button
                 type="submit"
                 role="menuitem"
-                className="block w-full px-4 py-2.5 text-left text-sm font-medium text-red-700 transition hover:bg-strek/40"
+                className="block w-full px-4 py-2.5 text-left text-sm font-medium text-dom-rod transition hover:bg-strek/40"
               >
                 Ja, slett kravet
               </button>

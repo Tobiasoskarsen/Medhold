@@ -66,8 +66,8 @@ export async function GET(
           alignItems: "center",
           justifyContent: "center",
           padding: 100,
-          background: "linear-gradient(160deg, #153529 0%, #1f4d3d 55%, #2f6e56 100%)",
-          fontFamily: "serif",
+          background: "linear-gradient(160deg, #0c2f2c 0%, #103c38 55%, #1d5a52 100%)",
+          fontFamily: "sans-serif",
           textAlign: "center",
           position: "relative",
         }}
@@ -93,7 +93,7 @@ export async function GET(
           }}
         >
           <span>Jeg fikk</span>
-          <span style={{ color: "#d9b25e", fontStyle: "italic" }}>medhold.</span>
+          <span style={{ color: "#d9b25e" }}>medhold.</span>
         </div>
         {belop > 0 && (
           <div style={{ display: "flex", marginTop: 60, color: "#d9b25e", fontSize: 140, fontWeight: 600 }}>
@@ -119,7 +119,6 @@ export async function GET(
             bottom: 80,
             color: "rgba(255,255,255,.55)",
             fontSize: 42,
-            fontStyle: "italic",
           }}
         >
           {APP_NAME}

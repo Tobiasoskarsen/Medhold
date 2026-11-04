@@ -104,7 +104,7 @@ export function Gebyrsjekk({
         <Kort className={harOver ? "mt-3" : ""}>
           {!harOver && (
             <>
-              <h3 className="font-serif text-[17px] font-semibold text-blekk">
+              <h3 className="seksjonstittel text-blekk">
                 Gebyrsjekk
               </h3>
               <p className="mt-0.5 text-[12px] text-dempet">

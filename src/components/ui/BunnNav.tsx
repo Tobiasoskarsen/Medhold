@@ -99,14 +99,14 @@ function NavPunktKnapp({
         }
       }}
       className={`trykk flex flex-col items-center gap-1 px-1 py-1 ${
-        aktiv ? "text-aksent" : "text-dempet"
+        aktiv ? "text-nav-aktiv" : "text-nav-tekst"
       }`}
     >
       <span className="relative flex h-[26px] w-10 items-center justify-center">
         {aktiv && (
           <m.span
             layoutId="bunnnav-indikator"
-            className="absolute inset-0 rounded-[13px] bg-aksent/15"
+            className="absolute inset-0 rounded-[12px] bg-white/10"
             transition={INDIKATOR_FJAER}
           />
         )}
@@ -123,16 +123,14 @@ function NavPunktKnapp({
           <Ikon className="relative size-5" />
         )}
       </span>
-      <span className={`text-[10.5px] ${aktiv ? "font-semibold" : "font-normal"}`}>
-        {etikett}
-      </span>
+      <span className="text-[11px] font-semibold">{etikett}</span>
     </Link>
   );
 }
 
 /**
- * BunnNav — flytende pille (designretning 2, ny bunnnav-mockup) med tre
- * punkter (Hjem, Saker, Meg) og en hevet midtknapp til «Legg til brev».
+ * BunnNav — flytende, mørk pille (Retning B §4.5) med tre punkter (Hjem,
+ * Saker, Meg) og en flat mint +-knapp til «Legg til brev» i midten.
  *
  * Aktivt punkt får en glidende pille-bakgrunn bak ikonet (delt `layoutId`,
  * morfer automatisk til ny posisjon ved navigasjon — samme Motion3 §3-
@@ -152,8 +150,11 @@ export function BunnNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10">
-      <div className="mx-auto max-w-[640px] px-4 pb-4">
-        <div className="flex h-[66px] items-center justify-around rounded-[26px] border border-strek bg-flate/90 px-2 shadow-[0_12px_32px_rgba(0,0,0,.35)] backdrop-blur-[14px]">
+      <div className="mx-auto max-w-[640px] px-[18px] pb-[18px]">
+        <div
+          className="flex h-[62px] items-center justify-around rounded-[22px] border border-nav-kant bg-nav-bg px-2 backdrop-blur-[14px]"
+          style={{ boxShadow: "0 12px 30px rgba(18,22,20,.22)" }}
+        >
           {venstre.map((punkt) => (
             <NavPunktKnapp key={punkt.href} punkt={punkt} aktiv={erAktiv(pathname, punkt)} />
           ))}
@@ -161,9 +162,9 @@ export function BunnNav() {
             href="/legg-til-brev"
             aria-label="Legg til brev"
             onPointerDown={() => haptikk("lett")}
-            className="trykk -mt-[40px] flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[linear-gradient(155deg,var(--aksent-dyp),var(--aksent))] text-white shadow-[0_8px_20px_color-mix(in_oklab,var(--aksent-dyp)_35%,transparent),0_0_0_5px_var(--bakgrunn)]"
+            className="trykk flex size-11 shrink-0 items-center justify-center rounded-[15px] bg-mint text-mint-tekst"
           >
-            <Plus className="size-[22px]" strokeWidth={2.4} aria-hidden />
+            <Plus className="size-6" strokeWidth={2} aria-hidden />
           </Link>
           {hoyre.map((punkt) => (
             <NavPunktKnapp key={punkt.href} punkt={punkt} aktiv={erAktiv(pathname, punkt)} />

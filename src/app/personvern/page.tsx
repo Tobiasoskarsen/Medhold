@@ -17,7 +17,7 @@ export default function PersonvernPage() {
         Tilbake
       </Link>
 
-      <h1 className="mt-4 font-serif text-[24px] font-medium tracking-[-0.01em] text-blekk">
+      <h1 className="tittel-s mt-4 text-blekk">
         Personvern
       </h1>
       <p className="mt-1.5 text-[13px] text-dempet">

@@ -74,7 +74,7 @@ export default async function BrevArkivPage() {
         <ChevronLeft className="size-5" aria-hidden />
         Meg
       </Link>
-      <h1 className="font-serif text-[21px] font-medium tracking-[-0.01em] text-blekk">
+      <h1 className="tittel-s text-blekk">
         Alle brev
       </h1>
 
@@ -111,7 +111,7 @@ export default async function BrevArkivPage() {
                                 <span
                                   role="img"
                                   aria-label="Gebyrfunn i dette brevet"
-                                  className="font-serif text-[13px] font-semibold leading-none text-dom-rod"
+                                  className="text-[13px] font-bold leading-none text-dom-rod"
                                 >
                                   §
                                 </span>

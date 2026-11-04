@@ -37,12 +37,12 @@ export default function VarselInnstilling({ pa }: { pa: boolean }) {
         }`}
       >
         <span
-          className={`inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition ${
-            aktiv ? "translate-x-5" : "translate-x-0.5"
+          className={`inline-block h-5 w-5 translate-y-0.5 rounded-full shadow transition ${
+            aktiv ? "translate-x-5 bg-aksent-tekst" : "translate-x-0.5 bg-flate mork:bg-dempet"
           }`}
         />
       </button>
-      {feil && <span className="text-[11px] text-red-700">{feil}</span>}
+      {feil && <span className="text-[11px] text-dom-rod">{feil}</span>}
     </span>
   );
 }

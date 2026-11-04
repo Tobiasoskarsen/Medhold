@@ -1,19 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Newsreader } from "next/font/google";
+import { Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { APP_NAME } from "@/lib/brand";
 
-const inter = Inter({
-  variable: "--font-inter",
+const schibsted = Schibsted_Grotesk({
+  variable: "--font-schibsted",
   subsets: ["latin"],
-});
-
-// Serif kun til overskrifter, beløp, Dommen, seier og profilhode (se serif-
-// regelen i designordren). Variabel font → opsz-aksen aktiv; italic inkludert.
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -54,14 +46,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1f4d3d",
+  themeColor: "#f3f0e9",
   width: "device-width",
   initialScale: 1,
 };
 
 // Settes før paint (ingen FOUC): leser lagret tema og legger .mork på <html>
 // hvis mørkt er valgt, eller «system» og OS er mørkt.
-const TEMA_SKRIPT = `(function(){try{var t=localStorage.getItem('medhold-tema')||'system';var d=t==='mork'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('mork');}}catch(e){}})();`;
+const TEMA_SKRIPT = `(function(){try{var t=localStorage.getItem('medhold-tema')||'lys';var d=t==='mork'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('mork');}}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -71,7 +63,7 @@ export default function RootLayout({
   return (
     <html
       lang="nb"
-      className={`${inter.variable} ${newsreader.variable} h-full antialiased`}
+      className={`${schibsted.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-bakgrunn text-blekk">

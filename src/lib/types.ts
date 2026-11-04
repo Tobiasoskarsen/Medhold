@@ -209,12 +209,13 @@ export const UTFALL_ETIKETT: Record<SakUtfall, string> = {
 };
 
 export const UTFALL_STIL: Record<SakUtfall, string> = {
-  medhold: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  delvis_medhold: "bg-teal-50 text-teal-700 ring-teal-200",
-  avvist: "bg-slate-100 text-slate-600 ring-slate-200",
-  nedbetalingsavtale: "bg-violet-50 text-violet-700 ring-violet-200",
+  // Gull er KUN for medhold (Retning B §2) — tidligere grønn ved en feil.
+  medhold: "bg-gull-bg text-gull ring-gull/30",
+  delvis_medhold: "bg-gull-bg text-gull ring-gull/30",
+  avvist: "bg-flate-2 text-dempet ring-strek",
+  nedbetalingsavtale: "bg-trygg/10 text-trygg ring-trygg/25",
   // Nøytral og verdig — ikke gull, ikke grønn suksess (token-basert).
-  oppgjort: "bg-strek text-blekk ring-strek",
+  oppgjort: "bg-flate-2 text-blekk ring-strek",
 };
 
 export const STATUS_ETIKETT: Record<SakStatus, string> = {
@@ -233,17 +234,17 @@ export const KATEGORI_ETIKETT: Record<SakKategori, string> = {
 
 // Rolige fargepaletter for status-merker (Tailwind-klasser).
 export const STATUS_STIL: Record<SakStatus, string> = {
-  aktiv: "bg-blue-50 text-blue-700 ring-blue-200",
-  venter_pa_svar: "bg-amber-50 text-amber-700 ring-amber-200",
-  fullfort: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  aktiv: "bg-flate-2 text-blekk ring-strek",
+  venter_pa_svar: "bg-aksent/10 text-aksent ring-aksent/25",
+  fullfort: "bg-trygg/10 text-trygg ring-trygg/25",
 };
 
 export const KATEGORI_STIL: Record<SakKategori, string> = {
-  helse: "bg-rose-50 text-rose-700 ring-rose-200",
-  okonomi: "bg-violet-50 text-violet-700 ring-violet-200",
-  familie: "bg-teal-50 text-teal-700 ring-teal-200",
-  bolig: "bg-orange-50 text-orange-700 ring-orange-200",
-  annet: "bg-slate-100 text-slate-600 ring-slate-200",
+  helse: "bg-flate-2 text-dempet ring-strek",
+  okonomi: "bg-flate-2 text-dempet ring-strek",
+  familie: "bg-flate-2 text-dempet ring-strek",
+  bolig: "bg-flate-2 text-dempet ring-strek",
+  annet: "bg-flate-2 text-dempet ring-strek",
 };
 
 export function erStatus(verdi: unknown): verdi is SakStatus {
