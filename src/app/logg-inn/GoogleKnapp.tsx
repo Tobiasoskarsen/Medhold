@@ -55,7 +55,7 @@ export function GoogleKnapp() {
       type="button"
       onClick={fortsett}
       disabled={laster}
-      className="trykk flex w-full items-center justify-center gap-2.5 rounded-kontroll border-[1.5px] border-strek bg-flate px-3 py-[15px] text-sm font-bold text-blekk transition hover:border-dempet/40 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+      className="trykk flex w-full items-center justify-center gap-2.5 min-h-[52px] rounded-kontroll border border-strek bg-flate px-3 text-sm font-semibold text-blekk transition hover:border-dempet/40 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
     >
       <GoogleG />
       {laster ? "Kobler til …" : "Fortsett med Google"}

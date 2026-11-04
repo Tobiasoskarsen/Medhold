@@ -69,6 +69,7 @@ export function GruppertSaksliste({
           value={sok}
           onChange={(e) => setSok(e.target.value)}
           placeholder="Søk etter kreditor …"
+          aria-label="Søk etter kreditor"
           className="w-full bg-transparent text-sm text-blekk outline-none placeholder:text-dempet"
         />
       </div>
@@ -95,23 +96,15 @@ export function GruppertSaksliste({
                   aria-expanded={åpen}
                   className="trykk flex w-full items-center gap-3 px-3.5 py-3 text-left"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-kontroll bg-flate-2 text-brod font-bold text-blekk">
-                    {g.navn.charAt(0).toUpperCase()}
-                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-blekk">
-                      <span className="truncate">{g.navn}</span>
-                      {g.harFunn && (
-                        <span
-                          aria-hidden
-                          className="text-hjelp font-bold leading-none text-dom-rod"
-                        >
-                          §
-                        </span>
-                      )}
+                      <span className="line-clamp-2">{g.navn}</span>
                     </span>
-                    <span className="mt-0.5 block text-xs text-dempet">
+                    <span className="radtekst mt-0.5 block">
                       {g.saker.length} krav
+                      {g.harFunn && (
+                        <span className="font-semibold text-dom-rod"> · § Gebyrfunn</span>
+                      )}
                     </span>
                     {g.fristTekst && (
                       <span className="mt-1 inline-block rounded-full bg-dom-rod-bg px-2 py-0.5 text-[10.5px] font-semibold text-dom-rod">
@@ -138,16 +131,20 @@ export function GruppertSaksliste({
                       <Link
                         key={s.id}
                         href={`/krav/${s.id}`}
-                        className="trykk flex items-center justify-between gap-3 border-b border-strek px-3.5 py-2.5 text-hjelp last:border-none hover:bg-bakgrunn"
+                        className="trykk flex min-h-11 items-center justify-between gap-3 border-b border-strek px-3.5 py-2.5 text-hjelp last:border-none hover:bg-bakgrunn"
                       >
                         <span className="min-w-0">
                           <span className="flex items-center gap-1 font-medium text-blekk">
                             {s.harFunn && (
-                              <span aria-hidden className="font-bold text-dom-rod">
+                              <span
+                                role="img"
+                                aria-label="Gebyrfunn"
+                                className="font-bold text-dom-rod"
+                              >
                                 §
                               </span>
                             )}
-                            <span className="truncate">{s.tittel}</span>
+                            <span className="line-clamp-2">{s.tittel}</span>
                           </span>
                           {s.underTekst && (
                             <span
@@ -176,7 +173,7 @@ export function GruppertSaksliste({
 
       {filtrerteEnkelt.length > 0 && (
         <div className="mt-6">
-          <h2 className="seksjonstittel mb-2.5 text-blekk">Enkeltstående (1 krav)</h2>
+          <h2 className="seksjonstittel mb-2.5 text-blekk">Kreditorer med ett krav</h2>
           <ul className="rounded-kort border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
             {filtrerteEnkelt.map((sak) => (
               <li key={sak.id}>

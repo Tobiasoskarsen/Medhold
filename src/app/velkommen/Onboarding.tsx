@@ -3,7 +3,8 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { m, useReducedMotion } from "motion/react";
-import { Primærknapp } from "@/components/ui";
+import { ChevronLeft } from "lucide-react";
+import { Ordmerke, Primærknapp } from "@/components/ui";
 import { Bevegelsesramme } from "@/components/Bevegelsesramme";
 import {
   EASING,
@@ -14,7 +15,6 @@ import {
 } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
 import { BrevSteg } from "./steg/BrevSteg";
-import { TrappSteg } from "./steg/TrappSteg";
 import { DomSteg } from "./steg/DomSteg";
 import { VeierSteg } from "./steg/VeierSteg";
 
@@ -23,7 +23,7 @@ import { VeierSteg } from "./steg/VeierSteg";
 // etter vellykket innlogging, er den ekte kilden — se auth/callback+confirm).
 const ONBOARDING_NOKKEL = "medhold-onboarding-sett";
 
-const STEG = [BrevSteg, TrappSteg, DomSteg, VeierSteg];
+const STEG = [BrevSteg, DomSteg, VeierSteg];
 const SISTE = STEG.length - 1;
 
 function lesOnboardingSett(): boolean {
@@ -107,15 +107,19 @@ export function Onboarding() {
   return (
     <Bevegelsesramme>
       <main className="relative mx-auto flex min-h-dvh w-full max-w-[420px] flex-col">
-        {i < SISTE && (
-          <button
-            type="button"
-            onClick={() => gaTil(SISTE)}
-            className="absolute right-5 top-5 z-10 text-hjelp font-medium text-dempet"
-          >
-            Hopp over
-          </button>
-        )}
+        {/* Logoen står fast; bare motivet og teksten bytter under den. */}
+        <header className="flex min-h-14 items-center justify-between px-6 pt-2 text-blekk">
+          <Ordmerke className="h-6 w-auto" />
+          {i < SISTE && (
+            <button
+              type="button"
+              onClick={() => gaTil(SISTE)}
+              className="trykk -mr-2 flex min-h-11 items-center px-2 text-hjelp font-medium text-dempet"
+            >
+              Hopp over
+            </button>
+          )}
+        </header>
 
         <div className="relative min-h-0 flex-1 overflow-hidden">
           {STEG.map((StegKomponent, idx) => {
@@ -131,7 +135,7 @@ export function Onboarding() {
             return (
               <div
                 key={idx}
-                className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center"
+                className="absolute inset-0 flex flex-col items-center px-8 pt-6 text-center"
                 style={style}
                 aria-hidden={posisjon !== "aktiv"}
               >
@@ -146,7 +150,7 @@ export function Onboarding() {
         </div>
 
         <m.div
-          className="flex flex-col gap-4 px-6 pb-8 pt-4"
+          className="flex flex-col gap-2 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-2"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{
@@ -155,24 +159,28 @@ export function Onboarding() {
             delay: 3 * ORKESTER_STIGRING,
           }}
         >
-          <div className="flex justify-center gap-1.5" role="tablist">
+          <div className="flex justify-center" role="tablist" aria-label="Steg i introduksjonen">
             {STEG.map((_, idx) => (
               <button
                 key={idx}
                 type="button"
                 role="tab"
-                aria-label={`Gå til steg ${idx + 1}`}
+                aria-label={`Gå til steg ${idx + 1} av ${STEG.length}`}
                 aria-selected={idx === i}
                 onClick={() => gaTil(idx)}
-                className="h-[7px] rounded-full"
-                style={{
-                  width: idx === i ? 20 : 7,
-                  backgroundColor: idx === i ? "var(--aksent)" : "var(--strek)",
-                  transitionProperty: "width, background-color",
-                  transitionDuration: "var(--bevegelse-normal)",
-                  transitionTimingFunction: "var(--bevegelse-easing)",
-                }}
-              />
+                className="flex size-11 items-center justify-center"
+              >
+                <span
+                  className="block h-[7px] rounded-full"
+                  style={{
+                    width: idx === i ? 20 : 7,
+                    backgroundColor: idx === i ? "var(--aksent)" : "var(--strek)",
+                    transitionProperty: "width, background-color",
+                    transitionDuration: "var(--bevegelse-normal)",
+                    transitionTimingFunction: "var(--bevegelse-easing)",
+                  }}
+                />
+              </button>
             ))}
           </div>
 
@@ -182,9 +190,9 @@ export function Onboarding() {
                 type="button"
                 onClick={() => gaTil(i - 1)}
                 aria-label="Tilbake"
-                className="trykk flex size-[52px] shrink-0 items-center justify-center rounded-kontroll border-[0.5px] border-strek bg-flate text-brod font-semibold text-blekk"
+                className="trykk flex size-[52px] shrink-0 items-center justify-center rounded-kontroll border border-strek bg-flate text-blekk"
               >
-                ‹
+                <ChevronLeft className="size-5" aria-hidden />
               </button>
             )}
             <div className="flex-1">

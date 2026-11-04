@@ -105,7 +105,7 @@ export function VeierUtFlyt({
                 disabled={lagrer}
                 onClick={jegHarBetalt}
               >
-                {lagrer ? "Lagrer …" : "Ja, betalt"}
+                {lagrer ? "Lagrer …" : "Ja, registrer betalingen"}
               </Primærknapp>
               <button
                 type="button"
@@ -118,7 +118,7 @@ export function VeierUtFlyt({
           </div>
         ) : (
           <Primærknapp onClick={() => setBetaltBekreft(true)} className="mt-3.5">
-            Jeg har betalt
+            Registrer at du har betalt
           </Primærknapp>
         )}
       </Kort>
@@ -128,7 +128,7 @@ export function VeierUtFlyt({
       <m.div {...kort2}>
       <Kort>
         <p className="text-brod font-semibold text-blekk">
-          Foreslå nedbetalingsavtale
+          Foreslå en nedbetalingsavtale
         </p>
         <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
           Del beløpet opp i avdrag over tid. Skriv hva du klarer i måneden, så
@@ -185,7 +185,7 @@ export function VeierUtFlyt({
           onClick={lagAvtaleForslag}
           className="mt-3.5"
         >
-          Lag forslaget
+          Lag et utkast
         </Primærknapp>
       </Kort>
       </m.div>
@@ -208,7 +208,7 @@ export function VeierUtFlyt({
           }
           className="mt-3.5"
         >
-          Skriv forespørselen
+          Lag et utkast
         </Primærknapp>
       </Kort>
       </m.div>

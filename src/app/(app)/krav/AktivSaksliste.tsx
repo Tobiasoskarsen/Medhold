@@ -26,8 +26,11 @@ const SKJUL_EXIT = { opacity: 0, y: -8 } as const;
  */
 export function AktivSaksliste({
   saker,
+  gruppe,
 }: {
   saker: ComponentProps<typeof Kravkort>[];
+  /** Gruppenavn til knappens tilgjengelige navn («trenger handling» o.l.). */
+  gruppe: string;
 }) {
   const [visAlle, setVisAlle] = useState(false);
   const synlige = visAlle ? saker : saker.slice(0, SYNLIG_UTEN_UTVIDELSE);
@@ -61,9 +64,15 @@ export function AktivSaksliste({
         <button
           type="button"
           onClick={() => setVisAlle((v) => !v)}
-          className="trykk mt-2.5 w-full rounded-kontroll border border-dashed border-strek py-3 text-center text-hjelp font-semibold text-dempet transition hover:text-blekk"
+          aria-expanded={visAlle}
+          aria-label={
+            visAlle
+              ? `Vis færre saker i gruppen ${gruppe}`
+              : `Vis alle ${saker.length} saker i gruppen ${gruppe}`
+          }
+          className="trykk mt-1 flex min-h-11 w-full items-center justify-center text-hjelp font-semibold text-dempet transition hover:text-blekk"
         >
-          {visAlle ? "Vis færre" : `Vis ${skjulteAntall} til`}
+          {visAlle ? "Vis færre" : `Vis alle ${saker.length}`}
         </button>
       )}
     </>

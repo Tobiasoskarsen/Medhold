@@ -26,13 +26,19 @@ export function AvsluttedeListe({
           </li>
         ))}
       </ul>
-      {!visAlle && saker.length > MAKS_UTEN_UTVIDELSE && (
+      {saker.length > MAKS_UTEN_UTVIDELSE && (
         <button
           type="button"
-          onClick={() => setVisAlle(true)}
-          className="mt-1 block min-h-11 w-full text-center text-hjelp text-dempet transition hover:text-blekk"
+          onClick={() => setVisAlle((v) => !v)}
+          aria-expanded={visAlle}
+          aria-label={
+            visAlle
+              ? "Vis færre avsluttede saker"
+              : `Vis alle ${saker.length} avsluttede saker`
+          }
+          className="trykk mt-1 flex min-h-11 w-full items-center justify-center text-hjelp font-semibold text-dempet transition hover:text-blekk"
         >
-          Vis alle ({saker.length})
+          {visAlle ? "Vis færre" : `Vis alle ${saker.length}`}
         </button>
       )}
     </>

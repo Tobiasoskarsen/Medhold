@@ -10,7 +10,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useReducedMotion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
-import { Primærknapp } from "@/components/ui";
+import { Ordmerke, Primærknapp } from "@/components/ui";
 import { KodeFelt, type KodeStatus } from "@/components/ui/KodeFelt";
 import { normaliserTelefon, telefonLoginPa } from "@/lib/telefon";
 import { ORKESTER_STIGRING, STEG_GLID } from "@/lib/bevegelse";
@@ -237,11 +237,13 @@ function LoggInn() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col">
-      <div className="flex min-h-10 items-center px-6 pt-6">
+      <div className="flex min-h-14 items-center justify-between px-6 pt-2 text-blekk">
+        <Ordmerke className="h-6 w-auto" />
         <button
           type="button"
           onClick={tilInntast}
-          className="text-hjelp font-semibold text-dempet"
+          tabIndex={steg === "kode" ? 0 : -1}
+          className="trykk -mr-2 flex min-h-11 items-center px-2 text-hjelp font-semibold text-dempet"
           style={{
             opacity: steg === "kode" ? 1 : 0,
             pointerEvents: steg === "kode" ? "auto" : "none",
@@ -262,25 +264,13 @@ function LoggInn() {
           aria-hidden={steg !== "inntast"}
         >
           <div style={inntredenStil(0)}>
-            <h1 className="tittel-s text-blekk">
-              Logg inn i Medhold
-            </h1>
-            <p className="mt-2 text-[13.5px] leading-[1.55] text-dempet">
-              Rolig og trygt — vi trenger bare én ting å sende koden til.
+            <h1 className="tittel-s mt-3 text-blekk">Logg inn</h1>
+            <p className="mt-1.5 text-[13.5px] leading-[1.55] text-dempet">
+              Vi sender deg en engangskode. Du trenger ikke passord.
             </p>
           </div>
 
-          <div className="mt-[22px]" style={inntredenStil(1)}>
-            <GoogleKnapp />
-          </div>
-
-          <div style={inntredenStil(2)}>
-            <div className="my-5 flex items-center gap-3">
-              <span className="h-px flex-1 bg-strek" />
-              <span className="text-meta text-dempet">eller</span>
-              <span className="h-px flex-1 bg-strek" />
-            </div>
-
+          <div className="mt-5" style={inntredenStil(1)}>
             {telefonPa && (
               <div className="mb-4">
                 <MetodeVeksler metode={metode} onVelg={byttMetode} />
@@ -289,7 +279,7 @@ function LoggInn() {
           </div>
 
           <form
-            style={inntredenStil(3)}
+            style={inntredenStil(2)}
             onSubmit={(e) => {
               e.preventDefault();
               if (!laster) sendKode();
@@ -343,10 +333,14 @@ function LoggInn() {
             </div>
           </form>
 
-          <p className="mt-3.5 pb-8 text-hjelp leading-[1.55] text-dempet">
-            Ingen passord å huske — vi sender en engangskode på {kodeLengde}{" "}
-            tegn.
-          </p>
+          <div className="pb-8" style={inntredenStil(3)}>
+            <div className="my-5 flex items-center gap-3">
+              <span className="h-px flex-1 bg-strek" />
+              <span className="text-meta text-dempet">eller</span>
+              <span className="h-px flex-1 bg-strek" />
+            </div>
+            <GoogleKnapp />
+          </div>
         </div>
 
         {/* STEG: kode */}

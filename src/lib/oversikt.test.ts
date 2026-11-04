@@ -5,8 +5,7 @@ import {
   beregnOversikt,
   hjemIngress,
   type HjemIngressInput,
-  type SakOppsummering,
-} from "./oversikt.ts";
+  type SakOppsummering, saksGrupper, brukGruppering } from "./oversikt.ts";
 import type { GebyrsjekkResultat, LinjeResultat, Vurdering } from "./gebyr.ts";
 
 function linje(vurdering: Vurdering, differanse: number | null): LinjeResultat {
@@ -186,7 +185,7 @@ test("hjemIngress regel 4: frister denne uka, entall og flertall", () => {
 });
 
 test("hjemIngress regel 5: toppsaken venter på svar", () => {
-  assert.equal(ingress({ toppVenter: true }), "Du venter på svar. Vi følger med.");
+  assert.equal(ingress({ toppVenter: true }), "Du venter på svar.");
 });
 
 test("hjemIngress regel 6: aktive saker uten frister denne uka, entall og flertall", () => {
@@ -206,4 +205,33 @@ test("null-beløp teller som 0 i samletKravAktive", () => {
     sak({ id: "b", belopTotalt: 500 }),
   ]);
   assert.equal(res.samletKravAktive, 500);
+});
+
+// --- saksGrupper (statusgrupper på Saker) ---
+
+const saker = (a: number, v: number, f: number) => [
+  ...Array.from({ length: a }, (_, i) => ({ id: `a${i}`, status: "aktiv" as const })),
+  ...Array.from({ length: v }, (_, i) => ({ id: `v${i}`, status: "venter_pa_svar" as const })),
+  ...Array.from({ length: f }, (_, i) => ({ id: `f${i}`, status: "fullfort" as const })),
+];
+
+test("saksGrupper: antall stemmer for 0, 1, 4, 5, 10 og 11 saker", () => {
+  for (const n of [0, 1, 4, 5, 10, 11]) {
+    const g = saksGrupper(saker(n, 0, 0));
+    assert.equal(g.trengerHandling.length, n);
+    assert.equal(g.venter.length, 0);
+    assert.equal(g.avsluttet.length, 0);
+  }
+});
+
+test("saksGrupper: blandede statuser havner i riktig gruppe og beholder rekkefølgen", () => {
+  const g = saksGrupper([...saker(2, 1, 1), { id: "a9", status: "aktiv" as const }]);
+  assert.deepEqual(g.trengerHandling.map((s) => s.id), ["a0", "a1", "a9"]);
+  assert.deepEqual(g.venter.map((s) => s.id), ["v0"]);
+  assert.deepEqual(g.avsluttet.map((s) => s.id), ["f0"]);
+});
+
+test("brukGruppering: først over 10 saker som trenger handling", () => {
+  assert.equal(brukGruppering(10), false);
+  assert.equal(brukGruppering(11), true);
 });

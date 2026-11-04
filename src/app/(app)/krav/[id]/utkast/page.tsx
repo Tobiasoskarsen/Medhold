@@ -96,8 +96,8 @@ export default async function UtkastPage({
         Lag et utkast
       </h1>
       <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
-        Velg type og fyll inn kort. Medhold skriver et utkast du kan endre og
-        sende selv.
+        Fyll inn kort, så lager Medhold et utkast du kan redigere. Du sender
+        brevet selv.
       </p>
 
       <div className="mt-6">
@@ -109,6 +109,7 @@ export default async function UtkastPage({
           kreditor={sak.kreditor ?? sak.tittel}
           saksnummer={sak.saksnummer ?? null}
           starttype={starttype}
+          typeValgt={erUtkastType(type)}
           harOverGebyr={harOverGebyr}
           gebyrDiff={gebyrDiff}
           ubestridt={ubestridt}
