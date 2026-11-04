@@ -111,7 +111,7 @@ export function Onboarding() {
           <button
             type="button"
             onClick={() => gaTil(SISTE)}
-            className="absolute right-5 top-5 z-10 text-[13px] font-medium text-dempet"
+            className="absolute right-5 top-5 z-10 text-hjelp font-medium text-dempet"
           >
             Hopp over
           </button>
@@ -182,7 +182,7 @@ export function Onboarding() {
                 type="button"
                 onClick={() => gaTil(i - 1)}
                 aria-label="Tilbake"
-                className="trykk flex size-[52px] shrink-0 items-center justify-center rounded-xl border-[0.5px] border-strek bg-flate text-[15px] font-semibold text-blekk"
+                className="trykk flex size-[52px] shrink-0 items-center justify-center rounded-xl border-[0.5px] border-strek bg-flate text-brod font-semibold text-blekk"
               >
                 ‹
               </button>

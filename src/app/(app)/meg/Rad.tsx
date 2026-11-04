@@ -25,19 +25,19 @@ export function Rad({
   chevron?: boolean;
 }) {
   const visChevron = chevron ?? !!(href || onClick);
-  const klasse = "flex items-center justify-between gap-3 px-[14px] py-3";
+  const klasse = "flex min-h-[52px] items-center justify-between gap-3 px-[14px] py-2.5";
 
   const innhold = (
     <>
-      <span className="flex items-center gap-2.5 text-sm text-blekk">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-flate-2">
+      <span className="flex shrink-0 items-center gap-2.5 text-brod text-blekk">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-liten bg-flate-2">
           <Ikon className="size-[17px] text-dempet" aria-hidden />
         </span>
         {etikett}
       </span>
-      <span className="flex items-center gap-1.5">
+      <span className="flex min-w-0 items-center gap-1.5">
         {høyre ??
-          (verdi && <span className="text-[13px] text-dempet">{verdi}</span>)}
+          (verdi && <span className="truncate text-hjelp text-dempet">{verdi}</span>)}
         {visChevron && (
           <ChevronRight
             className="size-[15px] shrink-0 text-dempet"

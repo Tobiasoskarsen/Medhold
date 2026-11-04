@@ -68,7 +68,7 @@ export function GammeltBrevKort({
           }
           setSkjult(true);
         }}
-        className="mt-3 block w-full text-center text-[13px] text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk"
+        className="mt-3 block w-full text-center text-hjelp text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk"
       >
         Nei, dette er det nyeste
       </button>

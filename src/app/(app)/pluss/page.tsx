@@ -39,7 +39,7 @@ export default function PlussPage() {
             </p>
           ) : (
             <>
-              <p className="mb-4 text-[13px] text-dempet">{PLUSS_PRIS}</p>
+              <p className="mb-4 text-hjelp text-dempet">{PLUSS_PRIS}</p>
               <Primærknapp>Oppgrader</Primærknapp>
             </>
           )}

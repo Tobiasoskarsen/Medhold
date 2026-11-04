@@ -117,7 +117,7 @@ function Spørsmålsrad<T extends string>({
 }) {
   return (
     <div>
-      <p className="text-[13px] font-medium text-blekk">{spørsmål}</p>
+      <p className="text-hjelp font-medium text-blekk">{spørsmål}</p>
       <div className="mt-2 flex gap-2">
         {valg.map((v) => (
           <button
@@ -128,7 +128,7 @@ function Spørsmålsrad<T extends string>({
               onVelg(v.verdi);
             }}
             aria-pressed={valgt === v.verdi}
-            className={`trykk flex-1 rounded-[12px] border px-3 py-2.5 text-[13px] font-medium transition ${
+            className={`trykk flex-1 rounded-[12px] border px-3 py-2.5 text-hjelp font-medium transition ${
               valgt === v.verdi
                 ? "border-blekk bg-blekk text-bakgrunn"
                 : "border-strek text-blekk hover:border-dempet/40"
@@ -177,7 +177,7 @@ export function Veivalg({
       <h2 className="seksjonstittel text-blekk">
         Hva vil du gjøre?
       </h2>
-      <p className="mt-1 text-[13px] leading-relaxed text-dempet">
+      <p className="mt-1 text-hjelp leading-relaxed text-dempet">
         Du kan ombestemme deg når som helst — ingenting sendes før du sier
         fra.
       </p>

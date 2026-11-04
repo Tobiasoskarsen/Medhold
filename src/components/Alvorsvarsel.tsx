@@ -29,7 +29,7 @@ function HjelpeLenke({
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-medium text-blekk">{tittel}</span>
-        <span className="block text-[12px] text-dempet">{tekst}</span>
+        <span className="block text-meta text-dempet">{tekst}</span>
       </span>
     </a>
   );
@@ -78,7 +78,7 @@ export function Alvorsvarsel({
         />
       </div>
 
-      <p className="mt-3.5 text-[12px] leading-relaxed text-dempet">
+      <p className="mt-3.5 text-meta leading-relaxed text-dempet">
         Fristene og oversikten over saken fungerer som vanlig — det er kun
         forslag til svar vi ikke tilbyr her.
       </p>

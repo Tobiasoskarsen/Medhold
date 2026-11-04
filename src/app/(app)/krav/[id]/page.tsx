@@ -281,16 +281,10 @@ export default async function KravDetaljPage({
     !!nesteFristBrev &&
     erGammeltBrev(nesteFristBrev.brevdato, nesteFristBrev.opprettet, idag);
 
-  // Navn: hovedkravet i overskriften, inkassoselskapet i eyebrow-en (når det
+  // Navn: hovedkravet i overskriften, inkassoselskapet over den (når det
   // finnes en opprinnelig kreditor, er `kreditor` selve inkassoselskapet).
   const hovednavn = sak.opprinnelig_kreditor ?? sak.kreditor ?? sak.tittel;
   const inkassoselskap = sak.opprinnelig_kreditor ? sak.kreditor : null;
-  const eyebrow = [
-    stadium ? stor(STADIUM_ETIKETT[stadium]) : null,
-    inkassoselskap ? `sak hos ${inkassoselskap}` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
 
   type Item = {
     key: string;
@@ -420,7 +414,7 @@ export default async function KravDetaljPage({
                 {s.tittel}
               </p>
               {s.under && (
-                <p className="mt-0.5 text-[13px] text-dempet">{s.under}</p>
+                <p className="mt-0.5 text-hjelp text-dempet">{s.under}</p>
               )}
             </>
           );
@@ -434,7 +428,7 @@ export default async function KravDetaljPage({
             {item.tittel}
           </p>
           {item.tekst && (
-            <p className="mt-0.5 text-[13px] leading-snug text-dempet">
+            <p className="mt-0.5 text-hjelp leading-snug text-dempet">
               {item.tekst}
             </p>
           )}
@@ -444,7 +438,7 @@ export default async function KravDetaljPage({
             </span>
           )}
           {item.chip && (
-            <span className="mt-1.5 inline-block rounded-full bg-aksent/10 px-3 py-1 text-[12px] font-semibold text-aksent-dyp">
+            <span className="mt-1.5 inline-block rounded-full bg-aksent/10 px-3 py-1 text-meta font-semibold text-aksent-dyp">
               {item.chip}
             </span>
           )}
@@ -579,7 +573,7 @@ export default async function KravDetaljPage({
             <p className="text-[14.5px] font-semibold text-blekk">
               Venter på svar fra {inkassoselskap ?? sak.kreditor ?? sak.tittel}
             </p>
-            <p className="mt-0.5 text-[13px] text-dempet">
+            <p className="mt-0.5 text-hjelp text-dempet">
               {oppfolgingTekst(
                 oppfolgingTilstandVerdi,
                 inkassoselskap ?? sak.kreditor ?? sak.tittel,
@@ -628,14 +622,14 @@ export default async function KravDetaljPage({
               kildelinje={
                 nesteFristBrev.brevtype &&
                 FRIST_HJEMMEL[nesteFristBrev.brevtype] ? (
-                  <p className="mt-2 text-[12px] text-dempet">
+                  <p className="mt-2 text-meta text-dempet">
                     {FRIST_HJEMMEL[nesteFristBrev.brevtype]}
                   </p>
                 ) : undefined
               }
             />
           ) : nesteFrist.kilde !== "beregnet" ? (
-            <p className="mt-2 text-[12px] text-dempet">
+            <p className="mt-2 text-meta text-dempet">
               Fristen står oppgitt i brevet.
             </p>
           ) : null}

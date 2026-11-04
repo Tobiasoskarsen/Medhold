@@ -33,7 +33,7 @@ export function Utregning({
         type="button"
         onClick={() => setÅpen((o) => !o)}
         aria-expanded={åpen}
-        className="trykk flex items-center gap-1 text-[13px] font-medium text-dempet transition hover:text-blekk"
+        className="trykk flex items-center gap-1 text-hjelp font-medium text-dempet transition hover:text-blekk"
       >
         {trigger}
         <ChevronDown
@@ -59,7 +59,7 @@ export function Utregning({
               {rader.map((r, i) => (
                 <div
                   key={i}
-                  className="flex items-baseline justify-between gap-3 text-[13px]"
+                  className="flex items-baseline justify-between gap-3 text-hjelp"
                 >
                   <dt className="text-dempet">{r.etikett}</dt>
                   <dd

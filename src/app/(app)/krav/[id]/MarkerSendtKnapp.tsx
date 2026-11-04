@@ -34,7 +34,7 @@ export function MarkerSendtKnapp({ utkastId }: { utkastId: string }) {
         type="button"
         onClick={bekreft}
         disabled={venter}
-        className="trykk inline-flex items-center gap-1.5 text-[13px] font-medium text-aksent hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent disabled:opacity-50"
+        className="trykk inline-flex items-center gap-1.5 text-hjelp font-medium text-aksent hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent disabled:opacity-50"
       >
         <Check className="size-3.5" aria-hidden />
         {venter ? "Lagrer …" : "Jeg har sendt det"}

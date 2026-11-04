@@ -22,7 +22,7 @@ export default function SlettKonto() {
       <button
         type="button"
         onClick={() => setBekreft(true)}
-        className="text-[13px] text-dom-rod/80 transition hover:text-dom-rod"
+        className="text-hjelp text-dom-rod/80 transition hover:text-dom-rod"
       >
         Slett kontoen min
       </button>
@@ -31,12 +31,12 @@ export default function SlettKonto() {
 
   return (
     <div className="w-full max-w-[360px] text-center">
-      <p className="text-[13px] leading-relaxed text-dempet">
+      <p className="text-hjelp leading-relaxed text-dempet">
         Dette sletter alle krav, brev, frister og selve kontoen.{" "}
         <strong className="text-blekk">Kan ikke angres.</strong>
       </p>
       {feil && (
-        <p role="alert" className="mt-2 text-[13px] text-dom-rod">
+        <p role="alert" className="mt-2 text-hjelp text-dom-rod">
           {feil}
         </p>
       )}
@@ -63,7 +63,7 @@ export default function SlettKonto() {
         type="button"
         onClick={() => setBekreft(false)}
         disabled={venter}
-        className="mt-1 text-[13px] text-dempet transition hover:text-blekk disabled:opacity-50"
+        className="mt-1 text-hjelp text-dempet transition hover:text-blekk disabled:opacity-50"
       >
         Avbryt
       </button>

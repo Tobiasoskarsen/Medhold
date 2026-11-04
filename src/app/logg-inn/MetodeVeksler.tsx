@@ -29,7 +29,7 @@ export function MetodeVeksler({
           type="button"
           onClick={() => onVelg(m)}
           aria-pressed={metode === m}
-          className="relative z-[1] flex-1 rounded-lg py-[9px] text-[13px] font-semibold"
+          className="relative z-[1] flex-1 rounded-lg py-[9px] text-hjelp font-semibold"
           style={{
             color: metode === m ? "var(--blekk)" : "var(--dempet)",
             transitionProperty: "color",

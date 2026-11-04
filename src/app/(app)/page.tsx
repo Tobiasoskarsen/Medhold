@@ -266,7 +266,7 @@ export default async function HjemPage() {
 
   const navnPa = (s: SakKobling) => s.kreditor ?? s.tittel;
   const kreditorLinje = (s: SakKobling) => (
-    <p className="mt-3 text-[15px] font-semibold text-helt-dempet">{navnPa(s)}</p>
+    <p className="mt-3 text-brod font-semibold text-helt-dempet">{navnPa(s)}</p>
   );
   const belopLinje = (s: SakKobling) =>
     s.belop_totalt != null ? (
@@ -327,15 +327,15 @@ export default async function HjemPage() {
                 </Primærknapp>
               }
             >
-              <p className="mt-3 text-[15px] font-semibold">{navnPa(seierSak)}</p>
+              <p className="mt-3 text-brod font-semibold">{navnPa(seierSak)}</p>
               <p className="tall-m mt-1 text-gull">Medhold.</p>
-              <p className="mt-2 text-[13px]">
+              <p className="mt-2 text-hjelp">
                 Kravet ble frafalt etter innsigelsen din.
               </p>
             </Heltekort>
           ) : !topSak ? (
             <Kort>
-              <p className="text-[15px] leading-relaxed text-blekk">
+              <p className="text-brod leading-relaxed text-blekk">
                 Ingen aktive saker akkurat nå.
               </p>
               <div className="mt-4">
@@ -467,7 +467,7 @@ export default async function HjemPage() {
             <h2 className="seksjonstittel text-blekk">Andre saker</h2>
             <Link
               href="/krav"
-              className="text-[13px] font-semibold text-dempet transition hover:text-blekk"
+              className="text-hjelp font-semibold text-dempet transition hover:text-blekk"
             >
               Se alle
             </Link>
@@ -507,7 +507,7 @@ export default async function HjemPage() {
                       )}
                     </span>
                     {belop && (
-                      <span className="shrink-0 text-[15px] font-bold tabular-nums text-blekk">
+                      <span className="shrink-0 text-brod font-bold tabular-nums text-blekk">
                         {belop} kr
                       </span>
                     )}

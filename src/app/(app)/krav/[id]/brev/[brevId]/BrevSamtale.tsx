@@ -103,13 +103,13 @@ export function BrevSamtale({
           }}
           rows={1}
           placeholder="Spør om noe i brevet …"
-          className="flex-1 resize-none rounded-[14px] border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+          className="flex-1 resize-none rounded-kontroll border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
         />
         <button
           type="submit"
           disabled={venter || !tekst.trim()}
           aria-label="Send"
-          className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-aksent text-aksent-tekst transition hover:opacity-95 disabled:opacity-40"
+          className="flex size-10 shrink-0 items-center justify-center rounded-liten bg-aksent text-aksent-tekst transition hover:opacity-95 disabled:opacity-40"
         >
           <SendHorizontal className="size-4" aria-hidden />
         </button>

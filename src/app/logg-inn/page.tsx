@@ -205,7 +205,7 @@ function LoggInn() {
   }
 
   const feltKlasse =
-    "mt-1.5 w-full rounded-[14px] border border-strek bg-flate px-[15px] py-3.5 text-[15.5px] text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+    "mt-1.5 w-full rounded-kontroll border border-strek bg-flate px-[15px] py-3.5 text-[15.5px] text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
   // Steg-overgang (opacity + translateX) — samme mønster som onboardingen.
   function stegStil(denneSteg: Steg): CSSProperties {
@@ -241,7 +241,7 @@ function LoggInn() {
         <button
           type="button"
           onClick={tilInntast}
-          className="text-[13px] font-semibold text-dempet"
+          className="text-hjelp font-semibold text-dempet"
           style={{
             opacity: steg === "kode" ? 1 : 0,
             pointerEvents: steg === "kode" ? "auto" : "none",
@@ -277,7 +277,7 @@ function LoggInn() {
           <div style={inntredenStil(2)}>
             <div className="my-5 flex items-center gap-3">
               <span className="h-px flex-1 bg-strek" />
-              <span className="text-[12px] text-dempet">eller</span>
+              <span className="text-meta text-dempet">eller</span>
               <span className="h-px flex-1 bg-strek" />
             </div>
 
@@ -333,9 +333,9 @@ function LoggInn() {
             </div>
 
             {melding && (
-              <p className="mt-4 text-[13px] text-aksent">{melding}</p>
+              <p className="mt-4 text-hjelp text-aksent">{melding}</p>
             )}
-            {feil && <p className="mt-4 text-[13px] text-dom-rod">{feil}</p>}
+            {feil && <p className="mt-4 text-hjelp text-dom-rod">{feil}</p>}
             <div className="mt-[18px]">
               <Primærknapp type="submit" disabled={laster}>
                 {laster ? "Sender …" : "Send meg en kode"}
@@ -343,7 +343,7 @@ function LoggInn() {
             </div>
           </form>
 
-          <p className="mt-3.5 pb-8 text-[13px] leading-[1.55] text-dempet">
+          <p className="mt-3.5 pb-8 text-hjelp leading-[1.55] text-dempet">
             Ingen passord å huske — vi sender en engangskode på {kodeLengde}{" "}
             tegn.
           </p>
@@ -403,7 +403,7 @@ function LoggInn() {
           </p>
 
           {feil && (
-            <p className="mt-1 text-center text-[13px] text-dom-rod">
+            <p className="mt-1 text-center text-hjelp text-dom-rod">
               {feil}
             </p>
           )}

@@ -13,7 +13,7 @@ import { formaterDato } from "@/lib/dato";
 import { SEGL_FJAER } from "@/lib/bevegelse";
 
 const KNAPP_KLASSE =
-  "trykk rounded-[10px] border border-white/30 bg-transparent px-5 py-3 text-[14px] font-semibold text-white";
+  "trykk rounded-liten border border-white/30 bg-transparent px-5 py-3 text-[14px] font-semibold text-white";
 
 export function DomFullskjerm({
   resultat,
@@ -83,7 +83,7 @@ export function DomFullskjerm({
         </m.div>
 
         <m.p
-          className="mt-6 text-[13px] font-bold uppercase tracking-[0.08em]"
+          className="mt-6 text-hjelp font-bold uppercase tracking-[0.08em]"
           style={{ color: "#d9b25e" }}
           initial={{ opacity: redusert ? 1 : 0 }}
           animate={{ opacity: 1 }}
@@ -102,7 +102,7 @@ export function DomFullskjerm({
         </m.p>
 
         <m.p
-          className="mt-2.5 max-w-[320px] text-[13px] leading-relaxed text-white/70"
+          className="mt-2.5 max-w-[320px] text-hjelp leading-relaxed text-white/70"
           initial={{ opacity: redusert ? 1 : 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: delay.forklaring }}

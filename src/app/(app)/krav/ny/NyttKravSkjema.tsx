@@ -8,7 +8,7 @@ import { haptikk } from "@/lib/haptikk";
 import { opprettKrav } from "../actions";
 
 const feltKlasse =
-  "mt-1.5 w-full rounded-[14px] border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+  "mt-1.5 w-full rounded-kontroll border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
 // «avsluttet» tilbys ikke — et nytt krav er alltid aktivt (bruk løst-flyten
 // på krav-detaljen for å avslutte).
@@ -40,7 +40,7 @@ export function NyttKravSkjema() {
 
   return (
     <div className="mt-6 flex flex-col gap-4">
-      <label className="block text-[13px] font-medium text-blekk">
+      <label className="block text-hjelp font-medium text-blekk">
         Hvem kravet er fra
         <input
           type="text"
@@ -50,7 +50,7 @@ export function NyttKravSkjema() {
           className={feltKlasse}
         />
       </label>
-      <label className="block text-[13px] font-medium text-blekk">
+      <label className="block text-hjelp font-medium text-blekk">
         Beløp (kr)
         <input
           type="text"
@@ -61,7 +61,7 @@ export function NyttKravSkjema() {
           className={feltKlasse}
         />
       </label>
-      <label className="block text-[13px] font-medium text-blekk">
+      <label className="block text-hjelp font-medium text-blekk">
         Saksnummer
         <input
           type="text"
@@ -71,7 +71,7 @@ export function NyttKravSkjema() {
           className={feltKlasse}
         />
       </label>
-      <label className="block text-[13px] font-medium text-blekk">
+      <label className="block text-hjelp font-medium text-blekk">
         Hvor er saken nå?
         <select
           value={stadium}
@@ -88,7 +88,7 @@ export function NyttKravSkjema() {
         </select>
       </label>
 
-      {feil && <p className="text-[13px] text-dom-rod">{feil}</p>}
+      {feil && <p className="text-hjelp text-dom-rod">{feil}</p>}
 
       <Primærknapp onClick={lagre} disabled={lagrer || !kreditor.trim()}>
         {lagrer ? "Oppretter …" : "Opprett krav"}

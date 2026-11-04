@@ -6,7 +6,7 @@ import { haptikk } from "@/lib/haptikk";
 
 const fokus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blekk focus-visible:ring-offset-2 focus-visible:ring-offset-bakgrunn disabled:opacity-60";
-const basisFull = `trykk block min-h-[52px] w-full rounded-kontroll px-4 py-[15px] text-center text-[15px] font-bold ${fokus}`;
+const basisFull = `trykk block min-h-[52px] w-full rounded-kontroll px-4 py-[15px] text-center text-brod font-bold ${fokus}`;
 // `full={false}`: selvstørrende variant for sekundære bekreftelsesknapper ved
 // siden av en tekstlenke (f.eks. «Ja, betalt» / «Avbryt»). Egen klassestreng
 // i stedet for å overstyre w-full via className — Tailwinds genererte CSS

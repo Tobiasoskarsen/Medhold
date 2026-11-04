@@ -66,7 +66,7 @@ export function VeierUtFlyt({
   }
 
   const feltKlasse =
-    "mt-2 w-full rounded-[14px] border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+    "mt-2 w-full rounded-kontroll border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
   // Kjeder kortenes egen liste-stagger etter SekvensDel sin forsinkelse
   // (Motion3 §2.2) — 0 utenfor en Sekvens, helt uendret oppførsel da.
@@ -82,21 +82,21 @@ export function VeierUtFlyt({
       <m.div {...kort1}>
       <Kort>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[15px] font-semibold text-blekk">Betal alt nå</p>
+          <p className="text-brod font-semibold text-blekk">Betal alt nå</p>
           <Pill variant="suksess">Billigst</Pill>
         </div>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+        <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
           Stopper alle videre omkostninger. Når hele beløpet er betalt, avsluttes
           saken, og det registreres ingen betalingsanmerkning for dette kravet.
         </p>
-        <p className="mt-2 text-[13px] leading-relaxed text-dempet">
+        <p className="mt-2 text-hjelp leading-relaxed text-dempet">
           Betal til kontonummeret som står i brevet —{" "}
           <span className="font-medium text-blekk">aldri til noen andre</span>.
         </p>
 
         {betaltBekreft ? (
           <div className="mt-3 rounded-xl border-[0.5px] border-strek bg-bakgrunn p-3.5">
-            <p className="text-[13px] font-medium text-blekk">
+            <p className="text-hjelp font-medium text-blekk">
               Har du betalt hele beløpet til kontonummeret i brevet?
             </p>
             <div className="mt-3 flex items-center gap-3">
@@ -110,7 +110,7 @@ export function VeierUtFlyt({
               <button
                 type="button"
                 onClick={() => setBetaltBekreft(false)}
-                className="text-[13px] text-dempet transition hover:text-blekk"
+                className="text-hjelp text-dempet transition hover:text-blekk"
               >
                 Avbryt
               </button>
@@ -127,15 +127,15 @@ export function VeierUtFlyt({
       {/* 2 — Nedbetalingsavtale */}
       <m.div {...kort2}>
       <Kort>
-        <p className="text-[15px] font-semibold text-blekk">
+        <p className="text-brod font-semibold text-blekk">
           Foreslå nedbetalingsavtale
         </p>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+        <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
           Del beløpet opp i avdrag over tid. Skriv hva du klarer i måneden, så
           regner vi ut planen.
         </p>
 
-        <label className="mt-3 block text-[13px] font-medium text-blekk">
+        <label className="mt-3 block text-hjelp font-medium text-blekk">
           Hva klarer du å betale i måneden?
           <input
             type="text"
@@ -161,7 +161,7 @@ export function VeierUtFlyt({
               .
             </p>
             {forslag.antallMandeder > 12 && (
-              <p className="mt-1.5 text-[12px] leading-relaxed text-dempet">
+              <p className="mt-1.5 text-meta leading-relaxed text-dempet">
                 Lange avtaler blir sjeldnere akseptert — vurder et høyere
                 månedsbeløp hvis du kan.
               </p>
@@ -170,12 +170,12 @@ export function VeierUtFlyt({
         )}
 
         {total == null && (
-          <p className="mt-2 text-[12px] text-dempet">
+          <p className="mt-2 text-meta text-dempet">
             Legg inn totalbeløpet på kravet for å regne ut en plan.
           </p>
         )}
 
-        <p className="mt-3 text-[12px] leading-relaxed text-dempet">
+        <p className="mt-3 text-meta leading-relaxed text-dempet">
           En avdragsordning kan gi noe ekstra omkostninger og renter frem til alt
           er betalt.
         </p>
@@ -193,10 +193,10 @@ export function VeierUtFlyt({
       {/* 3 — Betalingsutsettelse */}
       <m.div {...kort3}>
       <Kort>
-        <p className="text-[15px] font-semibold text-blekk">
+        <p className="text-brod font-semibold text-blekk">
           Be om betalingsutsettelse
         </p>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+        <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
           Be om å utsette betalingen til en bestemt dato. Beløpet endres ikke — du
           kjøper tid.
         </p>
@@ -208,14 +208,14 @@ export function VeierUtFlyt({
           }
           className="mt-3.5"
         >
-          Skriv anmodningen
+          Skriv forespørselen
         </Primærknapp>
       </Kort>
       </m.div>
 
       <m.p
         {...navLinje}
-        className="mt-2 text-center text-[12px] leading-relaxed text-dempet"
+        className="mt-2 text-center text-meta leading-relaxed text-dempet"
       >
         Trenger du hjelp med helheten i økonomien?{" "}
         <a

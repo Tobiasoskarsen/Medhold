@@ -15,7 +15,7 @@ export function NyttForsokLenke({
   deaktivert: boolean;
 }) {
   return (
-    <p className="mt-5 text-center text-[13px] text-dempet">
+    <p className="mt-5 text-center text-hjelp text-dempet">
       {sekunder > 0 ? (
         <span>
           Send på nytt om 0:{String(sekunder).padStart(2, "0")}

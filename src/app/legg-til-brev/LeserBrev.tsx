@@ -73,7 +73,7 @@ export function LeserBrev({
         <Hjorne plass="bottom-0 left-0 rounded-bl-[6px] border-b-2 border-l-2" />
         <Hjorne plass="bottom-0 right-0 rounded-br-[6px] border-b-2 border-r-2" />
 
-        <div className="relative aspect-[3/4] overflow-hidden rounded-[10px] border border-strek bg-flate">
+        <div className="relative aspect-[3/4] overflow-hidden rounded-liten border border-strek bg-flate">
           {bilde ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

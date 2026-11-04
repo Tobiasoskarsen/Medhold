@@ -19,7 +19,7 @@ export function AvsluttedeListe({
 
   return (
     <>
-      <ul className="rounded-[20px] border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
+      <ul className="rounded-kort border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
         {synlige.map((sak) => (
           <li key={sak.id}>
             <Kravkort {...sak} />
@@ -30,7 +30,7 @@ export function AvsluttedeListe({
         <button
           type="button"
           onClick={() => setVisAlle(true)}
-          className="mt-3 block w-full text-center text-[13px] text-dempet transition hover:text-blekk"
+          className="mt-1 block min-h-11 w-full text-center text-hjelp text-dempet transition hover:text-blekk"
         >
           Vis alle ({saker.length})
         </button>

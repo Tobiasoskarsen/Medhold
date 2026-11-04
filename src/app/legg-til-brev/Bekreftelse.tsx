@@ -23,7 +23,7 @@ import { tolkKr } from "@/lib/format";
 import { kr } from "@/lib/gebyrfunn-visning";
 
 const FELT =
-  "w-full rounded-[14px] border border-strek bg-flate px-3 py-2 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+  "w-full rounded-kontroll border border-strek bg-flate px-3 py-2 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
 function krTekst(s: string): string {
   const n = tolkKr(s);
@@ -60,7 +60,7 @@ function Rad({
             transition={{ duration: VARIGHET.hurtig, ease: EASING }}
             className="flex flex-col gap-1.5"
           >
-            <span className="text-[13px] text-dempet">{etikett}</span>
+            <span className="text-hjelp text-dempet">{etikett}</span>
             {felt(() => setRedigerer(false))}
           </m.div>
         ) : (
@@ -74,7 +74,7 @@ function Rad({
             transition={{ duration: VARIGHET.hurtig, ease: EASING }}
             className="trykk group flex w-full items-center justify-between gap-3 text-left"
           >
-            <span className="text-[13px] text-dempet">{etikett}</span>
+            <span className="text-hjelp text-dempet">{etikett}</span>
             <span className="flex items-center gap-2">
               {/* Ny verdi (etter retting) fader inn — et lite «oppdatert». */}
               <m.span
@@ -199,7 +199,7 @@ export function Bekreftelse({
   return (
     <Kort className="mt-5">
       <h2 className="seksjonstittel text-blekk">Stemmer dette med brevet?</h2>
-      <p className="mt-1 text-[13px] text-dempet">
+      <p className="mt-1 text-hjelp text-dempet">
         Sammenlign med brevet. Retter du noe her, regner vi alt på nytt.
       </p>
 
@@ -271,7 +271,7 @@ export function Bekreftelse({
               <button
                 type="button"
                 onClick={() => onLinjer(linjer.filter((_, j) => j !== i))}
-                className="mt-1 text-[12px] text-dempet underline decoration-strek underline-offset-2 transition hover:text-blekk"
+                className="mt-1 text-meta text-dempet underline decoration-strek underline-offset-2 transition hover:text-blekk"
               >
                 Fjern
               </button>
@@ -284,7 +284,7 @@ export function Bekreftelse({
             onClick={() =>
               onLinjer([...linjer, { type: "annet", belop: 0, tekst: "" }])
             }
-            className="text-[13px] font-medium text-aksent transition hover:text-blekk"
+            className="text-hjelp font-medium text-aksent transition hover:text-blekk"
           >
             + Legg til gebyr
           </button>
@@ -307,13 +307,13 @@ export function Bekreftelse({
       </ul>
 
       {sumkontroll.status === "stemmer" && (
-        <p className="mt-2 text-[13px] text-dempet">
+        <p className="mt-2 text-hjelp text-dempet">
           Hovedstol og gebyrer blir {kr(sumkontroll.sum)} kr. Det stemmer med
           totalen.
         </p>
       )}
       {sumkontroll.status === "avvik" && (
-        <div className="mt-2 rounded-[14px] bg-dom-rod-bg p-3 text-[13px] text-blekk">
+        <div className="mt-2 rounded-kontroll bg-dom-rod-bg p-3 text-hjelp text-blekk">
           <p>
             Tallene går ikke opp. Hovedstol og gebyrer blir{" "}
             {kr(sumkontroll.sum)} kr, men brevet sier {kr(sumkontroll.total)} kr.

@@ -60,7 +60,7 @@ export function AnnotertBrev({
 
   return (
     <Fragment>
-      <p className="mb-2 text-[12px] text-dempet">
+      <p className="mb-2 text-meta text-dempet">
         Trykk på de markerte tallene for å se hva de er.
       </p>
       <p className={`whitespace-pre-line ${className}`}>{deler}</p>
