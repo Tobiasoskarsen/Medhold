@@ -1,8 +1,8 @@
 import { NavLenke as Link } from "@/components/NavLenke";
 import { ChevronLeft } from "lucide-react";
-import { Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
+import { Kort, Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
 import { satserForDato } from "@/lib/gebyr";
-import { formaterDato } from "@/lib/dato";
+import { formaterDato, idagOslo } from "@/lib/dato";
 
 /** Norsk beløp med tusenskille, uten øre. */
 function kr(n: number): string {
@@ -15,17 +15,41 @@ function kr(n: number): string {
  * Meg → Hjelp. Endres satstabellen, endres denne siden med den.
  */
 export default function SatserPage() {
-  const sats = satserForDato(null);
+  const idag = idagOslo();
+  const sats = satserForDato(idag);
+
+  const tilbake = (
+    <Link
+      href="/meg"
+      className="mb-3.5 flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
+    >
+      <ChevronLeft className="size-5" aria-hidden />
+      Meg
+    </Link>
+  );
+
+  if (!sats) {
+    return (
+      <Skjermramme className="pt-5" animerInn={false}>
+        {tilbake}
+        <h1 className="tittel-s text-blekk">Satsene vi bruker</h1>
+        <Kort className="mt-5">
+          <h2 className="seksjonstittel text-blekk">
+            Satsene for {idag.slice(0, 4)} er ikke lagt inn ennå
+          </h2>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+            Inntil de nye satsene er lagt inn, vurderer vi ikke gebyrer i brev
+            fra i år. Gebyrsjekken sier da «Ikke kontrollert» i stedet for å
+            bruke fjorårets tall.
+          </p>
+        </Kort>
+      </Skjermramme>
+    );
+  }
 
   return (
     <Skjermramme className="pt-5" animerInn={false}>
-      <Link
-        href="/meg"
-        className="mb-3.5 flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
-      >
-        <ChevronLeft className="size-5" aria-hidden />
-        Meg
-      </Link>
+      {tilbake}
 
       <Sekvens>
         <SekvensDel>
@@ -41,7 +65,8 @@ export default function SatserPage() {
         <SekvensDel>
           <div className="mt-5 rounded-2xl border-[0.5px] border-strek bg-flate p-[18px]">
             <p className="eyebrow mb-3">
-              Gjeldende fra {formaterDato(sats.gyldigFra)}
+              Gjelder {formaterDato(sats.gyldigFra)} –{" "}
+              {formaterDato(sats.gyldigTil)}
             </p>
             <dl className="flex flex-col gap-2 text-[13px]">
               <div className="flex items-baseline justify-between gap-3">

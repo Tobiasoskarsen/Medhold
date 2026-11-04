@@ -10,8 +10,8 @@ import {
   Heltekort,
   HeltChip,
 } from "@/components/ui";
-import { dagerTil, fristNærhet } from "@/lib/dato";
-import { erHastende, fristChipTekst } from "@/lib/frist";
+import { dagerTil, fristNærhet, formaterTallDato, idagOslo } from "@/lib/dato";
+import { erHastende, erGammeltBrev, fristChipTekst } from "@/lib/frist";
 import { formaterBelop } from "@/lib/format";
 import { STADIUM_ETIKETT, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus, SakUtfall } from "@/lib/types";
@@ -37,6 +37,7 @@ type SakKobling = {
 type AapenFrist = {
   id: string;
   sak_id: string;
+  brev_id: string | null;
   tittel: string;
   forfallsdato: string;
   saker: SakKobling | null;
@@ -102,13 +103,13 @@ export default async function HjemPage() {
       supabase
         .from("frister")
         .select(
-          "id, sak_id, tittel, forfallsdato, saker(id, kreditor, tittel, belop_totalt, stadium, status, utfall)",
+          "id, sak_id, brev_id, tittel, forfallsdato, saker(id, kreditor, tittel, belop_totalt, stadium, status, utfall)",
         )
         .eq("fullfort", false),
       // Nyeste brev per sak (alvorsgrensen, §B.5) — ÉN spørring, ingen N+1.
       supabase
         .from("brev")
-        .select("sak_id, opprettet, alvorlig")
+        .select("id, sak_id, opprettet, alvorlig, brevdato")
         .order("opprettet", { ascending: false }),
     ]);
 
@@ -138,6 +139,21 @@ export default async function HjemPage() {
     alvorligPerSak.set(b.sak_id, !!b.alvorlig);
   }
 
+  // Gamle brev (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.2): en utløpt frist fra et
+  // brev over 45 dager gammelt er historikk — ingen «En frist har gått ut» og
+  // ingen rød «Frist utløpt»-chip. Fristens EGET brev avgjør (brev_id).
+  const idag = idagOslo();
+  const brevDatoPerId = new Map<string, string>();
+  const gammeltPerBrev = new Map<string, boolean>();
+  for (const b of brevData ?? []) {
+    const brevdato = (b.brevdato as string | null) ?? null;
+    brevDatoPerId.set(b.id, brevdato ?? b.opprettet.slice(0, 10));
+    gammeltPerBrev.set(b.id, erGammeltBrev(brevdato, b.opprettet, idag));
+  }
+  const fraGammeltBrev = (f: AapenFrist) =>
+    !!f.brev_id && (gammeltPerBrev.get(f.brev_id) ?? false);
+  const utlopte = frister.filter((f) => dagerTil(f.forfallsdato) < 0);
+
   // Tidligste åpne frist per sak (frister er allerede sortert på dato).
   const nesteFristPerSak = new Map<string, string>();
   for (const f of frister) {
@@ -161,7 +177,8 @@ export default async function HjemPage() {
   const ingress = hjemIngress({
     antallSaker: saker.length,
     antallAktive: aktiveSaker.length,
-    antallUtlopteFrister: frister.filter((f) => dagerTil(f.forfallsdato) < 0).length,
+    antallUtlopteFrister: utlopte.length,
+    antallUtlopteFraGamleBrev: utlopte.filter(fraGammeltBrev).length,
     sakerMedFristDenneUka: sakerDenneUka.size,
     toppVenter: topSak?.status === "venter_pa_svar",
   });
@@ -373,7 +390,14 @@ export default async function HjemPage() {
               {(topFrist || hjemHarOverGebyr) && (
                 <div className="mt-3.5 flex flex-wrap gap-1.5">
                   {topFrist &&
-                    (dagerTil(topFrist.forfallsdato) < 0 ? (
+                    (dagerTil(topFrist.forfallsdato) < 0 &&
+                    topFrist.brev_id &&
+                    fraGammeltBrev(topFrist) ? (
+                      <HeltChip variant="noytral">
+                        Brev fra{" "}
+                        {formaterTallDato(brevDatoPerId.get(topFrist.brev_id) ?? "")}
+                      </HeltChip>
+                    ) : dagerTil(topFrist.forfallsdato) < 0 ? (
                       <HeltChip variant="funn">Frist utløpt</HeltChip>
                     ) : (
                       <HeltChip variant="noytral">

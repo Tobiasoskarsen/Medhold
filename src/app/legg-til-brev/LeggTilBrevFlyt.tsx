@@ -12,6 +12,7 @@ import {
   BREVTYPER,
   STADIUM_ETIKETT,
   LOVBESTEMT_FRIST_DAGER,
+  beregnFrist,
   type BrevType,
 } from "@/lib/gjeld";
 import { formaterKortDato, formaterDato } from "@/lib/dato";
@@ -29,7 +30,9 @@ import { FORKLARING_DISCLAIMER } from "@/lib/brand";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { Veivalg } from "@/components/Veivalg";
 import { LeserBrev } from "./LeserBrev";
-import { sjekkKostnader } from "@/lib/gebyr";
+import { Bekreftelse } from "./Bekreftelse";
+import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
+import { kontrollerSum } from "@/lib/sumkontroll";
 import {
   analyserBrevTekst,
   analyserBrevBilder,
@@ -101,32 +104,70 @@ export function LeggTilBrevFlyt({
   const [kravForslag, setKravForslag] = useState<KravForslag | null>(null);
   const [fristForslag, setFristForslag] = useState<FristForslag[]>([]);
   const [fristAv, setFristAv] = useState<Record<number, boolean>>({});
-  // Den ENE fristen som er sammenlignet mot lovberegningen (§A.2) — vises som
-  // egen rad, atskilt fra fristForslag sine (urørte) øvrige eksplisitte
-  // frister.
-  const [fristSammenligning, setFristSammenligning] =
-    useState<FristSammenligning | null>(null);
+  // Den ENE eksplisitte fristen som sammenlignes mot lovberegningen (§A.2) —
+  // redigerbar i bekreftelseskortet («Frist i brevet»).
+  const [relevantEksplisitt, setRelevantEksplisitt] = useState<{
+    tittel: string;
+    forfallsdato: string;
+  } | null>(null);
   const [fristSammenligningAv, setFristSammenligningAv] = useState(false);
   const [alvorlig, setAlvorlig] = useState(false);
   const [stegAv, setStegAv] = useState<Record<number, boolean>>({});
   const [utfall, setUtfall] = useState<SakUtfall | "">("");
+  // Bekreftelseskortet (MEDHOLD_SIKKERHET_ARBEIDSORDRE §A.2): redigerbare
+  // kopier av det AI-en leste. Alt under beregnes fra disse, ikke fra analyse.
+  const [hovedstolTekst, setHovedstolTekst] = useState("");
+  const [linjer, setLinjer] = useState<Kostnadslinje[]>([]);
+  const [bekreftet, setBekreftet] = useState(false);
+  const [stemmerLikevel, setStemmerLikevel] = useState(false);
+
+  // Linjer uten beløp (en nylig lagt til, ikke utfylt «+ Legg til gebyr») teller ikke.
+  const gyldigeLinjer = useMemo(() => linjer.filter((l) => l.belop > 0), [linjer]);
 
   // Salærgrunnlaget er hovedstol når den finnes, ellers totalbeløpet — delt
   // mellom gebyrsjekk-beregningen og utregningsvisningen (Utregning), slik at
   // «Hovedstol i brevet»-raden alltid stemmer med det som faktisk ble lagt
   // til grunn.
   const hovedstolGrunnlag = useMemo(
-    () => tolkKr(analyse?.hovedstol) ?? tolkKr(belop),
-    [analyse, belop],
+    () => tolkKr(hovedstolTekst) ?? tolkKr(belop),
+    [hovedstolTekst, belop],
   );
 
-  // Gebyrsjekken beregnes reaktivt fra kostnadslinjene AI-en fant og de
-  // (redigerbare) verdiene i steg 3 — retter du beløpet, følger panelet med.
+  // Gebyrsjekken beregnes reaktivt fra de bekreftede verdiene — retter du et
+  // beløp i bekreftelseskortet, følger panelet med.
   const gebyrsjekk = useMemo(() => {
-    const linjer = analyse?.kostnadslinjer ?? [];
-    if (linjer.length === 0) return null;
-    return sjekkKostnader(linjer, hovedstolGrunnlag, brevdato || null);
-  }, [analyse, hovedstolGrunnlag, brevdato]);
+    if (gyldigeLinjer.length === 0) return null;
+    return sjekkKostnader(gyldigeLinjer, hovedstolGrunnlag, brevdato || null);
+  }, [gyldigeLinjer, hovedstolGrunnlag, brevdato]);
+
+  const sumkontroll = useMemo(
+    () => kontrollerSum(tolkKr(belop), tolkKr(hovedstolTekst), gyldigeLinjer),
+    [belop, hovedstolTekst, gyldigeLinjer],
+  );
+  // Lagring (og visning av funnene) krever bekreftelse — og ved sumavvik i
+  // tillegg «Det stemmer likevel». lagreBrev håndhever det samme på serveren.
+  const kanLagre =
+    bekreftet && (sumkontroll.status !== "avvik" || stemmerLikevel);
+
+  // Fristfunnet regnes på nytt fra den bekreftede datoen (§A.4): retter
+  // brukeren brevdatoen, brevtypen eller fristen, følger funnet med.
+  const fristSammenligning = useMemo<FristSammenligning | null>(() => {
+    const beregnet = brevtype && brevdato ? beregnFrist(brevtype, brevdato) : null;
+    return sammenlignFrist(
+      relevantEksplisitt,
+      beregnet ? { tittel: beregnet.tittel, forfallsdato: beregnet.forfallsdato } : null,
+    );
+  }, [brevtype, brevdato, relevantEksplisitt]);
+
+  // Hver retting i bekreftelseskortet nullstiller bekreftelsen — det som ble
+  // bekreftet, var tallene slik de sto da.
+  function rettet<T>(sett: (v: T) => void) {
+    return (v: T) => {
+      sett(v);
+      setBekreftet(false);
+      setStemmerLikevel(false);
+    };
+  }
 
   // Sum kr over lovlig sats — kun brukt i Veivalgs «betale»-resultattekst.
   const gebyrDifferanse = useMemo(
@@ -150,6 +191,10 @@ export function LeggTilBrevFlyt({
     setBrevtype(r.analyse.brevtype);
     setBrevdato(r.analyse.brevdato);
     setBelop(r.analyse.belop);
+    setHovedstolTekst(r.analyse.hovedstol);
+    setLinjer(r.analyse.kostnadslinjer);
+    setBekreftet(false);
+    setStemmerLikevel(false);
     setSaksnummer(r.analyse.saksnummer);
     // Forslag om eksisterende krav — aldri auto-valgt. Vises kun når vi ikke
     // allerede er på et bestemt krav (forvalgtKrav). Brukeren bekrefter selv.
@@ -164,12 +209,15 @@ export function LeggTilBrevFlyt({
     // første med en konkret dato (§A.2). Andre eksplisitte frister (annen
     // tittel) vises urørt som før.
     const relevantIndeks = eksplisitte.findIndex((f) => f.forfallsdato);
-    const relevantEksplisitt = relevantIndeks >= 0 ? eksplisitte[relevantIndeks] : null;
+    const relevant = relevantIndeks >= 0 ? eksplisitte[relevantIndeks] : null;
     const andreEksplisitte = eksplisitte.filter((_, i) => i !== relevantIndeks);
 
-    const sammenligning = sammenlignFrist(relevantEksplisitt, r.beregnetFrist);
-    setFristSammenligning(sammenligning);
-    setFristSammenligningAv(sammenligning !== null);
+    setRelevantEksplisitt(
+      relevant ? { tittel: relevant.tittel, forfallsdato: relevant.forfallsdato } : null,
+    );
+    // Fristen er forhåndsvalgt når det finnes en; sammenligningen selv er
+    // reaktiv (useMemo over).
+    setFristSammenligningAv(true);
 
     setFristForslag(andreEksplisitte);
     setFristAv(
@@ -228,7 +276,7 @@ export function LeggTilBrevFlyt({
   }
 
   async function lagre(destinasjon: "innsigelse" | "veier-ut" | "krav") {
-    if (!analyse) return;
+    if (!analyse || !kanLagre) return;
     setLagrer(true);
     setFeil(null);
 
@@ -262,10 +310,12 @@ export function LeggTilBrevFlyt({
       foreslatte_steg: valgteSteg,
       valgteFrister,
       utfall: valgtKravVenter && utfall ? utfall : null,
-      kostnadslinjer: analyse.kostnadslinjer,
-      hovedstol: tolkKr(analyse.hovedstol),
+      kostnadslinjer: gyldigeLinjer,
+      hovedstol: tolkKr(hovedstolTekst),
       fristfunn: fristSammenligning,
       alvorlig,
+      bekreftet: true,
+      sumStemmerLikevel: stemmerLikevel,
     };
 
     const r = await lagreBrev(input);
@@ -464,6 +514,28 @@ export function LeggTilBrevFlyt({
             Slik forstår vi brevet
           </h1>
 
+          <Bekreftelse
+            brevdato={brevdato}
+            onBrevdato={rettet(setBrevdato)}
+            belop={belop}
+            onBelop={rettet(setBelop)}
+            hovedstolTekst={hovedstolTekst}
+            onHovedstol={rettet(setHovedstolTekst)}
+            linjer={linjer}
+            onLinjer={rettet(setLinjer)}
+            fristIBrevet={relevantEksplisitt?.forfallsdato ?? ""}
+            onFristIBrevet={rettet((v: string) =>
+              setRelevantEksplisitt((f) =>
+                v ? { tittel: f?.tittel || "Betalingsfrist", forfallsdato: v } : null,
+              ),
+            )}
+            sumkontroll={sumkontroll}
+            bekreftet={bekreftet}
+            onBekreftet={setBekreftet}
+            stemmerLikevel={stemmerLikevel}
+            onStemmerLikevel={setStemmerLikevel}
+          />
+
           <div className="mt-4 rounded-2xl border-[0.5px] border-strek bg-flate p-4">
             <p className="whitespace-pre-line text-sm leading-relaxed text-blekk">
               {analyse.forklaring}
@@ -511,26 +583,6 @@ export function LeggTilBrevFlyt({
               </select>
             </label>
             <label className="block text-[13px] font-medium text-blekk">
-              Beløp (kr)
-              <input
-                type="text"
-                inputMode="numeric"
-                value={belop}
-                onChange={(e) => setBelop(e.target.value)}
-                placeholder="F.eks. 12480"
-                className={feltKlasse}
-              />
-            </label>
-            <label className="col-span-2 block text-[13px] font-medium text-blekk">
-              Brevdato
-              <input
-                type="date"
-                value={brevdato}
-                onChange={(e) => setBrevdato(e.target.value)}
-                className={feltKlasse}
-              />
-            </label>
-            <label className="col-span-2 block text-[13px] font-medium text-blekk">
               Saksnummer
               <input
                 type="text"
@@ -542,11 +594,17 @@ export function LeggTilBrevFlyt({
             </label>
           </div>
 
-          <Gebyrsjekk
-            resultat={gebyrsjekk}
-            hovedstol={hovedstolGrunnlag}
-            className="mt-5"
-          />
+          {kanLagre ? (
+            <Gebyrsjekk
+              resultat={gebyrsjekk}
+              hovedstol={hovedstolGrunnlag}
+              className="mt-5"
+            />
+          ) : (
+            <p className="mt-5 text-[13px] text-dempet">
+              Bekreft tallene over, så sjekker vi gebyrer og frister.
+            </p>
+          )}
 
           <div className="mt-5">
             <p className="text-[13px] font-medium text-blekk">Hører til</p>
@@ -650,13 +708,13 @@ export function LeggTilBrevFlyt({
             </div>
           )}
 
-          {(fristSammenligning || fristForslag.length > 0) && (
+          {((kanLagre && fristSammenligning) || fristForslag.length > 0) && (
             <div className="mt-5">
               <p className="text-[13px] font-medium text-blekk">
                 Foreslåtte frister
               </p>
               <div className="mt-2 flex flex-col gap-2">
-                {fristSammenligning &&
+                {kanLagre && fristSammenligning &&
                   (fristSammenligning.status === "avvik_kortere" ? (
                     <label className="flex items-start justify-between gap-3 rounded-xl border-[0.5px] border-dom-rod bg-dom-rod-bg px-3.5 py-2.5">
                       <span className="min-w-0">
@@ -755,6 +813,7 @@ export function LeggTilBrevFlyt({
 
           {feil && <p className="mt-4 text-[13px] text-dom-rod">{feil}</p>}
 
+          {kanLagre && (
           <div className="mt-6">
             <Veivalg
               harGebyrfunn={(gebyrsjekk?.antallOver ?? 0) > 0}
@@ -762,17 +821,17 @@ export function LeggTilBrevFlyt({
               svarMål={{
                 type: "klikk",
                 onKlikk: () => lagre("innsigelse"),
-                deaktivert: lagrer,
+                deaktivert: lagrer || !kanLagre,
               }}
               betaleMål={{
                 type: "klikk",
                 onKlikk: () => lagre("veier-ut"),
-                deaktivert: lagrer,
+                deaktivert: lagrer || !kanLagre,
               }}
               ekstra={
                 <button
                   type="button"
-                  disabled={lagrer}
+                  disabled={lagrer || !kanLagre}
                   onClick={() => lagre("krav")}
                   className="trykk mt-3 block text-[13px] text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk disabled:opacity-60"
                 >
@@ -781,6 +840,7 @@ export function LeggTilBrevFlyt({
               }
             />
           </div>
+          )}
         </m.div>
       )}
       </AnimatePresence>

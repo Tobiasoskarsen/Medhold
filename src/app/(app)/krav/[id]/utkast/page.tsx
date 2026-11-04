@@ -7,6 +7,7 @@ import { harPluss } from "@/lib/plan";
 import { UTKAST_TYPER, type UtkastType } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { beregnAvdrag, type AvdragsForslag } from "@/lib/avdrag";
+import { gebyrDifferanse, ubestridtDel } from "@/lib/utkast-prompt";
 import { UtkastFlyt } from "./UtkastFlyt";
 
 function erUtkastType(v: string | undefined): v is UtkastType {
@@ -42,7 +43,7 @@ export default async function UtkastPage({
   // Nyeste brev på kravet (grunnlag for utkastet), evt. det oppgitte.
   const { data: brevListe } = await supabase
     .from("brev")
-    .select("id, avsender, avsender_epost, brevdato, opprettet, gebyrsjekk")
+    .select("id, avsender, avsender_epost, brevdato, opprettet, gebyrsjekk, belop")
     .eq("sak_id", id)
     .order("brevdato", { ascending: false, nullsFirst: false })
     .order("opprettet", { ascending: false });
@@ -52,8 +53,12 @@ export default async function UtkastPage({
     brevListe?.[0] ||
     null;
 
-  const harOverGebyr =
-    ((brev?.gebyrsjekk as GebyrsjekkResultat | null)?.antallOver ?? 0) > 0;
+  const gs = (brev?.gebyrsjekk as GebyrsjekkResultat | null) ?? null;
+  const harOverGebyr = (gs?.antallOver ?? 0) > 0;
+  // Til «Hva er du uenig i?» og betalingsmerknaden (§D.1) — samme rene
+  // utregning som prompten bruker.
+  const gebyrDiff = gebyrDifferanse(gs);
+  const ubestridt = ubestridtDel(sak.belop_totalt ?? brev?.belop ?? null, gs);
 
   const starttype = erUtkastType(type) ? type : "innsigelse";
 
@@ -102,6 +107,8 @@ export default async function UtkastPage({
           saksnummer={sak.saksnummer ?? null}
           starttype={starttype}
           harOverGebyr={harOverGebyr}
+          gebyrDiff={gebyrDiff}
+          ubestridt={ubestridt}
           avdrag={avdrag}
           navnStart={navnStart}
         />

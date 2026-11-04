@@ -1,0 +1,16 @@
+{
+  "brev": "testbrev_13.pdf",
+  "verifisert": false,
+  "merknad": "PDF-en lå ikke i repoet da filen ble laget. Verdiene er hentet fra MEDHOLD_SIKKERHET_ARBEIDSORDRE (§0 og akseptansekriteriene), ikke fra PDF-ens tekstlag. Typen på 38-kronerslinjen er antatt. Saksnummer og avsender mangler. Sjekk mot PDF-en og sett verifisert: true.",
+  "brevtype": "inkassovarsel",
+  "brevdato": "2026-07-20",
+  "belop": 1288,
+  "hovedstol": 1250,
+  "kostnadslinjer": [{ "type": "inkassovarselgebyr", "belop": 38 }],
+  "fristIBrevet": "2026-07-27",
+  "saksnummer": null,
+  "avsender": null,
+  "forventetGebyrsjekk": ["innenfor"],
+  "forventetFristfunn": "avvik_kortere",
+  "forventetSum": "stemmer"
+}

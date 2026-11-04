@@ -12,6 +12,10 @@ export type HjemIngressInput = {
   antallAktive: number;
   /** Åpne frister på aktive saker som allerede er passert. */
   antallUtlopteFrister: number;
+  /** Av de utløpte: hvor mange som kommer fra et brev over 45 dager gammelt
+   *  (erGammeltBrev). De er historikk og utløser ikke regel 3
+   *  (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.2). */
+  antallUtlopteFraGamleBrev: number;
   /** Aktive saker med minst én åpen frist innen 0–7 dager. */
   sakerMedFristDenneUka: number;
   /** Hjem sin toppsak står i «venter på svar». */
@@ -27,7 +31,7 @@ export function hjemIngress(i: HjemIngressInput): string {
     return "Ingen aktive saker. Godt jobbet.";
   }
   if (i.antallSaker === 0) return "Ett brev om gangen. Vi tar det rolig.";
-  if (i.antallUtlopteFrister > 0) {
+  if (i.antallUtlopteFrister - i.antallUtlopteFraGamleBrev > 0) {
     return "En frist har gått ut. Se hva du kan gjøre.";
   }
   if (i.sakerMedFristDenneUka > 0) {

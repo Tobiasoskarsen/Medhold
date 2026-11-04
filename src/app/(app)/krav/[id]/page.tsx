@@ -21,7 +21,12 @@ import { Utregning } from "@/components/Utregning";
 import { HovedstolVarsel } from "@/components/HovedstolVarsel";
 import type { HovedstolAvvik } from "@/lib/hovedstol-konsistens";
 import { KravNavn, KravBelop } from "./KravHeader";
-import { formaterKortDato, formaterDato } from "@/lib/dato";
+import {
+  formaterKortDato,
+  formaterDato,
+  formaterDagManed,
+  idagOslo,
+} from "@/lib/dato";
 import {
   STADIUM_ETIKETT,
   stotterUtkast,
@@ -42,7 +47,12 @@ import {
   type SakUtfall,
 } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
-import type { FristSammenligning } from "@/lib/frist";
+import {
+  brevAlderDager,
+  erGammeltBrev,
+  type FristSammenligning,
+} from "@/lib/frist";
+import { GammeltBrevKort } from "./GammeltBrevKort";
 import { finnFraser } from "@/lib/tekstsok";
 import { ALVORLIGE_SIGNALER } from "@/lib/alvorsgrense";
 import {
@@ -251,7 +261,24 @@ export default async function KravDetaljPage({
     : null;
 
   // Fristfunn (§A.3): gebyrfunn har alltid forrang i rødnoten under beløpet.
-  const harFristfunn = sisteBrev?.fristfunn?.status === "avvik_kortere";
+  const harFristfunn =
+    sisteBrev?.fristfunn?.status === "avvik_kortere" &&
+    !!sisteBrev.fristfunn.beregnetDato;
+
+  // Gamle brev (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.2): er nyeste brev i en
+  // aktiv sak over 45 dager gammelt, er funnene historikk, og brukeren bes
+  // legge til det nyeste brevet.
+  const idag = idagOslo();
+  const sisteBrevGammelt =
+    sak.status === "aktiv" &&
+    !!sisteBrev &&
+    erGammeltBrev(sisteBrev.brevdato, sisteBrev.opprettet, idag);
+  const sisteBrevDato = sisteBrev
+    ? (sisteBrev.brevdato ?? sisteBrev.opprettet.slice(0, 10))
+    : null;
+  const fristBrevGammelt =
+    !!nesteFristBrev &&
+    erGammeltBrev(nesteFristBrev.brevdato, nesteFristBrev.opprettet, idag);
 
   // Navn: hovedkravet i overskriften, inkassoselskapet i eyebrow-en (når det
   // finnes en opprinnelig kreditor, er `kreditor` selve inkassoselskapet).
@@ -415,11 +442,16 @@ export default async function KravDetaljPage({
                     ? `/krav/${sak.id}/utkast?type=innsigelse`
                     : undefined
                 }
+                historisk={sisteBrevGammelt}
+                brevdato={sisteBrevDato}
               />
             )}
             {harFristfunn && sisteBrev?.fristfunn && (
               <DomMiniFrist
                 differanseDager={Math.abs(sisteBrev.fristfunn.differanseDager ?? 0)}
+                brevdato={sisteBrev.brevdato}
+                beregnetDato={sisteBrev.fristfunn.beregnetDato as string}
+                historisk={sisteBrevGammelt}
               />
             )}
           </div>
@@ -431,6 +463,7 @@ export default async function KravDetaljPage({
           <FristRad
             forfallsdato={nesteFrist.forfallsdato}
             tittel={nesteFrist.tittel}
+            gammeltBrev={fristBrevGammelt}
             className="mt-2.5"
           />
           {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
@@ -465,6 +498,20 @@ export default async function KravDetaljPage({
               Fristen står oppgitt i brevet.
             </p>
           ) : null}
+        </SekvensDel>
+      )}
+
+      {sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
+        <SekvensDel>
+          <GammeltBrevKort
+            brevId={sisteBrev.id}
+            kravId={sak.id}
+            datoTekst={formaterDagManed(sisteBrevDato)}
+            uker={Math.floor(
+              brevAlderDager(sisteBrev.brevdato, sisteBrev.opprettet, idag) / 7,
+            )}
+            className="mt-6"
+          />
         </SekvensDel>
       )}
 

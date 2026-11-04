@@ -3,11 +3,17 @@ import { type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { harPluss } from "@/lib/plan";
 import { AI_MODELL, UTKAST_STRØM_MARKØR as MARKØR } from "@/lib/ai";
-import { tellOrd } from "@/lib/format";
-import { finnForbudteOrd } from "@/lib/utkast-stemme";
 import { UTKAST_TYPER, type UtkastType } from "@/lib/types";
 import type { AvdragsForslag } from "@/lib/avdrag";
-import { byggUtkastPrompt, type UtkastMelding } from "../../(app)/krav/[id]/utkast/actions";
+import {
+  etterkontroll,
+  fjernStjerner,
+  rettemelding,
+  type Omfang,
+  type UtkastMelding,
+} from "@/lib/utkast-prompt";
+import { kontrollerUtkast, type VaktFunn } from "@/lib/utkast-vakt";
+import { byggUtkastPrompt } from "../../(app)/krav/[id]/utkast/actions";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel (samme mønster
 // som api/brev-samtale/route.ts).
@@ -17,13 +23,6 @@ export const maxDuration = 60;
 // (arbeidsordren antok én — se PROSJEKT_STATUS «Valg tatt underveis»). Denne
 // er en ny, romslig fornuftsgrense for et fritekstfelt ment å være kort.
 const DETALJER_MAKS_TEGN = 2000;
-
-function fjernStjerner(tekst: string): string {
-  return tekst
-    .replace(/^[ \t]*\*[ \t]+/gm, "")
-    .replace(/\*/g, "")
-    .trim();
-}
 
 function erAvdragsForslag(v: unknown): v is AvdragsForslag {
   if (!v || typeof v !== "object") return false;
@@ -49,6 +48,7 @@ export async function POST(req: NextRequest) {
     detaljer?: string;
     navn?: string;
     avdrag?: unknown;
+    omfang?: unknown;
   };
   try {
     body = await req.json();
@@ -62,6 +62,8 @@ export async function POST(req: NextRequest) {
   const detaljer = String(body.detaljer ?? "");
   const navn = String(body.navn ?? "");
   const avdrag = erAvdragsForslag(body.avdrag) ? body.avdrag : null;
+  const omfang: Omfang | null =
+    body.omfang === "delvis" || body.omfang === "helt" ? body.omfang : null;
 
   if (!kravId) return new Response("Mangler krav-id", { status: 400 });
   if (!(UTKAST_TYPER as readonly string[]).includes(type))
@@ -85,9 +87,10 @@ export async function POST(req: NextRequest) {
     detaljer,
     navn,
     avdrag,
+    omfang,
   );
   if ("feil" in prompt) return new Response(prompt.feil, { status: 404 });
-  const { system, meldinger } = prompt;
+  const { system, meldinger, vaktFakta } = prompt;
 
   const anthropic = new Anthropic();
   const encoder = new TextEncoder();
@@ -137,41 +140,32 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        // Etterkontroll: «AI tolker, kode beslutter» — også for stil. Treff på
-        // forbudslisten eller for langt utkast → ÉN regenerering (ikke en
-        // løkke, av kostnadshensyn), samme regel/rettemelding som dagens
-        // lagUtkast. Den ukontrollerte teksten vises IKKE som sluttresultat
-        // og lagres ALDRI (guardrail 2) — klienten toner den ned og venter
-        // på den nye strømmen (§B.3).
-        const treff = finnForbudteOrd(tekst);
-        const ordtall = tellOrd(tekst);
-        if (treff.length > 0 || ordtall > 300) {
-          const problemer: string[] = [];
-          if (treff.length > 0)
-            problemer.push(
-              `Disse ordene/frasene forekommer og MÅ bort: ${treff.join(", ")}.`,
-            );
-          if (ordtall > 300)
-            problemer.push(
-              `Brevet er ${ordtall} ord — for langt. Kort det ned til under 200 ord.`,
-            );
-          const rettemelding = `Utkastet ditt har feil:\n- ${problemer.join("\n- ")}\n\nSkriv HELE brevet på nytt med samme fakta, rettet. Kun brevteksten, ingen forklaring.`;
+        // Etterkontroll: «AI tolker, kode beslutter» — også for stil og
+        // fakta. Forbudte ord, for langt utkast og vaktfunn (§D.3) → ÉN
+        // regenerering med alle rettelsene (ikke en løkke, av
+        // kostnadshensyn), samme regel som lagUtkast. Den ukontrollerte
+        // teksten vises IKKE som sluttresultat og lagres ALDRI (guardrail 2)
+        // — klienten toner den ned og venter på den nye strømmen (§B.3).
+        const kontroll = etterkontroll(tekst, vaktFakta);
+        let advarsler: VaktFunn[] = kontroll.vaktFunn;
+        if (kontroll.problemer.length > 0) {
           const meldinger2: UtkastMelding[] = [
             ...meldinger,
             { role: "assistant", content: tekst },
-            { role: "user", content: rettemelding },
+            { role: "user", content: rettemelding(kontroll.problemer) },
           ];
 
           send(MARKØR.JUSTERER);
           const tekst2 = await strømOgSamle(meldinger2);
-          if (tekst2 !== null) {
-            const treff2 = finnForbudteOrd(tekst2);
-            if (treff2.length > 0) {
-              console.error(
-                `[utkast-generer] Forbudte ord slapp gjennom etter regenerering (type=${type}): ${treff2.join(", ")}`,
-              );
-            }
-            tekst = tekst2;
+          if (tekst2 !== null) tekst = tekst2;
+          // Vakten på nytt: det som står igjen er advarsler, aldri en sperre
+          // (guardrail 5). Brukeren ser dem i «Sjekk før du sender».
+          advarsler = kontrollerUtkast(tekst, vaktFakta);
+          if (advarsler.length > 0) {
+            console.error(
+              `[utkast-generer] Vaktfunn står igjen etter regenerering (type=${type}):`,
+              advarsler.map((a) => a.rettelinje),
+            );
           }
           // tekst2 === null: behold første forsøk (tekst) — samme «behold og
           // logg, ikke blokkér brukeren»-prinsipp som dagens lagUtkast bruker
@@ -205,7 +199,14 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        send(MARKØR.FERDIG + lagret.id);
+        // Sluttmarkøren bærer id, advarsler og vaktfaktaene klienten bruker
+        // til å kontrollere utkastet på nytt når brukeren redigerer (§D.4).
+        const slutt: { id: string; advarsler: VaktFunn[]; fakta: typeof vaktFakta } = {
+          id: lagret.id,
+          advarsler,
+          fakta: vaktFakta,
+        };
+        send(MARKØR.FERDIG + JSON.stringify(slutt));
       } finally {
         controller.close();
       }

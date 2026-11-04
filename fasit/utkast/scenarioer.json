@@ -1,0 +1,364 @@
+{
+  "_merknad": "Syntetiske saker (fiktive selskaper og personer) til scripts/fasit-utkast.ts. Fordeling etter MEDHOLD_SIKKERHET_ARBEIDSORDRE §E.4: 6 delvis innsigelse, 4 hele kravet, 4 nedbetaling, 3 utsettelse, 3 med egne påstander i detaljene.",
+  "scenarioer": [
+    {
+      "id": "delvis-1",
+      "kategori": "innsigelse_delvis",
+      "type": "innsigelse",
+      "omfang": "delvis",
+      "stadium": "betalingsoppfordring",
+      "navn": "Ola Nordmann",
+      "detaljer": "",
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Nordvik Inkasso AS på vegne av Fjordkraft Strøm AS. Saksnummer NI-2026-11872. Datert 14. oktober 2026.\nHovedstol: 2 400,00 kr\nInkassosalær: 800,00 kr\nÅ betale: 3 200,00 kr\nBetalingsfrist: 28. oktober 2026.",
+        "brevdato": "2026-10-14",
+        "fristdato": "2026-10-28",
+        "belopTotalt": 3200,
+        "hovedstol": 2400,
+        "kostnadslinjer": [{ "type": "salaer", "belop": 800, "tekst": "Inkassosalær 800,00 kr" }]
+      }
+    },
+    {
+      "id": "delvis-2",
+      "kategori": "innsigelse_delvis",
+      "type": "innsigelse",
+      "omfang": "delvis",
+      "stadium": "inkassovarsel",
+      "navn": "Kari Eksempel",
+      "detaljer": "purregebyret virker for høyt",
+      "brev": {
+        "tekst": "Inkassovarsel fra Bølgen Mobil AS. Fakturanummer 2026-004417. Datert 6. oktober 2026.\nUbetalt faktura: 1 250,00 kr\nPurregebyr: 70,00 kr\nInkassovarselgebyr: 38,00 kr\nÅ betale: 1 358,00 kr\nBetal innen 20. oktober 2026, ellers sendes saken til inkasso.",
+        "brevdato": "2026-10-06",
+        "fristdato": "2026-10-20",
+        "belopTotalt": 1358,
+        "hovedstol": 1250,
+        "kostnadslinjer": [
+          { "type": "purregebyr", "belop": 70, "tekst": "Purregebyr 70,00 kr" },
+          { "type": "inkassovarselgebyr", "belop": 38, "tekst": "Inkassovarselgebyr 38,00 kr" }
+        ]
+      }
+    },
+    {
+      "id": "delvis-3",
+      "kategori": "innsigelse_delvis",
+      "type": "innsigelse",
+      "omfang": "delvis",
+      "stadium": "betalingsoppfordring",
+      "navn": "Per Hansen",
+      "detaljer": "",
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Tindefoto AS. Kundenummer 88213, faktura 2026-1190. Datert 9. oktober 2026.\nHovedkrav: 5 600,00 kr\nBetalingsoppfordringsgebyr: 180,00 kr\nTotalt: 5 780,00 kr\nFrist: 23. oktober 2026.",
+        "brevdato": "2026-10-09",
+        "fristdato": "2026-10-23",
+        "belopTotalt": 5780,
+        "hovedstol": 5600,
+        "kostnadslinjer": [{ "type": "betalingsoppfordringsgebyr", "belop": 180, "tekst": "Betalingsoppfordringsgebyr 180,00 kr" }]
+      }
+    },
+    {
+      "id": "delvis-4",
+      "kategori": "innsigelse_delvis",
+      "type": "innsigelse",
+      "omfang": "delvis",
+      "stadium": "betalingsoppfordring",
+      "navn": "Lise Berg",
+      "detaljer": "jeg er enig i selve regningen fra tannlegen",
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Akersgata Inkasso AS på vegne av Smilet Tannklinikk AS. Saksnr. AI-2026-30455. Datert 12. oktober 2026.\nHovedstol: 8 000,00 kr\nInkassovarselgebyr: 38,00 kr\nInkassosalær: 1 900,00 kr\nÅ betale: 9 938,00 kr\nBetalingsfrist 26. oktober 2026.",
+        "brevdato": "2026-10-12",
+        "fristdato": "2026-10-26",
+        "belopTotalt": 9938,
+        "hovedstol": 8000,
+        "kostnadslinjer": [
+          { "type": "inkassovarselgebyr", "belop": 38, "tekst": "Inkassovarselgebyr 38,00 kr" },
+          { "type": "salaer", "belop": 1900, "tekst": "Inkassosalær 1 900,00 kr" }
+        ]
+      }
+    },
+    {
+      "id": "delvis-5",
+      "kategori": "innsigelse_delvis",
+      "type": "innsigelse",
+      "omfang": "delvis",
+      "stadium": "inkassovarsel",
+      "navn": "Ahmed Rahimi",
+      "detaljer": "",
+      "brev": {
+        "tekst": "Inkassovarsel fra Gløtt Strømmetjeneste AS. Kundenr. GS-77120. Datert 15. oktober 2026.\nUtestående: 890,50 kr\nInkassovarselgebyr: 65,00 kr\nÅ betale: 955,50 kr\nFrist: 29. oktober 2026.",
+        "brevdato": "2026-10-15",
+        "fristdato": "2026-10-29",
+        "belopTotalt": 955.5,
+        "hovedstol": 890.5,
+        "kostnadslinjer": [{ "type": "inkassovarselgebyr", "belop": 65, "tekst": "Inkassovarselgebyr 65,00 kr" }]
+      }
+    },
+    {
+      "id": "delvis-6",
+      "kategori": "innsigelse_delvis",
+      "type": "innsigelse",
+      "omfang": "delvis",
+      "stadium": "betalingsoppfordring",
+      "navn": "Mari Solheim",
+      "detaljer": "",
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Vestland Krav AS. Saksnummer VK-2026-6021. Datert 7. oktober 2026.\nHovedstol: 900,00 kr\nPurregebyr: 75,00 kr\nInkassosalær: 700,00 kr\nÅ betale: 1 675,00 kr\nBetalingsfrist: 21. oktober 2026.",
+        "brevdato": "2026-10-07",
+        "fristdato": "2026-10-21",
+        "belopTotalt": 1675,
+        "hovedstol": 900,
+        "kostnadslinjer": [
+          { "type": "purregebyr", "belop": 75, "tekst": "Purregebyr 75,00 kr" },
+          { "type": "salaer", "belop": 700, "tekst": "Inkassosalær 700,00 kr" }
+        ]
+      }
+    },
+    {
+      "id": "helt-1",
+      "kategori": "innsigelse_helt",
+      "type": "innsigelse",
+      "omfang": "helt",
+      "stadium": "inkassovarsel",
+      "navn": "Jonas Lie",
+      "detaljer": "jeg har aldri bestilt dette abonnementet",
+      "brev": {
+        "tekst": "Inkassovarsel fra Ukeblad Direkte AS. Kundenummer 451190. Datert 13. oktober 2026.\nAbonnement juli–september 2026: 1 497,00 kr\nInkassovarselgebyr: 38,00 kr\nÅ betale: 1 535,00 kr\nBetal innen 27. oktober 2026.",
+        "brevdato": "2026-10-13",
+        "fristdato": "2026-10-27",
+        "belopTotalt": 1535,
+        "hovedstol": 1497,
+        "kostnadslinjer": [{ "type": "inkassovarselgebyr", "belop": 38, "tekst": "Inkassovarselgebyr 38,00 kr" }]
+      }
+    },
+    {
+      "id": "helt-2",
+      "kategori": "innsigelse_helt",
+      "type": "innsigelse",
+      "omfang": "helt",
+      "stadium": "betalingsoppfordring",
+      "navn": "Nora Dahl",
+      "detaljer": "sa opp medlemskapet 30. juni 2026, har bekreftelse på e-post",
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Nordvik Inkasso AS på vegne av Spenst Trening AS. Saksnummer NI-2026-12904. Datert 8. oktober 2026.\nMedlemskap august–september 2026: 1 198,00 kr\nInkassovarselgebyr: 38,00 kr\nInkassosalær: 300,00 kr\nÅ betale: 1 536,00 kr\nFrist 22. oktober 2026.",
+        "brevdato": "2026-10-08",
+        "fristdato": "2026-10-22",
+        "belopTotalt": 1536,
+        "hovedstol": 1198,
+        "kostnadslinjer": [
+          { "type": "inkassovarselgebyr", "belop": 38, "tekst": "Inkassovarselgebyr 38,00 kr" },
+          { "type": "salaer", "belop": 300, "tekst": "Inkassosalær 300,00 kr" }
+        ]
+      }
+    },
+    {
+      "id": "helt-3",
+      "kategori": "innsigelse_helt",
+      "type": "innsigelse",
+      "omfang": "helt",
+      "stadium": "betalingsoppfordring",
+      "navn": "Erik Moe",
+      "detaljer": "jeg har aldri fått varen, pakken ble returnert til avsender",
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Akersgata Inkasso AS på vegne av Hyllevare Nett AS. Saksnr. AI-2026-31877. Datert 16. oktober 2026.\nOrdre 2026-55102: 2 349,00 kr\nPurregebyr: 70,00 kr\nInkassosalær: 375,00 kr\nÅ betale: 2 794,00 kr\nBetalingsfrist: 30. oktober 2026.",
+        "brevdato": "2026-10-16",
+        "fristdato": "2026-10-30",
+        "belopTotalt": 2794,
+        "hovedstol": 2349,
+        "kostnadslinjer": [
+          { "type": "purregebyr", "belop": 70, "tekst": "Purregebyr 70,00 kr" },
+          { "type": "salaer", "belop": 375, "tekst": "Inkassosalær 375,00 kr" }
+        ]
+      }
+    },
+    {
+      "id": "helt-4",
+      "kategori": "innsigelse_helt",
+      "type": "innsigelse",
+      "omfang": "helt",
+      "stadium": "inkassovarsel",
+      "navn": "Sofie Lund",
+      "detaljer": "kravet gjelder forrige leietaker, jeg flyttet inn 1. september 2026",
+      "brev": {
+        "tekst": "Inkassovarsel fra Elvia Kraftsalg AS. Målepunkt 707057500012345678. Datert 5. oktober 2026.\nStrøm august 2026: 1 842,60 kr\nInkassovarselgebyr: 38,00 kr\nÅ betale: 1 880,60 kr\nBetal innen 19. oktober 2026.",
+        "brevdato": "2026-10-05",
+        "fristdato": "2026-10-19",
+        "belopTotalt": 1880.6,
+        "hovedstol": 1842.6,
+        "kostnadslinjer": [{ "type": "inkassovarselgebyr", "belop": 38, "tekst": "Inkassovarselgebyr 38,00 kr" }]
+      }
+    },
+    {
+      "id": "nedbetaling-1",
+      "kategori": "nedbetaling",
+      "type": "nedbetalingsavtale",
+      "omfang": null,
+      "stadium": "betalingsoppfordring",
+      "navn": "Thomas Bakke",
+      "detaljer": "",
+      "manedsbelop": 600,
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Nordvik Inkasso AS. Saksnummer NI-2026-13310. Datert 19. oktober 2026.\nHovedstol: 4 200,00 kr\nInkassosalær: 600,00 kr\nÅ betale: 4 800,00 kr\nFrist: 2. november 2026.",
+        "brevdato": "2026-10-19",
+        "fristdato": "2026-11-02",
+        "belopTotalt": 4800,
+        "hovedstol": 4200,
+        "kostnadslinjer": [{ "type": "salaer", "belop": 600, "tekst": "Inkassosalær 600,00 kr" }]
+      }
+    },
+    {
+      "id": "nedbetaling-2",
+      "kategori": "nedbetaling",
+      "type": "nedbetalingsavtale",
+      "omfang": null,
+      "stadium": "betalingsoppfordring",
+      "navn": "Ingrid Haugen",
+      "detaljer": "jeg har nettopp mistet jobben",
+      "manedsbelop": 500,
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Vestland Krav AS på vegne av Pulsløft Treningssenter AS. Saksnummer VK-2026-6544. Datert 20. oktober 2026. Krav: 3 243,00 kr. Betalingsfrist 3. november 2026.",
+        "brevdato": "2026-10-20",
+        "fristdato": "2026-11-03",
+        "belopTotalt": 3243,
+        "hovedstol": null,
+        "kostnadslinjer": []
+      }
+    },
+    {
+      "id": "nedbetaling-3",
+      "kategori": "nedbetaling",
+      "type": "nedbetalingsavtale",
+      "omfang": null,
+      "stadium": "forliksrad",
+      "navn": "Kristian Vik",
+      "detaljer": "",
+      "manedsbelop": 1000,
+      "brev": {
+        "tekst": "Varsel om rettslig inndriving fra Akersgata Inkasso AS. Saksnr. AI-2026-29011. Datert 21. oktober 2026. Utestående krav: 12 480,00 kr. Betales kravet ikke innen 4. november 2026, sender vi forliksklage.",
+        "brevdato": "2026-10-21",
+        "fristdato": "2026-11-04",
+        "belopTotalt": 12480,
+        "hovedstol": null,
+        "kostnadslinjer": []
+      }
+    },
+    {
+      "id": "nedbetaling-4",
+      "kategori": "nedbetaling",
+      "type": "nedbetalingsavtale",
+      "omfang": null,
+      "stadium": "inkassovarsel",
+      "navn": "Hanne Strand",
+      "detaljer": "kan betale litt hver måned etter lønning",
+      "manedsbelop": 300,
+      "brev": {
+        "tekst": "Inkassovarsel fra Bølgen Mobil AS. Fakturanummer 2026-005512. Datert 22. oktober 2026.\nUbetalt: 2 112,00 kr\nInkassovarselgebyr: 38,00 kr\nÅ betale: 2 150,00 kr\nBetal innen 5. november 2026.",
+        "brevdato": "2026-10-22",
+        "fristdato": "2026-11-05",
+        "belopTotalt": 2150,
+        "hovedstol": 2112,
+        "kostnadslinjer": [{ "type": "inkassovarselgebyr", "belop": 38, "tekst": "Inkassovarselgebyr 38,00 kr" }]
+      }
+    },
+    {
+      "id": "utsettelse-1",
+      "kategori": "utsettelse",
+      "type": "betalingsutsettelse",
+      "omfang": null,
+      "stadium": "inkassovarsel",
+      "navn": "Martin Eide",
+      "detaljer": "får lønn 12. november, kan betale alt da",
+      "brev": {
+        "tekst": "Inkassovarsel fra Ukeblad Direkte AS. Kundenummer 459902. Datert 16. oktober 2026. Å betale: 1 535,00 kr. Betal innen 30. oktober 2026.",
+        "brevdato": "2026-10-16",
+        "fristdato": "2026-10-30",
+        "belopTotalt": 1535,
+        "hovedstol": null,
+        "kostnadslinjer": []
+      }
+    },
+    {
+      "id": "utsettelse-2",
+      "kategori": "utsettelse",
+      "type": "betalingsutsettelse",
+      "omfang": null,
+      "stadium": "betalingsoppfordring",
+      "navn": "Eva Lunde",
+      "detaljer": "venter på feriepenger, kan betale 20. november 2026",
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Nordvik Inkasso AS. Saksnummer NI-2026-13999. Datert 23. oktober 2026.\nHovedstol: 3 100,00 kr\nInkassosalær: 375,00 kr\nÅ betale: 3 475,00 kr\nFrist: 6. november 2026.",
+        "brevdato": "2026-10-23",
+        "fristdato": "2026-11-06",
+        "belopTotalt": 3475,
+        "hovedstol": 3100,
+        "kostnadslinjer": [{ "type": "salaer", "belop": 375, "tekst": "Inkassosalær 375,00 kr" }]
+      }
+    },
+    {
+      "id": "utsettelse-3",
+      "kategori": "utsettelse",
+      "type": "betalingsutsettelse",
+      "omfang": null,
+      "stadium": "inkassovarsel",
+      "navn": "Anders Holm",
+      "detaljer": "er sykmeldt og venter på sykepenger, kan betale hele beløpet 25. november",
+      "brev": {
+        "tekst": "Inkassovarsel fra Gløtt Strømmetjeneste AS. Kundenr. GS-80314. Datert 24. oktober 2026. Utestående: 799,00 kr. Inkassovarselgebyr: 38,00 kr. Å betale: 837,00 kr innen 7. november 2026.",
+        "brevdato": "2026-10-24",
+        "fristdato": "2026-11-07",
+        "belopTotalt": 837,
+        "hovedstol": 799,
+        "kostnadslinjer": [{ "type": "inkassovarselgebyr", "belop": 38, "tekst": "Inkassovarselgebyr 38,00 kr" }]
+      }
+    },
+    {
+      "id": "pastand-1",
+      "kategori": "egne_pastander",
+      "type": "innsigelse",
+      "omfang": "helt",
+      "stadium": "inkassovarsel",
+      "navn": "Camilla Røed",
+      "detaljer": "jeg har betalt fakturaen 3. september 2026 og har kvittering fra nettbanken",
+      "brev": {
+        "tekst": "Inkassovarsel fra Tindefoto AS. Faktura 2026-1244. Datert 14. oktober 2026.\nUbetalt faktura: 2 450,00 kr\nInkassovarselgebyr: 38,00 kr\nÅ betale: 2 488,00 kr\nBetal innen 28. oktober 2026.",
+        "brevdato": "2026-10-14",
+        "fristdato": "2026-10-28",
+        "belopTotalt": 2488,
+        "hovedstol": 2450,
+        "kostnadslinjer": [{ "type": "inkassovarselgebyr", "belop": 38, "tekst": "Inkassovarselgebyr 38,00 kr" }]
+      }
+    },
+    {
+      "id": "pastand-2",
+      "kategori": "egne_pastander",
+      "type": "innsigelse",
+      "omfang": "helt",
+      "stadium": "betalingsoppfordring",
+      "navn": "Vegard Nilsen",
+      "detaljer": "jeg klaget på jakken til butikken i juli fordi glidelåsen var ødelagt, og fikk aldri svar",
+      "brev": {
+        "tekst": "Betalingsoppfordring fra Vestland Krav AS på vegne av Turbutikken Nord AS. Saksnummer VK-2026-6702. Datert 17. oktober 2026.\nHovedstol: 1 999,00 kr\nInkassosalær: 300,00 kr\nÅ betale: 2 299,00 kr\nFrist: 31. oktober 2026.",
+        "brevdato": "2026-10-17",
+        "fristdato": "2026-10-31",
+        "belopTotalt": 2299,
+        "hovedstol": 1999,
+        "kostnadslinjer": [{ "type": "salaer", "belop": 300, "tekst": "Inkassosalær 300,00 kr" }]
+      }
+    },
+    {
+      "id": "pastand-3",
+      "kategori": "egne_pastander",
+      "type": "innsigelse",
+      "omfang": "helt",
+      "stadium": "inkassovarsel",
+      "navn": "Silje Aas",
+      "detaljer": "jeg sa opp abonnementet skriftlig 15. juni 2026 og har bekreftelse på e-post",
+      "brev": {
+        "tekst": "Inkassovarsel fra Bølgen Mobil AS. Fakturanummer 2026-006033. Datert 18. oktober 2026.\nAbonnement juli–september 2026: 897,00 kr\nInkassovarselgebyr: 38,00 kr\nÅ betale: 935,00 kr\nBetal innen 1. november 2026.",
+        "brevdato": "2026-10-18",
+        "fristdato": "2026-11-01",
+        "belopTotalt": 935,
+        "hovedstol": 897,
+        "kostnadslinjer": [{ "type": "inkassovarselgebyr", "belop": 38, "tekst": "Inkassovarselgebyr 38,00 kr" }]
+      }
+    }
+  ]
+}

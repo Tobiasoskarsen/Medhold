@@ -38,7 +38,101 @@ etter hver fase.
 | Komplett-ordre Del B | Illustrasjonsspråk: TomKonvolutt/RoligFigur/DokumentHake (egen ordre) | ✅ Ferdig |
 | Komplett-ordre Del C | Fullskjerm-Dom, åpnes fra DomMini (egen ordre) | ✅ Ferdig |
 | Retning B | Én skrift, ny B/C-palett, heltekort, radlister — hele appen (egen ordre) | ✅ Ferdig |
+| Sikkerhet | Bekreftelse av lesingen, sumkontroll, satsenes sluttdato, gamle brev, utkast-vakter, fasitsett (egen ordre) | ✅ Ferdig i kode (PDF-ene til fasiten mangler, UI ikke sett i nettleser) |
 | Hjem-forenkling | MEDHOLD_HJEM_FORENKLING_ARBEIDSORDRE — aldri sendt | ⏭️ Erstattet av Retning B |
+
+---
+
+## MEDHOLD_SIKKERHET_ARBEIDSORDRE — feil skal oppdages før de koster noe (ferdig i kode)
+
+Utløst av testbrev 13: «Å betale 1 288,00 kr» ble lagret som 289 kr uten at noe
+fanget det. Ingen nye avhengigheter, ingen migrasjoner, ingen DB-endringer.
+All ny vurdering ligger i rene, testede funksjoner.
+
+**Del A — lesingen.**
+- `src/lib/sumkontroll.ts`: `kontrollerSum` (±1 kr).
+- `src/app/legg-til-brev/Bekreftelse.tsx` ligger øverst i steg 3, med redigerbare rader for brevdato, «Å betale», hovedstol, hver kostnadslinje («Fjern», «+ Legg til gebyr») og «Frist i brevet». Under radene står sumlinjen, og ved avvik det røde kortet med «Det stemmer likevel». Bekreftelsen er «Ja, dette stemmer med brevet».
+- Gebyrsjekk, fristfunn-raden og Veivalg, der lagre-knappene sitter, vises først når brukeren har bekreftet, og ved avvik også krysset av for «stemmer likevel». Før det står «Bekreft tallene over, så sjekker vi gebyrer og frister.»
+- Gebyrsjekk, hovedstolgrunnlag og fristfunn regnes reaktivt fra de redigerte verdiene (`useMemo`). `beregnFrist` kjøres nå på klienten.
+- `lagreBrev` avviser input uten `bekreftet: true`, og ved sumavvik også uten `sumStemmerLikevel`. Et bekreftet avvik lagres som `gebyrsjekk.sumkontroll`.
+- Brevdato og beløp er flyttet fra skjemafeltene til kortet. Avsender, e-post, brevtype og saksnummer står under, som før.
+
+**Del B — satsene.**
+- `Satsversjon.gyldigTil` er lagt til (2026: `2026-12-31`).
+- `satserForDato` gir `null` utenfor alle versjoner. Ved `null` dato brukes `idagOslo()`.
+- `sjekkKostnader` setter `satserMangler` og gir «ukjent» på alle linjer når ingen versjon dekker datoen. Uten brevdato bruker den dagens satser og setter `brevdatoAntatt`.
+- `KOSTNADSTYPE_ETIKETT` er flyttet hit fra Gebyrsjekk.tsx.
+- `/satser` viser «Gjelder {fra} – {til}», og en egen melding når årets satser mangler.
+
+**Del C — fristfunn og gamle brev.**
+- Ny tekst i `DomMiniFrist` med props `brevdato`/`beregnetDato`, oppdatert på begge kallestedene.
+- `erGammeltBrev`/`brevAlderDager` (`frist.ts`, >45 dager) styrer fire ting:
+  - `GammeltBrevKort` over Veivalg på saken.
+  - Dempede funnkort (`historisk`), med « · fra 20.7.».
+  - `FristRad` med nøytral «Utløpt 27.7.».
+  - Hjem, der `hjemIngress` får `antallUtlopteFraGamleBrev` og chipen blir «Brev fra {dato}».
+
+**Del D — utkastene.**
+- `src/lib/utkast-vakt.ts` har seks vakter: beløp, dato, token, paragraf, påstand og omfang, og kilder for «Sjekk før du sender».
+- Promptbyggingen er flyttet til den rene `src/lib/utkast-prompt.ts`: `byggPrompt`, `gjeldendeOmfang`, `ubestridtDel`, `etterkontroll` og `genererUtkast`. `byggUtkastPrompt` i `utkast/actions.ts` henter nå bare fakta og kaller denne.
+- Delvis innsigelse:
+  - Spørsmålet «Hva er du uenig i?» med «Bare gebyret» forhåndsvalgt.
+  - Egen fakta- og regeltekst, og delvis-brevet som eneste eksempel.
+  - Merknaden om å betale den ubestridte delen.
+- Vaktfunnene går inn i den ene regenereringen sammen med forbudte ord og lengde. Funn som står igjen, blir `advarsler`.
+- Streaming-ruten sender `{ id, advarsler, fakta }` som JSON etter FERDIG-markøren. Klienten kjører vakten på nytt ved blur.
+
+**Del E — fasitsettet.**
+- `fasit/` (README, `forventet/13.json`, `utkast/scenarioer.json`, `rapport.md`).
+- `src/lib/fasit.test.ts` (i `npm test`).
+- `src/lib/brevanalyse.ts`: analysekjernen skilt ut fra `legg-til-brev/actions.ts`, uten Next-kontekst.
+- `scripts/fasit-lesing.ts` og `scripts/fasit-utkast.ts`.
+
+**Resultat.**
+- `npm run build`, `npm run lint` og `npm test` er grønne (**211 tester**, 52 nye).
+- Utkast-fasiten (20 scenarioer, ekte API) ga **20/20 uten advarsler** etter to promptrettinger, se under.
+- Lesefasiten har ikke lest noe, se «Gjenstår».
+
+### Gjenstår
+
+1. **Testbrev-PDF-ene finnes ikke i repoet** eller på maskinen (søkt i repoet og `~/Downloads`).
+   - `fasit/forventet/` har bare `13.json`, fylt ut fra tallene som står i ordren (1 250 + 38 = 1 288, datert 20.7., frist 27.7.). Den er merket `verifisert: false`, og typen på 38-kronerslinjen er antatt.
+   - Legg `testbrev_1.pdf … testbrev_31.pdf` i `fasit/brev/`. Fyll ut `forventet/NN.json` fra tekstlaget (`pdftotext -layout`) og kjør `node --env-file=.env.local scripts/fasit-lesing.ts`.
+   - `fasit/rapport.md` sier nå «Lest: 0».
+2. **Filer Tobias skal kontrollere mot PDF-ene:** `forventet/02.json`, `06.json`, `13.json`, `18.json` og `27.json`. Bare 13 finnes ennå. De fire andre må lages når PDF-ene er på plass.
+3. **UI-et er ikke sett i nettleseren denne økten.**
+   - Preview-verktøyet starter dev-serveren fra en annen sjekk-ut (`magical-villani`, uten Supabase-variabler), ikke fra denne worktreen.
+   - Bekreftelseskortet, de dempede funnkortene, `GammeltBrevKort` og «Sjekk før du sender» er dekket av typesjekk, build og enhetstester av logikken, men ikke visuelt.
+
+### Årlig satsoppdatering
+
+Hver desember, før 1. januar:
+1. Hent nye satser fra Finanstilsynets oversikt over utenrettslige inndrivingskostnader. URL-en står i `FINANSTILSYNET_URL` i `src/lib/gebyr.ts`.
+2. Legg inn en **ny** `Satsversjon` i `SATSVERSJONER` med `gyldigFra` (1. januar), `gyldigTil` (31. desember) og `kilde`. Eksisterende versjoner redigeres aldri.
+3. Kjør `npm test`. Legg gjerne til en test i `gebyr.test.ts` for det nye året.
+4. Skriv datoen for oppdateringen her: *2026-satsene verifisert 2026-07-15. 2027 er ikke lagt inn.*
+
+Til det er gjort, sier appen «Satsene for {år} er ikke lagt inn ennå» og «ukjent» for nye brev. Det er riktig oppførsel og ingen feil. Testen «satserForDato(null) bruker dagens dato» holder også etter nyttår, siden den sammenligner med `satserForDato(idagOslo())`.
+
+### Valg tatt underveis
+
+1. **Påstandsvakten ble utvidet med bøyninger og «bevis»/«e-post».**
+   - `finnFraser` bruker ordgrenser, så «oppsigelse» traff ikke «oppsigelsen». Fraselistene har fått de vanligste bøyningene (oppsigelsen, kvitteringen, dokumentasjonen, reklamasjonen, innbetalte).
+   - Dokumentasjonsgruppen godtar også `bevis`, `epost` og `e-post` i detaljene. Referansebrev 1 («har eposten som bevis» → «e-postbekreftelse på») ga ellers et funn med sine egne fakta.
+2. **`VaktFunn` har ett felt mer enn ordren:** `rettelinje` (til modellen) i tillegg til `tekst` (til brukeren). Typen har også `"token"`. Ordren hadde en tokenvakt, men ingen funntype for den.
+3. **`VaktFakta.kilder`** er lagt til for kildeetikettene i «Sjekk før du sender». Dagens dato får etiketten «dagens dato», en femte kilde etter de fire i ordren.
+4. **Datoer uten år i brevet** («Betal innen 24. juli») lagres som `0000-07-24` og godtar ethvert år i utkastet.
+5. **Årstall ignoreres** bare når tallet står uten tusenskille og uten «kr» rundt, så et oppdiktet «2 050 kr» fortsatt fanges.
+6. **Retting i bekreftelseskortet nullstiller bekreftelsen**, så det som er bekreftet alltid er tallene slik de står. Kortet står rett under tittelen, over AI-forklaringen («øverst»).
+7. **Gebyrsjekk-objekt uten linjer:** et bekreftet sumavvik på et brev uten kostnadslinjer lagres som `gebyrsjekk` med tomme linjer pluss `sumkontroll`, siden ordren sier «i det eksisterende jsonb-objektet». Alle visninger hopper allerede over et resultat uten linjer.
+8. **Gamle brev på Hjem** avgjøres av fristens *eget* brev (`frister.brev_id`), ikke av sakens nyeste brev. Det er samme brev som `FristRad` på saken bruker. Frister uten brev regnes aldri som gamle.
+9. **`DomMiniFrist` regner `{gitt}`** som (brevdato → lovens frist) minus differansen. Det er det samme som brevdato → brevets frist, men bruker bare de to propsene ordren nevner.
+10. **Analysekjernen** (`brevanalyse.ts`) bruker relative `.ts`-importer, så fasitskriptet kan kjøre den direkte med Node. Det samme gjelder `utkast-prompt.ts`.
+11. **To promptrettinger fra utkast-fasiten**, begge i prompten og ikke i vaktene, som ordren krever:
+    - «Emne:»-linjen sto i 20 av 20 utkast fordi eksempelsvarene hadde den. Den fjernes nå fra eksemplene. Feilen fantes også før denne ordren.
+    - Ny regel: modellen skal ikke nevne kvittering, dokumentasjon eller bekreftelse uten at personen har skrevet det, og ber om dokumentasjon med «Send meg avtalen kravet bygger på». Før dette ga helt-1 et funn på «Finner dere ingen dokumentasjon på en bestilling fra meg».
+    - Påstandsvakten skiller ikke mellom «jeg har dokumentasjon» og «dere må dokumentere». Det er en kjent grense ved fraselisten.
+12. **Utkast-fasiten bruker fast «i dag» = 2026-11-04**, så rapporten kan gjenskapes.
 
 ---
 
@@ -2240,6 +2334,36 @@ Samlet liste over påstander/tekster som bør sees av advokat før bred lanserin
   Medhold slutter å hjelpe direkte og henviser videre. Samme for Hjem sin
   «Alvorlig varsel — søk hjelp». Se også «Valg tatt underveis» punkt 4 om at
   Advokatvakten sin lenke-URL ikke ble gitt i ordren og bør verifiseres.
+- **Ny fristfunn-tekst** (`DomMiniFrist`, MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.1),
+  erstatter «Loven gir deg minst {N} dager til.»: «Brevet ga deg {gitt} dager.
+  Loven krever minst 14. Kravet blir ikke ugyldig av det, men kreditor kunne
+  tidligst gå videre {dato}. Har de lagt til kostnader før det, kan du be om
+  at de fjernes.» — påstanden om at kostnader lagt til før den lovlige datoen
+  kan kreves fjernet, bør sjekkes.
+- **Gamle brev** (§C.2): «Dette brevet er fra {dato}» / «Det er {uker} uker
+  siden. Har du fått nye brev om saken? Legg til det nyeste, så blir
+  vurderingen riktig.» / «Legg til nyere brev» / «Nei, dette er det nyeste»,
+  og pillen «Utløpt {dato}» og Hjem-chipen «Brev fra {dato}».
+- **Omfang i innsigelsen** (§D.1): «Hva er du uenig i?» / «Bare gebyret som er
+  for høyt ({kr} kr)» / «Hele kravet», og merknadene «Husk å betale {kr} kr
+  innen fristen. Da kommer det ikke nye kostnader på den delen.» og «Er du bare
+  uenig i en del av kravet, bør du betale resten innen fristen.» — den første
+  er et råd om å betale, med en påstand om at det hindrer nye kostnader.
+- **Promptregelen for delvis innsigelse** (`src/lib/utkast-prompt.ts`): «Brevet
+  bestrider KUN {diff} kr … Skriv at personen betaler den ubestridte delen på
+  {kr} kr, og be om et korrigert krav. Skriv ALDRI at personen ikke betaler
+  kravet.» — styrer hva hvert delvis utkast lover på personens vegne.
+- **«Sjekk før du sender»** (§D.4): advarslene («{kr} kr finnes ikke i brevet
+  ditt. Sjekk beløpet.», «Utkastet viser til en paragraf …», «Utkastet sier at
+  du {har betalt}, men det har du ikke skrevet …», «Utkastet bestrider hele
+  kravet, men du valgte bare gebyret …»), kildeetikettene og «Du sender brevet
+  selv, så les det gjennom før du sender.»
+- **Bekreftelseskortet** (§A.2): «Tallene går ikke opp … Sjekk beløpene mot
+  brevet.» og «Det stemmer likevel (for eksempel delbetaling eller renter som
+  ikke står oppført)».
+- **Satser mangler** (§B.1): «Satsene for {år} er ikke lagt inn ennå, så vi kan
+  ikke vurdere gebyrene.», «Brevet har ingen dato. Vi har brukt satsene som
+  gjelder i dag.» og `/satser`-meldingen når årets satser mangler.
 
 ---
 

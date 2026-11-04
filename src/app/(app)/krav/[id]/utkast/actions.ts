@@ -6,143 +6,31 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { harPluss } from "@/lib/plan";
 import { type UtkastType } from "@/lib/types";
-import { gebyrFunnTekst, type GebyrsjekkResultat } from "@/lib/gebyr";
+import type { GebyrsjekkResultat, Kostnadslinje } from "@/lib/gebyr";
 import type { AvdragsForslag } from "@/lib/avdrag";
-import { AI_MODELL } from "@/lib/ai";
-import { tellOrd } from "@/lib/format";
+import { idagOslo } from "@/lib/dato";
 import {
-  TONEREGLER,
-  REFERANSEBREV,
-  REFERANSEBREV_TILLEGG,
-  MOTEKSEMPEL,
-  finnForbudteOrd,
-} from "@/lib/utkast-stemme";
-
-function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
-}
-
-/**
- * Sikkerhetsnett mot markdown i et brev som limes inn som ren tekst. Fjerner
- * stjerne-punktlister i linjestart og alle gjenværende stjerner (fet/kursiv).
- * Brev på norsk inneholder praktisk talt aldri legitime stjerner.
- */
-function fjernStjerner(tekst: string): string {
-  return tekst
-    .replace(/^[ \t]*\*[ \t]+/gm, "")
-    .replace(/\*/g, "")
-    .trim();
-}
+  byggPrompt,
+  genererUtkast,
+  gjeldendeOmfang,
+  ubestridtDel,
+  type Omfang,
+  type UtkastMelding,
+} from "@/lib/utkast-prompt";
+import { byggVaktFakta, type VaktFakta, type VaktFunn } from "@/lib/utkast-vakt";
 
 export type UtkastResultat =
-  | { ok: true; id: string; innhold: string }
+  | { ok: true; id: string; innhold: string; advarsler: VaktFunn[] }
   | { ok: false; feil?: string; paywall?: boolean };
 
-const FORMÅL: Record<UtkastType, string> = {
-  innsigelse:
-    "en innsigelse der personen bestrider kravet helt eller delvis",
-  betalingsutsettelse:
-    "en høflig forespørsel om betalingsutsettelse til en konkret dato, uten å bestride kravet",
-  nedbetalingsavtale:
-    "et forslag om nedbetalingsavtale med konkret månedsbeløp og varighet, uten å bestride kravet",
-  klage: "en klage på vedtaket/kravet",
-};
-
-type FewShot = { bruker: string; svar: string };
-
-// Synteiske «bruker»-turer som pares med de ekte referansebrevene (eid av
-// utkast-stemme.ts — ingen duplisering av selve brevteksten her, kun
-// saksbeskrivelsene som danner konteksten svarene ble skrevet i). Sendes som
-// ekte user/assistant-turer (few-shot) siden det viste seg å kondisjonere
-// stilen langt bedre enn å bare beskrive den i systemprompten.
-const FS_BESTRID_HELT: FewShot = {
-  bruker: `Brevet det svares på:
-
-Betalingsoppfordring fra Pulsløft Treningssenter AS. Saksnummer FK-2026-88213. Datert 12. juli 2026. Krever 3 243,20 kr for medlemskap januar–mars 2026.
-
-Det personen selv oppgir: sa opp i november, har eposten som bevis
-
-Navnet mitt: Kari Eksempel`,
-  svar: REFERANSEBREV.innsigelse,
-};
-
-const FS_BESTRID_DELVIS: FewShot = {
-  bruker: `Brevet det svares på:
-
-Betalingsoppfordring. Saksnummer KY-2026-3341. Datert 13. juli 2026. Hovedkrav 2 400 kr. Inkassosalær 800 kr.
-
-Fakta fra Medhold: Inkassosalæret på 800 kr overstiger lovlig maksimalsats. Høyeste tillatte salær for et krav i denne størrelsen er 750 kr.
-
-Personen har ikke oppgitt utfyllende detaljer.
-
-Navnet mitt: Kari Eksempel`,
-  svar: REFERANSEBREV_TILLEGG.innsigelseDelvis,
-};
-
-const FS_NEDBETALING: FewShot = {
-  bruker: `Brevet det svares på:
-
-Betalingsoppfordring. Saksnummer FK-2026-88213. Datert 12. juli 2026. Krav 3 243,20 kr.
-
-Fakta fra Medhold: Nedbetalingsforslag: 500 kr per måned i 7 måneder (siste avdrag 243,20 kr).
-
-Personen har ikke oppgitt utfyllende detaljer.
-
-Navnet mitt: Kari Eksempel`,
-  svar: REFERANSEBREV.nedbetalingsavtale,
-};
-
-const FS_UTSETTELSE: FewShot = {
-  bruker: `Brevet det svares på:
-
-Inkassovarsel. Saksnummer AG-2026-04471. Datert 10. juli 2026. Betalingsfrist 24. juli 2026.
-
-Det personen selv oppgir: får lønn 15.
-
-Navnet mitt: Kari Eksempel`,
-  svar: REFERANSEBREV.betalingsutsettelse,
-};
-
-// Klage gjenbruker bestrid-helt-eksempelet som stilreferanse (§2 — ingen
-// egen mal denne runden).
-const EKSEMPLER: Record<UtkastType, FewShot[]> = {
-  innsigelse: [FS_BESTRID_HELT, FS_BESTRID_DELVIS],
-  betalingsutsettelse: [FS_UTSETTELSE],
-  nedbetalingsavtale: [FS_NEDBETALING],
-  klage: [FS_BESTRID_HELT],
-};
-
-// Meldingsformen brukt overalt i denne filen — smalere enn
-// `Anthropic.MessageParam` (som også tillater "system"-rolle og content-
-// blokker), siden alt her alltid er plain user/assistant-tekst.
-export type UtkastMelding = { role: "user" | "assistant"; content: string };
-
-async function genererTekst(
-  anthropic: Anthropic,
-  system: string,
-  meldinger: UtkastMelding[],
-): Promise<string | null> {
-  const svar = await anthropic.messages.create({
-    model: AI_MODELL,
-    max_tokens: 1500,
-    thinking: { type: "disabled" },
-    system,
-    messages: meldinger,
-  });
-  const blokk = svar.content.find((b) => b.type === "text");
-  if (!blokk || blokk.type !== "text") return null;
-  return fjernStjerner(blokk.text);
-}
-
 /**
- * Bygger system-prompt og few-shot-meldinger for et utkast — ren utrekking av
- * det som lå inline i `lagUtkast` (referansebrev-valg, gebyrFunnTekst,
- * navnehåndtering, MOTEKSEMPEL osv.), samme innhold/regler, ingen adferds-
- * endring. Brukes av BÅDE `lagUtkast` og streaming-ruten
- * (`api/utkast-generer/route.ts`) — ingen duplisering av selve prompten.
- * `supabase` er en allerede autentisert klient (RLS sikrer eierskap på
- * brev/sak-oppslagene); kalleren gjør sin egen auth-/paywall-/nøkkel-sjekk
- * FØR denne kalles.
+ * Henter sakens fakta (brev, gebyrsjekk, stadium, frist) og bygger prompten
+ * og vaktfaktaene for et utkast. Selve prompten bygges av den rene
+ * `byggPrompt` (lib/utkast-prompt.ts), så fasit-skriptet bruker nøyaktig
+ * samme tekst. Brukes av BÅDE `lagUtkast` og streaming-ruten
+ * (`api/utkast-generer/route.ts`). `supabase` er en allerede autentisert
+ * klient (RLS sikrer eierskap på brev/sak-oppslagene); kalleren gjør sin egen
+ * auth-/paywall-/nøkkel-sjekk FØR denne kalles.
  */
 export async function byggUtkastPrompt(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -152,112 +40,86 @@ export async function byggUtkastPrompt(
   detaljer: string,
   navn: string,
   avdrag?: AvdragsForslag | null,
+  omfangValgt?: Omfang | null,
 ): Promise<
-  | { system: string; meldinger: UtkastMelding[] }
+  | { system: string; meldinger: UtkastMelding[]; vaktFakta: VaktFakta }
   | { feil: string }
 > {
   // Hent brevet det svares på (RLS sikrer eierskap).
-  let original = "";
-  let gebyrFakta = "";
+  let brev: {
+    original_tekst: string | null;
+    gebyrsjekk: unknown;
+    brevdato: string | null;
+    belop: number | null;
+    belop_hovedstol: number | null;
+    kostnadslinjer: unknown;
+  } | null = null;
+  let fristdato: string | null = null;
   if (brevId) {
-    const { data: brev } = await supabase
-      .from("brev")
-      .select("original_tekst, gebyrsjekk")
-      .eq("id", brevId)
-      .maybeSingle();
-    original = brev?.original_tekst ?? "";
-    // Kun «over»-funn sendes til prompten (kode beslutter, ikke AI). mulig_over
-    // og ukjent holdes utenfor — konservativt.
-    const gs = (brev?.gebyrsjekk as GebyrsjekkResultat | null) ?? null;
-    if (gs && gs.antallOver > 0) gebyrFakta = gebyrFunnTekst(gs);
+    const [{ data: b }, { data: frister }] = await Promise.all([
+      supabase
+        .from("brev")
+        .select(
+          "original_tekst, gebyrsjekk, brevdato, belop, belop_hovedstol, kostnadslinjer",
+        )
+        .eq("id", brevId)
+        .maybeSingle(),
+      supabase
+        .from("frister")
+        .select("forfallsdato")
+        .eq("brev_id", brevId)
+        .order("forfallsdato", { ascending: true })
+        .limit(1),
+    ]);
+    brev = b;
+    fristdato = (frister?.[0]?.forfallsdato as string | undefined) ?? null;
   }
+  const gs = (brev?.gebyrsjekk as GebyrsjekkResultat | null) ?? null;
 
-  // Stadium avgjør om nedbetalingsforslaget svarer på rettslig inndriving
-  // (forliksråd/namsmann) — kode beslutter hvilket mønster som gjelder, ikke AI.
   // Eksplisitt eierskapssjekk (utover RLS): finnes ikke saken, avbryt her —
   // samme feil-union brukes av streaming-ruten (§B.2) til å svare 404/feil
   // FØR noe AI-kall gjøres.
   const { data: sak } = await supabase
     .from("saker")
-    .select("stadium")
+    .select("stadium, belop_totalt")
     .eq("id", sakId)
     .maybeSingle();
   if (!sak) return { feil: "Fant ikke saken." };
-  const rettslig =
-    sak.stadium === "forliksrad" || sak.stadium === "namsmann";
 
-  const detalj = detaljer.trim();
-  const navnTrimmet = navn.trim();
+  // Kode beslutter omfanget: «delvis» krever et gebyrfunn (§D.1).
+  const omfang = gjeldendeOmfang(type, gs, omfangValgt);
+  const belopTotalt =
+    (sak.belop_totalt as number | null) ?? brev?.belop ?? null;
+  const avdragForType = type === "nedbetalingsavtale" ? (avdrag ?? null) : null;
 
-  const gebyrRegel = gebyrFakta
-    ? `
-- Appen har gjort en automatisk kontroll mot inkassoforskriftens maksimalsatser (se «Fakta fra Medhold» under). Du KAN vise til at det aktuelle beløpet overstiger den lovlige maksimalsatsen etter inkassoforskriften, men oppgi ALDRI paragrafnummer, og hold tonen rolig og saklig — ikke skjerp den.`
-    : "";
+  const { system, meldinger } = byggPrompt({
+    type,
+    originalTekst: brev?.original_tekst ?? "",
+    gebyrsjekk: gs,
+    stadium: (sak.stadium as string | null) ?? null,
+    belopTotalt,
+    detaljer,
+    navn,
+    avdrag: avdragForType,
+    omfang,
+  });
 
-  // Avdragsforslag fra koden (Veier ut → avdragshjelperen). Kun for
-  // nedbetalingsavtale, og kun tallene — ingen begrunnelse legges til.
-  const avdragFakta =
-    type === "nedbetalingsavtale" && avdrag && avdrag.antallMandeder > 0
-      ? `Nedbetalingsforslag: ${kr(avdrag.manedsbelop)} kr per måned i ${avdrag.antallMandeder} måneder (siste avdrag ${kr(avdrag.sisteAvdrag)} kr).`
-      : "";
-  const avtaleRegel =
-    type === "nedbetalingsavtale"
-      ? `
-- Dette er et FORSLAG om nedbetalingsavtale, ikke en bestridelse av kravet. Bruk avdragsforslaget fra «Fakta fra Medhold» ORDRETT (nøyaktig månedsbeløp, antall måneder og siste avdrag). Hold en verdig, saklig tone — ingen bønnfallelse, og ikke oppgi grunner personen ikke selv har skrevet.`
-      : "";
-  const rettsligRegel =
-    type === "nedbetalingsavtale" && rettslig
-      ? `
-- Saken er i stadiet «${sak.stadium}» — rettslig inndriving er varslet eller igangsatt. Brevet MÅ inneholde disse tre punktene, som en kort strekliste: (1) be om skriftlig bekreftelse på om nedbetalingsplanen godtas, (2) be om at forliksklage og videre inndriving settes på vent mens forslaget vurderes, (3) be om at det ikke legges til nye omkostninger i denne perioden. Følg mønsteret i «Fasit ved rettslig varsel» under — fyll inn sakens egne verdier for {}-feltene, ta ALDRI med selve klammeparentesene i svaret.
+  const vaktFakta = byggVaktFakta({
+    originalTekst: brev?.original_tekst ?? null,
+    belopTotalt,
+    belopHovedstol: brev?.belop_hovedstol ?? null,
+    kostnadslinjer: (brev?.kostnadslinjer as Kostnadslinje[] | null) ?? [],
+    gebyrsjekk: gs,
+    ubestridt: omfang === "delvis" ? ubestridtDel(belopTotalt, gs) : null,
+    avdrag: avdragForType,
+    detaljer,
+    brevdato: brev?.brevdato ?? null,
+    fristdato,
+    idag: idagOslo(),
+    omfang,
+  });
 
-Fasit ved rettslig varsel (mønster, ikke ordrett tekst):
-
-${REFERANSEBREV_TILLEGG.nedbetalingRettslig}`
-      : "";
-  const navnRegel = navnTrimmet
-    ? `
-- Avslutt brevet med «Vennlig hilsen» og deretter navnelinjen «${navnTrimmet}» nøyaktig — aldri et annet eller oppdiktet navn.`
-    : `
-- Avslutt brevet med kun «Vennlig hilsen», uten navnelinje under (ikke oppgitt navn — finn aldri på et).`;
-
-  const system = `Du skriver et utkast til ${FORMÅL[type]} på vegne av en privatperson som har fått et brev om gjeld/inkasso.
-
-${TONEREGLER}
-
-${MOTEKSEMPEL}
-
-Ufravikelige regler:
-- Skriv KUN ren tekst, klar til å limes rett inn i en e-post. INGEN markdown: ingen stjerner (*), ingen fet skrift, ingen overskrifter (#). Bruk vanlig bindestrek (-) for korte handlingslister, aldri stjerner.
-- Bruk KUN fakta fra brevet, det personen selv oppgir, og fakta fra Medhold når det er oppgitt. Finn ALDRI opp beløp, datoer, paragrafer, navn eller omstendigheter.
-- Nevn ikke forhold personen ikke har oppgitt. Er noe uklart, hold det generelt fremfor å gjette.
-- Ikke gi garantier om utfallet. Ikke lat som du er advokat.${gebyrRegel}${avtaleRegel}${rettsligRegel}${navnRegel}
-- IKKE ta med emnelinjen (linjen som starter med «Emne:») i svaret ditt, selv om referansebrevene har den — appen bygger emnelinjen selv. Start rett på «Hei,».
-- Skriv kun selve brevteksten (ingen forklaring rundt, ingen «her er utkastet»).
-- Eksemplene i samtalen viser ønsket tone, lengde og struktur. Navn, beløp, datoer og saksnumre i eksemplene er kun illustrasjon — bruk alltid sakens faktiske verdier, aldri eksemplenes.`;
-
-  const bruker = [
-    original ? `Brevet det svares på:\n\n${original}` : null,
-    gebyrFakta ? `Fakta fra Medhold: ${gebyrFakta}` : null,
-    avdragFakta ? `Fakta fra Medhold: ${avdragFakta}` : null,
-    detalj
-      ? `Det personen selv oppgir: ${detalj}`
-      : "Personen har ikke oppgitt utfyllende detaljer.",
-    navnTrimmet ? `Navnet mitt: ${navnTrimmet}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-
-  const fewShotMeldinger: UtkastMelding[] = EKSEMPLER[type].flatMap((ex) => [
-    { role: "user" as const, content: ex.bruker },
-    { role: "assistant" as const, content: ex.svar },
-  ]);
-
-  const meldinger: UtkastMelding[] = [
-    ...fewShotMeldinger,
-    { role: "user" as const, content: bruker },
-  ];
-
-  return { system, meldinger };
+  return { system, meldinger, vaktFakta };
 }
 
 export async function lagUtkast(
@@ -267,6 +129,7 @@ export async function lagUtkast(
   detaljer: string,
   navn: string,
   avdrag?: AvdragsForslag | null,
+  omfang?: Omfang | null,
 ): Promise<UtkastResultat> {
   const supabase = await createClient();
   const {
@@ -288,50 +151,28 @@ export async function lagUtkast(
     detaljer,
     navn,
     avdrag,
+    omfang,
   );
   if ("feil" in prompt) return { ok: false, feil: prompt.feil };
-  const { system, meldinger } = prompt;
 
+  // Etterkontroll: «AI tolker, kode beslutter» — også for stil og fakta.
+  // Forbudte ord, lengde og vaktfunn → ÉN regenerering (ikke en løkke, av
+  // kostnadshensyn). Det som fortsatt står igjen, logges og vises som
+  // advarsel — utkastet blokkeres aldri (guardrail 5).
   let innhold: string;
+  let advarsler: VaktFunn[];
   try {
-    const anthropic = new Anthropic();
-    let tekst = await genererTekst(anthropic, system, meldinger);
-    if (tekst === null)
+    const r = await genererUtkast(new Anthropic(), prompt, prompt.vaktFakta);
+    if (r === null)
       return { ok: false, feil: "Fikk ikke et brukbart utkast. Prøv igjen." };
-
-    // Etterkontroll: «AI tolker, kode beslutter» — også for stil. Treff på
-    // forbudslisten eller for langt utkast → ÉN regenerering (ikke en løkke,
-    // av kostnadshensyn). Fortsatt treff etterpå → behold og logg, ikke blokkér.
-    const treff = finnForbudteOrd(tekst);
-    const ordtall = tellOrd(tekst);
-    if (treff.length > 0 || ordtall > 300) {
-      const problemer: string[] = [];
-      if (treff.length > 0)
-        problemer.push(
-          `Disse ordene/frasene forekommer og MÅ bort: ${treff.join(", ")}.`,
-        );
-      if (ordtall > 300)
-        problemer.push(
-          `Brevet er ${ordtall} ord — for langt. Kort det ned til under 200 ord.`,
-        );
-      const rettemelding = `Utkastet ditt har feil:\n- ${problemer.join("\n- ")}\n\nSkriv HELE brevet på nytt med samme fakta, rettet. Kun brevteksten, ingen forklaring.`;
-      const meldinger2 = [
-        ...meldinger,
-        { role: "assistant" as const, content: tekst },
-        { role: "user" as const, content: rettemelding },
-      ];
-      const tekst2 = await genererTekst(anthropic, system, meldinger2);
-      if (tekst2 !== null) {
-        const treff2 = finnForbudteOrd(tekst2);
-        if (treff2.length > 0) {
-          console.error(
-            `[lagUtkast] Forbudte ord slapp gjennom etter regenerering (type=${type}): ${treff2.join(", ")}`,
-          );
-        }
-        tekst = tekst2;
-      }
+    innhold = r.tekst;
+    advarsler = r.advarsler;
+    if (r.regenerert && advarsler.length > 0) {
+      console.error(
+        `[lagUtkast] Vaktfunn står igjen etter regenerering (type=${type}):`,
+        advarsler.map((a) => a.rettelinje),
+      );
     }
-    innhold = tekst;
   } catch (e) {
     console.error("[lagUtkast] AI-generering feilet:", e);
     return { ok: false, feil: "Noe gikk galt. Prøv igjen om litt." };
@@ -367,7 +208,7 @@ export async function lagUtkast(
   }
 
   revalidatePath(`/krav/${sakId}`);
-  return { ok: true, id: lagret.id, innhold };
+  return { ok: true, id: lagret.id, innhold, advarsler };
 }
 
 /**
