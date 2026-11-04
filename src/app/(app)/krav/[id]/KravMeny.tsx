@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MoreHorizontal, Check, Trash2 } from "lucide-react";
 import { Bunnark } from "@/components/ui/Bunnark";
+import { HoldKnapp } from "@/components/ui/HoldKnapp";
 import { slettKrav } from "../actions";
 import { UtfallVelger } from "./UtfallVelger";
 
@@ -15,6 +16,7 @@ const RAD =
 export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
   const [åpen, setÅpen] = useState(false);
   const [modus, setModus] = useState<"meny" | "utfall" | "slett">("meny");
+  const skjema = useRef<HTMLFormElement | null>(null);
 
   function apne() {
     setModus("meny");
@@ -74,17 +76,22 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
         )}
 
         {modus === "slett" && (
-          <form action={slettKrav} className="flex flex-col gap-2 px-1">
+          <form ref={skjema} action={slettKrav} className="flex flex-col gap-2 px-1">
             <input type="hidden" name="id" value={kravId} />
             <p className="text-[13.5px] text-dempet">
               Kravet, brevene og utkastene slettes. Dette kan ikke angres.
             </p>
-            <button
-              type="submit"
-              className="trykk mt-2 w-full rounded-[16px] border-[1.5px] border-dom-rod bg-dom-rod-bg px-4 py-[15px] text-[15px] font-bold text-dom-rod"
-            >
-              Ja, slett kravet
-            </button>
+            {/* Hold inne for å slette (HoldKnapp) — et uhell-trykk i arket
+                kan ikke slette en sak. Fullført hold sender skjemaet. */}
+            <div className="mt-2">
+              <HoldKnapp
+                holdTime={1500}
+                doneLabel="Sletter …"
+                onHold={() => skjema.current?.requestSubmit()}
+              >
+                Hold for å slette kravet
+              </HoldKnapp>
+            </div>
             <button
               type="button"
               onClick={() => setModus("meny")}

@@ -1,0 +1,307 @@
+/* HoldKnapp — basert på HoldButton fra React Bits (reactbits.dev). Tilpasset
+   Medhold: fet skrift og 52 px høyde som Primærknapp, full bredde-variant, og
+   en hint-linje som fader inn ved et vanlig trykk. */
+.hold-button {
+  --hb-radius: 16px;
+  --hb-bg: var(--dom-rod-bg);
+  --hb-fill: var(--dom-rod);
+  --hb-text: var(--dom-rod);
+  --hb-fill-text: var(--bakgrunn);
+  --hb-hold: 2000ms;
+  --hb-release: 200ms;
+  --hb-press: 0.98;
+  --hb-wave: 4px;
+  --hb-w: 0px;
+  --hb-h: 0px;
+  --hb-cycles: 2;
+  --hb-p: 0;
+  --hb-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --hb-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--hb-fill) 35%, transparent);
+  --hb-glow:
+    inset 0 0 0 1.5px color-mix(in srgb, var(--hb-fill) 35%, transparent),
+    0 10px 32px -6px color-mix(in srgb, var(--hb-fill) 70%, transparent);
+
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  isolation: isolate;
+  margin: 0;
+  border: 0;
+  border-radius: var(--hb-radius);
+  background: var(--hb-bg);
+  color: var(--hb-text);
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  box-shadow: var(--hb-shadow);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    transform 160ms var(--hb-ease-out),
+    background-color 160ms ease,
+    box-shadow var(--hb-release) var(--hb-ease-out);
+}
+
+.hold-button--full {
+  width: 100%;
+}
+
+.hold-button--sm {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+.hold-button--md {
+  height: 44px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+
+.hold-button--lg {
+  height: 52px;
+  padding: 0 24px;
+  font-size: 15px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hold-button:not(:disabled):hover {
+    background: color-mix(in srgb, var(--hb-fill) 8%, var(--hb-bg));
+  }
+}
+
+.hold-button[data-phase="holding"][data-input="pointer"] {
+  transform: scale(var(--hb-press));
+}
+
+.hold-button[data-glow="true"][data-phase="holding"],
+.hold-button[data-glow="true"][data-phase="done"] {
+  box-shadow: var(--hb-glow);
+}
+
+.hold-button[data-glow="true"][data-phase="holding"] {
+  transition:
+    transform 160ms var(--hb-ease-out),
+    background-color 160ms ease,
+    box-shadow var(--hb-hold) linear;
+}
+
+.hold-button:focus-visible {
+  outline: 2px solid var(--hb-fill);
+  outline-offset: 3px;
+}
+
+.hold-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+.hold-button__pulse {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--hb-radius);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.hold-button[data-glow="true"][data-phase="done"] .hold-button__pulse {
+  animation: hb-pulse 600ms var(--hb-ease-out) forwards;
+}
+
+@keyframes hb-pulse {
+  from {
+    opacity: 1;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--hb-fill) 55%, transparent);
+  }
+  to {
+    opacity: 0;
+    box-shadow: 0 0 0 14px color-mix(in srgb, var(--hb-fill) 0%, transparent);
+  }
+}
+
+.hold-button__label {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+}
+
+.hold-button__label > span {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition:
+    opacity 200ms ease,
+    filter 200ms ease;
+}
+
+.hold-button__icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.hold-button__icon > svg {
+  display: block;
+}
+
+.hold-button__done {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.hold-button[data-phase="done"] .hold-button__idle {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.hold-button[data-phase="done"] .hold-button__done {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.hold-button__clip {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  clip-path: inset(0 round var(--hb-radius));
+  pointer-events: none;
+}
+
+.hold-button__fill {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--hb-fill);
+  color: var(--hb-fill-text);
+  clip-path: inset(
+    0 calc((1 - var(--hb-p)) * (100% + 0.75 * var(--hb-wave)) - var(--hb-p) * 0.25 * var(--hb-wave)) 0 0
+  );
+}
+
+.hold-button[data-direction="up"] .hold-button__fill {
+  clip-path: inset(
+    calc((1 - var(--hb-p)) * (100% + 0.75 * var(--hb-wave)) - var(--hb-p) * 0.25 * var(--hb-wave)) 0 0 0
+  );
+}
+
+.hold-button__crest {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--hb-fill);
+  color: var(--hb-fill-text);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='200' viewBox='0 0 20 200' preserveAspectRatio='none'%3E%3Cpath d='M0 0H10C18 8 18 25.3 10 33.3S2 58.7 10 66.7S18 92 10 100S2 125.3 10 133.3S18 158.7 10 166.7S2 192 10 200H0Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='200' viewBox='0 0 20 200' preserveAspectRatio='none'%3E%3Cpath d='M0 0H10C18 8 18 25.3 10 33.3S2 58.7 10 66.7S18 92 10 100S2 125.3 10 133.3S18 158.7 10 166.7S2 192 10 200H0Z'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: repeat-y;
+  mask-repeat: repeat-y;
+  -webkit-mask-size: var(--hb-wave) calc(var(--hb-h) * 2);
+  mask-size: var(--hb-wave) calc(var(--hb-h) * 2);
+  -webkit-mask-position-x: calc(-1 * var(--hb-wave) + var(--hb-p) * (var(--hb-w) + var(--hb-wave)));
+  mask-position-x: calc(-1 * var(--hb-wave) + var(--hb-p) * (var(--hb-w) + var(--hb-wave)));
+  -webkit-mask-position-y: calc(-1 * var(--hb-p) * var(--hb-cycles) * var(--hb-h));
+  mask-position-y: calc(-1 * var(--hb-p) * var(--hb-cycles) * var(--hb-h));
+}
+
+.hold-button[data-direction="up"] .hold-button__crest {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='20' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M0 20V10C12 2 38 2 50 10S88 18 100 10S138 2 150 10S188 18 200 10V20Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='20' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M0 20V10C12 2 38 2 50 10S88 18 100 10S138 2 150 10S188 18 200 10V20Z'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+  -webkit-mask-size: calc(var(--hb-w) * 2) var(--hb-wave);
+  mask-size: calc(var(--hb-w) * 2) var(--hb-wave);
+  -webkit-mask-position-x: calc(-1 * var(--hb-p) * var(--hb-cycles) * var(--hb-w));
+  mask-position-x: calc(-1 * var(--hb-p) * var(--hb-cycles) * var(--hb-w));
+  -webkit-mask-position-y: calc(var(--hb-h) - var(--hb-p) * (var(--hb-h) + var(--hb-wave)));
+  mask-position-y: calc(var(--hb-h) - var(--hb-p) * (var(--hb-h) + var(--hb-wave)));
+}
+
+.hold-button__label--fill {
+  z-index: auto;
+}
+
+.hold-button__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hold-button__hint {
+  min-height: 1.2em;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition:
+    opacity var(--bevegelse-normal) var(--bevegelse-easing),
+    transform var(--bevegelse-normal) var(--bevegelse-easing);
+}
+
+.hold-button__hint[data-vis] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-contrast: more) {
+  .hold-button {
+    outline: 1px solid var(--hb-text);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hold-button {
+    transition:
+      background-color 160ms ease,
+      box-shadow var(--hb-release) ease;
+    transform: none !important;
+  }
+
+  .hold-button__fill,
+  .hold-button[data-direction="up"] .hold-button__fill {
+    clip-path: inset(0);
+    opacity: 0;
+    transition: opacity var(--hb-release) ease;
+  }
+
+  .hold-button__crest {
+    display: none;
+  }
+
+  .hold-button[data-phase="holding"] .hold-button__fill,
+  .hold-button[data-phase="done"] .hold-button__fill {
+    opacity: 1;
+    transition: opacity var(--hb-hold) linear;
+  }
+
+  /* globals.css setter alle transitions til 0,01 ms ved redusert bevegelse.
+     Her ER overgangen selve tilbakemeldingen på at holdet pågår (en rolig
+     opasitetsfade i stedet for bølgen), så den må få hele holdetiden. */
+  .hold-button[data-phase="holding"] .hold-button__fill {
+    transition-duration: var(--hb-hold) !important;
+  }
+
+  .hold-button__pulse {
+    animation: none !important;
+  }
+
+  .hold-button__label > span {
+    transition: opacity 200ms ease;
+    filter: none !important;
+  }
+
+  .hold-button__hint {
+    transform: none;
+  }
+}
