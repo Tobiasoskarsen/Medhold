@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { m, useReducedMotion } from "motion/react";
 import { Copy, Check, Mail, Loader2 } from "lucide-react";
-import { Primærknapp } from "@/components/ui";
+import { Kort, Primærknapp } from "@/components/ui";
+import {
+  kontrollerUtkast,
+  verdierMedKilde,
+  type VaktFakta,
+} from "@/lib/utkast-vakt";
+import { kr } from "@/lib/gebyrfunn-visning";
 import { haptikk } from "@/lib/haptikk";
 import { VARIGHET } from "@/lib/bevegelse";
 import { UTKAST_STRØM_MARKØR } from "@/lib/ai";
@@ -28,6 +34,8 @@ const MAKS_MARKØR_LEN = Math.max(
 
 const GENERISK_FEIL = "Noe gikk galt. Prøv igjen om litt.";
 
+type Omfang = "delvis" | "helt";
+
 export function UtkastFlyt({
   sakId,
   brevId,
@@ -37,6 +45,8 @@ export function UtkastFlyt({
   saksnummer,
   starttype,
   harOverGebyr,
+  gebyrDiff,
+  ubestridt,
   avdrag,
   navnStart,
 }: {
@@ -48,6 +58,10 @@ export function UtkastFlyt({
   saksnummer: string | null;
   starttype: UtkastType;
   harOverGebyr: boolean;
+  /** Sum kr over lovlig sats i brevet (0 = ingen gebyrfunn). */
+  gebyrDiff: number;
+  /** Totalen minus gebyrDiff; null når totalen er ukjent eller ingen funn. */
+  ubestridt: number | null;
   avdrag?: AvdragsForslag | null;
   navnStart: string;
 }) {
@@ -55,6 +69,25 @@ export function UtkastFlyt({
   const [type, setType] = useState<UtkastType>(starttype);
   const [detaljer, setDetaljer] = useState("");
   const [navn, setNavn] = useState(navnStart);
+  // «Hva er du uenig i?» (§D.1): kun for innsigelse med gebyrfunn, og da er
+  // «bare gebyret» forhåndsvalgt. Uten gebyrfunn er omfanget alltid «helt».
+  const [omfangValg, setOmfangValg] = useState<Omfang>("delvis");
+  const visOmfang = type === "innsigelse" && gebyrDiff > 0;
+  const omfang: Omfang = visOmfang ? omfangValg : "helt";
+  // Omfanget utkastet faktisk ble laget med (til betalingsmerknaden).
+  const [omfangBrukt, setOmfangBrukt] = useState<Omfang | null>(null);
+
+  // «Sjekk før du sender» (§D.4): vaktfaktaene kommer fra serveren sammen med
+  // utkastet; vakten kjøres på nytt her når brukeren har redigert (ved blur).
+  const [vaktFakta, setVaktFakta] = useState<VaktFakta | null>(null);
+  const [kontrollTekst, setKontrollTekst] = useState("");
+  const sjekk = useMemo(() => {
+    if (!vaktFakta) return null;
+    return {
+      advarsler: kontrollerUtkast(kontrollTekst, vaktFakta),
+      verdier: verdierMedKilde(kontrollTekst, vaktFakta),
+    };
+  }, [kontrollTekst, vaktFakta]);
 
   // "skjema": skjemaet vises, «Lag utkast»-knappen kan trykkes.
   // "strømmer": brevet skrives frem live, feltet er skrivebeskyttet.
@@ -89,14 +122,19 @@ export function UtkastFlyt({
     // ett steg (§B.3: «deretter erstattes teksten fortløpende»), i stedet for
     // å tømmes brått idet markøren mottas.
     let ventendeErstatning = false;
+    // Speiler `tekst` lokalt, så sluttkontrollen får hele teksten uten å
+    // vente på en re-render.
+    let samlet = "";
     function leggTilTekst(biter: string) {
       if (!biter) return;
       tilStrømmevisning();
       if (ventendeErstatning) {
         ventendeErstatning = false;
         setJusterer(false);
+        samlet = biter;
         setTekst(biter);
       } else {
+        samlet += biter;
         setTekst((t) => t + biter);
       }
     }
@@ -112,6 +150,7 @@ export function UtkastFlyt({
           detaljer,
           navn,
           avdrag: type === "nedbetalingsavtale" ? avdrag : null,
+          omfang: type === "innsigelse" ? omfang : null,
         }),
       });
 
@@ -200,7 +239,19 @@ export function UtkastFlyt({
         return;
       }
 
-      setUtkastId(ferdigId);
+      // Sluttmarkøren bærer { id, advarsler, fakta } som JSON (route.ts).
+      let slutt: { id: string; fakta: VaktFakta | null };
+      try {
+        const p = JSON.parse(ferdigId) as { id: string; fakta?: VaktFakta };
+        slutt = { id: p.id, fakta: p.fakta ?? null };
+      } catch {
+        slutt = { id: ferdigId, fakta: null };
+      }
+      setUtkastId(slutt.id);
+      setVaktFakta(slutt.fakta);
+      // Siste tekst fra strømmen — samme tekst serveren kontrollerte.
+      setKontrollTekst(samlet);
+      setOmfangBrukt(type === "innsigelse" ? omfang : null);
       setFase("ferdig");
       haptikk("suksess");
     } catch {
@@ -307,6 +358,38 @@ export function UtkastFlyt({
             ))}
           </div>
 
+          {visOmfang && (
+            <fieldset className="mt-5">
+              <legend className="text-[13px] font-medium text-blekk">
+                Hva er du uenig i?
+              </legend>
+              <div className="mt-1.5 flex flex-col gap-2">
+                {(
+                  [
+                    ["delvis", `Bare gebyret som er for høyt (${kr(gebyrDiff)} kr)`],
+                    ["helt", "Hele kravet"],
+                  ] as const
+                ).map(([verdi, etikett]) => (
+                  <label
+                    key={verdi}
+                    className={`flex items-center gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm text-blekk transition ${
+                      omfangValg === verdi ? "border-aksent bg-aksent/5" : "border-strek"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="omfang"
+                      checked={omfangValg === verdi}
+                      onChange={() => setOmfangValg(verdi)}
+                      className="accent-aksent"
+                    />
+                    {etikett}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
           <label className="mt-5 block text-[13px] font-medium text-blekk">
             {UTKAST_SPORSMAL[type]}
             <textarea
@@ -354,6 +437,7 @@ export function UtkastFlyt({
             <textarea
               value={tekst}
               onChange={(e) => setTekst(e.target.value)}
+              onBlur={() => setKontrollTekst(tekst)}
               rows={16}
               className="w-full resize-none rounded-[14px] border border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
             />
@@ -387,6 +471,58 @@ export function UtkastFlyt({
                 Les gjennom og endre det som trengs — så sender du det selv
                 {avsender ? ` til ${avsender}` : ""}.
               </p>
+
+              {omfangBrukt === "delvis" && ubestridt !== null && (
+                <Kort className="mt-4">
+                  <p className="text-[13.5px] text-blekk">
+                    Husk å betale {kr(ubestridt)} kr innen fristen. Da kommer
+                    det ikke nye kostnader på den delen.
+                  </p>
+                </Kort>
+              )}
+              {omfangBrukt === "helt" && (
+                <Kort className="mt-4">
+                  <p className="text-[13.5px] text-blekk">
+                    Er du bare uenig i en del av kravet, bør du betale resten
+                    innen fristen.
+                  </p>
+                </Kort>
+              )}
+
+              {sjekk && (
+                <Kort className="mt-4">
+                  <h2 className="seksjonstittel text-blekk">Sjekk før du sender</h2>
+                  {sjekk.advarsler.length > 0 && (
+                    <ul className="mt-2 flex flex-col gap-1">
+                      {sjekk.advarsler.map((a, i) => (
+                        <li key={i} className="text-[13px] font-semibold text-dom-rod">
+                          {a.tekst}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {sjekk.verdier.length > 0 && (
+                    <ul className="mt-2">
+                      {sjekk.verdier.map((v) => (
+                        <li
+                          key={`${v.type}-${v.verdi}`}
+                          className="flex items-baseline justify-between gap-3 border-t-[0.5px] border-strek py-2 text-[13px] first:border-t-0"
+                        >
+                          <span className="font-bold tabular-nums text-blekk">
+                            {v.verdi}
+                          </span>
+                          <span className={v.kilde ? "text-dempet" : "text-dom-rod"}>
+                            {v.kilde ?? "finnes ikke i saken"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-2 text-[12px] text-dempet">
+                    Du sender brevet selv, så les det gjennom før du sender.
+                  </p>
+                </Kort>
+              )}
 
               <div className="mt-4">
                 {forLangtForMailto ? (

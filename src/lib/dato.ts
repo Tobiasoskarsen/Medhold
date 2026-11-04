@@ -30,6 +30,24 @@ export function formaterKortDato(iso: string): string {
   });
 }
 
+const MANEDSNAVN = [
+  "januar", "februar", "mars", "april", "mai", "juni",
+  "juli", "august", "september", "oktober", "november", "desember",
+];
+
+/** «20. juli» — dag og full måned, uten år. Leses rett fra ISO-strengen
+ * (ingen Date-tolkning, så tidssonen kan ikke flytte dagen). */
+export function formaterDagManed(iso: string): string {
+  const [, mnd, dag] = iso.slice(0, 10).split("-").map(Number);
+  return `${dag}. ${MANEDSNAVN[mnd - 1]}`;
+}
+
+/** «20.7.» — kort talldato uten år. */
+export function formaterTallDato(iso: string): string {
+  const [, mnd, dag] = iso.slice(0, 10).split("-").map(Number);
+  return `${dag}.${mnd}.`;
+}
+
 /** Antall hele dager fra i dag (norsk tid) til datoen (negativt = på overtid). */
 export function dagerTil(isoDato: string): number {
   const idag = Date.parse(`${idagOslo()}T00:00:00Z`);

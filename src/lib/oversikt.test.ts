@@ -130,6 +130,7 @@ function ingress(over: Partial<HjemIngressInput>): string {
     antallSaker: 3,
     antallAktive: 2,
     antallUtlopteFrister: 0,
+    antallUtlopteFraGamleBrev: 0,
     sakerMedFristDenneUka: 0,
     toppVenter: false,
     ...over,
@@ -153,6 +154,28 @@ test("hjemIngress regel 2: ingen saker i det hele tatt", () => {
 test("hjemIngress regel 3: utløpt frist går foran frister denne uka", () => {
   assert.equal(
     ingress({ antallUtlopteFrister: 1, sakerMedFristDenneUka: 2, toppVenter: true }),
+    "En frist har gått ut. Se hva du kan gjøre.",
+  );
+});
+
+test("hjemIngress regel 3 gjelder ikke utløpte frister fra gamle brev", () => {
+  assert.equal(
+    ingress({ antallUtlopteFrister: 1, antallUtlopteFraGamleBrev: 1 }),
+    "2 aktive saker. Ingen frister denne uka.",
+  );
+  assert.equal(
+    ingress({
+      antallUtlopteFrister: 1,
+      antallUtlopteFraGamleBrev: 1,
+      sakerMedFristDenneUka: 1,
+    }),
+    "Én sak trenger deg denne uka.",
+  );
+});
+
+test("hjemIngress regel 3: én fersk utløpt frist holder, selv med gamle i tillegg", () => {
+  assert.equal(
+    ingress({ antallUtlopteFrister: 2, antallUtlopteFraGamleBrev: 1 }),
     "En frist har gått ut. Se hva du kan gjøre.",
   );
 });

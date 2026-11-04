@@ -11,9 +11,15 @@
 // under er identiske med ordrens §3. Satstabellen endres ALDRI uten ny
 // Satsversjon med kilde-URL (se §9). Eksisterende versjoner redigeres ikke.
 
-/** Én versjon av satstabellen, gyldig fra en gitt dato. */
+import { idagOslo } from "./dato.ts";
+
+/** Én versjon av satstabellen, gyldig i et avgrenset tidsrom. */
 export type Satsversjon = {
   gyldigFra: string; // ISO-dato, f.eks. "2026-01-01"
+  // Siste gyldige dag. Etter denne finnes det ingen satser før en ny versjon
+  // er lagt inn (se «Årlig satsoppdatering» i PROSJEKT_STATUS.md) — appen sier
+  // da «ukjent» i stedet for å vurdere mot fjorårets tall.
+  gyldigTil: string;
   kilde: string; // URL til Finanstilsynet
   inkassosats: number;
   purregebyr: number;
@@ -37,6 +43,7 @@ const FINANSTILSYNET_URL =
 export const SATSVERSJONER: Satsversjon[] = [
   {
     gyldigFra: "2026-01-01",
+    gyldigTil: "2026-12-31",
     kilde: FINANSTILSYNET_URL,
     inkassosats: 750,
     purregebyr: 38,
@@ -61,18 +68,28 @@ function versjonerSortert(): Satsversjon[] {
 }
 
 /**
- * Nyeste satsversjon med gyldigFra <= dato. Dato mangler → nyeste versjon.
- * Dato før eldste versjon → eldste versjon returneres som fallback, men
- * sjekkKostnader markerer da alle linjer som «ukjent» (satsene fra brevets tid
- * er ikke lagt inn). Se sjekkKostnader.
+ * Satsversjonen der gyldigFra <= dato <= gyldigTil, ellers null. Dato
+ * mangler → dagens dato (norsk tid). ALDRI «nyeste versjon uansett»: et brev
+ * fra et år uten innlagte satser skal gi «ukjent», ikke en vurdering mot
+ * feil års tall.
  */
-export function satserForDato(dato: string | null): Satsversjon {
-  const sortert = versjonerSortert();
-  if (dato === null) return sortert[sortert.length - 1];
-  const gyldige = sortert.filter((v) => v.gyldigFra <= dato);
-  if (gyldige.length === 0) return sortert[0];
-  return gyldige[gyldige.length - 1];
+export function satserForDato(dato: string | null): Satsversjon | null {
+  const d = dato ?? idagOslo();
+  return (
+    versjonerSortert().find((v) => v.gyldigFra <= d && d <= v.gyldigTil) ??
+    null
+  );
 }
+
+export const KOSTNADSTYPE_ETIKETT: Record<Kostnadstype, string> = {
+  purregebyr: "Purregebyr",
+  inkassovarselgebyr: "Inkassovarselgebyr",
+  betalingsoppfordringsgebyr: "Betalingsoppfordringsgebyr",
+  salaer: "Inkassosalær",
+  forsinkelsesrente: "Forsinkelsesrente",
+  rettsgebyr: "Rettsgebyr",
+  annet: "Annen kostnad",
+};
 
 export const KOSTNADSTYPER = [
   "purregebyr",
@@ -103,10 +120,16 @@ export type LinjeResultat = {
 };
 
 export type GebyrsjekkResultat = {
+  // Satsversjonen som ble brukt. Når satserMangler er satt, er dette
+  // nærmeste kjente versjon (kun for visning) — ingen linje er vurdert mot den.
   satsGyldigFra: string;
   linjer: LinjeResultat[];
   antallOver: number;
   antallMuligOver: number;
+  /** Ingen satsversjon dekker brevdatoen → alle linjer «ukjent». */
+  satserMangler?: boolean;
+  /** Brevet manglet dato → dagens satser er lagt til grunn. */
+  brevdatoAntatt?: boolean;
 };
 
 // 1 kr slingring på alle grenser (avrunding i brevet skal ikke gi falsk «over»).
@@ -233,31 +256,46 @@ function vurderLinje(
 
 /**
  * Vurderer alle kostnadslinjer mot satsversjonen som gjaldt på brevdatoen.
- * Brevdato før eldste kjente satsversjon → alle linjer «ukjent» (vi kan ikke
- * vurdere mot satser vi ikke har lagt inn).
+ * Ingen versjon dekker datoen → alle linjer «ukjent» (vi kan ikke vurdere mot
+ * satser vi ikke har lagt inn). Brevdato mangler → dagens dato, og
+ * resultatet merkes `brevdatoAntatt`.
  */
 export function sjekkKostnader(
   linjer: Kostnadslinje[],
   hovedstol: number | null,
   brevdato: string | null,
 ): GebyrsjekkResultat {
-  const eldste = versjonerSortert()[0];
-  const forGammel = brevdato !== null && brevdato < eldste.gyldigFra;
-  const sats = forGammel ? eldste : satserForDato(brevdato);
+  const dato = brevdato || idagOslo();
+  const brevdatoAntatt = !brevdato;
+  const sats = satserForDato(dato);
 
-  const linjeResultater: LinjeResultat[] = linjer.map((linje) => {
-    if (forGammel) {
-      return {
+  if (!sats) {
+    const sortert = versjonerSortert();
+    const forGammel = dato < sortert[0].gyldigFra;
+    const forklaring = forGammel
+      ? "Satsene fra brevets tid er ikke lagt inn ennå."
+      : `Satsene for ${dato.slice(0, 4)} er ikke lagt inn ennå, så vi kan ikke vurdere gebyrene.`;
+    return {
+      satsGyldigFra: (forGammel ? sortert[0] : sortert[sortert.length - 1])
+        .gyldigFra,
+      linjer: linjer.map((linje) => ({
         linje,
         vurdering: "ukjent",
         maksLav: null,
         maksHoy: null,
         differanse: null,
-        forklaring: "Satsene fra brevets tid er ikke lagt inn ennå.",
-      };
-    }
-    return vurderLinje(linje, hovedstol, sats);
-  });
+        forklaring,
+      })),
+      antallOver: 0,
+      antallMuligOver: 0,
+      satserMangler: true,
+      ...(brevdatoAntatt ? { brevdatoAntatt } : {}),
+    };
+  }
+
+  const linjeResultater = linjer.map((linje) =>
+    vurderLinje(linje, hovedstol, sats),
+  );
 
   return {
     satsGyldigFra: sats.gyldigFra,
@@ -265,6 +303,7 @@ export function sjekkKostnader(
     antallOver: linjeResultater.filter((l) => l.vurdering === "over").length,
     antallMuligOver: linjeResultater.filter((l) => l.vurdering === "mulig_over")
       .length,
+    ...(brevdatoAntatt ? { brevdatoAntatt } : {}),
   };
 }
 

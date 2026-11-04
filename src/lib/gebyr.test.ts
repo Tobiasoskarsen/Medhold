@@ -10,6 +10,7 @@ import {
   SATSVERSJONER,
   type Kostnadslinje,
 } from "./gebyr.ts";
+import { idagOslo } from "./dato.ts";
 
 // Hjelper: vurder én linje og hent ut resultatet.
 function vurder(
@@ -23,7 +24,7 @@ function vurder(
 // --- Satstabellen selv ---------------------------------------------------
 
 test("2026-versjonen har de verifiserte faste satsene", () => {
-  const s = satserForDato("2026-06-01");
+  const s = satserForDato("2026-06-01")!;
   assert.equal(s.inkassosats, 750);
   assert.equal(s.purregebyr, 38);
   assert.equal(s.inkassovarselGebyr, 38);
@@ -31,17 +32,86 @@ test("2026-versjonen har de verifiserte faste satsene", () => {
   assert.equal(s.rettsgebyr, 1345);
 });
 
-test("satserForDato(null) → nyeste versjon", () => {
-  const nyeste = [...SATSVERSJONER].sort((a, b) =>
-    a.gyldigFra.localeCompare(b.gyldigFra),
-  )[SATSVERSJONER.length - 1];
-  assert.equal(satserForDato(null).gyldigFra, nyeste.gyldigFra);
+test("satserForDato(null) bruker dagens dato, aldri «nyeste uansett»", () => {
+  assert.deepEqual(satserForDato(null), satserForDato(idagOslo()));
+});
+
+test("2026-06-01 → 2026-versjonen", () => {
+  const s = satserForDato("2026-06-01");
+  assert.equal(s?.gyldigFra, "2026-01-01");
+  assert.equal(s?.gyldigTil, "2026-12-31");
+});
+
+test("grensene er inkluderende: 2026-01-01 og 2026-12-31 → 2026-versjonen", () => {
+  assert.equal(satserForDato("2026-01-01")?.gyldigFra, "2026-01-01");
+  assert.equal(satserForDato("2026-12-31")?.gyldigFra, "2026-01-01");
+});
+
+test("2027-01-15 → null (satsene for 2027 er ikke lagt inn)", () => {
+  assert.equal(satserForDato("2027-01-15"), null);
+});
+
+test("hver satsversjon har gyldigTil etter gyldigFra", () => {
+  for (const v of SATSVERSJONER) assert.ok(v.gyldigFra <= v.gyldigTil);
+});
+
+test("brev datert 2027-01-15 → alle linjer ukjent med «Satsene for 2027»", () => {
+  const res = sjekkKostnader(
+    [
+      { type: "purregebyr", belop: 70, tekst: "" },
+      { type: "salaer", belop: 2100, tekst: "" },
+    ],
+    10000,
+    "2027-01-15",
+  );
+  assert.equal(res.satserMangler, true);
+  assert.equal(res.antallOver, 0);
+  assert.equal(res.antallMuligOver, 0);
+  for (const l of res.linjer) {
+    assert.equal(l.vurdering, "ukjent");
+    assert.equal(
+      l.forklaring,
+      "Satsene for 2027 er ikke lagt inn ennå, så vi kan ikke vurdere gebyrene.",
+    );
+  }
+});
+
+test("brev datert 2025-12-31 → ukjent med dagens tekst for eldre brev", () => {
+  const res = sjekkKostnader(
+    [{ type: "purregebyr", belop: 70, tekst: "" }],
+    null,
+    "2025-12-31",
+  );
+  assert.equal(res.linjer[0].vurdering, "ukjent");
+  assert.equal(
+    res.linjer[0].forklaring,
+    "Satsene fra brevets tid er ikke lagt inn ennå.",
+  );
+});
+
+test("brevdato mangler → dagens satser og brevdatoAntatt", () => {
+  const res = sjekkKostnader(
+    [{ type: "purregebyr", belop: 70, tekst: "" }],
+    null,
+    null,
+  );
+  const iDag = sjekkKostnader(
+    [{ type: "purregebyr", belop: 70, tekst: "" }],
+    null,
+    idagOslo(),
+  );
+  assert.deepEqual(res, { ...iDag, brevdatoAntatt: true });
+});
+
+test("brevdato oppgitt → ingen brevdatoAntatt", () => {
+  const res = sjekkKostnader([{ type: "purregebyr", belop: 38, tekst: "" }], null, "2026-06-01");
+  assert.equal(res.brevdatoAntatt, undefined);
 });
 
 // --- Salærtrinn-grenser --------------------------------------------------
 
 test("hovedstol treffer riktig salærtrinn på grensene", () => {
-  const s = satserForDato("2026-06-01");
+  const s = satserForDato("2026-06-01")!;
   // Beløp midt i hvert trinns A/B-spenn → vurdering mulig_over uansett trinn,
   // men vi verifiserer trinnvalget via maksHoy (tungB per trinn).
   const cases: Array<[number, number]> = [
@@ -200,7 +270,7 @@ test("gebyrFunnTekst med to funn skiller med semikolon", () => {
 // --- trinnEtikett («Hvordan vi regnet dette ut») --------------------------
 
 test("trinnEtikett: grensene 500/1000/2500/10000/50000/250000/over", () => {
-  const sats = satserForDato("2026-06-01");
+  const sats = satserForDato("2026-06-01")!;
   assert.match(trinnEtikett(500, sats), /t\.o\.m\. 500 kr/);
   assert.match(trinnEtikett(501, sats), /t\.o\.m\. 1\s?000 kr/);
   assert.match(trinnEtikett(1000, sats), /t\.o\.m\. 1\s?000 kr/);
@@ -218,7 +288,7 @@ test("trinnEtikett: grensene 500/1000/2500/10000/50000/250000/over", () => {
 // --- utregningRaderForLinje ------------------------------------------------
 
 test("utregningRaderForLinje: innenfor/ukjent gir ingenting å vise", () => {
-  const sats = satserForDato("2026-06-01");
+  const sats = satserForDato("2026-06-01")!;
   assert.equal(utregningRaderForLinje(vurder({ type: "purregebyr", belop: 38, tekst: "" }), sats, null), null);
   assert.equal(
     utregningRaderForLinje(
@@ -231,7 +301,7 @@ test("utregningRaderForLinje: innenfor/ukjent gir ingenting å vise", () => {
 });
 
 test("utregningRaderForLinje: over på salær med kjent hovedstol viser full utregning", () => {
-  const sats = satserForDato("2026-06-01");
+  const sats = satserForDato("2026-06-01")!;
   const l = vurder({ type: "salaer", belop: 800, tekst: "" }, 2400);
   const rader = utregningRaderForLinje(l, sats, 2400);
   assert.ok(rader);
@@ -256,7 +326,7 @@ test("utregningRaderForLinje: over på salær med kjent hovedstol viser full utr
 });
 
 test("utregningRaderForLinje: fast gebyr over viser kun 3 rader", () => {
-  const sats = satserForDato("2026-06-01");
+  const sats = satserForDato("2026-06-01")!;
   const l = vurder({ type: "purregebyr", belop: 70, tekst: "" });
   const rader = utregningRaderForLinje(l, sats, null);
   assert.deepEqual(
@@ -267,7 +337,7 @@ test("utregningRaderForLinje: fast gebyr over viser kun 3 rader", () => {
 });
 
 test("utregningRaderForLinje: mulig_over har ingen Over-rad, siste er Krevd i brevet", () => {
-  const sats = satserForDato("2026-06-01");
+  const sats = satserForDato("2026-06-01")!;
   const l = vurder({ type: "salaer", belop: 900, tekst: "" }, 10000);
   assert.equal(l.vurdering, "mulig_over");
   const rader = utregningRaderForLinje(l, sats, 10000);
@@ -285,7 +355,7 @@ test("utregningRaderForLinje: mulig_over har ingen Over-rad, siste er Krevd i br
 });
 
 test("utregningRaderForLinje: manglende hovedstol utelater Hovedstol/Salærtrinn-radene", () => {
-  const sats = satserForDato("2026-06-01");
+  const sats = satserForDato("2026-06-01")!;
   const l = vurder({ type: "salaer", belop: 900, tekst: "" }, 10000);
   const rader = utregningRaderForLinje(l, sats, null);
   assert.deepEqual(

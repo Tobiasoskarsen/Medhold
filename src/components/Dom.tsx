@@ -7,8 +7,9 @@ import { m } from "motion/react";
 import { Primærknapp } from "@/components/ui";
 import { DomFullskjerm } from "@/components/DomFullskjerm";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
-import { formaterDato } from "@/lib/dato";
+import { formaterDato, formaterTallDato } from "@/lib/dato";
 import { FJAER } from "@/lib/bevegelse";
+import { LOVBESTEMT_FRIST_DAGER } from "@/lib/gjeld";
 import { kr, overLinjer, totalOver } from "@/lib/gebyrfunn-visning";
 
 /**
@@ -72,25 +73,41 @@ export function Dom({
   );
 }
 
-// Felles ramme for DomMini/DomMiniFrist (Retning B §7.1).
+// Felles ramme for DomMini/DomMiniFrist (Retning B §7.1). `historisk`
+// (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.2): funnet gjelder et brev som er mer enn
+// 45 dager gammelt — da er det historikk, ikke en akutt fare, og kortet blir
+// en rolig flate i stedet for rødt.
 const FUNNKORT =
   "block w-full rounded-[22px] bg-dom-rod-bg p-[18px] text-left mork:border mork:border-dom-rod/20";
+const FUNNKORT_HISTORISK =
+  "block w-full rounded-[22px] border border-strek bg-flate p-[18px] text-left";
 
 function Funninnhold({
   etikett,
   tall,
+  historiskFra,
   children,
 }: {
   etikett: string;
   tall: string;
+  /** Brevdatoen (ISO) når kortet er historisk, ellers utelatt. */
+  historiskFra?: string | null;
   children: ReactNode;
 }) {
+  const historisk = historiskFra !== undefined;
+  const farge = historisk ? "text-dempet" : "text-dom-rod";
   return (
     <>
-      <span className="block text-[12px] font-bold uppercase tracking-[0.08em] text-dom-rod">
+      <span className={`block text-[12px] font-bold uppercase tracking-[0.08em] ${farge}`}>
         {etikett}
+        {historisk && historiskFra && (
+          <span className="normal-case tracking-normal">
+            {" "}
+            · fra {formaterTallDato(historiskFra)}
+          </span>
+        )}
       </span>
-      <span className="tall-m mt-2 block text-dom-rod">{tall}</span>
+      <span className={`tall-m mt-2 block ${farge}`}>{tall}</span>
       {children}
     </>
   );
@@ -104,11 +121,17 @@ function Funninnhold({
 export function DomMini({
   resultat,
   utkastHref,
+  historisk = false,
+  brevdato = null,
   className = "",
 }: {
   resultat: GebyrsjekkResultat;
   /** Videreført til DomFullskjerm sin «Bruk i svaret →»-CTA når stadiet støtter utkast. */
   utkastHref?: string;
+  /** Brevet er mer enn 45 dager gammelt (erGammeltBrev) — dempet flate. */
+  historisk?: boolean;
+  /** Brevets dato, til « · fra {dato}» når kortet er historisk. */
+  brevdato?: string | null;
   className?: string;
 }) {
   const [åpen, setÅpen] = useState(false);
@@ -128,9 +151,13 @@ export function DomMini({
         ref={knappRef}
         onClick={() => setÅpen(true)}
         aria-label="Se gebyrfunnet i fullskjerm"
-        className={`trykk ${FUNNKORT} ${className}`}
+        className={`trykk ${historisk ? FUNNKORT_HISTORISK : FUNNKORT} ${className}`}
       >
-        <Funninnhold etikett="Gebyrsjekk" tall={`${kr(total)} kr for mye`}>
+        <Funninnhold
+          etikett="Gebyrsjekk"
+          tall={`${kr(total)} kr for mye`}
+          historiskFra={historisk ? brevdato : undefined}
+        >
           <span className="mt-2 block text-[13.5px] leading-[1.45] text-blekk">
             {forklaring} Funnet er lagt klart til svaret ditt.
           </span>
@@ -138,7 +165,11 @@ export function DomMini({
             Kontrollert mot inkassoforskriften · satser fra{" "}
             {formaterDato(resultat.satsGyldigFra)}
           </span>
-          <span className="mt-3 block text-[13px] font-semibold text-dom-rod">
+          <span
+            className={`mt-3 block text-[13px] font-semibold ${
+              historisk ? "text-blekk" : "text-dom-rod"
+            }`}
+          >
             Se detaljer →
           </span>
         </Funninnhold>
@@ -157,25 +188,54 @@ export function DomMini({
   );
 }
 
+/** Hele dager mellom to rene datoer (YYYY-MM-DD). */
+function dagerMellom(fra: string, til: string): number {
+  return Math.round(
+    (Date.parse(`${til}T00:00:00Z`) - Date.parse(`${fra}T00:00:00Z`)) / 86_400_000,
+  );
+}
+
 /**
  * DomMiniFrist — samme ramme som DomMini, for et fristfunn
  * (MEDHOLD_FRIST_OG_ALVOR_ARBEIDSORDRE §A.3), men ikke klikkbar.
  * `differanseDager` skal være et POSITIVT tall (antall dager kortere — bruk
- * Math.abs på FristSammenligning sin negative differanse).
+ * Math.abs på FristSammenligning sin negative differanse). Teksten sier hva
+ * funnet betyr (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.1): kravet blir ikke
+ * ugyldig, men kreditor kunne tidligst gå videre på den lovlige datoen.
  */
 export function DomMiniFrist({
   differanseDager,
+  brevdato,
+  beregnetDato,
+  historisk = false,
   className = "",
 }: {
   differanseDager: number;
+  /** Brevets dato (ISO). Null → fristen brevet ga regnes fra lovens 14 dager. */
+  brevdato: string | null;
+  /** Den lovlige fristen (FristSammenligning.beregnetDato). */
+  beregnetDato: string;
+  historisk?: boolean;
   className?: string;
 }) {
+  // Dagene brevet ga = dager fra brevdato til lovens frist, minus det brevet
+  // kortet ned med. Beregnet frist er alltid brevdato + 14 (beregnFrist).
+  const lovensDager = brevdato
+    ? dagerMellom(brevdato, beregnetDato)
+    : LOVBESTEMT_FRIST_DAGER;
+  const gitt = lovensDager - differanseDager;
   return (
-    <div className={`${FUNNKORT} ${className}`}>
-      <Funninnhold etikett="Fristsjekk" tall={`${differanseDager} dager for kort`}>
+    <div className={`${historisk ? FUNNKORT_HISTORISK : FUNNKORT} ${className}`}>
+      <Funninnhold
+        etikett="Fristsjekk"
+        tall={`${differanseDager} dager for kort`}
+        historiskFra={historisk ? brevdato : undefined}
+      >
         <p className="mt-2 text-[13.5px] leading-[1.45] text-blekk">
-          Fristen i brevet er kortere enn loven krever. Loven gir deg minst{" "}
-          {differanseDager} dager til.
+          Brevet ga deg {gitt} dager. Loven krever minst{" "}
+          {LOVBESTEMT_FRIST_DAGER}. Kravet blir ikke ugyldig av det, men
+          kreditor kunne tidligst gå videre {formaterDato(beregnetDato)}. Har de
+          lagt til kostnader før det, kan du be om at de fjernes.
         </p>
       </Funninnhold>
     </div>

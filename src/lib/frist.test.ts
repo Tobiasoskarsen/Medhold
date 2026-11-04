@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { sammenlignFrist } from "./frist.ts";
+import { sammenlignFrist, erGammeltBrev, brevAlderDager } from "./frist.ts";
 import type { BeregnetFrist } from "./gjeld.ts";
 
 function beregnet(forfallsdato: string, tittel = "Betalingsfrist"): BeregnetFrist {
@@ -72,4 +72,29 @@ test("eksplisitt lengre enn beregnet gir avvik_lengre, positiv differanse, viser
   assert.equal(res?.status, "avvik_lengre");
   assert.equal(res?.differanseDager, 8);
   assert.equal(res?.visForfallsdato, "2026-08-01");
+});
+
+// --- erGammeltBrev (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.2) ---
+
+test("erGammeltBrev: 45 dager er ikke gammelt, 46 er det", () => {
+  assert.equal(erGammeltBrev("2026-07-20", "2026-07-21T10:00:00Z", "2026-09-03"), false);
+  assert.equal(erGammeltBrev("2026-07-20", "2026-07-21T10:00:00Z", "2026-09-04"), true);
+});
+
+test("erGammeltBrev: testbrev 13 (20. juli) i november er gammelt", () => {
+  assert.equal(erGammeltBrev("2026-07-20", "2026-11-01T08:00:00Z", "2026-11-04"), true);
+});
+
+test("erGammeltBrev: uten brevdato brukes opprettet-datoen", () => {
+  assert.equal(erGammeltBrev(null, "2026-10-30T23:00:00Z", "2026-11-04"), false);
+  assert.equal(erGammeltBrev(null, "2026-08-01T08:00:00Z", "2026-11-04"), true);
+});
+
+test("erGammeltBrev: brev fra i dag eller fremtiden er ikke gammelt", () => {
+  assert.equal(erGammeltBrev("2026-11-04", "2026-11-04T08:00:00Z", "2026-11-04"), false);
+  assert.equal(erGammeltBrev("2026-12-01", "2026-11-04T08:00:00Z", "2026-11-04"), false);
+});
+
+test("brevAlderDager teller hele dager", () => {
+  assert.equal(brevAlderDager("2026-07-20", "2026-07-20T00:00:00Z", "2026-11-04"), 107);
 });

@@ -2,10 +2,11 @@
 // øverst; øvrige linjer (innenfor/mulig_over/ukjent) vises som piller under.
 // Rekalkulerer ALDRI — viser det lagrede resultatet.
 import {
+  KOSTNADSTYPE_ETIKETT,
   satserForDato,
+  SATSVERSJONER,
   utregningRaderForLinje,
   type GebyrsjekkResultat,
-  type Kostnadstype,
   type Vurdering,
 } from "@/lib/gebyr";
 import { NavLenke as Link } from "@/components/NavLenke";
@@ -14,16 +15,6 @@ import { Pill } from "@/components/ui/Pill";
 import { Dom } from "@/components/Dom";
 import { Utregning } from "@/components/Utregning";
 import { formaterDato } from "@/lib/dato";
-
-const TYPE_ETIKETT: Record<Kostnadstype, string> = {
-  purregebyr: "Purregebyr",
-  inkassovarselgebyr: "Inkassovarselgebyr",
-  betalingsoppfordringsgebyr: "Betalingsoppfordringsgebyr",
-  salaer: "Inkassosalær",
-  forsinkelsesrente: "Forsinkelsesrente",
-  rettsgebyr: "Rettsgebyr",
-  annet: "Annen kostnad",
-};
 
 const PILL: Record<
   Vurdering,
@@ -60,12 +51,15 @@ export function Gebyrsjekk({
   const harOver = resultat.linjer.some((l) => l.vurdering === "over");
   const overLinjer = resultat.linjer.filter((l) => l.vurdering === "over");
   const rest = resultat.linjer.filter((l) => l.vurdering !== "over");
+  // Versjonen resultatet ble vurdert mot (satsGyldigFra er dens startdato).
+  // Kun null hvis versjonen er fjernet — da finnes ingen over/mulig_over-
+  // linjer som trenger utregningen.
   const sats = satserForDato(resultat.satsGyldigFra);
   const kildelinje = (
     <p className="mt-2 text-[12px] text-dempet">
       Satser gjeldende fra {formaterDato(resultat.satsGyldigFra)}. Kilde:{" "}
       <a
-        href={sats.kilde}
+        href={sats?.kilde ?? SATSVERSJONER[0].kilde}
         target="_blank"
         rel="noopener noreferrer"
         className="underline decoration-strek underline-offset-2 hover:decoration-aksent"
@@ -91,7 +85,7 @@ export function Gebyrsjekk({
           {overLinjer.map((l, i) => (
             <Utregning
               key={i}
-              rader={utregningRaderForLinje(l, sats, hovedstol) ?? []}
+              rader={(sats && utregningRaderForLinje(l, sats, hovedstol)) || []}
               uthevetFarge="dom-rod"
               kildelinje={kildelinje}
               className="mt-3"
@@ -108,8 +102,14 @@ export function Gebyrsjekk({
                 Gebyrsjekk
               </h3>
               <p className="mt-0.5 text-[12px] text-dempet">
-                Kontrollert mot offentlige maksimalsatser (fra{" "}
-                {formaterDato(resultat.satsGyldigFra)}).
+                {resultat.satserMangler ? (
+                  "Ikke kontrollert. Satsene for brevets dato er ikke lagt inn."
+                ) : (
+                  <>
+                    Kontrollert mot offentlige maksimalsatser (fra{" "}
+                    {formaterDato(resultat.satsGyldigFra)}).
+                  </>
+                )}
               </p>
             </>
           )}
@@ -124,7 +124,7 @@ export function Gebyrsjekk({
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm text-blekk">
-                      {TYPE_ETIKETT[l.linje.type]}
+                      {KOSTNADSTYPE_ETIKETT[l.linje.type]}
                       <span className="text-dempet"> · {kr(l.linje.belop)} kr</span>
                     </span>
                     <Pill variant={pill.variant}>{pill.tekst}</Pill>
@@ -134,7 +134,7 @@ export function Gebyrsjekk({
                   )}
                   {l.vurdering === "mulig_over" && (
                     <Utregning
-                      rader={utregningRaderForLinje(l, sats, hovedstol) ?? []}
+                      rader={(sats && utregningRaderForLinje(l, sats, hovedstol)) || []}
                       uthevetFarge="noytral"
                       kildelinje={kildelinje}
                       className="mt-2"
@@ -147,6 +147,11 @@ export function Gebyrsjekk({
         </Kort>
       )}
 
+      {resultat.brevdatoAntatt && (
+        <p className="mt-3 px-1 text-[11.5px] text-dempet">
+          Brevet har ingen dato. Vi har brukt satsene som gjelder i dag.
+        </p>
+      )}
       <p className="mt-3 px-1 text-[11px] leading-relaxed text-dempet">
         Automatisk kontroll — ikke juridisk rådgivning. Satsene følger
         inkassoforskriften.

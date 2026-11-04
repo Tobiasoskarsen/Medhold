@@ -17,6 +17,32 @@ export function fristChipTekst(dagerIgjen: number): string {
   return dagerIgjen === 1 ? "1 dag igjen" : `${dagerIgjen} dager igjen`;
 }
 
+// --- Gamle brev (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.2) ------------------------
+//
+// Et brev som er mer enn 45 dager gammelt er trolig ikke det siste i saken.
+// Da er en utløpt frist historikk, ikke en akutt fare, og brukeren bes legge
+// til det nyeste brevet i stedet for å reagere på et gammelt funn.
+
+export const GAMMELT_BREV_DAGER = 45;
+
+/** Hele dager siden brevet (brevdato, ellers opprettet-datoen) til `idag`. */
+export function brevAlderDager(
+  brevdato: string | null,
+  opprettet: string,
+  idag: string,
+): number {
+  return dagerMellom(brevdato ?? opprettet.slice(0, 10), idag);
+}
+
+/** Brevet (brevdato, ellers opprettet) er MER enn 45 dager før i dag. */
+export function erGammeltBrev(
+  brevdato: string | null,
+  opprettet: string,
+  idag: string,
+): boolean {
+  return brevAlderDager(brevdato, opprettet, idag) > GAMMELT_BREV_DAGER;
+}
+
 // --- Fristduplisering (MEDHOLD_FRIST_OG_ALVOR_ARBEIDSORDRE §A) --------------
 //
 // AI-en trekker ut frister som STÅR i brevet (`eksplisitt`); koden beregner

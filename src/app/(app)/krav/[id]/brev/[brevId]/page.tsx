@@ -6,7 +6,7 @@ import { Skjermramme, Kort, Sekvens, SekvensDel } from "@/components/ui";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { DomMiniFrist } from "@/components/Dom";
 import { AnnotertBrev } from "@/components/AnnotertBrev";
-import { formaterKortDato } from "@/lib/dato";
+import { formaterKortDato, idagOslo } from "@/lib/dato";
 import { FORKLARING_DISCLAIMER } from "@/lib/brand";
 import {
   STADIUM_ETIKETT,
@@ -15,7 +15,7 @@ import {
   type Stadium,
 } from "@/lib/gjeld";
 import type { GebyrsjekkResultat, Kostnadslinje } from "@/lib/gebyr";
-import type { FristSammenligning } from "@/lib/frist";
+import { erGammeltBrev, type FristSammenligning } from "@/lib/frist";
 import { finnAnnoteringer } from "@/lib/annotering";
 import { BrevSamtale } from "./BrevSamtale";
 import { SakStatusLinje } from "./SakStatusLinje";
@@ -44,7 +44,7 @@ export default async function BrevPage({
   const { data: brev } = await supabase
     .from("brev")
     .select(
-      "id, sak_id, avsender, brevtype, brevdato, belop, forklaring, original_tekst, gebyrsjekk, kostnadslinjer, fristfunn",
+      "id, sak_id, avsender, brevtype, brevdato, belop, forklaring, original_tekst, gebyrsjekk, kostnadslinjer, fristfunn, opprettet",
     )
     .eq("id", brevId)
     .maybeSingle();
@@ -152,9 +152,12 @@ export default async function BrevPage({
         utkastHref={utkastHref}
         className="mt-3"
       />
-      {harFristfunn && (
+      {harFristfunn && fristfunn?.beregnetDato && (
         <DomMiniFrist
-          differanseDager={Math.abs(fristfunn?.differanseDager ?? 0)}
+          differanseDager={Math.abs(fristfunn.differanseDager ?? 0)}
+          brevdato={brev.brevdato}
+          beregnetDato={fristfunn.beregnetDato}
+          historisk={erGammeltBrev(brev.brevdato, brev.opprettet, idagOslo())}
           className="mt-3"
         />
       )}
