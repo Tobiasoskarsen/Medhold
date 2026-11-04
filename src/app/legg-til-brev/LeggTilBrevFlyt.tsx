@@ -41,8 +41,8 @@ import {
   type AnalyseResultat,
   type LagreBrevInput,
   type KravForslag,
-  type Bilde,
 } from "./actions";
+import type { Bilde } from "@/lib/brevanalyse";
 
 type AnalyseData = Extract<AnalyseResultat, { ok: true }>["analyse"];
 type KravValg = { id: string; navn: string; venter: boolean };
@@ -285,10 +285,19 @@ export function LeggTilBrevFlyt({
       : "brev_eksplisitt";
   }
 
-  async function lesTekst() {
+  // Kaster selve server action-kallet (krasj på serveren, tidsavbrudd,
+  // nettverksfeil), får brukeren en feilmelding og kommer tilbake til steg 1
+  // — i stedet for å bli stående i lesingen for alltid.
+  async function les(kall: () => Promise<AnalyseResultat>) {
     setFeil(null);
     gaTil(2);
-    const r = await analyserBrevTekst(tekst);
+    let r: AnalyseResultat;
+    try {
+      r = await kall();
+    } catch (e) {
+      console.error("[legg-til-brev] Lesingen feilet:", e);
+      r = { ok: false, feil: "Noe gikk galt under lesingen. Prøv igjen om litt." };
+    }
     if (!r.ok) {
       setFeil(r.feil);
       gaTil(1);
@@ -297,16 +306,14 @@ export function LeggTilBrevFlyt({
     anvendAnalyse(r);
   }
 
-  async function lesBilder() {
-    setFeil(null);
-    gaTil(2);
-    const r = await analyserBrevBilder(bilder.map(({ media_type, data }) => ({ media_type, data })));
-    if (!r.ok) {
-      setFeil(r.feil);
-      gaTil(1);
-      return;
-    }
-    anvendAnalyse(r);
+  function lesTekst() {
+    return les(() => analyserBrevTekst(tekst));
+  }
+
+  function lesBilder() {
+    return les(() =>
+      analyserBrevBilder(bilder.map(({ media_type, data }) => ({ media_type, data }))),
+    );
   }
 
   async function velgFiler(filer: FileList | null) {
