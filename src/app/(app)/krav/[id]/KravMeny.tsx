@@ -8,7 +8,7 @@ import { slettKrav } from "../actions";
 import { UtfallVelger } from "./UtfallVelger";
 
 const RAD =
-  "trykk flex w-full items-center gap-3 rounded-[14px] px-3 py-3.5 text-left text-[15px] transition hover:bg-flate-2";
+  "trykk flex w-full items-center gap-3 rounded-kontroll px-3 py-3.5 text-left text-brod transition hover:bg-flate-2";
 
 /** Meny oppe til høyre på kravsiden: marker som løst (med valgfritt utfall) +
  *  sletting, bak et MoreHorizontal-ikon. Åpnes som et bunnark (visuell
@@ -38,9 +38,9 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
         aria-haspopup="dialog"
         aria-expanded={åpen}
         onClick={apne}
-        className="trykk flex size-9 items-center justify-center rounded-full border border-kant bg-flate text-blekk focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blekk"
+        className="trykk -mr-2.5 flex size-11 items-center justify-center text-blekk"
       >
-        <MoreHorizontal className="size-[18px]" aria-hidden />
+        <MoreHorizontal className="size-6" strokeWidth={2} aria-hidden />
       </button>
 
       <Bunnark apen={åpen} onLukk={() => setÅpen(false)} tittel={tittel}>
@@ -95,7 +95,7 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
             <button
               type="button"
               onClick={() => setModus("meny")}
-              className="trykk w-full rounded-[16px] px-4 py-3 text-[15px] font-medium text-blekk"
+              className="trykk w-full rounded-kontroll px-4 py-3 text-brod font-medium text-blekk"
             >
               Avbryt
             </button>

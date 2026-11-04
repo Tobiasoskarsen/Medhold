@@ -69,7 +69,7 @@ export default async function BrevArkivPage() {
     <Skjermramme className="pt-6">
       <Link
         href="/meg"
-        className="mb-3.5 flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
+        className="mb-3.5 flex items-center gap-1 text-hjelp text-dempet transition hover:text-blekk"
       >
         <ChevronLeft className="size-5" aria-hidden />
         Meg
@@ -82,7 +82,7 @@ export default async function BrevArkivPage() {
         {brev.length === 0 ? (
           <Kort>
             <DokumentHake className="size-14 text-blekk" />
-            <p className="mt-4 text-[15px] leading-relaxed text-blekk">
+            <p className="mt-4 text-brod leading-relaxed text-blekk">
               Ingen brev ennå. Legg inn ditt første brev, så samler vi dem her.
             </p>
             <div className="mt-4">
@@ -111,7 +111,7 @@ export default async function BrevArkivPage() {
                                 <span
                                   role="img"
                                   aria-label="Gebyrfunn i dette brevet"
-                                  className="text-[13px] font-bold leading-none text-dom-rod"
+                                  className="text-hjelp font-bold leading-none text-dom-rod"
                                 >
                                   §
                                 </span>
@@ -136,7 +136,7 @@ export default async function BrevArkivPage() {
 
       <Link
         href="/legg-til-brev"
-        className="trykk mt-6 flex w-full items-center justify-center gap-2 rounded-[10px] border-[0.5px] border-aksent/40 bg-flate px-3 py-3 text-sm font-medium text-aksent transition hover:bg-aksent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+        className="trykk mt-6 flex w-full items-center justify-center gap-2 rounded-liten border-[0.5px] border-aksent/40 bg-flate px-3 py-3 text-sm font-medium text-aksent transition hover:bg-aksent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
       >
         <Plus className="size-4" aria-hidden />
         Legg til brev

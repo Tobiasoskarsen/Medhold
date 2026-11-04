@@ -44,7 +44,7 @@ export default async function VeierUtPage({
     <Skjermramme className="pt-5" animerInn={false}>
       <Link
         href={`/krav/${id}`}
-        className="mb-3.5 flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
+        className="mb-3.5 flex items-center gap-1 text-hjelp text-dempet transition hover:text-blekk"
       >
         <ChevronLeft className="size-5" aria-hidden />
         {kreditor}
@@ -56,7 +56,7 @@ export default async function VeierUtPage({
       <h1 className="tittel-s text-blekk">
         Veiene ut
       </h1>
-      <p className="mt-2 text-[13px] leading-relaxed text-dempet">
+      <p className="mt-2 text-hjelp leading-relaxed text-dempet">
         Tre helt vanlige måter å håndtere et krav på. Det viktigste er å
         velge én — og gi beskjed før fristen.
       </p>

@@ -11,7 +11,7 @@ export default function PersonvernPage() {
     <main className="mx-auto w-full max-w-2xl px-6 py-10">
       <Link
         href="/meg"
-        className="flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
+        className="flex items-center gap-1 text-hjelp text-dempet transition hover:text-blekk"
       >
         <ChevronLeft className="size-5" aria-hidden />
         Tilbake
@@ -20,7 +20,7 @@ export default function PersonvernPage() {
       <h1 className="tittel-s mt-4 text-blekk">
         Personvern
       </h1>
-      <p className="mt-1.5 text-[13px] text-dempet">
+      <p className="mt-1.5 text-hjelp text-dempet">
         Kort og ærlig om hvordan dataene dine behandles.
       </p>
 
@@ -84,7 +84,7 @@ export default function PersonvernPage() {
           </p>
         </section>
 
-        <section className="rounded-xl bg-varsel-bg px-4 py-3 text-varsel-tekst">
+        <section className="rounded-kontroll bg-varsel-bg px-4 py-3 text-varsel-tekst">
           <h2 className="mb-1 font-medium">Ikke profesjonell rådgivning</h2>
           <p>
             {APP_NAME} hjelper deg å holde oversikt. Det er ikke en offentlig

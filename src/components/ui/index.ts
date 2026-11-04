@@ -16,3 +16,4 @@ export { Ordmerke } from "./Ordmerke";
 export { Heltekort, HeltChip } from "./Heltekort";
 export { StadiumLinje } from "./StadiumLinje";
 export { FristRad } from "./FristRad";
+export { Snarvei } from "./Snarvei";

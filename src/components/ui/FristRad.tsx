@@ -1,3 +1,4 @@
+import { CalendarDays } from "lucide-react";
 import { dagerTil, formaterTallDato } from "@/lib/dato";
 import { erHastende, fristChipTekst } from "@/lib/frist";
 
@@ -31,14 +32,19 @@ export function FristRad({
   const historisk = d < 0 && gammeltBrev;
   return (
     <div
-      className={`flex items-center justify-between gap-3 rounded-[18px] border border-kant bg-flate px-4 py-3.5 ${className}`}
+      className={`flex items-center justify-between gap-3 rounded-kort border border-kant bg-flate px-4 py-3 ${className}`}
     >
-      <div className="min-w-0">
-        <p className="text-[12px] font-medium text-dempet">{tittel}</p>
-        <p className="text-[15px] font-bold text-blekk">{langDato(forfallsdato)}</p>
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="hidden size-9 shrink-0 items-center justify-center rounded-liten bg-flate-2 min-[360px]:flex" aria-hidden>
+          <CalendarDays className="size-[18px] text-dempet" strokeWidth={2} />
+        </span>
+        <div className="min-w-0">
+          <p className="radtekst truncate">{tittel}</p>
+          <p className="whitespace-nowrap text-brod font-bold text-blekk">{langDato(forfallsdato)}</p>
+        </div>
       </div>
       <span
-        className={`shrink-0 rounded-full px-[11px] py-1.5 text-[13px] font-bold ${
+        className={`shrink-0 rounded-full px-2.5 py-1 text-hjelp font-bold ${
           erHastende(d) && !historisk
             ? "bg-dom-rod-bg text-dom-rod"
             : "bg-flate-2 text-dempet"

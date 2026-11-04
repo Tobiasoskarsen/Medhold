@@ -56,7 +56,7 @@ export function Gebyrsjekk({
   // linjer som trenger utregningen.
   const sats = satserForDato(resultat.satsGyldigFra);
   const kildelinje = (
-    <p className="mt-2 text-[12px] text-dempet">
+    <p className="mt-2 text-meta text-dempet">
       Satser gjeldende fra {formaterDato(resultat.satsGyldigFra)}. Kilde:{" "}
       <a
         href={sats?.kilde ?? SATSVERSJONER[0].kilde}
@@ -101,7 +101,7 @@ export function Gebyrsjekk({
               <h3 className="seksjonstittel text-blekk">
                 Gebyrsjekk
               </h3>
-              <p className="mt-0.5 text-[12px] text-dempet">
+              <p className="mt-0.5 text-meta text-dempet">
                 {resultat.satserMangler ? (
                   "Ikke kontrollert. Satsene for brevets dato er ikke lagt inn."
                 ) : (
@@ -130,7 +130,7 @@ export function Gebyrsjekk({
                     <Pill variant={pill.variant}>{pill.tekst}</Pill>
                   </div>
                   {l.vurdering !== "innenfor" && (
-                    <p className="mt-1.5 text-[13px] text-dempet">{l.forklaring}</p>
+                    <p className="mt-1.5 text-hjelp text-dempet">{l.forklaring}</p>
                   )}
                   {l.vurdering === "mulig_over" && (
                     <Utregning

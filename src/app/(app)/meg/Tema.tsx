@@ -70,7 +70,7 @@ export function TemaVelger({
             role="radio"
             aria-checked={aktiv}
             onClick={() => velg(verdi)}
-            className={`trykk flex flex-col items-center gap-1.5 rounded-xl border-[0.5px] px-2 py-3 text-[13px] font-medium ${
+            className={`trykk flex flex-col items-center gap-1.5 rounded-kontroll border-[0.5px] px-2 py-3 text-hjelp font-medium ${
               aktiv
                 ? "border-aksent bg-aksent/5 text-blekk"
                 : "border-strek text-dempet"

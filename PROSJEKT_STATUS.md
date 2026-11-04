@@ -43,6 +43,53 @@ etter hver fase.
 
 ---
 
+## Redesign — ny komposisjon på Hjem og saksdetaljer (arbeidsordre, ferdig i kode)
+
+Før/etter-bilder (390 px, lys, samme anonymiserte testdata) ligger i `docs/design/redesign/`. Mørk modus: `hjem-mork-etter.jpg` og `sak-mork-etter.jpg`.
+
+Bare presentasjon er endret. Backend, spørringer, API, autentisering, juridiske beregninger, fristregler og `topSak`-prioritering er urørt, og alle 211 tester består uendret.
+
+- **P0 Designsystem og mobilramme.**
+  - Tokens i `globals.css`: `rounded-liten/-kontroll/-kort/-helt`, `text-meta/-hjelp/-brod`, `mt-seksjon/-gruppe`, `.radtittel/.radtekst`, `--skygge-hevet`.
+  - Felles `--nav-plass`, `viewport-fit=cover` og `min-h-dvh`. Felt er 16 px på berøringsskjerm, så iOS ikke zoomer.
+  - Synlig fokus globalt. Bunnmenyen er roligere, har 44 px trykkflater og viker når tastaturet er oppe.
+- **P1 Hjem.**
+  - Rekkefølge: kompakt velkomst, neste handling, snarveier (Legg til brev, Se saker, Satsene vi bruker, Få hjelp), andre saker, og en kort forklaring ved 0–1 aktive saker.
+  - Hjem bruker nå samme navnegrunnlag som Meg.
+- **P2 Saksdetaljer.**
+  - Rekkefølge: status, neste handling eller `Alvorsvarsel`, «Frist og funn», sakens gang.
+  - Funn er kompakte rader i én liste (`FunnListe`), og detaljer åpnes fra raden. «Kravet blir ikke ugyldig av det» står alltid synlig.
+  - `StadiumLinje` viser registrert stadium i stedet for en prosess. De to nyeste hendelsene er alltid synlige.
+- **P3 Saker.** Rader med chevron, avsluttede saker er lesbare (ingen opacity på hele raden), ventende saker er tydelige, og forskjellen fra + er forklart. Tomtilstanden er sentrert.
+- **P4 Utkast.**
+  - Fasevisning (Opplysninger, Skriver, Les og rediger) og samme dokumentflate i alle faser, uten layout-hopp.
+  - «Åpne i e-post», «Kopier» og «Jeg har sendt det» er tydelig skilt. Eget skjelett.
+  - «Skriv anmodningen» er blitt «Skriv forespørselen».
+- **P5 Meg.** 52 px rader, lange verdier avkortes, standard overskrifter.
+- **P6 Bevegelse.**
+  - `template.tsx` animerer bare opasitet, og ingenting ved delt View Transition. Dermed ingen dobbeltfade, og `Sekvens` eier bevegelsen.
+  - `Bunnark` har fått fokusfelle, inert bakgrunn og `max-h`. Fane-flagget settes også ved tastatur.
+
+**Valg tatt underveis:**
+1. **Avvik fra referansebildet, etter ordren:** ingen fremdriftslinje på saken, ingen «Betalingsplan»-snarvei uten sakskontekst, og fanen heter Meg.
+2. **Rekkefølgen på saken følger ordren** (neste handling før frist), ikke bildet.
+3. **Funnrad-teksten:** «Funnet er lagt klart til svaret ditt» er fjernet fra `DomMini` for å gjøre raden kompakt. Fullskjermvisningen og Veivalg sier det samme.
+4. **Hovedstol-teksten er delt i tittel og forklaring.** Innholdet er det samme.
+5. **Fristsjekk-teksten fra sikkerhetsordren er delt:** de to første setningene er synlige, resten ligger bak «Hva betyr dette?». Ordlyden er uendret bortsett fra stor forbokstav på «Kreditor».
+6. **Ny tekst til advokatgjennomgang:** «Hovedstol – Har endret seg», «Slik fungerer Medhold …», og teksten om «Opprett nytt krav».
+7. **Saksliste:** «Frist utløpt» vises fortsatt i rød på rader med gamle brev. Regelen for gamle brev gjaldt saken og Hjem-kortet, så den er ikke endret her uten ny beslutning.
+
+**Kontroller:**
+- Skjermbilder av tom, én og mange saker, 11 saker (gruppert), alvorlig varsel, gammelt brev og ventende sak, med bredde 320, 390 og 1024 px, lys og mørk.
+- Bildene er tatt av prerendret HTML (mock av Supabase, aldri committet) i headless Edge, altså **uten JavaScript kjørende**. Preview-verktøyet bygger fortsatt fra en annen worktree.
+
+**Ikke verifisert (krever kjørende app, gjerne telefon):**
+- Animasjoner, View Transitions og bunnark (drag, fokusfelle).
+- Tastatur på iPhone, større tekst, redusert bevegelse.
+- Selve genereringen av utkast. Bunnarket scroller ikke godt på berøring hvis innholdet blir høyere enn 85 % av skjermen; dagens innhold er kortere.
+
+---
+
 ## Hold-for-å-slette — React Bits HoldButton (på brukerens forespørsel, ferdig i kode)
 
 `src/components/ui/HoldKnapp.tsx` og `HoldKnapp.css` er porten av HoldButton fra React Bits: en rød fylling med bølgekant som fyller knappen mens du holder.

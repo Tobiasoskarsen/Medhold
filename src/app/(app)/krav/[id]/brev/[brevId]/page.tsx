@@ -4,7 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Sekvens, SekvensDel } from "@/components/ui";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
-import { DomMiniFrist } from "@/components/Dom";
+import { DomMiniFrist, FunnListe } from "@/components/Dom";
 import { AnnotertBrev } from "@/components/AnnotertBrev";
 import { formaterKortDato, idagOslo } from "@/lib/dato";
 import { FORKLARING_DISCLAIMER } from "@/lib/brand";
@@ -106,7 +106,7 @@ export default async function BrevPage({
     <Skjermramme className="pt-5" animerInn={false}>
       <Link
         href={`/krav/${id}`}
-        className="mb-3.5 flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
+        className="mb-3.5 flex items-center gap-1 text-hjelp text-dempet transition hover:text-blekk"
       >
         <ChevronLeft className="size-5" aria-hidden />
         Tilbake
@@ -117,7 +117,7 @@ export default async function BrevPage({
       <h1 className="tittel-s text-blekk">
         {tittel}
       </h1>
-      <p className="mt-0.5 text-[13px] text-dempet">
+      <p className="mt-0.5 text-hjelp text-dempet">
         {[brev.avsender, brev.brevdato ? formaterKortDato(brev.brevdato) : null]
           .filter(Boolean)
           .join(" · ")}
@@ -143,7 +143,7 @@ export default async function BrevPage({
           {brev.forklaring}
         </p>
       </Kort>
-      <p className="mt-1.5 text-[12px] text-dempet">{FORKLARING_DISCLAIMER}</p>
+      <p className="mt-1.5 text-meta text-dempet">{FORKLARING_DISCLAIMER}</p>
       </SekvensDel>
 
       <SekvensDel>
@@ -153,26 +153,27 @@ export default async function BrevPage({
         className="mt-3"
       />
       {harFristfunn && fristfunn?.beregnetDato && (
-        <DomMiniFrist
-          differanseDager={Math.abs(fristfunn.differanseDager ?? 0)}
-          brevdato={brev.brevdato}
-          beregnetDato={fristfunn.beregnetDato}
-          historisk={erGammeltBrev(brev.brevdato, brev.opprettet, idagOslo())}
-          className="mt-3"
-        />
+        <FunnListe className="mt-3">
+          <DomMiniFrist
+            differanseDager={Math.abs(fristfunn.differanseDager ?? 0)}
+            brevdato={brev.brevdato}
+            beregnetDato={fristfunn.beregnetDato}
+            historisk={erGammeltBrev(brev.brevdato, brev.opprettet, idagOslo())}
+          />
+        </FunnListe>
       )}
       </SekvensDel>
 
       <SekvensDel>
       <details className="mt-3">
-        <summary className="cursor-pointer text-[13px] text-dempet transition hover:text-blekk">
+        <summary className="cursor-pointer text-hjelp text-dempet transition hover:text-blekk">
           Vis originalteksten
         </summary>
         <div className="mt-2">
           <AnnotertBrev
             tekst={brev.original_tekst}
             annoteringer={annoteringer}
-            className="rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-[13px] leading-relaxed text-dempet"
+            className="rounded-kort border-[0.5px] border-strek bg-flate p-4 text-hjelp leading-relaxed text-dempet"
           />
         </div>
       </details>
@@ -180,7 +181,7 @@ export default async function BrevPage({
 
       <SekvensDel>
       <div className="mt-6">
-        <p className="mb-3 text-[13px] font-medium text-blekk">
+        <p className="mb-3 text-hjelp font-medium text-blekk">
           Spør om brevet
         </p>
         <BrevSamtale brevId={brev.id} start={samtale} />

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { Phone, KeyRound } from "lucide-react";
+import { Phone, KeyRound, Pencil } from "lucide-react";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { Brevnavn } from "./Brevnavn";
 import { Telefon } from "./Telefon";
@@ -34,7 +34,7 @@ export function ProfilKort({
   return (
     <div>
       <div className="flex flex-col items-center pb-5 pt-3">
-        <div className="flex size-16 items-center justify-center rounded-full bg-blekk text-[27px] font-bold text-bakgrunn mork:bg-flate-2 mork:text-blekk">
+        <div className="flex size-[72px] items-center justify-center rounded-full bg-aksent text-[28px] font-bold text-aksent-tekst">
           {initial}
         </div>
         {fornavn && (
@@ -42,13 +42,14 @@ export function ProfilKort({
             {fornavn}
           </p>
         )}
-        <p className="mt-0.5 text-[13px] text-dempet">{epost}</p>
+        <p className="mt-0.5 max-w-full break-all text-center text-hjelp text-dempet">{epost}</p>
         <button
           type="button"
           onClick={() => setRediger((r) => !r)}
           aria-expanded={rediger}
-          className="trykk mt-2.5 rounded-full border border-strek bg-flate px-3.5 py-1.5 text-[13px] font-medium text-blekk"
+          className="trykk mt-2.5 inline-flex min-h-11 items-center gap-1.5 rounded-full border border-strek bg-flate px-4 text-hjelp font-medium text-blekk"
         >
+          <Pencil className="size-3.5" aria-hidden />
           Rediger profil
         </button>
       </div>
@@ -63,7 +64,7 @@ export function ProfilKort({
             transition={{ duration: VARIGHET.rolig, ease: EASING }}
             style={{ overflow: "hidden" }}
           >
-            <div className="mb-[18px] flex flex-col gap-4 rounded-2xl border-[0.5px] border-strek bg-flate p-[18px]">
+            <div className="mb-[18px] flex flex-col gap-4 rounded-kort border-[0.5px] border-strek bg-flate p-[18px]">
               <Brevnavn start={navn} />
               <Telefon start={telefon} />
             </div>

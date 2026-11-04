@@ -33,7 +33,7 @@ export function Utregning({
         type="button"
         onClick={() => setÅpen((o) => !o)}
         aria-expanded={åpen}
-        className="trykk flex items-center gap-1 text-[13px] font-medium text-dempet transition hover:text-blekk"
+        className="trykk flex items-center gap-1 text-hjelp font-medium text-dempet transition hover:text-blekk"
       >
         {trigger}
         <ChevronDown
@@ -55,11 +55,11 @@ export function Utregning({
             transition={{ duration: VARIGHET.rolig, ease: EASING }}
             style={{ overflow: "hidden" }}
           >
-            <dl className="mt-3 flex flex-col gap-2 rounded-xl border-[0.5px] border-strek bg-flate p-3.5">
+            <dl className="mt-3 flex flex-col gap-2 rounded-kontroll border-[0.5px] border-strek bg-flate p-3.5">
               {rader.map((r, i) => (
                 <div
                   key={i}
-                  className="flex items-baseline justify-between gap-3 text-[13px]"
+                  className="flex items-baseline justify-between gap-3 text-hjelp"
                 >
                   <dt className="text-dempet">{r.etikett}</dt>
                   <dd

@@ -9,7 +9,9 @@ import {
   SekvensDel,
   Heltekort,
   HeltChip,
+  Snarvei,
 } from "@/components/ui";
+import { FilePlus2, FolderOpen, Scale, CircleHelp } from "lucide-react";
 import { dagerTil, fristNærhet, formaterTallDato, idagOslo } from "@/lib/dato";
 import { erHastende, erGammeltBrev, fristChipTekst } from "@/lib/frist";
 import { formaterBelop } from "@/lib/format";
@@ -88,8 +90,15 @@ export default async function HjemPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const varslerPa = user?.user_metadata?.varsler_paa !== false;
+  // Samme navnegrunnlag som Meg: brevnavn med fallback til det gamle
+  // fornavn-feltet. Kun første ord vises her.
   const fornavn =
-    (user?.user_metadata?.fornavn as string | undefined)?.trim() || null;
+    (
+      (user?.user_metadata?.brevnavn as string | undefined) ??
+      (user?.user_metadata?.fornavn as string | undefined)
+    )
+      ?.trim()
+      .split(/\s+/)[0] || null;
   const avatarBokstav = (fornavn?.[0] ?? user?.email?.[0] ?? "M").toUpperCase();
 
   const [{ data: sakData }, { data: fristData }, { data: brevData }] =
@@ -257,7 +266,7 @@ export default async function HjemPage() {
 
   const navnPa = (s: SakKobling) => s.kreditor ?? s.tittel;
   const kreditorLinje = (s: SakKobling) => (
-    <p className="mt-3 text-[15px] font-semibold text-helt-dempet">{navnPa(s)}</p>
+    <p className="mt-3 text-brod font-semibold text-helt-dempet">{navnPa(s)}</p>
   );
   const belopLinje = (s: SakKobling) =>
     s.belop_totalt != null ? (
@@ -270,17 +279,24 @@ export default async function HjemPage() {
     <Skjermramme className="pt-6" animerInn={false}>
       <Sekvens>
       <SekvensDel>
-        <div className="mb-[22px] flex items-center justify-between">
-          <p className="text-[13px] font-medium text-dempet">{idagEyebrow()}</p>
+        {/* Kompakt velkomst: dato og navn til venstre, profil til høyre. */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-hjelp font-medium text-dempet">{idagEyebrow()}</p>
+            <h1 className="tittel mt-1 text-blekk">
+              {fornavn ? `Hei, ${fornavn}` : "Hei"}
+            </h1>
+          </div>
           <Link
             href="/meg"
             aria-label="Meg"
-            className="trykk flex size-[34px] items-center justify-center rounded-full bg-blekk text-[14px] font-bold text-bakgrunn mork:border mork:border-kant mork:bg-flate-2 mork:text-blekk"
+            className="trykk -mr-1 flex size-11 shrink-0 items-center justify-center"
           >
-            {avatarBokstav}
+            <span className="flex size-9 items-center justify-center rounded-full bg-aksent text-[14px] font-bold text-aksent-tekst">
+              {avatarBokstav}
+            </span>
           </Link>
         </div>
-        <h1 className="tittel text-blekk">{fornavn ? `Hei, ${fornavn}` : "Hei"}</h1>
         <p className="mt-1.5 text-[14px] text-dempet">{ingress}</p>
       </SekvensDel>
 
@@ -311,15 +327,15 @@ export default async function HjemPage() {
                 </Primærknapp>
               }
             >
-              <p className="mt-3 text-[15px] font-semibold">{navnPa(seierSak)}</p>
+              <p className="mt-3 text-brod font-semibold">{navnPa(seierSak)}</p>
               <p className="tall-m mt-1 text-gull">Medhold.</p>
-              <p className="mt-2 text-[13px]">
+              <p className="mt-2 text-hjelp">
                 Kravet ble frafalt etter innsigelsen din.
               </p>
             </Heltekort>
           ) : !topSak ? (
             <Kort>
-              <p className="text-[15px] leading-relaxed text-blekk">
+              <p className="text-brod leading-relaxed text-blekk">
                 Ingen aktive saker akkurat nå.
               </p>
               <div className="mt-4">
@@ -414,18 +430,49 @@ export default async function HjemPage() {
         </div>
       </SekvensDel>
 
+      {/* Snarveier: alltid nyttig innhold, også med null eller én sak. */}
+      <SekvensDel>
+        <h2 className="seksjonstittel mt-seksjon text-blekk">Hva vil du gjøre?</h2>
+        <div className="mt-gruppe grid grid-cols-2 gap-2.5">
+          <Snarvei
+            ikon={FilePlus2}
+            tittel="Legg til brev"
+            tekst="Få brevet lest og sjekket"
+            href="/legg-til-brev"
+          />
+          <Snarvei
+            ikon={FolderOpen}
+            tittel="Se saker"
+            tekst="Alle brev og krav samlet"
+            href="/krav"
+          />
+          <Snarvei
+            ikon={Scale}
+            tittel="Satsene vi bruker"
+            tekst="Offentlige maksimalsatser"
+            href="/satser"
+          />
+          <Snarvei
+            ikon={CircleHelp}
+            tittel="Få hjelp"
+            tekst="Kontakt og personvern"
+            href="/meg"
+          />
+        </div>
+      </SekvensDel>
+
       {andreSaker.length > 0 && (
         <SekvensDel>
-          <div className="mb-2.5 mt-6 flex items-baseline justify-between px-0.5">
+          <div className="mb-gruppe mt-seksjon flex items-baseline justify-between">
             <h2 className="seksjonstittel text-blekk">Andre saker</h2>
             <Link
               href="/krav"
-              className="text-[13px] font-semibold text-dempet transition hover:text-blekk"
+              className="text-hjelp font-semibold text-dempet transition hover:text-blekk"
             >
               Se alle
             </Link>
           </div>
-          <ul className="rounded-[20px] border border-kant bg-flate px-4">
+          <ul className="rounded-kort border border-kant bg-flate px-4">
             {andreSaker.map((s, i) => {
               const frist = nesteFristPerSak.get(s.id);
               const dager = frist ? dagerTil(frist) : null;
@@ -442,17 +489,17 @@ export default async function HjemPage() {
                     href={`/krav/${s.id}`}
                     className="trykk flex items-center gap-3 py-[13px]"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] bg-flate-2 text-[14px] font-bold text-blekk">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-liten bg-flate-2 text-[14px] font-bold text-blekk">
                       {navnPa(s).charAt(0).toUpperCase()}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14px] font-semibold text-blekk">
+                      <span className="radtittel block truncate text-blekk">
                         {navnPa(s)}
                       </span>
                       {undertekst && (
                         <span
-                          className={`block text-[12px] ${
-                            hastende ? "font-semibold text-dom-rod" : "text-dempet"
+                          className={`radtekst block ${
+                            hastende ? "font-semibold !text-dom-rod" : ""
                           }`}
                         >
                           {undertekst}
@@ -460,7 +507,7 @@ export default async function HjemPage() {
                       )}
                     </span>
                     {belop && (
-                      <span className="shrink-0 text-[15px] font-bold tabular-nums text-blekk">
+                      <span className="shrink-0 text-brod font-bold tabular-nums text-blekk">
                         {belop} kr
                       </span>
                     )}
@@ -469,6 +516,20 @@ export default async function HjemPage() {
               );
             })}
           </ul>
+        </SekvensDel>
+      )}
+
+      {/* Kort forklaring av flyten ved få saker — samme flyt som finnes, ingen
+          nye løfter. Forsvinner når brukeren har flere saker å forholde seg til. */}
+      {aktiveSaker.length <= 1 && (
+        <SekvensDel>
+          <div className="mt-seksjon rounded-kort bg-flate-2 p-4">
+            <p className="radtittel text-blekk">Slik fungerer Medhold</p>
+            <p className="mt-1 text-hjelp leading-relaxed text-dempet">
+              Legg til brevet og sjekk tallene mot det. Vi kontrollerer gebyrer og
+              frister, og lager et utkast du kan endre. Du sender det selv.
+            </p>
+          </div>
         </SekvensDel>
       )}
       </Sekvens>

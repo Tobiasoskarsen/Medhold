@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme } from "@/components/ui";
+import { Toppstripe } from "@/components/ui/Toppstripe";
 import { harPluss } from "@/lib/plan";
 import { UTKAST_TYPER, type UtkastType } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
@@ -80,19 +81,21 @@ export default async function UtkastPage({
       : null;
 
   return (
-    <Skjermramme className="pt-5">
-      <Link
-        href={`/krav/${id}`}
-        className="mb-3.5 flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
-      >
-        <ChevronLeft className="size-5" aria-hidden />
-        {sak.kreditor ?? sak.tittel}
-      </Link>
+    <Skjermramme className="pt-2.5" animerInn={false}>
+      <Toppstripe className="mb-1">
+        <Link
+          href={`/krav/${id}`}
+          className="trykk -ml-2.5 flex min-h-11 min-w-0 items-center gap-0.5 pr-2 text-hjelp text-dempet transition hover:text-blekk"
+        >
+          <ChevronLeft className="size-6 shrink-0 text-blekk" strokeWidth={2} aria-hidden />
+          <span className="truncate">{sak.kreditor ?? sak.tittel}</span>
+        </Link>
+      </Toppstripe>
 
       <h1 className="tittel-s text-blekk">
         Lag et utkast
       </h1>
-      <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+      <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
         Velg type og fyll inn kort. Medhold skriver et utkast du kan endre og
         sende selv.
       </p>

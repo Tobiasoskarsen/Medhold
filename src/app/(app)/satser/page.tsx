@@ -21,7 +21,7 @@ export default function SatserPage() {
   const tilbake = (
     <Link
       href="/meg"
-      className="mb-3.5 flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
+      className="mb-3.5 flex items-center gap-1 text-hjelp text-dempet transition hover:text-blekk"
     >
       <ChevronLeft className="size-5" aria-hidden />
       Meg
@@ -37,7 +37,7 @@ export default function SatserPage() {
           <h2 className="seksjonstittel text-blekk">
             Satsene for {idag.slice(0, 4)} er ikke lagt inn ennå
           </h2>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+          <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
             Inntil de nye satsene er lagt inn, vurderer vi ikke gebyrer i brev
             fra i år. Gebyrsjekken sier da «Ikke kontrollert» i stedet for å
             bruke fjorårets tall.
@@ -56,19 +56,19 @@ export default function SatserPage() {
           <h1 className="tittel-s text-blekk">
             Satsene vi bruker
           </h1>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+          <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
             Alle kontroller i Medhold gjøres mot disse satsene. De er
             offentlige og fastsatt i inkassoforskriften.
           </p>
         </SekvensDel>
 
         <SekvensDel>
-          <div className="mt-5 rounded-2xl border-[0.5px] border-strek bg-flate p-[18px]">
+          <div className="mt-5 rounded-kort border-[0.5px] border-strek bg-flate p-[18px]">
             <p className="eyebrow mb-3">
               Gjelder {formaterDato(sats.gyldigFra)} –{" "}
               {formaterDato(sats.gyldigTil)}
             </p>
-            <dl className="flex flex-col gap-2 text-[13px]">
+            <dl className="flex flex-col gap-2 text-hjelp">
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-dempet">Inkassosats</dt>
                 <dd className="tabular-nums text-blekk">
@@ -122,9 +122,9 @@ export default function SatserPage() {
             ).map((tabell) => (
               <div
                 key={tabell.bokstav}
-                className="mt-3 overflow-hidden rounded-2xl border-[0.5px] border-strek bg-flate"
+                className="mt-3 overflow-hidden rounded-kort border-[0.5px] border-strek bg-flate"
               >
-                <p className="border-b-[0.5px] border-strek px-3.5 py-2.5 text-[13px] font-medium text-blekk">
+                <p className="border-b-[0.5px] border-strek px-3.5 py-2.5 text-hjelp font-medium text-blekk">
                   Tabell {tabell.bokstav}{" "}
                   <span className="font-normal text-dempet">
                     — {tabell.forklaring}
@@ -166,7 +166,7 @@ export default function SatserPage() {
             ))}
           </div>
 
-          <p className="mt-4 text-[12px] text-dempet">
+          <p className="mt-4 text-meta text-dempet">
             Kilde:{" "}
             <a
               href={sats.kilde}

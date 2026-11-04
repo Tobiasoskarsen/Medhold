@@ -45,7 +45,7 @@ export function SakStatusLinje({
       : "text-dempet";
 
   return (
-    <p className={`text-[13px] leading-relaxed ${farge}`}>
+    <p className={`text-hjelp leading-relaxed ${farge}`}>
       {tekst}{" "}
       <Link
         href={`/krav/${sakId}`}

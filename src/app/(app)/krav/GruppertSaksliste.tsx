@@ -63,7 +63,7 @@ export function GruppertSaksliste({
 
   return (
     <div>
-      <div className="flex items-center gap-2 rounded-[16px] border border-kant bg-flate px-3.5 py-2.5">
+      <div className="flex items-center gap-2 rounded-kontroll border border-kant bg-flate px-3.5 py-2.5">
         <Search className="size-4 shrink-0 text-dempet" aria-hidden />
         <input
           value={sok}
@@ -74,7 +74,7 @@ export function GruppertSaksliste({
       </div>
 
       {!q && (
-        <p className="mb-2 mt-4 text-[13px] text-dempet">
+        <p className="mb-2 mt-4 text-hjelp text-dempet">
           Gruppert på kreditor · {antallKreditorer}{" "}
           {antallKreditorer === 1 ? "kreditor" : "kreditorer"}
         </p>
@@ -87,7 +87,7 @@ export function GruppertSaksliste({
             return (
               <div
                 key={g.navn}
-                className="overflow-hidden rounded-[20px] border border-kant bg-flate"
+                className="overflow-hidden rounded-kort border border-kant bg-flate"
               >
                 <button
                   type="button"
@@ -95,7 +95,7 @@ export function GruppertSaksliste({
                   aria-expanded={åpen}
                   className="trykk flex w-full items-center gap-3 px-3.5 py-3 text-left"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] bg-flate-2 text-[15px] font-bold text-blekk">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-kontroll bg-flate-2 text-brod font-bold text-blekk">
                     {g.navn.charAt(0).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -104,7 +104,7 @@ export function GruppertSaksliste({
                       {g.harFunn && (
                         <span
                           aria-hidden
-                          className="text-[13px] font-bold leading-none text-dom-rod"
+                          className="text-hjelp font-bold leading-none text-dom-rod"
                         >
                           §
                         </span>
@@ -120,7 +120,7 @@ export function GruppertSaksliste({
                     )}
                   </span>
                   {g.samletBelop != null && (
-                    <span className="tall-s shrink-0 text-blekk">
+                    <span className="text-brod font-bold tabular-nums shrink-0 text-blekk">
                       {formaterBelop(g.samletBelop)} kr
                     </span>
                   )}
@@ -138,7 +138,7 @@ export function GruppertSaksliste({
                       <Link
                         key={s.id}
                         href={`/krav/${s.id}`}
-                        className="trykk flex items-center justify-between gap-3 border-b border-strek px-3.5 py-2.5 text-[13px] last:border-none hover:bg-bakgrunn"
+                        className="trykk flex items-center justify-between gap-3 border-b border-strek px-3.5 py-2.5 text-hjelp last:border-none hover:bg-bakgrunn"
                       >
                         <span className="min-w-0">
                           <span className="flex items-center gap-1 font-medium text-blekk">
@@ -177,7 +177,7 @@ export function GruppertSaksliste({
       {filtrerteEnkelt.length > 0 && (
         <div className="mt-6">
           <h2 className="seksjonstittel mb-2.5 text-blekk">Enkeltstående (1 krav)</h2>
-          <ul className="rounded-[20px] border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
+          <ul className="rounded-kort border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
             {filtrerteEnkelt.map((sak) => (
               <li key={sak.id}>
                 <Kravkort {...sak} />
@@ -188,7 +188,7 @@ export function GruppertSaksliste({
       )}
 
       {ingenTreff && (
-        <p className="mt-6 text-center text-[13px] text-dempet">
+        <p className="mt-6 text-center text-hjelp text-dempet">
           Ingen treff på «{sok}».
         </p>
       )}

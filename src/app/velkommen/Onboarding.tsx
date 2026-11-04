@@ -80,7 +80,7 @@ export function Onboarding() {
   // Samme markup på server og klient inntil avgjørelsen er tatt (null) eller
   // vi omdirigerer bort (true) — en tom, bakgrunnsfarget flate. Unngår at
   // server og klientens første render noensinne kan avvike strukturelt.
-  if (hoppOverAlt !== false) return <main className="min-h-screen bg-bakgrunn" />;
+  if (hoppOverAlt !== false) return <main className="min-h-dvh bg-bakgrunn" />;
 
   // Parallakse ved steg-bytte (Motion3 §4.3): illustrasjonen glir `faktor`
   // ganger STEG_GLID, tekstblokken kun STEG_GLID — samme varighet/easing som
@@ -106,12 +106,12 @@ export function Onboarding() {
 
   return (
     <Bevegelsesramme>
-      <main className="relative mx-auto flex min-h-screen w-full max-w-[420px] flex-col">
+      <main className="relative mx-auto flex min-h-dvh w-full max-w-[420px] flex-col">
         {i < SISTE && (
           <button
             type="button"
             onClick={() => gaTil(SISTE)}
-            className="absolute right-5 top-5 z-10 text-[13px] font-medium text-dempet"
+            className="absolute right-5 top-5 z-10 text-hjelp font-medium text-dempet"
           >
             Hopp over
           </button>
@@ -182,7 +182,7 @@ export function Onboarding() {
                 type="button"
                 onClick={() => gaTil(i - 1)}
                 aria-label="Tilbake"
-                className="trykk flex size-[52px] shrink-0 items-center justify-center rounded-xl border-[0.5px] border-strek bg-flate text-[15px] font-semibold text-blekk"
+                className="trykk flex size-[52px] shrink-0 items-center justify-center rounded-kontroll border-[0.5px] border-strek bg-flate text-brod font-semibold text-blekk"
               >
                 ‹
               </button>

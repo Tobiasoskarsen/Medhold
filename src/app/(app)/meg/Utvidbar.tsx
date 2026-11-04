@@ -29,16 +29,16 @@ export function Utvidbar({
         type="button"
         onClick={() => setÅpen((o) => !o)}
         aria-expanded={åpen}
-        className="trykk flex w-full items-center justify-between gap-3 px-[14px] py-3 text-left"
+        className="trykk flex min-h-[52px] w-full items-center justify-between gap-3 px-[14px] py-2.5 text-left"
       >
-        <span className="flex items-center gap-2.5 text-sm text-blekk">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-flate-2">
+        <span className="flex shrink-0 items-center gap-2.5 text-brod text-blekk">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-liten bg-flate-2">
             <Ikon className="size-[17px] text-dempet" aria-hidden />
           </span>
           {etikett}
         </span>
-        <span className="flex items-center gap-1.5">
-          {verdi && <span className="text-[13px] text-dempet">{verdi}</span>}
+        <span className="flex min-w-0 items-center gap-1.5">
+          {verdi && <span className="truncate text-hjelp text-dempet">{verdi}</span>}
           <ChevronRight
             className={`size-[15px] shrink-0 text-dempet transition-transform duration-200 ${
               åpen ? "rotate-90" : ""

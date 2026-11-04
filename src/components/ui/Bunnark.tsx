@@ -14,8 +14,9 @@ const LUKK_FART = 500;
 
 /**
  * Bunnark — et ark som glir opp fra bunnen, med håndtak og «dra ned for å
- * lukke». Lukkes også med Esc, trykk på bakgrunnen, eller fra innholdet
- * (`lukk`). Fokus flyttes inn i arket og tilbake til utløseren ved lukking.
+ * lukke». Lukkes også med Esc eller trykk på bakgrunnen. Fokus flyttes inn i
+ * arket, holdes der (Tab går i ring), og går tilbake til utløseren ved lukking;
+ * resten av siden er utilgjengelig (inert) mens arket er åpent.
  * Rendres i en portal (fixed må ikke arve transform fra foreldre). Ved
  * redusert bevegelse blir glid og drag ren fade (MotionConfig).
  */
@@ -53,11 +54,44 @@ export function Bunnark({
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const tast = (e: KeyboardEvent) => {
-      if (e.key === "Escape") lukkRef.current();
+      if (e.key === "Escape") {
+        lukkRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const ark = arkRef.current;
+      if (!ark) return;
+      const fokuserbare = ark.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (fokuserbare.length === 0) return;
+      const forste = fokuserbare[0];
+      const siste = fokuserbare[fokuserbare.length - 1];
+      const aktiv = document.activeElement;
+      if (e.shiftKey && (aktiv === forste || !ark.contains(aktiv))) {
+        e.preventDefault();
+        siste.focus();
+      } else if (!e.shiftKey && (aktiv === siste || !ark.contains(aktiv))) {
+        e.preventDefault();
+        forste.focus();
+      }
+    };
+    // Bakgrunnen utilgjengelig: alt i body utenom portalen med arket.
+    const bak: Element[] = [];
+    const settInert = () => {
+      const ark = arkRef.current;
+      if (!ark) return;
+      for (const el of Array.from(document.body.children)) {
+        if (!el.contains(ark) && !el.hasAttribute("inert")) {
+          el.setAttribute("inert", "");
+          bak.push(el);
+        }
+      }
     };
     window.addEventListener("keydown", tast);
     // Fokus inn i arket når det er på plass.
     const t = window.setTimeout(() => {
+      settInert();
       arkRef.current
         ?.querySelector<HTMLElement>("button, [href], input, [tabindex]")
         ?.focus();
@@ -66,6 +100,7 @@ export function Bunnark({
       document.body.style.overflow = overflow;
       window.removeEventListener("keydown", tast);
       window.clearTimeout(t);
+      bak.forEach((el) => el.removeAttribute("inert"));
       forrige?.focus?.();
     };
   }, [apen]);
@@ -91,7 +126,8 @@ export function Bunnark({
               role="dialog"
               aria-modal="true"
               aria-label={tittel}
-              className="relative w-full max-w-[640px] rounded-t-[26px] border-t border-kant bg-flate px-[18px] pb-[max(18px,env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-12px_40px_-16px_rgb(0_0_0/0.35)]"
+              className="relative max-h-[85dvh] w-full max-w-[640px] overflow-y-auto overscroll-contain rounded-t-helt border-t border-kant bg-flate px-[18px] pb-[max(18px,env(safe-area-inset-bottom))] pt-2.5"
+              style={{ boxShadow: "var(--skygge-hevet)" }}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -113,7 +149,7 @@ export function Bunnark({
               }}
             >
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-strek" aria-hidden />
-              <p className="mb-2 px-1 text-[13px] font-semibold text-dempet">{tittel}</p>
+              <p className="mb-2 px-1 text-hjelp font-semibold text-dempet">{tittel}</p>
               {children}
             </m.div>
           </div>

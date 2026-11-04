@@ -3,7 +3,7 @@
 import { useRef, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { m } from "motion/react";
-import { TriangleAlert } from "lucide-react";
+import { ChevronRight, TriangleAlert } from "lucide-react";
 import { useInntreden, useSekvensForsinkelse } from "@/components/ui";
 import {
   STATUS_ETIKETT,
@@ -34,8 +34,8 @@ import { erHastende, fristChipTekst } from "@/lib/frist";
  * tekstene er garantert like (ingen opprinnelig_kreditor) — ellers ville
  * teksten «hoppe» til noe annet midt i overgangen.
  *
- * `status === "fullfort"` → avsluttet-variant: hele raden opacity-70, og
- * utfallspillen erstatter underteksten (frist/venter/stadium). Ingen
+ * `status === "fullfort"` → avsluttet-variant: dempet beløp (teksten skal
+ * fortsatt være lett å lese), og utfallspillen erstatter underteksten (frist/venter/stadium). Ingen
  * funn-markør på avsluttede (Sakslisteordre §2.3).
  */
 export function Kravkort({
@@ -121,7 +121,7 @@ export function Kravkort({
       href={href}
       onClick={klikk}
       onPointerDown={startTrykk}
-      className={`trykk flex items-center gap-3 py-[13px] ${avsluttet ? "opacity-70" : ""}`}
+      className="trykk flex min-h-[64px] items-center gap-3 py-3"
       style={{
         opacity: aktiv ? PENDING_OPASITET : undefined,
         transitionProperty: "opacity",
@@ -129,13 +129,13 @@ export function Kravkort({
         transitionTimingFunction: "var(--bevegelse-easing)",
       }}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px] bg-flate-2 text-[14px] font-bold text-blekk">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-liten bg-flate-2 text-[14px] font-bold text-blekk">
         {navn.charAt(0).toUpperCase()}
       </span>
       <span className="min-w-0 flex-1">
         <span
           ref={navnRef}
-          className="block truncate text-[14px] font-semibold text-blekk"
+          className="radtittel block truncate text-blekk"
         >
           {navn}
         </span>
@@ -150,8 +150,12 @@ export function Kravkort({
           undertekst && (
             <m.span
               {...merkeInntreden}
-              className={`block text-[12px] ${
-                hastende ? "font-semibold text-dom-rod" : "text-dempet"
+              className={`radtekst block ${
+                hastende
+                  ? "font-semibold !text-dom-rod"
+                  : status === "venter_pa_svar"
+                    ? "font-medium !text-trygg"
+                    : ""
               }`}
             >
               {undertekst}
@@ -165,7 +169,7 @@ export function Kravkort({
             {...merkeInntreden}
             role="img"
             aria-label="Gebyrfunn i denne saken"
-            className="text-[13px] font-bold leading-none text-dom-rod"
+            className="text-hjelp font-bold leading-none text-dom-rod"
           >
             §
           </m.span>
@@ -182,11 +186,12 @@ export function Kravkort({
         {belop && (
           <span
             ref={belopRef}
-            className={`text-[15px] font-bold tabular-nums ${avsluttet ? "text-dempet" : "text-blekk"}`}
+            className={`text-brod font-bold tabular-nums ${avsluttet ? "text-dempet" : "text-blekk"}`}
           >
             {belop} kr
           </span>
         )}
+        <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
       </span>
     </a>
   );

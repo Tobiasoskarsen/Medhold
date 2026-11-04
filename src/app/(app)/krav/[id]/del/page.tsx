@@ -40,7 +40,7 @@ export default async function DelPage({
     <Skjermramme className="pt-5" animerInn={false}>
       <Link
         href={`/krav/${id}`}
-        className="mb-3.5 flex items-center gap-1 text-[13px] text-dempet transition hover:text-blekk"
+        className="mb-3.5 flex items-center gap-1 text-hjelp text-dempet transition hover:text-blekk"
       >
         <ChevronLeft className="size-5" aria-hidden />
         Tilbake
@@ -49,11 +49,11 @@ export default async function DelPage({
       <h1 className="tittel-s text-blekk">
         Del resultatet
       </h1>
-      <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+      <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
         Ingen navn eller detaljer om saken din vises i bildet — kun beløpet.
       </p>
 
-      <div className="mt-5 overflow-hidden rounded-[26px] border-[0.5px] border-strek">
+      <div className="mt-5 overflow-hidden rounded-helt border-[0.5px] border-strek">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={bildeUrl}

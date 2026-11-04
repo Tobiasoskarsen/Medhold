@@ -10,7 +10,7 @@ export default function Loading() {
       <Skjelett className="mt-2.5 h-4 w-full" />
       <div className="mt-5 flex flex-col gap-2.5">
         {[0, 1, 2].map((i) => (
-          <Skjelett key={i} className="h-24 w-full rounded-[20px]" />
+          <Skjelett key={i} className="h-24 w-full rounded-kort" />
         ))}
       </div>
     </Skjermramme>

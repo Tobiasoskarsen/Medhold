@@ -38,7 +38,7 @@ export function VeierSteg({
             {RADER.map((rad, i) => (
               <m.div
                 key={rad}
-                className="flex items-center gap-2.5 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5 text-left text-[13px] font-medium text-blekk"
+                className="flex items-center gap-2.5 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5 text-left text-hjelp font-medium text-blekk"
                 initial={{ opacity: 0, y: 8 }}
                 animate={vist ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
                 transition={{

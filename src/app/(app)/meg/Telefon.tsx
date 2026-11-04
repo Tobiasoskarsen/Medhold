@@ -30,7 +30,7 @@ export function Telefon({ start }: { start: string }) {
       <label htmlFor="telefon" className="text-sm font-medium text-blekk">
         Telefon
       </label>
-      <p className="mt-0.5 text-[13px] text-dempet">
+      <p className="mt-0.5 text-hjelp text-dempet">
         Valgfritt. Klar for SMS-påminnelser og -innlogging senere.
       </p>
       <input
@@ -49,13 +49,13 @@ export function Telefon({ start }: { start: string }) {
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
         }}
-        className="mt-2 w-full rounded-[14px] border border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+        className="mt-2 w-full rounded-kontroll border border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
       />
       {feil ? (
-        <p className="mt-1.5 text-[13px] text-dom-rod">{feil}</p>
+        <p className="mt-1.5 text-hjelp text-dom-rod">{feil}</p>
       ) : (
         lagret &&
-        !venter && <p className="mt-1.5 text-[13px] text-trygg">Lagret</p>
+        !venter && <p className="mt-1.5 text-hjelp text-trygg">Lagret</p>
       )}
     </div>
   );

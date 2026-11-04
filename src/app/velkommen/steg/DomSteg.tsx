@@ -28,7 +28,7 @@ export function DomSteg({
       <div style={illustrasjonStil}>
         <div className="flex size-[180px] items-center justify-center">
           <m.div
-            className="flex size-[150px] flex-col items-center justify-center gap-0.5 rounded-[20px] border-[1.5px] border-dom-rod/40 bg-dom-rod-bg"
+            className="flex size-[150px] flex-col items-center justify-center gap-0.5 rounded-kort border-[1.5px] border-dom-rod/40 bg-dom-rod-bg"
             initial={{ scale: 1.04, rotate: -0.6, opacity: 0 }}
             animate={
               vist

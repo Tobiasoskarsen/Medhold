@@ -36,6 +36,30 @@ const GENERISK_FEIL = "Noe gikk galt. Prøv igjen om litt.";
 
 type Omfang = "delvis" | "helt";
 
+// Samme flate i alle faser, så teksten ikke hopper fra strømming til redigering.
+const DOKUMENT =
+  "min-h-[420px] w-full rounded-kort border border-kant bg-flate p-5 text-brod leading-[1.6] text-blekk";
+
+const FASER = ["Opplysninger", "Skriver", "Les og rediger"] as const;
+
+/** Hvor i flyten brukeren er. Ren visning av de tre eksisterende fasene. */
+function FaseLinje({ aktiv }: { aktiv: 0 | 1 | 2 }) {
+  return (
+    <ol className="mb-5 flex items-center gap-1.5 text-meta font-medium text-dempet">
+      {FASER.map((f, i) => (
+        <li
+          key={f}
+          aria-current={i === aktiv ? "step" : undefined}
+          className="flex items-center gap-1.5"
+        >
+          {i > 0 && <span className="h-px w-3 bg-strek" aria-hidden />}
+          <span className={i === aktiv ? "font-bold text-blekk" : ""}>{f}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export function UtkastFlyt({
   sakId,
   brevId,
@@ -321,10 +345,11 @@ export function UtkastFlyt({
 
   return (
     <div>
+      <FaseLinje aktiv={fase === "skjema" ? 0 : fase === "strømmer" ? 1 : 2} />
       {fase === "skjema" ? (
         <>
           {harOverGebyr && (
-            <p className="mb-3 rounded-xl bg-dom-rod-bg px-3.5 py-2.5 text-[13px] leading-relaxed text-dom-rod">
+            <p className="mb-3 rounded-kontroll bg-dom-rod-bg px-3.5 py-2.5 text-hjelp leading-relaxed text-dom-rod">
               Gebyrsjekken fant et beløp over maksimalsats — dette tas med i
               utkastet.
             </p>
@@ -333,7 +358,7 @@ export function UtkastFlyt({
             {UTKAST_TYPER.map((t) => (
               <label
                 key={t}
-                className={`flex items-start gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm transition ${
+                className={`flex items-start gap-2.5 rounded-kontroll border-[0.5px] px-3.5 py-3 text-sm transition ${
                   type === t
                     ? "border-aksent bg-aksent/5 text-blekk"
                     : "border-strek text-blekk"
@@ -350,7 +375,7 @@ export function UtkastFlyt({
                   <span className="block font-medium text-blekk">
                     {UTKAST_ETIKETT[t]}
                   </span>
-                  <span className="block text-[12px] text-dempet">
+                  <span className="block text-meta text-dempet">
                     {UTKAST_UNDERTEKST[t]}
                   </span>
                 </span>
@@ -360,7 +385,7 @@ export function UtkastFlyt({
 
           {visOmfang && (
             <fieldset className="mt-5">
-              <legend className="text-[13px] font-medium text-blekk">
+              <legend className="text-hjelp font-medium text-blekk">
                 Hva er du uenig i?
               </legend>
               <div className="mt-1.5 flex flex-col gap-2">
@@ -372,7 +397,7 @@ export function UtkastFlyt({
                 ).map(([verdi, etikett]) => (
                   <label
                     key={verdi}
-                    className={`flex items-center gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm text-blekk transition ${
+                    className={`flex items-center gap-2.5 rounded-kontroll border-[0.5px] px-3.5 py-3 text-sm text-blekk transition ${
                       omfangValg === verdi ? "border-aksent bg-aksent/5" : "border-strek"
                     }`}
                   >
@@ -390,33 +415,34 @@ export function UtkastFlyt({
             </fieldset>
           )}
 
-          <label className="mt-5 block text-[13px] font-medium text-blekk">
-            {UTKAST_SPORSMAL[type]}
+          <label className="mt-5 block text-hjelp font-medium text-blekk">
+            {/* Omfanget spør allerede «Hva er du uenig i?» — ikke spør to ganger. */}
+            {visOmfang ? "Hvorfor er du uenig?" : UTKAST_SPORSMAL[type]}
             <textarea
               value={detaljer}
               onChange={(e) => setDetaljer(e.target.value)}
               rows={5}
               placeholder="Skriv kort med egne ord. La stå tomt om du er usikker."
-              className="mt-1.5 w-full resize-none rounded-[14px] border border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+              className="mt-1.5 w-full resize-none rounded-kontroll border border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
             />
           </label>
 
           {/* Kun når navnet ikke allerede er satt på Meg — er det satt der,
               brukes det uten å spørre på nytt her (§6, utkast-stemme). */}
           {!navnStart.trim() && (
-            <label className="mt-5 block text-[13px] font-medium text-blekk">
+            <label className="mt-5 block text-hjelp font-medium text-blekk">
               Navnet ditt (slik det skal stå i brevet)
               <input
                 type="text"
                 value={navn}
                 onChange={(e) => setNavn(e.target.value)}
                 placeholder="Fullt navn"
-                className="mt-1.5 w-full rounded-[14px] border border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+                className="mt-1.5 w-full rounded-kontroll border border-strek bg-flate px-3.5 py-3 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
               />
             </label>
           )}
 
-          {feil && <p className="mt-3 text-[13px] text-dom-rod">{feil}</p>}
+          {feil && <p className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
 
           <div className="mt-5">
             <Primærknapp onClick={generer} disabled={genererer}>
@@ -439,7 +465,7 @@ export function UtkastFlyt({
               onChange={(e) => setTekst(e.target.value)}
               onBlur={() => setKontrollTekst(tekst)}
               rows={16}
-              className="w-full resize-none rounded-[14px] border border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+              className={`${DOKUMENT} resize-none outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30`}
             />
           ) : (
             <>
@@ -447,7 +473,7 @@ export function UtkastFlyt({
                 aria-live="polite"
                 animate={{ opacity: justerer ? 0.35 : 1 }}
                 transition={{ duration: redusert ? 0 : VARIGHET.hurtig }}
-                className="min-h-[380px] w-full whitespace-pre-wrap rounded-2xl border-[0.5px] border-strek bg-flate p-4 text-sm leading-relaxed text-blekk"
+                className={`${DOKUMENT} whitespace-pre-wrap`}
               >
                 {tekst}
                 {!justerer && tekst && (
@@ -457,17 +483,16 @@ export function UtkastFlyt({
                   />
                 )}
               </m.div>
-              {justerer && (
-                <p className="mt-2 text-[13px] text-dempet">
-                  Justerer ordlyden …
-                </p>
-              )}
+              {/* Plassen er alltid reservert: ingen hopp når teksten kommer. */}
+              <p className="mt-2 h-5 text-hjelp text-dempet" aria-live="polite">
+                {justerer ? "Justerer ordlyden …" : ""}
+              </p>
             </>
           )}
 
           {fase === "ferdig" && (
             <>
-              <p className="mt-3 text-[13px] leading-relaxed text-dempet">
+              <p className="mt-3 text-hjelp leading-relaxed text-dempet">
                 Les gjennom og endre det som trengs — så sender du det selv
                 {avsender ? ` til ${avsender}` : ""}.
               </p>
@@ -495,7 +520,7 @@ export function UtkastFlyt({
                   {sjekk.advarsler.length > 0 && (
                     <ul className="mt-2 flex flex-col gap-1">
                       {sjekk.advarsler.map((a, i) => (
-                        <li key={i} className="text-[13px] font-semibold text-dom-rod">
+                        <li key={i} className="text-hjelp font-semibold text-dom-rod">
                           {a.tekst}
                         </li>
                       ))}
@@ -506,7 +531,7 @@ export function UtkastFlyt({
                       {sjekk.verdier.map((v) => (
                         <li
                           key={`${v.type}-${v.verdi}`}
-                          className="flex items-baseline justify-between gap-3 border-t-[0.5px] border-strek py-2 text-[13px] first:border-t-0"
+                          className="flex items-baseline justify-between gap-3 border-t-[0.5px] border-strek py-2 text-hjelp first:border-t-0"
                         >
                           <span className="font-bold tabular-nums text-blekk">
                             {v.verdi}
@@ -518,7 +543,7 @@ export function UtkastFlyt({
                       ))}
                     </ul>
                   )}
-                  <p className="mt-2 text-[12px] text-dempet">
+                  <p className="mt-2 text-meta text-dempet">
                     Du sender brevet selv, så les det gjennom før du sender.
                   </p>
                 </Kort>
@@ -552,7 +577,7 @@ export function UtkastFlyt({
                 <button
                   type="button"
                   onClick={kopier}
-                  className="trykk inline-flex items-center gap-2 rounded-[14px] border border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+                  className="trykk inline-flex min-h-11 shrink-0 items-center gap-2 rounded-kontroll border border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
                 >
                   {/* Ikonet morfer: kopi-ikonet roterer ut, haken fjærer inn. */}
                   <span className="relative flex size-4 items-center justify-center">
@@ -580,18 +605,24 @@ export function UtkastFlyt({
                 </p>
               </div>
 
-              {feil && <p className="mt-3 text-[13px] text-dom-rod">{feil}</p>}
+              {feil && <p className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
 
-              <div className="mt-6 border-t-[0.5px] border-strek pt-4">
-                <button
-                  type="button"
-                  onClick={jegHarSendtDet}
-                  disabled={sender}
-                  className="trykk inline-flex items-center gap-2 rounded-[10px] border-[0.5px] border-aksent/40 px-4 py-2.5 text-sm font-medium text-aksent hover:bg-aksent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent disabled:opacity-50"
-                >
-                  <Check className="size-4" aria-hidden />
-                  {sender ? "Lagrer …" : "Jeg har sendt det"}
-                </button>
+              {/* Egen seksjon: dette er en registrering brukeren gjør etter å
+                  ha sendt selv — appen sender aldri noe. */}
+              <div className="mt-seksjon border-t-[0.5px] border-strek pt-5">
+                <h2 className="seksjonstittel text-blekk">Har du sendt brevet?</h2>
+                <div className="mt-gruppe">
+                  <Primærknapp
+                    variant="rolig"
+                    onClick={jegHarSendtDet}
+                    disabled={sender}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Check className="size-4" aria-hidden />
+                      {sender ? "Lagrer …" : "Jeg har sendt det"}
+                    </span>
+                  </Primærknapp>
+                </div>
                 <p className="mt-2 text-xs leading-relaxed text-dempet">
                   Da settes saken til «Venter på svar», og vi følger opp om
                   det drøyer.

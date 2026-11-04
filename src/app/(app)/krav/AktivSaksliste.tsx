@@ -35,7 +35,7 @@ export function AktivSaksliste({
 
   return (
     <>
-      <ul className="rounded-[20px] border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
+      <ul className="rounded-kort border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
         <AnimatePresence initial={false}>
           {synlige.map((sak, i) => {
             const utenforFasteFire = i >= SYNLIG_UTEN_UTVIDELSE;
@@ -61,7 +61,7 @@ export function AktivSaksliste({
         <button
           type="button"
           onClick={() => setVisAlle((v) => !v)}
-          className="trykk mt-2.5 w-full rounded-[14px] border border-dashed border-strek py-3 text-center text-[13px] font-semibold text-dempet transition hover:text-blekk"
+          className="trykk mt-2.5 w-full rounded-kontroll border border-dashed border-strek py-3 text-center text-hjelp font-semibold text-dempet transition hover:text-blekk"
         >
           {visAlle ? "Vis færre" : `Vis ${skjulteAntall} til`}
         </button>

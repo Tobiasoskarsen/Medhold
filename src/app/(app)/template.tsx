@@ -2,47 +2,38 @@
 
 import { useState, type ReactNode } from "react";
 import { m } from "motion/react";
-import { VARIGHET, FJAER, GLID_DYBDE } from "@/lib/bevegelse";
+import { DELT_OVERGANG_NOKKEL, VARIGHET } from "@/lib/bevegelse";
 import { FANE_NAV_NOKKEL } from "@/components/ui/BunnNav";
 
 /**
  * Ruteovergang for de innloggede skjermene. Template re-mountes ved hver
- * navigasjon → gir konsistent inntreden. Kun inntreden, ingen exit (bevisst).
- * - Dybde-navigasjon (åpne et krav e.l.): fade + lite glid (GLID_DYBDE) fra
- *   høyre — bevisst kort slik at delte View-Transition-overganger (Motion2 §1)
- *   dominerer i stedet for å konkurrere med sideglidet.
- * - Fane-bytte via BunnNav (søsken): ren fade, ingen sideveis glid.
- * MotionConfig i (app)/layout gjør at redusert bevegelse → ren opasitetsfade.
+ * navigasjon. Kun opasitet: bevegelsen eies av Sekvens inni skjermen, så to
+ * glid ikke legger seg oppå hverandre (redesign-ordren §6).
+ * - Delt View Transition (kort → sak): ingen fade her — nettleseren kryssfader
+ *   allerede roten, og en fade til ville blitt en dobbeltfade.
+ * - Fane-bytte via BunnNav: rask fade. Dybde-navigasjon: litt roligere fade.
  */
 export default function Template({ children }: { children: ReactNode }) {
-  const [faneNav] = useState(() => {
-    if (typeof window === "undefined") return false;
+  const [modus] = useState<"fane" | "delt" | "dybde">(() => {
+    if (typeof window === "undefined") return "dybde";
     try {
+      // Bare lest her: KravBelop eier og fjerner det delte flagget.
+      if (sessionStorage.getItem(DELT_OVERGANG_NOKKEL) === "1") return "delt";
       const f = sessionStorage.getItem(FANE_NAV_NOKKEL) === "1";
       if (f) sessionStorage.removeItem(FANE_NAV_NOKKEL);
-      return f;
+      return f ? "fane" : "dybde";
     } catch {
-      return false;
+      return "dybde";
     }
   });
 
-  if (faneNav) {
-    return (
-      <m.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: VARIGHET.hurtig }}
-      >
-        {children}
-      </m.div>
-    );
-  }
+  if (modus === "delt") return <>{children}</>;
 
   return (
     <m.div
-      initial={{ opacity: 0, x: GLID_DYBDE }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={FJAER}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: modus === "fane" ? VARIGHET.hurtig : VARIGHET.normal }}
     >
       {children}
     </m.div>

@@ -400,7 +400,7 @@ export function LeggTilBrevFlyt({
   }
 
   const feltKlasse =
-    "mt-1.5 w-full rounded-[14px] border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+    "mt-1.5 w-full rounded-kontroll border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
   return (
     <Bevegelsesramme>
@@ -408,7 +408,7 @@ export function LeggTilBrevFlyt({
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: VARIGHET.rolig, ease: EASING }}
-      className="mx-auto flex min-h-screen w-full max-w-[640px] flex-col px-5 pt-4">
+      className="mx-auto flex min-h-dvh w-full max-w-[640px] flex-col px-5 pt-4">
       <div className="mb-4 flex items-center justify-between gap-4">
         <button
           type="button"
@@ -456,7 +456,7 @@ export function LeggTilBrevFlyt({
 
           {inntak === "valg" && (
             <>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+              <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
                 Velg hvordan du vil legge inn brevet.
               </p>
               <div className="mt-5 flex flex-col gap-2.5">
@@ -479,13 +479,13 @@ export function LeggTilBrevFlyt({
                   onClick={() => setInntak("tekst")}
                 />
               </div>
-              {feil && <p className="mt-4 text-[13px] text-dom-rod">{feil}</p>}
+              {feil && <p className="mt-4 text-hjelp text-dom-rod">{feil}</p>}
             </>
           )}
 
           {inntak === "tekst" && (
             <>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+              <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
                 Lim inn teksten fra brevet, så leser Medhold det.
               </p>
               <textarea
@@ -493,9 +493,9 @@ export function LeggTilBrevFlyt({
                 onChange={(e) => setTekst(e.target.value)}
                 rows={12}
                 placeholder="Lim inn teksten fra brevet her …"
-                className="mt-4 w-full flex-1 resize-none rounded-[14px] border border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
+                className="mt-4 w-full flex-1 resize-none rounded-kontroll border border-strek bg-flate p-4 text-sm leading-relaxed text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30"
               />
-              {feil && <p className="mt-3 text-[13px] text-dom-rod">{feil}</p>}
+              {feil && <p className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
               <div className="mt-4 pb-8">
                 <Primærknapp onClick={lesTekst} disabled={tekst.trim().length < 10}>
                   Les brevet
@@ -506,14 +506,14 @@ export function LeggTilBrevFlyt({
 
           {inntak === "bilde" && (
             <>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-dempet">
+              <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
                 {bilder.length}/2 bilder. Legg gjerne til baksiden også.
               </p>
               <div className="mt-4 flex flex-col gap-2.5">
                 {bilder.map((b, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3"
+                    className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-3"
                   >
                     <span className="truncate text-sm text-blekk">{b.navn}</span>
                     <button
@@ -532,13 +532,13 @@ export function LeggTilBrevFlyt({
                   <button
                     type="button"
                     onClick={() => filInput.current?.click()}
-                    className="rounded-xl border-[0.5px] border-dashed border-strek px-3.5 py-3 text-sm text-dempet transition hover:border-aksent hover:text-blekk"
+                    className="rounded-kontroll border-[0.5px] border-dashed border-strek px-3.5 py-3 text-sm text-dempet transition hover:border-aksent hover:text-blekk"
                   >
                     + Legg til bilde
                   </button>
                 )}
               </div>
-              {feil && <p className="mt-3 text-[13px] text-dom-rod">{feil}</p>}
+              {feil && <p className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
               <div className="mt-4 pb-8">
                 <Primærknapp onClick={lesBilder} disabled={bilder.length === 0}>
                   Les brevet
@@ -608,17 +608,17 @@ export function LeggTilBrevFlyt({
             onStemmerLikevel={setStemmerLikevel}
           />
 
-          <div className="mt-4 rounded-2xl border-[0.5px] border-strek bg-flate p-4">
+          <div className="mt-4 rounded-kort border-[0.5px] border-strek bg-flate p-4">
             <p className="whitespace-pre-line text-sm leading-relaxed text-blekk">
               {analyse.forklaring}
             </p>
           </div>
-          <p className="mt-1.5 text-[12px] text-dempet">
+          <p className="mt-1.5 text-meta text-dempet">
             {FORKLARING_DISCLAIMER}
           </p>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <label className="col-span-2 block text-[13px] font-medium text-blekk">
+            <label className="col-span-2 block text-hjelp font-medium text-blekk">
               Avsender
               <input
                 type="text"
@@ -628,7 +628,7 @@ export function LeggTilBrevFlyt({
                 className={feltKlasse}
               />
             </label>
-            <label className="col-span-2 block text-[13px] font-medium text-blekk">
+            <label className="col-span-2 block text-hjelp font-medium text-blekk">
               E-post til avsender
               <input
                 type="email"
@@ -639,7 +639,7 @@ export function LeggTilBrevFlyt({
                 className={feltKlasse}
               />
             </label>
-            <label className="block text-[13px] font-medium text-blekk">
+            <label className="block text-hjelp font-medium text-blekk">
               Brevtype
               <select
                 value={brevtype}
@@ -654,7 +654,7 @@ export function LeggTilBrevFlyt({
                 ))}
               </select>
             </label>
-            <label className="block text-[13px] font-medium text-blekk">
+            <label className="block text-hjelp font-medium text-blekk">
               Saksnummer
               <input
                 type="text"
@@ -680,13 +680,13 @@ export function LeggTilBrevFlyt({
               />
             </m.div>
           ) : (
-            <p className="mt-5 text-[13px] text-dempet">
+            <p className="mt-5 text-hjelp text-dempet">
               Bekreft tallene over, så sjekker vi gebyrer og frister.
             </p>
           )}
 
           <div className="mt-5">
-            <p className="text-[13px] font-medium text-blekk">Hører til</p>
+            <p className="text-hjelp font-medium text-blekk">Hører til</p>
             {kravForslag && kravModus === "ny" && (
               <button
                 type="button"
@@ -695,16 +695,16 @@ export function LeggTilBrevFlyt({
                   setValgtKrav(kravForslag.id);
                   haptikk("lett");
                 }}
-                className="trykk mt-2 flex w-full items-center justify-between gap-3 rounded-xl border-[0.5px] border-aksent/40 bg-aksent/5 px-3.5 py-3 text-left"
+                className="trykk mt-2 flex w-full items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-aksent/40 bg-aksent/5 px-3.5 py-3 text-left"
               >
-                <span className="text-[13px] text-blekk">
+                <span className="text-hjelp text-blekk">
                   Ligner kravet «{kravForslag.navn}» —{" "}
                   {kravForslag.grunn === "saksnummer"
                     ? "samme saksnummer"
                     : "samme avsender"}
                   . Er det samme sak?
                 </span>
-                <span className="shrink-0 text-[13px] font-medium text-aksent">
+                <span className="shrink-0 text-hjelp font-medium text-aksent">
                   Ja, legg til der
                 </span>
               </button>
@@ -725,7 +725,7 @@ export function LeggTilBrevFlyt({
                       setValgtKrav(e.target.value);
                       setKravModus("eksisterende");
                     }}
-                    className="rounded-[14px] border border-strek bg-flate px-3 py-2 text-sm text-blekk outline-none focus:border-aksent"
+                    className="rounded-kontroll border border-strek bg-flate px-3 py-2 text-sm text-blekk outline-none focus:border-aksent"
                   >
                     {krav.map((k) => (
                       <option key={k.id} value={k.id}>
@@ -750,17 +750,17 @@ export function LeggTilBrevFlyt({
 
           {valgtKravVenter && (
             <div className="mt-5">
-              <p className="text-[13px] font-medium text-blekk">
+              <p className="text-hjelp font-medium text-blekk">
                 Hva betyr svaret?
               </p>
-              <p className="mt-0.5 text-[13px] text-dempet">
+              <p className="mt-0.5 text-hjelp text-dempet">
                 Er dette svaret på det du sendte? Bekreft utfallet.
               </p>
               <div className="mt-2 flex flex-col gap-2">
                 {UTFALL_VALGBARE.map((u) => (
                   <label
                     key={u}
-                    className={`flex items-center gap-2.5 rounded-xl border-[0.5px] px-3.5 py-3 text-sm transition ${
+                    className={`flex items-center gap-2.5 rounded-kontroll border-[0.5px] px-3.5 py-3 text-sm transition ${
                       utfall === u
                         ? "border-aksent bg-aksent/5 text-blekk"
                         : "border-strek text-blekk"
@@ -779,7 +779,7 @@ export function LeggTilBrevFlyt({
                 <button
                   type="button"
                   onClick={() => setUtfall("")}
-                  className="mt-1 self-start text-[13px] text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk"
+                  className="mt-1 self-start text-hjelp text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk"
                 >
                   Vet ikke / la stå tomt
                 </button>
@@ -789,13 +789,13 @@ export function LeggTilBrevFlyt({
 
           {((kanLagre && fristSammenligning) || fristForslag.length > 0) && (
             <div className="mt-5">
-              <p className="text-[13px] font-medium text-blekk">
+              <p className="text-hjelp font-medium text-blekk">
                 Foreslåtte frister
               </p>
               <div className="mt-2 flex flex-col gap-2">
                 {kanLagre && fristSammenligning &&
                   (fristSammenligning.status === "avvik_kortere" ? (
-                    <label className="flex items-start justify-between gap-3 rounded-xl border-[0.5px] border-dom-rod bg-dom-rod-bg px-3.5 py-2.5">
+                    <label className="flex items-start justify-between gap-3 rounded-kontroll border-[0.5px] border-dom-rod bg-dom-rod-bg px-3.5 py-2.5">
                       <span className="min-w-0">
                         <span className="block text-sm font-medium text-dom-rod">
                           {formaterKortDato(fristSammenligning.visForfallsdato)}
@@ -815,7 +815,7 @@ export function LeggTilBrevFlyt({
                       />
                     </label>
                   ) : (
-                    <label className="flex items-center justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5">
+                    <label className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5">
                       <span className="min-w-0">
                         <span className="block truncate text-sm text-blekk">
                           {fristSammenligning.visTittel}
@@ -833,7 +833,7 @@ export function LeggTilBrevFlyt({
                 {fristForslag.map((f, i) => (
                   <label
                     key={i}
-                    className="flex items-center justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
+                    className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm text-blekk">
@@ -859,14 +859,14 @@ export function LeggTilBrevFlyt({
 
           {analyse.foreslatte_steg.length > 0 && (
             <div className="mt-5">
-              <p className="text-[13px] font-medium text-blekk">
+              <p className="text-hjelp font-medium text-blekk">
                 Foreslåtte steg
               </p>
               <div className="mt-2 flex flex-col gap-2">
                 {analyse.foreslatte_steg.map((s, i) => (
                   <label
                     key={i}
-                    className="flex items-start justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
+                    className="flex items-start justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
                   >
                     <span className="text-sm text-blekk">{s}</span>
                     <Avkrysning
@@ -880,7 +880,7 @@ export function LeggTilBrevFlyt({
             </div>
           )}
 
-          {feil && <p className="mt-4 text-[13px] text-dom-rod">{feil}</p>}
+          {feil && <p className="mt-4 text-hjelp text-dom-rod">{feil}</p>}
 
           {kanLagre && (
           <div className="mt-6">
@@ -902,7 +902,7 @@ export function LeggTilBrevFlyt({
                   type="button"
                   disabled={lagrer || !kanLagre}
                   onClick={() => lagre("krav")}
-                  className="trykk mt-3 block text-[13px] text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk disabled:opacity-60"
+                  className="trykk mt-3 block text-hjelp text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk disabled:opacity-60"
                 >
                   {lagrer ? "Lagrer …" : "Bestem senere — lagre i tidslinjen"}
                 </button>
@@ -933,14 +933,14 @@ function InntakKort({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3.5 rounded-[14px] border border-strek bg-flate px-4 py-4 text-left transition hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+      className="flex items-center gap-3.5 rounded-kontroll border border-strek bg-flate px-4 py-4 text-left transition hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-aksent/10 text-aksent">
         {ikon}
       </span>
       <span>
         <span className="block text-sm font-medium text-blekk">{tittel}</span>
-        <span className="block text-[13px] text-dempet">{tekst}</span>
+        <span className="block text-hjelp text-dempet">{tekst}</span>
       </span>
     </button>
   );

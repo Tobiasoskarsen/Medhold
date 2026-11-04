@@ -33,7 +33,7 @@ export function FeilVisning({
         <h1 className="tittel-s text-blekk">
           {tittel}
         </h1>
-        <p className="mt-1 text-[13px] leading-relaxed text-dempet">{tekst}</p>
+        <p className="mt-1 text-hjelp leading-relaxed text-dempet">{tekst}</p>
 
         <div className="mt-5 flex w-full flex-col items-center gap-3">
           {primaer.onClick ? (
@@ -48,7 +48,7 @@ export function FeilVisning({
           {sekundaer && (
             <Link
               href={sekundaer.href}
-              className="text-[13px] text-dempet underline decoration-strek underline-offset-2 hover:text-blekk"
+              className="text-hjelp text-dempet underline decoration-strek underline-offset-2 hover:text-blekk"
             >
               {sekundaer.tekst}
             </Link>

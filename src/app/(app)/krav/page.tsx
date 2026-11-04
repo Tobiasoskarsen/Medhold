@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Kort, Primærknapp, Sekvens, SekvensDel } from "@/components/ui";
+import { Skjermramme, Primærknapp, Sekvens, SekvensDel } from "@/components/ui";
 import { TomKonvolutt } from "@/components/illustrasjoner/TomKonvolutt";
 import { AktivSaksliste } from "./AktivSaksliste";
 import { AvsluttedeListe } from "./AvsluttedeListe";
@@ -209,22 +209,23 @@ export default async function KravListePage() {
 
       {saker.length === 0 && (
         <SekvensDel>
-          <Kort className="mt-6">
-            <TomKonvolutt className="size-14 text-blekk" />
-            <p className="mt-4 text-[15px] leading-relaxed text-blekk">
+          <div className="mt-seksjon flex flex-col items-center px-4 text-center">
+            <TomKonvolutt className="size-20 text-blekk" />
+            <p className="seksjonstittel mt-4 text-blekk">Ingen saker ennå</p>
+            <p className="mt-1.5 text-brod leading-relaxed text-dempet">
               Legg inn ditt første brev, så holder Medhold oversikten.
             </p>
-            <div className="mt-4">
+            <div className="mt-5 w-full">
               <Primærknapp href="/legg-til-brev">Legg til brev</Primærknapp>
             </div>
-          </Kort>
+          </div>
         </SekvensDel>
       )}
       {aktive.length > 0 && (
         <SekvensDel>
           <div className="mt-6">
             {avsluttede.length > 0 && (
-              <h2 className="seksjonstittel mb-2.5 text-blekk">Aktive</h2>
+              <h2 className="seksjonstittel mb-gruppe text-blekk">Aktive</h2>
             )}
             {brukGruppering ? (
               <GruppertSaksliste
@@ -240,19 +241,23 @@ export default async function KravListePage() {
       )}
       {avsluttede.length > 0 && (
         <SekvensDel>
-          <div className="mt-8">
-            <h2 className="seksjonstittel mb-2.5 text-blekk">Avsluttet</h2>
+          <div className="mt-seksjon">
+            <h2 className="seksjonstittel mb-gruppe text-blekk">Avsluttet</h2>
             <AvsluttedeListe saker={avsluttede.map(kortData)} />
           </div>
         </SekvensDel>
       )}
       </Sekvens>
 
-      <div className="mt-6">
+      <div className="mt-seksjon">
         <Primærknapp href="/krav/ny" variant="rolig">
           <Plus className="-mt-0.5 mr-1.5 inline size-4" aria-hidden />
           Opprett nytt krav
         </Primærknapp>
+        {/* Forskjellen fra + i bunnmenyen, som leser et brev for deg. */}
+        <p className="mt-2 text-center text-hjelp text-dempet">
+          Uten brev kan du opprette kravet selv. Har du brevet, bruk + nederst.
+        </p>
       </div>
     </Skjermramme>
   );

@@ -8,7 +8,7 @@
 // sendes ALDRI til utkast-prompten — ren UI-tilstand.
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, Check } from "lucide-react";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { Pill } from "@/components/ui";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
@@ -74,27 +74,22 @@ function VeivalgKort({
   return (
     <MålKnapp
       mål={mål}
-      className="trykk relative flex flex-1 flex-col gap-2 rounded-[20px] border border-kant bg-flate p-[13px] text-left"
-      style={anbefalt ? { boxShadow: "var(--anbefalt-glod)" } : undefined}
+      className="trykk flex min-h-[68px] w-full items-center gap-3 rounded-kort border border-kant bg-flate px-4 py-3 text-left"
+      style={{ boxShadow: anbefalt ? "var(--anbefalt-glod)" : "var(--kort-skygge)" }}
     >
-      {anbefalt && (
-        <Pill variant="aksent" className="absolute -top-2 right-3">
-          Anbefalt
-        </Pill>
-      )}
       <span
-        className={`flex size-[30px] shrink-0 items-center justify-center rounded-[10px] ${ikonBg}`}
+        className={`flex size-9 shrink-0 items-center justify-center rounded-liten ${ikonBg}`}
       >
         {ikon}
       </span>
-      <span className="min-w-0">
-        <span className="block text-[13px] font-semibold leading-tight text-blekk">
-          {tittel}
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="radtittel text-blekk">{tittel}</span>
+          {anbefalt && <Pill variant="aksent">Anbefalt</Pill>}
         </span>
-        <span className="mt-0.5 block text-[11px] leading-snug text-dempet">
-          {undertekst}
-        </span>
+        <span className="radtekst mt-0.5 block">{undertekst}</span>
       </span>
+      <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
     </MålKnapp>
   );
 }
@@ -122,7 +117,7 @@ function Spørsmålsrad<T extends string>({
 }) {
   return (
     <div>
-      <p className="text-[13px] font-medium text-blekk">{spørsmål}</p>
+      <p className="text-hjelp font-medium text-blekk">{spørsmål}</p>
       <div className="mt-2 flex gap-2">
         {valg.map((v) => (
           <button
@@ -133,7 +128,7 @@ function Spørsmålsrad<T extends string>({
               onVelg(v.verdi);
             }}
             aria-pressed={valgt === v.verdi}
-            className={`trykk flex-1 rounded-[12px] border px-3 py-2.5 text-[13px] font-medium transition ${
+            className={`trykk flex-1 rounded-kontroll border px-3 py-2.5 text-hjelp font-medium transition ${
               valgt === v.verdi
                 ? "border-blekk bg-blekk text-bakgrunn"
                 : "border-strek text-blekk hover:border-dempet/40"
@@ -182,12 +177,12 @@ export function Veivalg({
       <h2 className="seksjonstittel text-blekk">
         Hva vil du gjøre?
       </h2>
-      <p className="mt-1 text-[13px] leading-relaxed text-dempet">
+      <p className="mt-1 text-hjelp leading-relaxed text-dempet">
         Du kan ombestemme deg når som helst — ingenting sendes før du sier
         fra.
       </p>
 
-      <div className="mt-4 flex gap-2.5">
+      <div className="mt-gruppe flex flex-col gap-2">
         <VeivalgKort
           ikon={
             <span className="text-[17px] font-bold text-dom-rod">
@@ -218,7 +213,7 @@ export function Veivalg({
         type="button"
         onClick={() => setÅpen((o) => !o)}
         aria-expanded={åpen}
-        className="trykk mt-4 flex items-center gap-1 text-[13px] font-medium text-dempet transition hover:text-blekk"
+        className="trykk mt-1 flex min-h-11 items-center gap-1 text-hjelp font-medium text-dempet transition hover:text-blekk"
       >
         Usikker? Hjelp meg å velge
         <ChevronDown
@@ -241,7 +236,7 @@ export function Veivalg({
             transition={{ duration: VARIGHET.rolig, ease: EASING }}
             style={{ overflow: "hidden" }}
           >
-            <div className="mt-4 flex flex-col gap-4 rounded-[20px] border border-kant bg-flate p-4">
+            <div className="mt-4 flex flex-col gap-4 rounded-kort border border-kant bg-flate p-4">
               <Spørsmålsrad
                 spørsmål="Har du bestilt eller avtalt det kravet gjelder?"
                 valg={JA_NEI_VETIKKE}
@@ -276,7 +271,7 @@ export function Veivalg({
                   >
                     <div
                       aria-live="polite"
-                      className={`rounded-xl p-3.5 text-[13.5px] leading-relaxed text-blekk ${
+                      className={`rounded-kontroll p-3.5 text-[13.5px] leading-relaxed text-blekk ${
                         anbefaling === "svar" ? "bg-dom-rod-bg" : "bg-trygg/10"
                       }`}
                     >

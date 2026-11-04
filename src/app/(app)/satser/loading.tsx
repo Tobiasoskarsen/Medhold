@@ -7,8 +7,8 @@ export default function Loading() {
       <Skjelett className="h-4 w-16" />
       <Skjelett className="mt-4 h-6 w-52" />
       <Skjelett className="mt-1.5 h-4 w-full" />
-      <Skjelett className="mt-5 h-[190px] w-full rounded-[20px]" />
-      <Skjelett className="mt-5 h-[220px] w-full rounded-[20px]" />
+      <Skjelett className="mt-5 h-[190px] w-full rounded-kort" />
+      <Skjelett className="mt-5 h-[220px] w-full rounded-kort" />
     </Skjermramme>
   );
 }

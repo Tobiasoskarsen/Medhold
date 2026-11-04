@@ -28,7 +28,7 @@ export function Heltekort({
   const topp = (
     <>
       <p
-        className={`text-[12px] font-semibold uppercase tracking-[0.08em] ${
+        className={`text-meta font-semibold uppercase tracking-[0.08em] ${
           gull ? "text-gull" : "text-helt-etikett"
         }`}
       >
@@ -39,7 +39,7 @@ export function Heltekort({
   );
   return (
     <div
-      className={`rounded-[26px] border px-5 pb-[18px] pt-5 ${
+      className={`rounded-helt border px-5 pb-[18px] pt-5 ${
         gull
           ? "border-gull/30 bg-gull-bg text-blekk"
           : // Et svakt lys øverst til høyre gir flaten dybde uten å bli
@@ -70,7 +70,7 @@ export function HeltChip({
 }) {
   return (
     <span
-      className={`chip-inn rounded-full px-2.5 py-[5px] text-[12px] font-semibold ${
+      className={`chip-inn rounded-full px-2.5 py-[5px] text-meta font-semibold ${
         variant === "funn"
           ? "bg-helt-funn-bg text-helt-funn-tekst"
           : "bg-helt-chip text-helt-tekst mork:border mork:border-helt-kant"
