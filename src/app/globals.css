@@ -236,7 +236,23 @@ body {
   }
 }
 
-/* Skeleton-flate med rolig opasitetspuls. */
+/* Chips i heltekortet glir lett inn etter kortet (visuell ordre, fase 2) —
+   ren CSS, siden Heltekort er en serverkomponent. */
+.chip-inn {
+  display: inline-block;
+  animation: chip-inn var(--bevegelse-rolig) var(--bevegelse-easing) 0.2s both;
+}
+@keyframes chip-inn {
+  from {
+    opacity: 0;
+    transform: translateY(3px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Skjelett: rolig flate med en diskret lysbølge som glir over (kun transform
    på et pseudo-element — billig på mobil). Bølgen starter utenfor flaten og
    har en pause på slutten av syklusen, så den leses som rolig, ikke hektisk. */

@@ -77,11 +77,22 @@ Plan (vurdert og godkjent):
 
 **Ikke sett i nettleser.** Preview-verktøyet bygger koden fra worktreen `magical-villani-11dfc7` og ikke fra denne, samme problem som i sikkerhetsordren. Animasjonene må sjekkes på telefon før merge.
 
-Fase 2 gjenstår (ikke startet):
-- Bunnark med dra-for-å-lukke.
-- Finpuss av morfingen fra brev til detalj.
-- Heltekort og chips.
-- Blur på toppstripen ved scroll.
+### Fase 2 (ferdig i kode, ikke sett i nettleser)
+
+- **`Bunnark`** (`components/ui/Bunnark.tsx`) har håndtak, fjær opp og «dra ned for å lukke» (90 px eller rask flikk). Det lukkes også med Esc og trykk på bakgrunnen.
+  - Fokus går inn i arket og tilbake til knappen, og body-scroll låses.
+  - Arket rendres i en portal, siden fixed ikke skal arve transform.
+  - Drag krever Motions fulle funksjonssett (`domMax`). Det lastes dynamisk (`lib/motion-max.ts`) først når et ark åpnes, så hovedbundelen er uendret.
+- **`KravMeny`** er nå et bunnark i stedet for en dropdown, med store rader for tommelen.
+  - Slett har fått en egen bekreftelse med «Avbryt».
+  - Teksten «Kravet, brevene og utkastene slettes» er sjekket mot `on delete cascade` i migrasjonene.
+  - `UtfallVelger` har fått `visTittel` for å unngå dobbel overskrift.
+- **`Toppstripe`** (`components/ui/Toppstripe.tsx`) er en sticky rad som er flat øverst. Når innholdet glir under, får den frostet flate (`bg-bakgrunn/80` + blur) og en hårstrek.
+  - Scroll-lytteren er passiv og samlet per frame.
+  - Brukt på saken. Avstanden er uendret mens siden står øverst.
+- **Heltekort:** svakt radialt lys øverst til høyre på standardvarianten. Chipsene glir inn 0,2 s etter kortet (`.chip-inn`, ren CSS siden kortet er en serverkomponent).
+
+**Ikke gjort:** finpuss av morfingen fra brev til detalj. Den eksisterende View Transition-morfen fungerer, og uten å se den i nettleser ville en justering vært gjetting.
 
 ---
 

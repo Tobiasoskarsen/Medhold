@@ -15,11 +15,14 @@ export function UtfallVelger({
   kravId,
   onFerdig,
   iMeny = false,
+  visTittel = true,
 }: {
   kravId: string;
   onFerdig?: () => void;
   /** Rendres inni en `role="menu"` (KravMeny) — gir knappene `role="menuitem"`. */
   iMeny?: boolean;
+  /** Skjul «Hvordan endte saken?» når forelderen allerede viser den (Bunnark). */
+  visTittel?: boolean;
 }) {
   const [venter, startTransition] = useTransition();
 
@@ -41,7 +44,9 @@ export function UtfallVelger({
 
   return (
     <>
-      <p className="px-4 py-2 text-xs text-dempet">Hvordan endte saken?</p>
+      {visTittel && (
+        <p className="px-4 py-2 text-xs text-dempet">Hvordan endte saken?</p>
+      )}
       {UTFALL_VALGBARE.map((u) => (
         <button
           key={u}
