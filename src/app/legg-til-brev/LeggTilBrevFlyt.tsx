@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { Avkrysning } from "@/components/ui/Avkrysning";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, m } from "motion/react";
 import { X, Camera, Upload, Type, Trash2 } from "lucide-react";
 import { Primærknapp } from "@/components/ui";
 import { Bevegelsesramme } from "@/components/Bevegelsesramme";
-import { VARIGHET, EASING } from "@/lib/bevegelse";
+import { VARIGHET, EASING, FJAER, STEG_GLID } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
 import {
   BREVTYPER,
@@ -52,6 +53,44 @@ function brevtypeEtikett(bt: BrevType): string {
   return bt === "annet" ? "Annet" : STADIUM_ETIKETT[bt];
 }
 
+// Stegbytte glir i retningen brukeren går (frem: fra høyre, tilbake: fra
+// venstre). MotionConfig gjør det om til ren fade ved redusert bevegelse.
+const STEG_OVERGANG = {
+  inn: (r: 1 | -1) => ({ opacity: 0, x: r * STEG_GLID }),
+  synlig: { opacity: 1, x: 0 },
+  ut: (r: 1 | -1) => ({ opacity: 0, x: -r * STEG_GLID }),
+};
+
+const STEG_NAVN = ["Brevet", "Lesing", "Sjekk"] as const;
+
+/**
+ * Tre tynne segmenter for stegene i flyten. Fyllingen vokser inn fra venstre
+ * med fjær når et steg nås, og trekker seg tilbake hvis du går tilbake.
+ */
+function StegIndikator({ steg }: { steg: 1 | 2 | 3 }) {
+  return (
+    <div
+      className="flex w-28 gap-1"
+      role="progressbar"
+      aria-valuemin={1}
+      aria-valuemax={3}
+      aria-valuenow={steg}
+      aria-valuetext={`Steg ${steg} av 3: ${STEG_NAVN[steg - 1]}`}
+    >
+      {[1, 2, 3].map((n) => (
+        <span key={n} className="h-1 flex-1 overflow-hidden rounded-full bg-flate-2">
+          <m.span
+            className="block h-full origin-left rounded-full bg-aksent"
+            initial={false}
+            animate={{ scaleX: n <= steg ? 1 : 0 }}
+            transition={FJAER}
+          />
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function lesFilSomBase64(fil: File): Promise<ValgtBilde> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -77,6 +116,16 @@ export function LeggTilBrevFlyt({
 }) {
   const router = useRouter();
   const [steg, setSteg] = useState<1 | 2 | 3>(1);
+  // +1 frem, -1 tilbake (feil under lesing sender deg tilbake til steg 1).
+  const [retning, setRetning] = useState<1 | -1>(1);
+  // Ref, ikke state: gaTil kalles også etter await (lesTekst/lesBilder), der
+  // `steg` fra closuren ville vært utdatert.
+  const stegRef = useRef<1 | 2 | 3>(1);
+  function gaTil(neste: 1 | 2 | 3) {
+    setRetning(neste >= stegRef.current ? 1 : -1);
+    stegRef.current = neste;
+    setSteg(neste);
+  }
   const [inntak, setInntak] = useState<Inntak>("valg");
   const [tekst, setTekst] = useState("");
   const [bilder, setBilder] = useState<ValgtBilde[]>([]);
@@ -225,7 +274,7 @@ export function LeggTilBrevFlyt({
     );
     // Forhåndsvalgt utfall fra AI (null ved «uklart» → ingen forhåndsvalg).
     setUtfall(svarUtfallTilSak(r.analyse.svar_utfall) ?? "");
-    setSteg(3);
+    gaTil(3);
   }
 
   // samstemmer/kun_beregnet → dato er (også) lovens; avvik_kortere/
@@ -238,11 +287,11 @@ export function LeggTilBrevFlyt({
 
   async function lesTekst() {
     setFeil(null);
-    setSteg(2);
+    gaTil(2);
     const r = await analyserBrevTekst(tekst);
     if (!r.ok) {
       setFeil(r.feil);
-      setSteg(1);
+      gaTil(1);
       return;
     }
     anvendAnalyse(r);
@@ -250,11 +299,11 @@ export function LeggTilBrevFlyt({
 
   async function lesBilder() {
     setFeil(null);
-    setSteg(2);
+    gaTil(2);
     const r = await analyserBrevBilder(bilder.map(({ media_type, data }) => ({ media_type, data })));
     if (!r.ok) {
       setFeil(r.feil);
-      setSteg(1);
+      gaTil(1);
       return;
     }
     anvendAnalyse(r);
@@ -353,14 +402,17 @@ export function LeggTilBrevFlyt({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: VARIGHET.rolig, ease: EASING }}
       className="mx-auto flex min-h-screen w-full max-w-[640px] flex-col px-5 pt-4">
-      <button
-        type="button"
-        aria-label="Avbryt"
-        onClick={() => (inntak !== "valg" && steg === 1 ? setInntak("valg") : router.back())}
-        className="-ml-1 mb-4 flex size-8 items-center justify-center text-dempet transition hover:text-blekk"
-      >
-        <X className="size-5" aria-hidden />
-      </button>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <button
+          type="button"
+          aria-label="Avbryt"
+          onClick={() => (inntak !== "valg" && steg === 1 ? setInntak("valg") : router.back())}
+          className="trykk -ml-1 flex size-8 items-center justify-center text-dempet transition hover:text-blekk"
+        >
+          <X className="size-5" aria-hidden />
+        </button>
+        <StegIndikator steg={steg} />
+      </div>
 
       {/* Skjulte filvelgere. */}
       <input
@@ -380,13 +432,15 @@ export function LeggTilBrevFlyt({
         onChange={(e) => velgFiler(e.target.files)}
       />
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" custom={retning}>
       {steg === 1 && (
         <m.div
           key="steg-1"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
+          custom={retning}
+          variants={STEG_OVERGANG}
+          initial="inn"
+          animate="synlig"
+          exit="ut"
           transition={{ duration: VARIGHET.rolig, ease: EASING }}
           className="flex flex-1 flex-col">
           <h1 className="tittel-s text-blekk">
@@ -491,22 +545,33 @@ export function LeggTilBrevFlyt({
       {steg === 2 && (
         <m.div
           key="steg-2"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
+          custom={retning}
+          variants={STEG_OVERGANG}
+          initial="inn"
+          animate="synlig"
+          exit="ut"
           transition={{ duration: VARIGHET.rolig, ease: EASING }}
           className="flex flex-1 flex-col"
         >
-          <LeserBrev />
+          <LeserBrev
+            bilde={
+              bilder[0] && bilder[0].media_type.startsWith("image/")
+                ? `data:${bilder[0].media_type};base64,${bilder[0].data}`
+                : null
+            }
+            tekst={inntak === "tekst" ? tekst : null}
+          />
         </m.div>
       )}
 
       {steg === 3 && analyse && (
         <m.div
           key="steg-3"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
+          custom={retning}
+          variants={STEG_OVERGANG}
+          initial="inn"
+          animate="synlig"
+          exit="ut"
           transition={{ duration: VARIGHET.rolig, ease: EASING }}
           className="flex flex-1 flex-col pb-8"
         >
@@ -595,11 +660,18 @@ export function LeggTilBrevFlyt({
           </div>
 
           {kanLagre ? (
-            <Gebyrsjekk
-              resultat={gebyrsjekk}
-              hovedstol={hovedstolGrunnlag}
-              className="mt-5"
-            />
+            // Funnene kommer rolig inn idet tallene er bekreftet.
+            <m.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={FJAER}
+            >
+              <Gebyrsjekk
+                resultat={gebyrsjekk}
+                hovedstol={hovedstolGrunnlag}
+                className="mt-5"
+              />
+            </m.div>
           ) : (
             <p className="mt-5 text-[13px] text-dempet">
               Bekreft tallene over, så sjekker vi gebyrer og frister.
@@ -729,11 +801,10 @@ export function LeggTilBrevFlyt({
                           dato, siden det er den du faktisk må forholde deg til.
                         </span>
                       </span>
-                      <input
-                        type="checkbox"
+                      <Avkrysning
                         checked={fristSammenligningAv}
-                        onChange={(e) => setFristSammenligningAv(e.target.checked)}
-                        className="mt-0.5 size-4 shrink-0 accent-aksent"
+                        onChange={setFristSammenligningAv}
+                        className="mt-0.5"
                       />
                     </label>
                   ) : (
@@ -746,11 +817,9 @@ export function LeggTilBrevFlyt({
                           {formaterKortDato(fristSammenligning.visForfallsdato)}
                         </span>
                       </span>
-                      <input
-                        type="checkbox"
+                      <Avkrysning
                         checked={fristSammenligningAv}
-                        onChange={(e) => setFristSammenligningAv(e.target.checked)}
-                        className="size-4 accent-aksent"
+                        onChange={setFristSammenligningAv}
                       />
                     </label>
                   ))}
@@ -770,14 +839,10 @@ export function LeggTilBrevFlyt({
                         {f.kilde === "beregnet" ? " · beregnet — sjekk brevet" : ""}
                       </span>
                     </span>
-                    <input
-                      type="checkbox"
+                    <Avkrysning
                       checked={!!fristAv[i] && !!f.forfallsdato}
                       disabled={!f.forfallsdato}
-                      onChange={(e) =>
-                        setFristAv((s) => ({ ...s, [i]: e.target.checked }))
-                      }
-                      className="size-4 accent-aksent disabled:opacity-40"
+                      onChange={(v) => setFristAv((s) => ({ ...s, [i]: v }))}
                     />
                   </label>
                 ))}
@@ -797,13 +862,10 @@ export function LeggTilBrevFlyt({
                     className="flex items-start justify-between gap-3 rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
                   >
                     <span className="text-sm text-blekk">{s}</span>
-                    <input
-                      type="checkbox"
+                    <Avkrysning
                       checked={stegAv[i] !== false}
-                      onChange={(e) =>
-                        setStegAv((st) => ({ ...st, [i]: e.target.checked }))
-                      }
-                      className="mt-0.5 size-4 shrink-0 accent-aksent"
+                      onChange={(v) => setStegAv((st) => ({ ...st, [i]: v }))}
+                      className="mt-0.5"
                     />
                   </label>
                 ))}
