@@ -14,7 +14,7 @@ import {
   SekvensDel,
 } from "@/components/ui";
 import { VenterPaSvarUtvidelse } from "./VenterPaSvarUtvidelse";
-import { DomMini, DomMiniFrist } from "@/components/Dom";
+import { DomMini, DomMiniFrist, FunnListe } from "@/components/Dom";
 import { Veivalg } from "@/components/Veivalg";
 import { Alvorsvarsel } from "@/components/Alvorsvarsel";
 import { Utregning } from "@/components/Utregning";
@@ -372,25 +372,136 @@ export default async function KravDetaljPage({
   ].sort((a, b) => (a.datoISO < b.datoISO ? 1 : -1));
   if (items[0]) items[0].fremhevet = items[0].variant ? false : true;
 
+  // Sakens gang: de to nyeste hendelsene er alltid synlige (§2C).
+  const hendelser: ReactNode[] = [
+    oppfolgingTilstandVerdi && (
+      <TidslinjeHendelse
+        key="oppfolging"
+        dato={oppfolgingsdato ? formaterKortDato(oppfolgingsdato) : ""}
+        variant="venter"
+        sisteHendelse={items.length === 0}
+      >
+        <p className="text-[14.5px] font-semibold text-blekk">
+          {oppfolgingTekst(
+            oppfolgingTilstandVerdi,
+            inkassoselskap ?? sak.kreditor ?? sak.tittel,
+            varslerPa,
+          )}
+        </p>
+      </TidslinjeHendelse>
+    ),
+    lost && (
+      <TidslinjeHendelse
+        key="lost"
+        dato={lostDato ? formaterKortDato(lostDato) : ""}
+        node={<LostNode sakId={sak.id} utfall={utfall} />}
+        sisteHendelse={items.length === 0}
+      >
+        {(() => {
+          const s =
+            utfall === "medhold" || utfall === "delvis_medhold"
+              ? { tittel: "Medhold — kravet er frafalt", under: null, farge: "text-gull" }
+              : utfall === "nedbetalingsavtale"
+                ? {
+                    tittel: "Avtale på plass.",
+                    under: "Du har en plan — og saken har en slutt.",
+                    farge: "text-trygg",
+                  }
+                : utfall === "oppgjort"
+                  ? {
+                      tittel: "Saken er ute av verden.",
+                      under: "Betalt og avsluttet. Godt jobbet.",
+                      farge: "text-blekk",
+                    }
+                  : { tittel: "Sak løst", under: null, farge: "text-blekk" };
+          return (
+            <>
+              <p className={`text-[16px] font-bold ${s.farge}`}>
+                {s.tittel}
+              </p>
+              {s.under && (
+                <p className="mt-0.5 text-[13px] text-dempet">{s.under}</p>
+              )}
+            </>
+          );
+        })()}
+      </TidslinjeHendelse>
+    ),
+    ...items.map((item, i) => {
+      const kjerne = (
+        <>
+          <p className="text-[14.5px] font-semibold text-blekk">
+            {item.tittel}
+          </p>
+          {item.tekst && (
+            <p className="mt-0.5 text-[13px] leading-snug text-dempet">
+              {item.tekst}
+            </p>
+          )}
+          {item.fristPill && (
+            <span className="mt-1.5 inline-block rounded-full bg-varsel-bg px-2 py-1 text-[11px] font-medium text-varsel-tekst">
+              {item.fristPill}
+            </span>
+          )}
+          {item.chip && (
+            <span className="mt-1.5 inline-block rounded-full bg-aksent/10 px-3 py-1 text-[12px] font-semibold text-aksent-dyp">
+              {item.chip}
+            </span>
+          )}
+        </>
+      );
+      const innhold = item.fremhevet ? (
+        <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
+          {kjerne}
+        </div>
+      ) : (
+        kjerne
+      );
+      return (
+        <TidslinjeHendelse
+          key={item.key}
+          dato={formaterKortDato(item.datoISO)}
+          fremhevet={item.fremhevet}
+          variant={item.variant}
+          sisteHendelse={i === items.length - 1}
+        >
+          {item.href ? (
+            <Link href={item.href} className="trykk block hover:opacity-80">
+              {innhold}
+            </Link>
+          ) : (
+            innhold
+          )}
+          {item.ekstra}
+        </TidslinjeHendelse>
+      );
+    }),
+  ].filter(Boolean);
+  const FORHAND = 2;
+
+  const harFunnListe =
+    (harOverGebyr && !!sisteBrev?.gebyrsjekk) ||
+    (harFristfunn && !!sisteBrev?.fristfunn) ||
+    hovedstolAvvik.length > 0;
+
   return (
     <Skjermramme className="pt-2.5" animerInn={false}>
-      {/* Stripen er sticky: py-2.5 + mb-2 + rammens pt-2.5 gir samme avstand
-          som før (20 px over, 18 px under) mens siden står øverst. */}
-      <Toppstripe className="mb-2">
+      <Toppstripe className="mb-1">
         <Link
           href="/krav"
           aria-label="Tilbake til saker"
-          className="trykk flex size-9 items-center justify-center rounded-full border border-kant bg-flate text-blekk"
+          className="trykk -ml-2.5 flex size-11 items-center justify-center text-blekk"
         >
-          <ChevronLeft className="size-[18px]" aria-hidden />
+          <ChevronLeft className="size-6" strokeWidth={2} aria-hidden />
         </Link>
         <KravMeny kravId={sak.id} lost={lost} />
       </Toppstripe>
 
       <Sekvens>
+      {/* 1. Kreditor, beløp og status. */}
       <SekvensDel>
-      {eyebrow && (
-        <p className="text-[13px] font-medium text-dempet">{eyebrow}</p>
+      {inkassoselskap && (
+        <p className="text-hjelp font-medium text-dempet">Sak hos {inkassoselskap}</p>
       )}
       <KravNavn
         navn={hovednavn}
@@ -407,19 +518,19 @@ export default async function KravDetaljPage({
           />
         </p>
       )}
-      <HovedstolVarsel avvik={hovedstolAvvik} className="mt-1" />
 
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        {stadium && <StadiumLinje stadium={stadium} />}
         {sak.status === "venter_pa_svar" && (
           <span
-            className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
+            className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
           >
             {STATUS_ETIKETT.venter_pa_svar}
           </span>
         )}
         {utfall && (
           <span
-            className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
+            className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
           >
             {UTFALL_ETIKETT[utfall]}
           </span>
@@ -427,47 +538,74 @@ export default async function KravDetaljPage({
       </div>
       </SekvensDel>
 
-      {stadium && (
+      {/* 2. Viktigste varsel eller neste handling. Alvorsvarsel overstyrer
+          vanlige handlingsvalg (uendret betingelse). */}
+      {sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
         <SekvensDel>
-          <StadiumLinje stadium={stadium} className="mt-[18px]" />
+          <GammeltBrevKort
+            brevId={sisteBrev.id}
+            kravId={sak.id}
+            datoTekst={formaterDagManed(sisteBrevDato)}
+            uker={Math.floor(
+              brevAlderDager(sisteBrev.brevdato, sisteBrev.opprettet, idag) / 7,
+            )}
+            className="mt-seksjon"
+          />
         </SekvensDel>
       )}
 
-      {((harOverGebyr && sisteBrev?.gebyrsjekk) ||
-        (harFristfunn && sisteBrev?.fristfunn)) && (
+      {erSakAlvorlig && !lost ? (
         <SekvensDel>
-          <div className="mt-5 flex flex-col gap-2.5">
-            {harOverGebyr && sisteBrev?.gebyrsjekk && (
-              <DomMini
-                resultat={sisteBrev.gebyrsjekk}
-                utkastHref={
-                  stotterUtkast(stadium)
-                    ? `/krav/${sak.id}/utkast?type=innsigelse`
-                    : undefined
-                }
-                historisk={sisteBrevGammelt}
-                brevdato={sisteBrevDato}
-              />
-            )}
-            {harFristfunn && sisteBrev?.fristfunn && (
-              <DomMiniFrist
-                differanseDager={Math.abs(sisteBrev.fristfunn.differanseDager ?? 0)}
-                brevdato={sisteBrev.brevdato}
-                beregnetDato={sisteBrev.fristfunn.beregnetDato as string}
-                historisk={sisteBrevGammelt}
-              />
-            )}
-          </div>
+          <Alvorsvarsel signalord={signalord as string} className="mt-seksjon" />
+        </SekvensDel>
+      ) : (
+        stotterUtkast(stadium) &&
+        !lost && (
+          <SekvensDel>
+            <Veivalg
+              className="mt-seksjon"
+              harGebyrfunn={harOverGebyr}
+              gebyrDifferanse={overDiff}
+              svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
+              betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
+            />
+          </SekvensDel>
+        )
+      )}
+
+      {sak.status === "venter_pa_svar" && oppfolgingTilstandVerdi && (
+        <SekvensDel>
+          <Kort className="mt-seksjon">
+            <p className="text-[14.5px] font-semibold text-blekk">
+              Venter på svar fra {inkassoselskap ?? sak.kreditor ?? sak.tittel}
+            </p>
+            <p className="mt-0.5 text-[13px] text-dempet">
+              {oppfolgingTekst(
+                oppfolgingTilstandVerdi,
+                inkassoselskap ?? sak.kreditor ?? sak.tittel,
+                varslerPa,
+              )}
+            </p>
+            <div className="-mx-[18px] -mb-[18px] mt-3 border-t-[0.5px] border-strek">
+              <VenterPaSvarUtvidelse kravId={sak.id} />
+            </div>
+          </Kort>
         </SekvensDel>
       )}
 
+      {/* 3. Frist og kort funnoppsummering. Detaljer åpnes fra hver rad. */}
+      {(nesteFrist || harFunnListe) && (
+        <SekvensDel>
+          <h2 className="seksjonstittel mt-seksjon text-blekk">Frist og funn</h2>
+        </SekvensDel>
+      )}
       {nesteFrist && (
         <SekvensDel>
           <FristRad
             forfallsdato={nesteFrist.forfallsdato}
             tittel={nesteFrist.tittel}
             gammeltBrev={fristBrevGammelt}
-            className="mt-2.5"
+            className="mt-gruppe"
           />
           {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
             <Utregning
@@ -503,64 +641,39 @@ export default async function KravDetaljPage({
           ) : null}
         </SekvensDel>
       )}
-
-      {sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
+      {harFunnListe && (
         <SekvensDel>
-          <GammeltBrevKort
-            brevId={sisteBrev.id}
-            kravId={sak.id}
-            datoTekst={formaterDagManed(sisteBrevDato)}
-            uker={Math.floor(
-              brevAlderDager(sisteBrev.brevdato, sisteBrev.opprettet, idag) / 7,
+          <FunnListe className="mt-2.5">
+            {harOverGebyr && sisteBrev?.gebyrsjekk && (
+              <DomMini
+                resultat={sisteBrev.gebyrsjekk}
+                utkastHref={
+                  stotterUtkast(stadium)
+                    ? `/krav/${sak.id}/utkast?type=innsigelse`
+                    : undefined
+                }
+                historisk={sisteBrevGammelt}
+                brevdato={sisteBrevDato}
+              />
             )}
-            className="mt-6"
-          />
+            {harFristfunn && sisteBrev?.fristfunn && (
+              <DomMiniFrist
+                differanseDager={Math.abs(sisteBrev.fristfunn.differanseDager ?? 0)}
+                brevdato={sisteBrev.brevdato}
+                beregnetDato={sisteBrev.fristfunn.beregnetDato as string}
+                historisk={sisteBrevGammelt}
+              />
+            )}
+            <HovedstolVarsel avvik={hovedstolAvvik} />
+          </FunnListe>
         </SekvensDel>
       )}
 
-      {erSakAlvorlig && !lost ? (
-        <SekvensDel>
-          <Alvorsvarsel signalord={signalord as string} className="mt-6" />
-        </SekvensDel>
-      ) : (
-        stotterUtkast(stadium) &&
-        !lost && (
-          <SekvensDel>
-            <Veivalg
-              className="mt-6"
-              harGebyrfunn={harOverGebyr}
-              gebyrDifferanse={overDiff}
-              svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
-              betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
-            />
-          </SekvensDel>
-        )
-      )}
-
-      {sak.status === "venter_pa_svar" && oppfolgingTilstandVerdi && (
-        <SekvensDel>
-          <Kort className="mt-5">
-            <p className="text-[14.5px] font-semibold text-blekk">
-              Venter på svar fra {inkassoselskap ?? sak.kreditor ?? sak.tittel}
-            </p>
-            <p className="mt-0.5 text-[13px] text-dempet">
-              {oppfolgingTekst(
-                oppfolgingTilstandVerdi,
-                inkassoselskap ?? sak.kreditor ?? sak.tittel,
-                varslerPa,
-              )}
-            </p>
-            <div className="-mx-[18px] -mb-[18px] mt-3 border-t-[0.5px] border-strek">
-              <VenterPaSvarUtvidelse kravId={sak.id} />
-            </div>
-          </Kort>
-        </SekvensDel>
-      )}
-
+      {/* 4. Dokumenter og historikk. */}
       <SekvensDel>
-      {items.length === 0 && !lost && !oppfolgingTilstandVerdi ? (
+      {hendelser.length === 0 ? (
         <>
-          <h2 className="seksjonstittel mb-4 mt-8 text-blekk">
+          <h2 className="seksjonstittel mb-gruppe mt-seksjon text-blekk">
             Sakens gang
           </h2>
           <p className="text-sm text-dempet">
@@ -569,114 +682,12 @@ export default async function KravDetaljPage({
         </>
       ) : (
         <SakensGangSeksjon
-          antall={
-            items.length +
-            (oppfolgingTilstandVerdi ? 1 : 0) +
-            (lost ? 1 : 0)
-          }
+          antall={hendelser.length}
+          forhand={<Tidslinje>{hendelser.slice(0, FORHAND)}</Tidslinje>}
         >
-          <Tidslinje>
-            {oppfolgingTilstandVerdi && (
-              <TidslinjeHendelse
-                dato={oppfolgingsdato ? formaterKortDato(oppfolgingsdato) : ""}
-                variant="venter"
-                sisteHendelse={items.length === 0}
-              >
-                <p className="text-[14.5px] font-semibold text-blekk">
-                  {oppfolgingTekst(
-                    oppfolgingTilstandVerdi,
-                    inkassoselskap ?? sak.kreditor ?? sak.tittel,
-                    varslerPa,
-                  )}
-                </p>
-              </TidslinjeHendelse>
-            )}
-            {lost && (
-              <TidslinjeHendelse
-                dato={lostDato ? formaterKortDato(lostDato) : ""}
-                node={<LostNode sakId={sak.id} utfall={utfall} />}
-                sisteHendelse={items.length === 0}
-              >
-                {(() => {
-                  const s =
-                    utfall === "medhold" || utfall === "delvis_medhold"
-                      ? { tittel: "Medhold — kravet er frafalt", under: null, farge: "text-gull" }
-                      : utfall === "nedbetalingsavtale"
-                        ? {
-                            tittel: "Avtale på plass.",
-                            under: "Du har en plan — og saken har en slutt.",
-                            farge: "text-trygg",
-                          }
-                        : utfall === "oppgjort"
-                          ? {
-                              tittel: "Saken er ute av verden.",
-                              under: "Betalt og avsluttet. Godt jobbet.",
-                              farge: "text-blekk",
-                            }
-                          : { tittel: "Sak løst", under: null, farge: "text-blekk" };
-                  return (
-                    <>
-                      <p className={`text-[16px] font-bold ${s.farge}`}>
-                        {s.tittel}
-                      </p>
-                      {s.under && (
-                        <p className="mt-0.5 text-[13px] text-dempet">{s.under}</p>
-                      )}
-                    </>
-                  );
-                })()}
-              </TidslinjeHendelse>
-            )}
-            {items.map((item, i) => {
-              const kjerne = (
-                <>
-                  <p className="text-[14.5px] font-semibold text-blekk">
-                    {item.tittel}
-                  </p>
-                  {item.tekst && (
-                    <p className="mt-0.5 text-[13px] leading-snug text-dempet">
-                      {item.tekst}
-                    </p>
-                  )}
-                  {item.fristPill && (
-                    <span className="mt-1.5 inline-block rounded-full bg-varsel-bg px-2 py-1 text-[11px] font-medium text-varsel-tekst">
-                      {item.fristPill}
-                    </span>
-                  )}
-                  {item.chip && (
-                    <span className="mt-1.5 inline-block rounded-full bg-aksent/10 px-3 py-1 text-[12px] font-semibold text-aksent-dyp">
-                      {item.chip}
-                    </span>
-                  )}
-                </>
-              );
-              const innhold = item.fremhevet ? (
-                <div className="rounded-xl border-[0.5px] border-strek bg-flate px-3.5 py-3">
-                  {kjerne}
-                </div>
-              ) : (
-                kjerne
-              );
-              return (
-                <TidslinjeHendelse
-                  key={item.key}
-                  dato={formaterKortDato(item.datoISO)}
-                  fremhevet={item.fremhevet}
-                  variant={item.variant}
-                  sisteHendelse={i === items.length - 1}
-                >
-                  {item.href ? (
-                    <Link href={item.href} className="trykk block hover:opacity-80">
-                      {innhold}
-                    </Link>
-                  ) : (
-                    innhold
-                  )}
-                  {item.ekstra}
-                </TidslinjeHendelse>
-              );
-            })}
-          </Tidslinje>
+          {hendelser.length > FORHAND ? (
+            <Tidslinje>{hendelser.slice(FORHAND)}</Tidslinje>
+          ) : undefined}
         </SakensGangSeksjon>
       )}
       </SekvensDel>

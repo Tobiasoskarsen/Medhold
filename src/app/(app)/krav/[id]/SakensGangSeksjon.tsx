@@ -6,52 +6,32 @@ import { ChevronDown } from "lucide-react";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 
 /**
- * SakensGangSeksjon — «Sakens gang» er lukket som standard og åpnes med ett
- * trykk på selve overskriften (WAI-ARIA-mønsteret: en <button> inni <h2>,
- * ikke en fristilt knapp under). Antallet hendelser vises som en liten hint
- * ved siden av pilen slik at man ser om det er noe å hente uten å åpne.
- * Samme høyde/opasitet-mekanikk og VARIGHET.rolig/EASING-tokens som
- * Utvidbar/Utregning/Veivalg, med ett tillegg: innholdet glir også noen px
- * i Y — NED ved åpning, OPP ved lukking — så lukkingen tydelig leses som
- * «trekkes tilbake opp mot overskriften», ikke bare en høyde-krymping uten
- * retning (brukertilbakemelding: uten dette lignet lukkingen på bevegelse
- * NEDOVER i stedet for oppover). `children` er allerede ferdig rendret av
- * kalleren (Server Component) — trygt over server→klient-grensen, samme
- * mønster som Tidslinje/SekvensDel selv bruker.
+ * SakensGangSeksjon — de to nyeste hendelsene er alltid synlige (`forhand`),
+ * så brev og utkast ikke ligger bak en lukket overskrift (redesign-ordren
+ * §2C). Resten åpnes med én knapp. Samme høyde/opasitet-mekanikk og tokens som
+ * Utvidbar/Utregning/Veivalg, med ett tillegg: innholdet glir også noen px i Y
+ * — NED ved åpning, OPP ved lukking — så lukkingen leses som «trekkes tilbake
+ * opp» (brukertilbakemelding). Innholdet er allerede ferdig rendret av kalleren
+ * (Server Component) — trygt over server→klient-grensen.
  */
 export function SakensGangSeksjon({
   antall,
+  forhand,
   children,
 }: {
-  /** Totalt antall hendelser — vist som hint ved siden av pilen. */
+  /** Totalt antall hendelser. */
   antall: number;
-  children: ReactNode;
+  /** Alltid synlig: de nyeste hendelsene. */
+  forhand: ReactNode;
+  /** Resten, bak «Vis alle». Null når alt får plass i forhåndsvisningen. */
+  children?: ReactNode;
 }) {
   const [åpen, setÅpen] = useState(false);
 
   return (
-    <div>
-      <h2 className="mt-8">
-        <button
-          type="button"
-          onClick={() => setÅpen((o) => !o)}
-          aria-expanded={åpen}
-          className="trykk flex w-full items-center justify-between gap-2 py-1 text-left"
-        >
-          <span className="seksjonstittel text-blekk">
-            Sakens gang
-          </span>
-          <span className="flex items-center gap-1 text-[13px] font-medium text-dempet">
-            {åpen ? "Skjul" : antall === 1 ? "Vis 1 hendelse" : `Vis ${antall} hendelser`}
-            <ChevronDown
-              className={`size-[15px] shrink-0 transition-transform duration-200 ${
-                åpen ? "rotate-180" : ""
-              }`}
-              aria-hidden
-            />
-          </span>
-        </button>
-      </h2>
+    <div className="mt-seksjon">
+      <h2 className="seksjonstittel mb-gruppe text-blekk">Sakens gang</h2>
+      {forhand}
 
       <AnimatePresence initial={false}>
         {åpen && (
@@ -63,10 +43,27 @@ export function SakensGangSeksjon({
             transition={{ duration: VARIGHET.rolig, ease: EASING }}
             style={{ overflow: "hidden" }}
           >
-            <div className="pt-3">{children}</div>
+            {children}
           </m.div>
         )}
       </AnimatePresence>
+
+      {children && (
+        <button
+          type="button"
+          onClick={() => setÅpen((o) => !o)}
+          aria-expanded={åpen}
+          className="trykk flex min-h-11 items-center gap-1 text-hjelp font-medium text-dempet transition hover:text-blekk"
+        >
+          {åpen ? "Vis færre" : `Vis alle (${antall})`}
+          <ChevronDown
+            className={`size-[15px] shrink-0 transition-transform duration-200 ${
+              åpen ? "rotate-180" : ""
+            }`}
+            aria-hidden
+          />
+        </button>
+      )}
     </div>
   );
 }

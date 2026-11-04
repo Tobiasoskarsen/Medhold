@@ -38,9 +38,9 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
         aria-haspopup="dialog"
         aria-expanded={åpen}
         onClick={apne}
-        className="trykk flex size-9 items-center justify-center rounded-full border border-kant bg-flate text-blekk focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blekk"
+        className="trykk -mr-2.5 flex size-11 items-center justify-center text-blekk"
       >
-        <MoreHorizontal className="size-[18px]" aria-hidden />
+        <MoreHorizontal className="size-6" strokeWidth={2} aria-hidden />
       </button>
 
       <Bunnark apen={åpen} onLukk={() => setÅpen(false)} tittel={tittel}>

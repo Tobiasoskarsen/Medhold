@@ -9,7 +9,7 @@
 // enkel tekstlenke under en varsellinje).
 import { useState } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, TriangleAlert } from "lucide-react";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { formaterKortDato } from "@/lib/dato";
 import type { HovedstolAvvik } from "@/lib/hovedstol-konsistens";
@@ -33,18 +33,28 @@ export function HovedstolVarsel({
   const nyeste = avvik[avvik.length - 1];
 
   return (
-    <div className={className}>
-      <p className="text-[12.5px] font-semibold text-dom-rod">
-        Hovedstolen har endret seg fra {kr(nyeste.forrigeHovedstol)} kr til{" "}
-        {kr(nyeste.hovedstol)} kr mellom to brev i denne saken — verdt å
-        sjekke.
+    <div className={`flex items-start gap-3 p-4 ${className}`}>
+      <span
+        aria-hidden
+        className="flex size-9 shrink-0 items-center justify-center rounded-liten bg-dom-rod-bg text-dom-rod"
+      >
+        <TriangleAlert className="size-[18px]" strokeWidth={2} />
+      </span>
+      <div className="min-w-0 flex-1">
+      <p className="radtekst font-medium">Hovedstol</p>
+      <p className="mt-0.5 text-[17px] font-bold leading-tight tracking-[-0.01em] text-dom-rod">
+        Har endret seg
+      </p>
+      <p className="mt-1 text-hjelp leading-[1.4] text-blekk">
+        Fra {kr(nyeste.forrigeHovedstol)} kr til {kr(nyeste.hovedstol)} kr mellom
+        to brev i denne saken — verdt å sjekke.
       </p>
 
       <button
         type="button"
         onClick={() => setÅpen((o) => !o)}
         aria-expanded={åpen}
-        className="trykk mt-1 flex items-center gap-1 text-[12px] text-dempet transition hover:text-blekk"
+        className="trykk -my-2 flex min-h-11 items-center gap-1 text-hjelp font-medium text-dempet transition hover:text-blekk"
       >
         Se detaljer
         <ChevronDown
@@ -65,7 +75,7 @@ export function HovedstolVarsel({
             transition={{ duration: VARIGHET.rolig, ease: EASING }}
             style={{ overflow: "hidden" }}
           >
-            <ul className="mt-2 flex flex-col gap-1.5 rounded-xl border-[0.5px] border-strek bg-flate p-3">
+            <ul className="mt-2 flex flex-col gap-1.5 rounded-liten bg-flate-2 p-3">
               {avvik.map((a, i) => (
                 <li key={i} className="text-[12.5px] text-dempet">
                   {a.brevdato ? formaterKortDato(a.brevdato) : "Udatert brev"}
@@ -76,6 +86,7 @@ export function HovedstolVarsel({
           </m.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

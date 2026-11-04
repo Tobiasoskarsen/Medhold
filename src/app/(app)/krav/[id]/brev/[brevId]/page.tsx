@@ -4,7 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Sekvens, SekvensDel } from "@/components/ui";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
-import { DomMiniFrist } from "@/components/Dom";
+import { DomMiniFrist, FunnListe } from "@/components/Dom";
 import { AnnotertBrev } from "@/components/AnnotertBrev";
 import { formaterKortDato, idagOslo } from "@/lib/dato";
 import { FORKLARING_DISCLAIMER } from "@/lib/brand";
@@ -153,13 +153,14 @@ export default async function BrevPage({
         className="mt-3"
       />
       {harFristfunn && fristfunn?.beregnetDato && (
-        <DomMiniFrist
-          differanseDager={Math.abs(fristfunn.differanseDager ?? 0)}
-          brevdato={brev.brevdato}
-          beregnetDato={fristfunn.beregnetDato}
-          historisk={erGammeltBrev(brev.brevdato, brev.opprettet, idagOslo())}
-          className="mt-3"
-        />
+        <FunnListe className="mt-3">
+          <DomMiniFrist
+            differanseDager={Math.abs(fristfunn.differanseDager ?? 0)}
+            brevdato={brev.brevdato}
+            beregnetDato={fristfunn.beregnetDato}
+            historisk={erGammeltBrev(brev.brevdato, brev.opprettet, idagOslo())}
+          />
+        </FunnListe>
       )}
       </SekvensDel>
 
