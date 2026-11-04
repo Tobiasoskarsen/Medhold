@@ -5,16 +5,15 @@ import {
   useEffect,
   useRef,
   useState,
-  type ClipboardEvent,
   type CSSProperties,
-  type KeyboardEvent,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useReducedMotion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { Primærknapp } from "@/components/ui";
+import { KodeFelt, type KodeStatus } from "@/components/ui/KodeFelt";
 import { normaliserTelefon, telefonLoginPa } from "@/lib/telefon";
-import { ORKESTER_STIGRING, STEG_GLID, STIGRING } from "@/lib/bevegelse";
+import { ORKESTER_STIGRING, STEG_GLID } from "@/lib/bevegelse";
 import { GoogleKnapp } from "./GoogleKnapp";
 import { MetodeVeksler } from "./MetodeVeksler";
 import { NyttForsokLenke } from "./NyttForsokLenke";
@@ -44,7 +43,11 @@ function LoggInn() {
   const [telefon, setTelefon] = useState("");
   const [sendtTil, setSendtTil] = useState(""); // normalisert kontakt kode gikk til
   const [kodeLengde, setKodeLengde] = useState(KODE_LENGDE);
-  const [siffer, setSiffer] = useState<string[]>(Array(KODE_LENGDE).fill(""));
+  // Kodefeltet (KodeFelt, React Bits CodeSlots): status styrer feil-drenering
+  // og godkjent-hake; nøkkelen gir et friskt felt for hver nye kode.
+  const [kodeStatus, setKodeStatus] = useState<KodeStatus>("idle");
+  const [kodeNokkel, setKodeNokkel] = useState(0);
+  const kodeRef = useRef<HTMLInputElement | null>(null);
   const [laster, setLaster] = useState(false);
   const feilParam = params.get("feil");
   const [feil, setFeil] = useState<string | null>(
@@ -58,7 +61,6 @@ function LoggInn() {
     params.get("slettet") ? "Kontoen din og all data er slettet." : null,
   );
   const [nedtelling, setNedtelling] = useState(0);
-  const bokser = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (nedtelling <= 0) return;
@@ -148,10 +150,11 @@ function LoggInn() {
     setLaster(false);
     setSendtTil(til);
     setKodeLengde(lengde);
-    setSiffer(Array(lengde).fill(""));
+    setKodeStatus("idle");
+    setKodeNokkel((n) => n + 1);
     setSteg("kode");
     setNedtelling(30);
-    setTimeout(() => bokser.current[0]?.focus(), 50);
+    setTimeout(() => kodeRef.current?.focus(), 50);
   }
 
   async function verifiser(kode: string) {
@@ -174,46 +177,21 @@ function LoggInn() {
       setLaster(false);
       const hvor = metode === "epost" ? "e-posten" : "meldingen";
       setFeil(`Koden stemmer ikke. Sjekk ${hvor} eller be om en ny.`);
-      setSiffer(Array(kodeLengde).fill(""));
-      bokser.current[0]?.focus();
+      // Feltet drenerer sifrene baklengs og tømmer seg selv; onChange("")
+      // til slutt setter status tilbake til idle. Fokus blir stående.
+      setKodeStatus("error");
+      kodeRef.current?.focus();
       return;
     }
-    await settOnboardingSettHvisMangler(supabase, data.user);
+    // Godkjent: feltet samles til én flate med hake. La haken rekke å vises
+    // før vi navigerer (hoppes over ved redusert bevegelse).
+    setKodeStatus("success");
+    const pause = redusert
+      ? Promise.resolve()
+      : new Promise((ok) => setTimeout(ok, 550));
+    await Promise.all([settOnboardingSettHvisMangler(supabase, data.user), pause]);
     router.push("/");
     router.refresh();
-  }
-
-  function settSiffer(i: number, verdi: string) {
-    const rene = verdi.replace(/\D/g, "");
-    if (!rene) return;
-    const neste = [...siffer];
-    if (rene.length > 1) {
-      for (let k = 0; k < kodeLengde - i; k++) neste[i + k] = rene[k] ?? "";
-    } else {
-      neste[i] = rene;
-    }
-    setSiffer(neste);
-    const nesteTom = neste.findIndex((s) => s === "");
-    const fokus = nesteTom === -1 ? kodeLengde - 1 : nesteTom;
-    bokser.current[fokus]?.focus();
-    if (neste.every((s) => s !== "")) verifiser(neste.join(""));
-  }
-
-  function håndterTast(i: number, e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace" && !siffer[i] && i > 0) {
-      const neste = [...siffer];
-      neste[i - 1] = "";
-      setSiffer(neste);
-      bokser.current[i - 1]?.focus();
-    }
-  }
-
-  function håndterLim(e: ClipboardEvent<HTMLInputElement>) {
-    const tekst = e.clipboardData.getData("text").replace(/\D/g, "");
-    if (tekst) {
-      e.preventDefault();
-      settSiffer(0, tekst);
-    }
   }
 
   function byttMetode(m: Metode) {
@@ -384,43 +362,48 @@ function LoggInn() {
             Sendt til <b className="font-semibold text-blekk">{sendtTil}</b>
           </p>
 
-          <div className="mt-[22px] flex justify-center gap-[9px]">
-            {siffer.map((s, i) => (
-              <input
-                key={i}
-                ref={(el) => {
-                  bokser.current[i] = el;
-                }}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={s}
-                onChange={(e) => settSiffer(i, e.target.value)}
-                onKeyDown={(e) => håndterTast(i, e)}
-                onPaste={håndterLim}
-                aria-label={`Siffer ${i + 1}`}
-                tabIndex={steg === "kode" ? 0 : -1}
-                className={`flex h-[56px] w-[44px] items-center justify-center rounded-[16px] border bg-flate text-center text-[24px] font-bold tabular-nums text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30 ${
-                  s ? "border-aksent" : "border-strek"
-                }`}
-                style={{
-                  opacity: steg === "kode" ? 1 : 0,
-                  transform:
-                    steg === "kode" || redusert
-                      ? "none"
-                      : "translateY(8px) scale(0.9)",
-                  transitionProperty: "opacity, transform, border-color",
-                  transitionDuration:
-                    "var(--bevegelse-normal), var(--bevegelse-normal), var(--bevegelse-hurtig)",
-                  transitionTimingFunction: "var(--bevegelse-easing)",
-                  transitionDelay: redusert ? "0ms" : `${i * STIGRING * 1000}ms`,
-                }}
-              />
-            ))}
+          <div
+            className="mt-[22px] flex justify-center"
+            style={{
+              opacity: steg === "kode" ? 1 : 0,
+              transform:
+                steg === "kode" || redusert ? "none" : "translateY(8px) scale(0.97)",
+              transitionProperty: "opacity, transform",
+              transitionDuration: "var(--bevegelse-normal)",
+              transitionTimingFunction: "var(--bevegelse-easing)",
+              transitionDelay: redusert ? "0ms" : "60ms",
+            }}
+          >
+            <KodeFelt
+              key={kodeNokkel}
+              length={kodeLengde}
+              status={kodeStatus}
+              // 8-sifrede koder (Supabase-oppsettet avgjør) må få plass i
+              // 420 px-kolonnen: litt mindre felt og tettere avstand.
+              slotSize={kodeLengde > 6 ? 38 : 46}
+              gap={kodeLengde > 6 ? 6 : 9}
+              inputRef={kodeRef}
+              tabIndex={steg === "kode" ? 0 : -1}
+              ariaLabel={`Engangskode, ${kodeLengde} siffer`}
+              onChange={(kode) => {
+                if (kode) setFeil(null);
+                setKodeStatus((st) => (st === "error" ? "idle" : st));
+              }}
+              onComplete={(kode) => {
+                if (!laster) verifiser(kode);
+              }}
+            />
           </div>
 
+          <p
+            className="mt-3 h-5 text-center text-[12.5px] text-dempet"
+            aria-live="polite"
+          >
+            {laster && kodeStatus === "idle" ? "Sjekker koden …" : ""}
+          </p>
+
           {feil && (
-            <p className="mt-4 text-center text-[13px] text-dom-rod">
+            <p className="mt-1 text-center text-[13px] text-dom-rod">
               {feil}
             </p>
           )}

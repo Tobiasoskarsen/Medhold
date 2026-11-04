@@ -43,6 +43,35 @@ etter hver fase.
 
 ---
 
+## Kodefeltet — React Bits CodeSlots (på brukerens forespørsel, ferdig i kode)
+
+`src/components/ui/KodeFelt.tsx` og `KodeFelt.css` er porten av CodeSlots fra React Bits. Det erstatter de seks separate inputboksene i logg inn.
+
+Feltet er brukt i kodesteget i logg inn, som er felles for e-postkode og SMS-kode. Det er det eneste stedet appen tar imot en engangskode.
+
+Oppførsel:
+- Sifrene lander med fjær, og innliming kaskaderer inn.
+- `autocomplete="one-time-code"` lar iOS og Android fylle inn SMS-koden automatisk.
+- Ved feil kode drenerer sifrene baklengs i oransje, og feltet tømmer seg.
+- Ved riktig kode samles feltet til én grønn flate med hake. Navigeringen venter 550 ms så haken rekker å vises, men ikke ved redusert bevegelse.
+- 8-sifrede koder får mindre felt (38 px) så de får plass.
+
+**Valg tatt underveis:**
+1. **Ingen nye avhengigheter.** Haken er lucide sin `Check` i stedet for `@hugeicons/react` og `@hugeicons/core-free-icons`. Appen har allerede ett ikonbibliotek, og to pakker for ett ikon var ikke verdt det.
+2. **`m` og egen `LazyMotion`** i stedet for `motion`, så den lette Motion-pakken holder. Logg inn ligger utenfor (app)-layoutens Bevegelsesramme.
+3. **TypeScript-port med appens tokens** som standardfarger: `--aksent`, `--flate`, `--aksent-tekst`, `--dom-rod`. Lys og mørk modus følger automatisk.
+   - Feltene har fått en hårstrek (`--strek`), siden hvite felt ellers forsvinner mot kremhvit bakgrunn.
+   - Det aktive feltet har en aksentring.
+4. **Refs speiles i `useLayoutEffect`** i stedet for under render, slik React-lintreglene i prosjektet krever.
+   - «Drenerer» er state i stedet for en ref, så knappene oppdaterer seg.
+   - `inputRef` og `tabIndex` er nye props for stegbyttet i logg inn.
+   - Teksten til skjermlesere er på norsk.
+5. **Lisens:** React Bits sin lisens bør sjekkes på reactbits.dev før kommersiell lansering. Jeg har ikke verifisert om det er ren MIT.
+
+**Ikke sett i nettleser** av samme grunn som før: preview-verktøyet bygger fra en annen worktree.
+
+---
+
 ## Visuell kvalitet, fase 1 (på brukerens forespørsel, ferdig i kode)
 
 Plan (vurdert og godkjent):
