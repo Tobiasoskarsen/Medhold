@@ -43,6 +43,32 @@ etter hver fase.
 
 ---
 
+## Hold-for-å-slette — React Bits HoldButton (på brukerens forespørsel, ferdig i kode)
+
+`src/components/ui/HoldKnapp.tsx` og `HoldKnapp.css` er porten av HoldButton fra React Bits: en rød fylling med bølgekant som fyller knappen mens du holder.
+
+Brukt på de to handlingene som ikke kan angres:
+- **Slett konto** (`SlettKonto.tsx`, Meg): «Hold for å slette alt», 2 s, deretter «Sletter …». Ved feil fra serveren nullstilles knappen, så du kan prøve igjen.
+- **Slett krav** (`KravMeny.tsx`, i bunnarket): «Hold for å slette kravet», 1,5 s. Fullført hold sender skjemaet.
+
+Ingen andre steder passet. «Marker som løst» og «Jeg har sendt det» kan angres eller er ikke farlige, og der ville et hold bare vært friksjon.
+
+**Valg tatt underveis:**
+1. **Norsk og Medhold-stil:**
+   - Norske tekster, også til skjermlesere («Hold inne i 2 sekunder for å bekrefte»).
+   - Fargetokens: `--dom-rod-bg` som bunn og `--dom-rod` som fylling. `--bakgrunn` er tekstfargen i fyllingen, så kontrasten holder i både lys og mørk modus.
+   - Fet skrift og 52 px høyde, som Primærknapp. Glød er av.
+2. **Et vanlig trykk viser «Hold inne for å bekrefte»** (fader inn i 1,8 s), i stedet for at ingenting skjer.
+3. **Haptikk:** lett når holdet starter, suksess når det er fullført.
+4. **Redusert bevegelse:** `globals.css` setter alle transitions til 0,01 ms. Opasitetsfaden som viser at holdet pågår, får derfor et `!important`-unntak for hele holdetiden. Uten det ville det ikke vært noen tilbakemelding.
+5. **Bunnark drar nå bare fra steder uten `data-ingen-drag`, input, textarea eller select** (`useDragControls`). Et hold i arket skal ikke samtidig dra arket hvis fingeren skjelver.
+6. **`performance.now()` ligger i en hjelper på modulnivå** (`naa`). React-kompilatorens renhetsregel så ikke at kallene bare skjer i hendelser og rAF.
+7. **Lisens:** sjekk React Bits sin lisens før kommersiell lansering, som for kodefeltet.
+
+**Ikke sett i nettleser** av samme grunn som før.
+
+---
+
 ## Kodefeltet — React Bits CodeSlots (på brukerens forespørsel, ferdig i kode)
 
 `src/components/ui/KodeFelt.tsx` og `KodeFelt.css` er porten av CodeSlots fra React Bits. Det erstatter de seks separate inputboksene i logg inn.

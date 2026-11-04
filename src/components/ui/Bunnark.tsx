@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, LazyMotion, m } from "motion/react";
+import { AnimatePresence, LazyMotion, m, useDragControls } from "motion/react";
 import { FJAER, VARIGHET, EASING } from "@/lib/bevegelse";
 
 // Drag krever Motions fulle funksjonssett — lastes først når et ark åpnes.
@@ -32,6 +32,7 @@ export function Bunnark({
   children: ReactNode;
 }) {
   const arkRef = useRef<HTMLDivElement>(null);
+  const dra = useDragControls();
   // Siste onLukk i en ref, så effekten under bare kjører ved åpne/lukke —
   // ikke på nytt hver gang forelderen sender en ny inline-funksjon.
   const lukkRef = useRef(onLukk);
@@ -96,6 +97,15 @@ export function Bunnark({
               exit={{ y: "100%" }}
               transition={FJAER}
               drag="y"
+              // Drag startes manuelt, så felt og hold-knapper (data-ingen-drag)
+              // ikke drar arket med seg når fingeren skjelver litt.
+              dragListener={false}
+              dragControls={dra}
+              onPointerDown={(e) => {
+                const mål = e.target as HTMLElement;
+                if (mål.closest("[data-ingen-drag], input, textarea, select")) return;
+                dra.start(e);
+              }}
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={{ top: 0, bottom: 0.5 }}
               onDragEnd={(_, info) => {
