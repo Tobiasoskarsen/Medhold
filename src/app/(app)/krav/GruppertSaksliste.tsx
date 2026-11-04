@@ -120,7 +120,7 @@ export function GruppertSaksliste({
                     )}
                   </span>
                   {g.samletBelop != null && (
-                    <span className="tall-s shrink-0 text-blekk">
+                    <span className="text-brod font-bold tabular-nums shrink-0 text-blekk">
                       {formaterBelop(g.samletBelop)} kr
                     </span>
                   )}

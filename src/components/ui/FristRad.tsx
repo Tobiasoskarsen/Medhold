@@ -35,12 +35,12 @@ export function FristRad({
       className={`flex items-center justify-between gap-3 rounded-kort border border-kant bg-flate px-4 py-3 ${className}`}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-liten bg-flate-2" aria-hidden>
+        <span className="hidden size-9 shrink-0 items-center justify-center rounded-liten bg-flate-2 min-[360px]:flex" aria-hidden>
           <CalendarDays className="size-[18px] text-dempet" strokeWidth={2} />
         </span>
         <div className="min-w-0">
           <p className="radtekst truncate">{tittel}</p>
-          <p className="text-brod font-bold text-blekk">{langDato(forfallsdato)}</p>
+          <p className="whitespace-nowrap text-brod font-bold text-blekk">{langDato(forfallsdato)}</p>
         </div>
       </div>
       <span
