@@ -42,7 +42,9 @@ export function Heltekort({
       className={`rounded-[26px] border px-5 pb-[18px] pt-5 ${
         gull
           ? "border-gull/30 bg-gull-bg text-blekk"
-          : "border-helt-kant bg-helt-bg text-helt-tekst"
+          : // Et svakt lys øverst til høyre gir flaten dybde uten å bli
+            // en «effekt» (visuell ordre, fase 2).
+            "border-helt-kant bg-helt-bg bg-[radial-gradient(130%_90%_at_100%_0%,rgb(255_255_255/0.08),transparent_55%)] text-helt-tekst"
       } ${className}`}
       style={gull ? undefined : { boxShadow: "var(--kort-skygge)" }}
     >
@@ -68,7 +70,7 @@ export function HeltChip({
 }) {
   return (
     <span
-      className={`rounded-full px-2.5 py-[5px] text-[12px] font-semibold ${
+      className={`chip-inn rounded-full px-2.5 py-[5px] text-[12px] font-semibold ${
         variant === "funn"
           ? "bg-helt-funn-bg text-helt-funn-tekst"
           : "bg-helt-chip text-helt-tekst mork:border mork:border-helt-kant"

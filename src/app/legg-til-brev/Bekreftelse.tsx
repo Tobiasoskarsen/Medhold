@@ -6,7 +6,10 @@
 // bekreftelsen, så ingen låser seg på et funn som bygger på feil tall.
 // All vurdering (sumkontrollen) skjer i lib/sumkontroll.ts — her vises den.
 import { useState, type ReactNode } from "react";
+import { Avkrysning } from "@/components/ui/Avkrysning";
+import { AnimatePresence, m } from "motion/react";
 import { Pencil } from "lucide-react";
+import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { Kort } from "@/components/ui";
 import {
   KOSTNADSTYPER,
@@ -45,25 +48,53 @@ function Rad({
   const [redigerer, setRedigerer] = useState(false);
   return (
     <li className="border-t-[0.5px] border-strek py-2.5 first:border-t-0">
-      {redigerer ? (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-dempet">{etikett}</span>
-          {felt(() => setRedigerer(false))}
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setRedigerer(true)}
-          className="trykk flex w-full items-center justify-between gap-3 text-left"
-        >
-          <span className="text-[13px] text-dempet">{etikett}</span>
-          <span className="flex items-center gap-2">
-            <span className="text-sm font-bold tabular-nums text-blekk">{verdi}</span>
-            <Pencil className="size-3.5 shrink-0 text-dempet" aria-hidden />
-            <span className="sr-only">Rett</span>
-          </span>
-        </button>
-      )}
+      {/* Verdi ↔ felt glir kort over i hverandre, så rettingen føles som
+          samme rad som åpner seg, ikke et hopp. */}
+      <AnimatePresence mode="wait" initial={false}>
+        {redigerer ? (
+          <m.div
+            key="felt"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -2 }}
+            transition={{ duration: VARIGHET.hurtig, ease: EASING }}
+            className="flex flex-col gap-1.5"
+          >
+            <span className="text-[13px] text-dempet">{etikett}</span>
+            {felt(() => setRedigerer(false))}
+          </m.div>
+        ) : (
+          <m.button
+            key="verdi"
+            type="button"
+            onClick={() => setRedigerer(true)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: VARIGHET.hurtig, ease: EASING }}
+            className="trykk group flex w-full items-center justify-between gap-3 text-left"
+          >
+            <span className="text-[13px] text-dempet">{etikett}</span>
+            <span className="flex items-center gap-2">
+              {/* Ny verdi (etter retting) fader inn — et lite «oppdatert». */}
+              <m.span
+                key={verdi}
+                initial={{ opacity: 0.3 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: VARIGHET.rolig, ease: EASING }}
+                className="text-sm font-bold tabular-nums text-blekk"
+              >
+                {verdi}
+              </m.span>
+              <Pencil
+                className="size-3.5 shrink-0 text-dempet transition-colors group-hover:text-blekk"
+                aria-hidden
+              />
+              <span className="sr-only">Rett</span>
+            </span>
+          </m.button>
+        )}
+      </AnimatePresence>
       {etter}
     </li>
   );
@@ -289,11 +320,10 @@ export function Bekreftelse({
             Sjekk beløpene mot brevet.
           </p>
           <label className="mt-2.5 flex items-start gap-2.5">
-            <input
-              type="checkbox"
+            <Avkrysning
               checked={stemmerLikevel}
-              onChange={(e) => onStemmerLikevel(e.target.checked)}
-              className="mt-0.5 size-4 shrink-0 accent-aksent"
+              onChange={onStemmerLikevel}
+              className="mt-0.5"
             />
             Det stemmer likevel (for eksempel delbetaling eller renter som ikke
             står oppført)
@@ -302,11 +332,9 @@ export function Bekreftelse({
       )}
 
       <label className="mt-4 flex items-center gap-2.5 border-t-[0.5px] border-strek pt-3.5 text-sm font-medium text-blekk">
-        <input
-          type="checkbox"
+        <Avkrysning
           checked={bekreftet}
-          onChange={(e) => onBekreftet(e.target.checked)}
-          className="size-4 shrink-0 accent-aksent"
+          onChange={onBekreftet}
         />
         Ja, dette stemmer med brevet
       </label>

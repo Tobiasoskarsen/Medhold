@@ -43,6 +43,59 @@ etter hver fase.
 
 ---
 
+## Visuell kvalitet, fase 1 (på brukerens forespørsel, ferdig i kode)
+
+Plan (vurdert og godkjent):
+- Motion er grunnmuren (allerede installert).
+- Magic UI brukes bare som mønstre, skrevet som egen kode.
+- React Bits blir ikke brukt, fordi det er for prangende og trekker inn GSAP og three.js.
+- GSAP blir ikke brukt, fordi det dobler Motion.
+- Rive vurderes først når det finnes `.riv`-filer.
+
+**Ingen nye avhengigheter.** Oransje (`dom-rod`) betyr fortsatt bare «funn».
+
+- **Skanneanimasjon** (`LeserBrev.tsx`):
+  - Brevet ligger dempet i en ramme med mint hjørnemarkører. Det er bildet brukeren la til, eller de første linjene av den innlimte teksten. En PDF vises som et stilisert ark.
+  - En mint skannelinje med slør glir over (`SKANN_SYKLUS`).
+  - Under står en sjekkliste der ferdige steg får en hake som fjærer inn, og det aktive steget en pulserende prikk.
+  - Den pulserende logoen og strekprikkene er fjernet.
+  - Ved redusert bevegelse står linjen stille.
+- **Skjelett med lysbølge** (`.skjelett::after`, kun transform og ny token `--skjelett-lys`). Bølgen skjules ved redusert bevegelse.
+- **Stegindikator** i «Legg til brev»: tre segmenter som fylles med fjær (`role="progressbar"`).
+  - Stegbyttet glir i retningen du går. Tilbake etter en lesefeil glir motsatt vei.
+  - `gaTil()` bruker en ref, fordi stegbyttet også skjer etter await.
+- **`Avkrysning`** (`components/ui/Avkrysning.tsx`): en hake som tegnes (`pathLength`) i en boks som fyller seg med fjær.
+  - En usynlig, ekte `input` ligger over, så tastatur, label-klikk og skjermleser virker som før.
+  - Brukt i bekreftelseskortet og i frist- og steglistene i steg 3.
+- **Mikrointeraksjoner:**
+  - Rad ↔ felt glir over i hverandre i bekreftelseskortet, og en rettet verdi fader inn.
+  - Gebyrsjekken fjærer inn når tallene er bekreftet.
+  - Kopier-knappen morfer til en hake.
+- **Bunnmenyen:** bakgrunnen er 90 % dekkende, slik at blur og metning som allerede lå der, faktisk virker. Den har også fått en myk skygge.
+
+`build`, `lint` og `test` er grønne (211).
+
+**Ikke sett i nettleser.** Preview-verktøyet bygger koden fra worktreen `magical-villani-11dfc7` og ikke fra denne, samme problem som i sikkerhetsordren. Animasjonene må sjekkes på telefon før merge.
+
+### Fase 2 (ferdig i kode, ikke sett i nettleser)
+
+- **`Bunnark`** (`components/ui/Bunnark.tsx`) har håndtak, fjær opp og «dra ned for å lukke» (90 px eller rask flikk). Det lukkes også med Esc og trykk på bakgrunnen.
+  - Fokus går inn i arket og tilbake til knappen, og body-scroll låses.
+  - Arket rendres i en portal, siden fixed ikke skal arve transform.
+  - Drag krever Motions fulle funksjonssett (`domMax`). Det lastes dynamisk (`lib/motion-max.ts`) først når et ark åpnes, så hovedbundelen er uendret.
+- **`KravMeny`** er nå et bunnark i stedet for en dropdown, med store rader for tommelen.
+  - Slett har fått en egen bekreftelse med «Avbryt».
+  - Teksten «Kravet, brevene og utkastene slettes» er sjekket mot `on delete cascade` i migrasjonene.
+  - `UtfallVelger` har fått `visTittel` for å unngå dobbel overskrift.
+- **`Toppstripe`** (`components/ui/Toppstripe.tsx`) er en sticky rad som er flat øverst. Når innholdet glir under, får den frostet flate (`bg-bakgrunn/80` + blur) og en hårstrek.
+  - Scroll-lytteren er passiv og samlet per frame.
+  - Brukt på saken. Avstanden er uendret mens siden står øverst.
+- **Heltekort:** svakt radialt lys øverst til høyre på standardvarianten. Chipsene glir inn 0,2 s etter kortet (`.chip-inn`, ren CSS siden kortet er en serverkomponent).
+
+**Ikke gjort:** finpuss av morfingen fra brev til detalj. Den eksisterende View Transition-morfen fungerer, og uten å se den i nettleser ville en justering vært gjetting.
+
+---
+
 ## MEDHOLD_SIKKERHET_ARBEIDSORDRE — feil skal oppdages før de koster noe (ferdig i kode)
 
 Utløst av testbrev 13: «Å betale 1 288,00 kr» ble lagret som 289 kr uten at noe

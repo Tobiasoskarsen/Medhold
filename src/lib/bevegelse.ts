@@ -15,6 +15,10 @@ export const VARIGHET = {
   // veksten faktisk er synlig, ikke bare et hakk.
 } as const;
 
+// Sekunder for én vei av skannelinjen i LeserBrev (opp ELLER ned, speiles).
+// Rolig nok til å leses som «leser», ikke som en varsellampe.
+export const SKANN_SYKLUS = 2.2;
+
 // Stagger mellom Trappens fire søyler — større enn den vanlige STIGRING
 // (brukt til lister) slik at trinnene tydelig kommer ett etter ett.
 export const TRAPP_STIGRING = 0.09;

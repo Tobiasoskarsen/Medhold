@@ -1,27 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal, Check } from "lucide-react";
+import { MoreHorizontal, Check, Trash2 } from "lucide-react";
+import { Bunnark } from "@/components/ui/Bunnark";
 import { slettKrav } from "../actions";
 import { UtfallVelger } from "./UtfallVelger";
 
+const RAD =
+  "trykk flex w-full items-center gap-3 rounded-[14px] px-3 py-3.5 text-left text-[15px] transition hover:bg-flate-2";
+
 /** Meny oppe til høyre på kravsiden: marker som løst (med valgfritt utfall) +
- *  sletting, bak et MoreHorizontal-ikon. */
+ *  sletting, bak et MoreHorizontal-ikon. Åpnes som et bunnark (visuell
+ *  ordre, fase 2) — lett å nå med tommelen, og kan dras ned for å lukkes. */
 export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
   const [åpen, setÅpen] = useState(false);
   const [modus, setModus] = useState<"meny" | "utfall" | "slett">("meny");
 
   function apne() {
     setModus("meny");
-    setÅpen((v) => !v);
+    setÅpen(true);
   }
 
+  const tittel =
+    modus === "utfall"
+      ? "Hvordan endte saken?"
+      : modus === "slett"
+        ? "Slette kravet?"
+        : "Saken";
+
   return (
-    <div className="relative">
+    <>
       <button
         type="button"
         aria-label="Mer"
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-expanded={åpen}
         onClick={apne}
         className="trykk flex size-9 items-center justify-center rounded-full border border-kant bg-flate text-blekk focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blekk"
@@ -29,60 +41,60 @@ export function KravMeny({ kravId, lost }: { kravId: string; lost: boolean }) {
         <MoreHorizontal className="size-[18px]" aria-hidden />
       </button>
 
-      {åpen && (
-        <div
-          role="menu"
-          className="absolute right-0 z-10 mt-1 w-56 overflow-hidden rounded-[16px] border border-kant bg-flate py-1 shadow-lg"
-        >
-          {modus === "meny" && (
-            <>
-              {!lost && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => setModus("utfall")}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-blekk transition hover:bg-strek/40"
-                >
-                  <Check className="size-4 text-aksent" aria-hidden />
-                  Marker som løst
-                </button>
-              )}
+      <Bunnark apen={åpen} onLukk={() => setÅpen(false)} tittel={tittel}>
+        {modus === "meny" && (
+          <div className="flex flex-col">
+            {!lost && (
               <button
                 type="button"
-                role="menuitem"
-                onClick={() => setModus("slett")}
-                className="block w-full px-4 py-2.5 text-left text-sm text-dom-rod transition hover:bg-strek/40"
+                onClick={() => setModus("utfall")}
+                className={`${RAD} text-blekk`}
               >
-                Slett kravet
+                <Check className="size-[18px] text-aksent" aria-hidden />
+                Marker som løst
               </button>
-            </>
-          )}
+            )}
+            <button
+              type="button"
+              onClick={() => setModus("slett")}
+              className={`${RAD} text-dom-rod`}
+            >
+              <Trash2 className="size-[18px]" aria-hidden />
+              Slett kravet
+            </button>
+          </div>
+        )}
 
-          {modus === "utfall" && (
-            <UtfallVelger
-              kravId={kravId}
-              onFerdig={() => setÅpen(false)}
-              iMeny
-            />
-          )}
+        {modus === "utfall" && (
+          <UtfallVelger
+            kravId={kravId}
+            onFerdig={() => setÅpen(false)}
+            visTittel={false}
+          />
+        )}
 
-          {modus === "slett" && (
-            <form action={slettKrav}>
-              <input type="hidden" name="id" value={kravId} />
-              <p className="px-4 py-2 text-xs text-dempet">
-                Sikker? Dette kan ikke angres.
-              </p>
-              <button
-                type="submit"
-                role="menuitem"
-                className="block w-full px-4 py-2.5 text-left text-sm font-medium text-dom-rod transition hover:bg-strek/40"
-              >
-                Ja, slett kravet
-              </button>
-            </form>
-          )}
-        </div>
-      )}
-    </div>
+        {modus === "slett" && (
+          <form action={slettKrav} className="flex flex-col gap-2 px-1">
+            <input type="hidden" name="id" value={kravId} />
+            <p className="text-[13.5px] text-dempet">
+              Kravet, brevene og utkastene slettes. Dette kan ikke angres.
+            </p>
+            <button
+              type="submit"
+              className="trykk mt-2 w-full rounded-[16px] border-[1.5px] border-dom-rod bg-dom-rod-bg px-4 py-[15px] text-[15px] font-bold text-dom-rod"
+            >
+              Ja, slett kravet
+            </button>
+            <button
+              type="button"
+              onClick={() => setModus("meny")}
+              className="trykk w-full rounded-[16px] px-4 py-3 text-[15px] font-medium text-blekk"
+            >
+              Avbryt
+            </button>
+          </form>
+        )}
+      </Bunnark>
+    </>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { m, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Copy, Check, Mail, Loader2 } from "lucide-react";
 import { Kort, Primærknapp } from "@/components/ui";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/lib/utkast-vakt";
 import { kr } from "@/lib/gebyrfunn-visning";
 import { haptikk } from "@/lib/haptikk";
-import { VARIGHET } from "@/lib/bevegelse";
+import { FJAER, VARIGHET } from "@/lib/bevegelse";
 import { UTKAST_STRØM_MARKØR } from "@/lib/ai";
 import {
   UTKAST_TYPER,
@@ -554,11 +554,25 @@ export function UtkastFlyt({
                   onClick={kopier}
                   className="trykk inline-flex items-center gap-2 rounded-[14px] border border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
                 >
-                  {kopiert ? (
-                    <Check className="size-4 text-trygg" aria-hidden />
-                  ) : (
-                    <Copy className="size-4" aria-hidden />
-                  )}
+                  {/* Ikonet morfer: kopi-ikonet roterer ut, haken fjærer inn. */}
+                  <span className="relative flex size-4 items-center justify-center">
+                    <AnimatePresence initial={false} mode="popLayout">
+                      <m.span
+                        key={kopiert ? "hake" : "kopi"}
+                        initial={{ scale: 0.4, opacity: 0, rotate: kopiert ? -45 : 45 }}
+                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                        exit={{ scale: 0.4, opacity: 0 }}
+                        transition={FJAER}
+                        className="absolute"
+                      >
+                        {kopiert ? (
+                          <Check className="size-4 text-trygg" aria-hidden />
+                        ) : (
+                          <Copy className="size-4" aria-hidden />
+                        )}
+                      </m.span>
+                    </AnimatePresence>
+                  </span>
                   {kopiert ? "Kopiert" : "Kopier"}
                 </button>
                 <p className="text-xs leading-relaxed text-dempet">

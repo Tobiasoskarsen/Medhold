@@ -64,6 +64,7 @@ import {
 import type { HendelseVariant } from "@/components/ui/Tidslinje";
 import type { ReactNode } from "react";
 import { KravMeny } from "./KravMeny";
+import { Toppstripe } from "@/components/ui/Toppstripe";
 import { LostNode } from "./LostNode";
 import { MarkerSendtKnapp } from "./MarkerSendtKnapp";
 import { SakensGangSeksjon } from "./SakensGangSeksjon";
@@ -372,8 +373,10 @@ export default async function KravDetaljPage({
   if (items[0]) items[0].fremhevet = items[0].variant ? false : true;
 
   return (
-    <Skjermramme className="pt-5" animerInn={false}>
-      <div className="mb-[18px] flex items-center justify-between">
+    <Skjermramme className="pt-2.5" animerInn={false}>
+      {/* Stripen er sticky: py-2.5 + mb-2 + rammens pt-2.5 gir samme avstand
+          som før (20 px over, 18 px under) mens siden står øverst. */}
+      <Toppstripe className="mb-2">
         <Link
           href="/krav"
           aria-label="Tilbake til saker"
@@ -382,7 +385,7 @@ export default async function KravDetaljPage({
           <ChevronLeft className="size-[18px]" aria-hidden />
         </Link>
         <KravMeny kravId={sak.id} lost={lost} />
-      </div>
+      </Toppstripe>
 
       <Sekvens>
       <SekvensDel>

@@ -152,7 +152,7 @@ export function BunnNav() {
     <nav className="fixed inset-x-0 bottom-0 z-10">
       <div className="mx-auto max-w-[640px] px-[18px] pb-[18px]">
         <div
-          className="flex h-[62px] items-center justify-around rounded-[22px] border border-nav-kant bg-nav-bg px-2 backdrop-blur-[14px]"
+          className="flex h-[62px] items-center justify-around rounded-[22px] border border-nav-kant bg-nav-bg/90 px-2 shadow-[0_10px_28px_-14px_rgb(0_0_0/0.45)] backdrop-blur-[14px] backdrop-saturate-150"
           style={{ boxShadow: "0 12px 30px rgba(18,22,20,.22)" }}
         >
           {venstre.map((punkt) => (

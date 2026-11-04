@@ -51,6 +51,7 @@
   --nav-aktiv: #ffffff;
 
   --kort-skygge: none;
+  --skjelett-lys: #ffffff99;
   --anbefalt-glod: inset 0 0 0 1.5px var(--aksent);
 
   --background: var(--bakgrunn);
@@ -103,6 +104,7 @@
   --nav-aktiv: #f1f4f2;
 
   --kort-skygge: inset 0 1px 0 #ffffff0a;
+  --skjelett-lys: #ffffff0f;
   --anbefalt-glod: inset 0 0 0 1px #8fe3bf, 0 8px 24px #8fe3bf1f;
 
   color-scheme: dark;
@@ -234,19 +236,52 @@ body {
   }
 }
 
-/* Skeleton-flate med rolig opasitetspuls. */
+/* Chips i heltekortet glir lett inn etter kortet (visuell ordre, fase 2) —
+   ren CSS, siden Heltekort er en serverkomponent. */
+.chip-inn {
+  display: inline-block;
+  animation: chip-inn var(--bevegelse-rolig) var(--bevegelse-easing) 0.2s both;
+}
+@keyframes chip-inn {
+  from {
+    opacity: 0;
+    transform: translateY(3px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Skjelett: rolig flate med en diskret lysbølge som glir over (kun transform
+   på et pseudo-element — billig på mobil). Bølgen starter utenfor flaten og
+   har en pause på slutten av syklusen, så den leses som rolig, ikke hektisk. */
 .skjelett {
+  position: relative;
+  overflow: hidden;
   background: var(--strek);
   border-radius: 12px;
-  animation: skjelett-puls 1.6s ease-in-out infinite;
 }
-@keyframes skjelett-puls {
-  0%,
-  100% {
-    opacity: 1;
+.skjelett::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--skjelett-lys) 50%,
+    transparent 100%
+  );
+  animation: skjelett-bolge 1.8s var(--bevegelse-easing) infinite;
+}
+@keyframes skjelett-bolge {
+  0% {
+    transform: translateX(-100%);
   }
-  50% {
-    opacity: 0.6;
+  70%,
+  100% {
+    transform: translateX(100%);
   }
 }
 
@@ -265,8 +300,9 @@ body {
     opacity: 0.75;
   }
   /* Skeleton står stille ved redusert bevegelse. */
-  .skjelett {
+  .skjelett::after {
     animation: none;
+    display: none;
   }
   /* ViewOvergang.tsx dropper allerede View Transitions ved redusert bevegelse
      (matchMedia-sjekk) — dette er kun et forsvar i dybden, siden
