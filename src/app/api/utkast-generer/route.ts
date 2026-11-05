@@ -13,7 +13,7 @@ import {
   type UtkastMelding,
 } from "@/lib/utkast-prompt";
 import { kontrollerUtkast, type VaktFunn } from "@/lib/utkast-vakt";
-import { byggUtkastPrompt } from "../../(app)/krav/[id]/utkast/actions";
+import { byggUtkastPrompt } from "../../(app)/krav/[id]/utkast/byggUtkastPrompt";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel (samme mønster
 // som api/brev-samtale/route.ts).
