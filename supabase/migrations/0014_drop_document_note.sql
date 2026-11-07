@@ -1,3 +1,6 @@
+-- IKKE KJØR: erstattet av 0025_fjern_document_note.sql. Denne fila ville overskrevet
+-- slett_egen_konto() med en eldre versjon uten sendte_oppfolginger.
+--
 -- Medhold Fase 3: fullfør cutover fra document_note til brev (utsatt fra Fase 1).
 -- Nå bruker all kode `brev`/`brev_samtale.brev_id`, så vi kan gjøre brev_id
 -- obligatorisk, droppe den gamle koblingen og selve document_note-tabellen.
