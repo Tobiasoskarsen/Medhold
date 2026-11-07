@@ -111,7 +111,7 @@ export type SamtaleRolle = "bruker" | "assistent";
 
 export type BrevSamtaleMelding = {
   id: string;
-  document_note_id: string;
+  brev_id: string;
   bruker_id: string;
   rolle: SamtaleRolle;
   innhold: string;
