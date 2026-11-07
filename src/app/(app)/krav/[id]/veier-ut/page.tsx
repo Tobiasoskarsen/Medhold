@@ -68,6 +68,10 @@ export default async function VeierUtPage({
           brevId={brevId}
           total={sak.belop_totalt}
         />
+        <p className="mt-4 text-meta text-dempet">
+          Generell veiledning — ikke profesjonell rådgivning. Bekreft viktige
+          ting med rett instans.
+        </p>
       </SekvensDel>
       </Sekvens>
     </Skjermramme>

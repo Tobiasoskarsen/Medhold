@@ -522,6 +522,9 @@ export function UtkastFlyt({
                 Les gjennom og endre det som trengs — så sender du det selv
                 {avsender ? ` til ${avsender}` : ""}.
               </p>
+              <p className="mt-1.5 text-meta text-dempet">
+                Automatisk utkast — ikke profesjonell rådgivning.
+              </p>
 
               {omfangBrukt === "delvis" && ubestridt !== null && (
                 <Kort className="mt-4">
