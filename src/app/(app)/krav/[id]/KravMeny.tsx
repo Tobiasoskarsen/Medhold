@@ -6,7 +6,7 @@ import { Bunnark } from "@/components/ui/Bunnark";
 import { HoldKnapp } from "@/components/ui/HoldKnapp";
 import { Primærknapp } from "@/components/ui";
 import type { SakUtfall } from "@/lib/types";
-import { settUtfall, slettKrav } from "../actions";
+import { gjenapneKrav, settUtfall, slettKrav } from "../actions";
 import { UtfallVelger } from "./UtfallVelger";
 
 const RAD =
@@ -25,12 +25,27 @@ export function KravMeny({
   utfall?: SakUtfall | null;
 }) {
   const [åpen, setÅpen] = useState(false);
-  const [modus, setModus] = useState<"meny" | "utfall" | "slett" | "betalt">("meny");
+  const [modus, setModus] = useState<"meny" | "utfall" | "slett" | "betalt" | "apne">(
+    "meny",
+  );
   const skjema = useRef<HTMLFormElement | null>(null);
   const [betaler, startBetaling] = useTransition();
   const [feil, setFeil] = useState<string | null>(null);
-  // En akseptert avtale er avsluttet, men kan registreres som ferdig betalt.
-  const kanRegistrereBetalt = lost && utfall === "nedbetalingsavtale";
+  // En akseptert avtale kan registreres som ferdig betalt. Eldre avtaler kan
+  // være avsluttet fra før, nye er åpne til de er oppgjort.
+  const kanRegistrereBetalt = utfall === "nedbetalingsavtale";
+
+  function apneIgjen() {
+    setFeil(null);
+    startBetaling(async () => {
+      const r = await gjenapneKrav(kravId);
+      if (!r.ok) {
+        setFeil(r.feil);
+        return;
+      }
+      setÅpen(false);
+    });
+  }
 
   function registrerBetalt() {
     setFeil(null);
@@ -56,7 +71,9 @@ export function KravMeny({
         ? "Slette kravet?"
         : modus === "betalt"
           ? "Er avtalen ferdig betalt?"
-          : "Saken";
+          : modus === "apne"
+            ? "Åpne saken igjen?"
+            : "Saken";
 
   return (
     <>
@@ -82,6 +99,16 @@ export function KravMeny({
               >
                 <Check className="size-[18px] text-aksent" aria-hidden />
                 Registrer utfall
+              </button>
+            )}
+            {lost && (
+              <button
+                type="button"
+                onClick={() => setModus("apne")}
+                className={`${RAD} text-blekk`}
+              >
+                <Check className="size-[18px] text-aksent" aria-hidden />
+                Åpne saken igjen
               </button>
             )}
             {kanRegistrereBetalt && (
@@ -116,12 +143,34 @@ export function KravMeny({
         {modus === "betalt" && (
           <div className="flex flex-col gap-2 px-1">
             <p className="text-[13.5px] text-dempet">
-              Registrer at hele nedbetalingsavtalen er betalt. Saken blir stående
-              som oppgjort.
+              Registrer at hele nedbetalingsavtalen er betalt. Saken avsluttes
+              som oppgjort, og fristvarslene stopper.
             </p>
             <div className="mt-2 flex items-center gap-3">
               <Primærknapp full={false} disabled={betaler} onClick={registrerBetalt}>
                 {betaler ? "Lagrer …" : "Ja, registrer betalingen"}
+              </Primærknapp>
+              <button
+                type="button"
+                onClick={() => setModus("meny")}
+                className="text-hjelp text-dempet transition hover:text-blekk"
+              >
+                Avbryt
+              </button>
+            </div>
+            {feil && <p className="text-hjelp text-dom-rod">{feil}</p>}
+          </div>
+        )}
+
+        {modus === "apne" && (
+          <div className="flex flex-col gap-2 px-1">
+            <p className="text-[13.5px] text-dempet">
+              Saken flyttes tilbake til aktive saker, og fristene varsles igjen.
+              Utfallet blir stående i historikken.
+            </p>
+            <div className="mt-2 flex items-center gap-3">
+              <Primærknapp full={false} disabled={betaler} onClick={apneIgjen}>
+                {betaler ? "Lagrer …" : "Ja, åpne saken"}
               </Primærknapp>
               <button
                 type="button"

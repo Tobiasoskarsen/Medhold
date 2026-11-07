@@ -18,7 +18,7 @@ export default async function LeggTilBrevPage({
   const [{ data }, { data: fristData }] = await Promise.all([
     supabase
       .from("saker")
-      .select("id, kreditor, tittel, status")
+      .select("id, kreditor, tittel, status, sist_endret")
       .order("sist_endret", { ascending: false }),
     // Aktive frister per sak, så brukeren kan si om det nye brevet erstatter dem.
     supabase
@@ -33,6 +33,8 @@ export default async function LeggTilBrevPage({
     navn: (s.kreditor as string | null) ?? (s.tittel as string),
     venter: s.status === "venter_pa_svar",
     status: s.status as SakStatus,
+    // Saken slik den så ut da siden ble lest: lagringen avvises hvis den er endret.
+    sistEndret: s.sist_endret as string,
     frister: (fristData ?? [])
       .filter((f) => f.sak_id === s.id)
       .map((f) => ({

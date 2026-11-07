@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { SakUtfall } from "@/lib/types";
 import { STADIER } from "@/lib/gjeld";
-import { settFristStatus, settSakUtfall } from "@/lib/saksstatus";
+import { gjenapneSak, settFristStatus, settSakUtfall } from "@/lib/saksstatus";
 
 /** Oppretter et krav manuelt (uten brev). Brukeren kan legge til brev senere. */
 export async function opprettKrav(input: {
@@ -68,6 +68,26 @@ export async function settUtfall(
   if (!user) redirect("/velkommen");
 
   const r = await settSakUtfall(supabase, user.id, id, utfall, bekreftetAvslutning);
+  if (!r.ok) return r;
+
+  revalidatePath("/");
+  revalidatePath("/krav");
+  revalidatePath(`/krav/${id}`);
+  return { ok: true };
+}
+
+/** Åpner en avsluttet sak igjen. Utfallet beholdes som historikk. */
+export async function gjenapneKrav(
+  id: string,
+): Promise<{ ok: true } | { ok: false; feil: string }> {
+  if (!id) return { ok: false, feil: "Fant ikke saken." };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  const r = await gjenapneSak(supabase, user.id, id);
   if (!r.ok) return r;
 
   revalidatePath("/");

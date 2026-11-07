@@ -424,7 +424,7 @@ export default async function KravDetaljPage({
       >
         {(() => {
           // Én tekstkilde per utfall (lib/utfall.ts): bare medhold sier frafalt.
-          const s = utfallVisning(utfall);
+          const s = utfallVisning(utfall, true);
           return (
             <>
               <p className={`text-[16px] font-bold ${s.farge}`}>
@@ -547,9 +547,9 @@ export default async function KravDetaljPage({
           </span>
         )}
       </div>
-      {utfall && !lost && utfallVisning(utfall).under && (
+      {utfall && !lost && utfallVisning(utfall, false).under && (
         <p className="mt-2 text-hjelp leading-relaxed text-dempet">
-          {utfallVisning(utfall).under}
+          {utfallVisning(utfall, false).under}
         </p>
       )}
       </SekvensDel>

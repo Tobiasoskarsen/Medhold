@@ -57,6 +57,7 @@ type KravValg = {
   navn: string;
   venter: boolean;
   status: SakStatus;
+  sistEndret: string;
   /** Aktive frister på saken, så brukeren kan si om det nye brevet erstatter dem. */
   frister: { id: string; tittel: string; forfallsdato: string }[];
 };
@@ -165,6 +166,8 @@ export function LeggTilBrevFlyt({
   const [aiAvsluttende, setAiAvsluttende] = useState<SakUtfall | null>(null);
   const [avslutningBekreftet, setAvslutningBekreftet] = useState(false);
   const [erstatter, setErstatter] = useState<Record<string, boolean>>({});
+  // En avsluttet sak åpnes bare når brukeren krysser av for det.
+  const [gjenapne, setGjenapne] = useState(false);
   // Bekreftelseskortet (MEDHOLD_SIKKERHET_ARBEIDSORDRE §A.2): redigerbare
   // kopier av det AI-en leste. Alt under beregnes fra disse, ikke fra analyse.
   const [hovedstolTekst, setHovedstolTekst] = useState("");
@@ -287,6 +290,7 @@ export function LeggTilBrevFlyt({
     setAiAvsluttende(avsluttendeForslag(r.analyse.svar_utfall));
     setAvslutningBekreftet(false);
     setErstatter({});
+    setGjenapne(false);
     gaTil(3);
   }
 
@@ -373,8 +377,10 @@ export function LeggTilBrevFlyt({
         utfall: utfallSomGjelder,
         nyeFrister: valgteFrister.map((f) => f.forfallsdato),
         idag: idagOslo(),
+        gjenapne,
       })
     : null;
+  const valgtKravAvsluttet = valgtKravObj?.status === "fullfort";
   const erstatterIder = (valgtKravObj?.frister ?? [])
     .filter((f) => erstatter[f.id])
     .map((f) => f.id);
@@ -410,6 +416,8 @@ export function LeggTilBrevFlyt({
       sumStemmerLikevel: stemmerLikevel,
       erstatterFrister: erstatterIder,
       avslutningBekreftet,
+      gjenapne: valgtKravAvsluttet && gjenapne,
+      forventetSistEndret: valgtKravObj?.sistEndret ?? null,
     };
 
     const r = await lagreBrev(input);
@@ -973,12 +981,29 @@ export function LeggTilBrevFlyt({
             </div>
           )}
 
-          {statusForslag?.gjenapnet && (
+          {valgtKravAvsluttet && (
+            <div className="mt-5">
+              <p className="text-hjelp font-medium text-blekk">Saken er avsluttet</p>
+              <p className="mt-0.5 text-hjelp text-dempet">
+                Brevet lagres i saken uansett. Saken åpnes bare igjen hvis du
+                velger det.
+              </p>
+              {statusForslag?.kommendeFrist && !gjenapne && (
+                <p className="mt-2 rounded-kontroll bg-varsel-bg px-3.5 py-2.5 text-hjelp text-varsel-tekst">
+                  Brevet har en ny frist. Mens saken er avsluttet, vises den ikke
+                  på Hjem, og du får ikke varsel om den.
+                </p>
+              )}
+              <label className="mt-2 flex items-start gap-2.5 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk">
+                <Avkrysning checked={gjenapne} onChange={setGjenapne} className="mt-0.5" />
+                Åpne saken igjen. Tidligere utfall blir stående i historikken.
+              </label>
+            </div>
+          )}
+
+          {statusForslag?.gjenapnet && !valgtKravAvsluttet && (
             <p className="mt-5 rounded-kontroll bg-flate-2 px-3.5 py-3 text-hjelp text-blekk">
-              {valgtKravObj?.status === "fullfort"
-                ? "Saken åpnes igjen"
-                : "Saken flyttes til «Trenger handling»"}
-              , fordi brevet har en ny frist.
+              Saken flyttes til «Trenger handling», fordi brevet har en ny frist.
             </p>
           )}
 

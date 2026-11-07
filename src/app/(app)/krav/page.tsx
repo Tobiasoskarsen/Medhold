@@ -62,7 +62,7 @@ export default async function KravListePage() {
       // Nyeste brev per sak (kun for funn-markøren) — ÉN spørring, ingen N+1.
       supabase
         .from("brev")
-        .select("id, sak_id, brevdato, opprettet, gebyrsjekk")
+        .select("id, sak_id, brevdato, opprettet, alvorlig, gebyrsjekk")
         .order("opprettet", { ascending: false }),
     ]);
 
@@ -77,6 +77,7 @@ export default async function KravListePage() {
     sak_id: string;
     brevdato: string | null;
     opprettet: string;
+    alvorlig: boolean;
   }[];
 
   // Samme rangering som Hjem (lib/prioritet.ts). En gammel utløpt frist vises

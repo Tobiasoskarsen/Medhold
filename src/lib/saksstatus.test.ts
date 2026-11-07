@@ -1,7 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { erstattFrister, fristStatus, settFristStatus, settSakUtfall } from "./saksstatus.ts";
+import {
+  fristStatus,
+  gjenapneSak,
+  lagreBrevFeilmelding,
+  settFristStatus,
+  settSakUtfall,
+} from "./saksstatus.ts";
 
 const ALICE = "alice";
 const MALLORY = "mallory";
@@ -80,16 +86,18 @@ test("sak som ikke finnes gir feil", async () => {
   assert.equal(r.ok, false);
 });
 
-test("erstatting rører ikke en annens frister", async () => {
+test("gjenåpning av en annens sak avvises", async () => {
   const d = data();
-  await erstattFrister(fakeDb(d), MALLORY, "sA", ["f1"], "b9", NA);
-  assert.equal(d.frister[0].fullfort, false);
+  d.saker[0].status = "fullfort";
+  const r = await gjenapneSak(fakeDb(d), MALLORY, "sA");
+  assert.equal(r.ok, false);
+  assert.equal(d.saker[0].status, "fullfort");
 });
 
 // --- Avslutning krever bekreftelse ---
 
 test("utfall som avslutter uten bekreftelse avvises", async () => {
-  for (const u of ["medhold", "nedbetalingsavtale", "oppgjort", null] as const) {
+  for (const u of ["medhold", "oppgjort", null] as const) {
     const d = data();
     const r = await settSakUtfall(fakeDb(d), ALICE, "sA", u, false);
     assert.deepEqual(r, { ok: false, feil: "Bekreft at saken skal avsluttes." }, String(u));
@@ -112,9 +120,10 @@ test("«vet ikke» med bekreftelse avslutter og tømmer et gammelt utfall", asyn
   assert.equal(d.saker[0].utfall, null);
 });
 
-test("akseptert avtale setter stadium nedbetaling", async () => {
+test("akseptert avtale holder saken åpen med stadium nedbetaling", async () => {
   const d = data();
-  await settSakUtfall(fakeDb(d), ALICE, "sA", "nedbetalingsavtale", true);
+  assert.deepEqual(await settSakUtfall(fakeDb(d), ALICE, "sA", "nedbetalingsavtale", false), { ok: true });
+  assert.equal(d.saker[0].status, "aktiv");
   assert.equal(d.saker[0].stadium, "nedbetaling");
 });
 
@@ -155,27 +164,28 @@ test("frist kan fullføres og angres, og raden beholdes", async () => {
   assert.equal(d.frister[0].fullfort_at, null);
 });
 
-test("erstatting rører bare valgte frister og husker brevet", async () => {
+test("gjenåpning beholder utfallet som historikk", async () => {
   const d = data();
-  const r = await erstattFrister(fakeDb(d), ALICE, "sA", ["f1"], "b9", NA);
-  assert.deepEqual(r, { ok: true });
-  assert.equal(fristStatus(d.frister[0] as never), "erstattet");
-  assert.equal(d.frister[0].erstattet_av_brev_id, "b9");
-  assert.equal(d.frister[0].erstattet_at, NA);
-  assert.equal(fristStatus(d.frister[1] as never), "aktiv");
+  d.saker[0].status = "fullfort";
+  d.saker[0].utfall = "medhold";
+  assert.deepEqual(await gjenapneSak(fakeDb(d), ALICE, "sA"), { ok: true });
+  assert.equal(d.saker[0].status, "aktiv");
+  assert.equal(d.saker[0].utfall, "medhold");
 });
 
-test("erstatting gjelder bare fristene på den oppgitte saken", async () => {
+test("gjenåpning av en åpen sak gir feil, ikke stille endring", async () => {
   const d = data();
-  d.frister[0].sak_id = "annen";
-  await erstattFrister(fakeDb(d), ALICE, "sA", ["f1"], "b9", NA);
-  assert.equal(d.frister[0].fullfort, false);
+  const r = await gjenapneSak(fakeDb(d), ALICE, "sA");
+  assert.deepEqual(r, { ok: false, feil: "Saken er allerede åpen." });
 });
 
-test("tom erstatningsliste gjør ingenting", async () => {
-  const d = data();
-  assert.deepEqual(await erstattFrister(fakeDb(d), ALICE, "sA", [], "b9", NA), { ok: true });
-  assert.equal(d.frister[0].fullfort, false);
+test("feil fra lagre_brev blir forståelige meldinger", () => {
+  assert.match(lagreBrevFeilmelding("MEDHOLD_SAK_ENDRET"), /endret i mellomtiden/);
+  assert.match(lagreBrevFeilmelding("x MEDHOLD_FANT_IKKE_SAK"), /Fant ikke saken/);
+  assert.match(lagreBrevFeilmelding("MEDHOLD_FRIST_ERSTATTET"), /eldre fristene/);
+  for (const m of [undefined, "noe annet"]) {
+    assert.match(lagreBrevFeilmelding(m), /Ingenting ble lagret/);
+  }
 });
 
 test("fristStatus skiller aktiv, fullført og erstattet", () => {

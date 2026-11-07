@@ -25,6 +25,7 @@ export type SakInn = {
   id: string;
   status: SakStatus;
   belop_totalt?: number | null;
+  utfall?: string | null;
 };
 
 export type FristKlasse = "snart" | "utlopt" | "senere" | "historikk";
@@ -94,6 +95,7 @@ export type Grunn =
   | "frist_utlopt"
   | "frist_senere"
   | "aktiv"
+  | "nedbetaling"
   | "frist_historikk"
   | "venter";
 
@@ -103,8 +105,10 @@ const GRUNN_RANG: Record<Grunn, number> = {
   frist_utlopt: 2,
   frist_senere: 3,
   aktiv: 4,
-  frist_historikk: 5,
-  venter: 6,
+  // En akseptert avtale følges opp, men krever ingen handling før neste frist.
+  nedbetaling: 5,
+  frist_historikk: 6,
+  venter: 7,
 };
 
 export type RangertSak<S, F> = {
@@ -145,7 +149,9 @@ export function rangerSaker<S extends SakInn, F extends FristInn>(
         : sak.status === "venter_pa_svar"
           ? "venter"
           : !valgt
-            ? "aktiv"
+            ? sak.utfall === "nedbetalingsavtale"
+              ? "nedbetaling"
+              : "aktiv"
             : valgt.klasse === "snart"
               ? "frist_snart"
               : valgt.klasse === "utlopt"

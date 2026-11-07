@@ -101,29 +101,34 @@ export async function settFristStatus(
 }
 
 /**
- * Markerer aktive frister på saken som erstattet av et nytt brev. Rører bare
- * fristene brukeren har valgt, på saken som alt er kontrollert av kalleren.
+ * Åpner en avsluttet sak igjen. Utfallet beholdes som historikk. Er saken
+ * allerede åpen, er det en feil (ingen stille endring).
  */
-export async function erstattFrister(
+export async function gjenapneSak(
   db: SupabaseClient,
   brukerId: string,
   sakId: string,
-  fristIder: string[],
-  brevId: string,
-  naIso: string = new Date().toISOString(),
 ): Promise<Resultat> {
-  if (fristIder.length === 0) return { ok: true };
-  const { error } = await db
-    .from("frister")
-    .update({
-      fullfort: true,
-      fullfort_at: null,
-      erstattet_at: naIso,
-      erstattet_av_brev_id: brevId,
-    })
-    .eq("sak_id", sakId)
+  if (!(await eierSak(db, brukerId, sakId))) return { ok: false, feil: FANT_IKKE_SAK };
+  const { data, error } = await db
+    .from("saker")
+    .update({ status: "aktiv" })
+    .eq("id", sakId)
     .eq("bruker_id", brukerId)
-    .eq("fullfort", false)
-    .in("id", fristIder);
-  return error ? { ok: false, feil: KUNNE_IKKE_LAGRE } : { ok: true };
+    .eq("status", "fullfort")
+    .select("id");
+  if (error) return { ok: false, feil: KUNNE_IKKE_LAGRE };
+  if (!data || data.length === 0) return { ok: false, feil: "Saken er allerede åpen." };
+  return { ok: true };
+}
+
+/** Brukervennlig melding for en feil fra lagre_brev (migrasjon 0027). */
+export function lagreBrevFeilmelding(melding: string | undefined | null): string {
+  const m = melding ?? "";
+  if (m.includes("MEDHOLD_SAK_ENDRET"))
+    return "Saken er endret i mellomtiden. Last siden på nytt og prøv igjen. Ingenting ble lagret.";
+  if (m.includes("MEDHOLD_FANT_IKKE_SAK")) return "Fant ikke saken. Ingenting ble lagret.";
+  if (m.includes("MEDHOLD_FRIST_ERSTATTET"))
+    return "En av de eldre fristene er allerede endret. Last siden på nytt. Ingenting ble lagret.";
+  return "Kunne ikke lagre brevet. Ingenting ble lagret. Prøv igjen.";
 }

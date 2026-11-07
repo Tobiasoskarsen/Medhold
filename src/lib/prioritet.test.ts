@@ -161,6 +161,32 @@ test("sisteBrevPerSak: dato slår opprettet, brev uten dato kommer sist", () => 
   assert.equal(m.get("s")?.id, "ny");
 });
 
+test("akseptert avtale uten frist kommer etter aktive saker, foran gamle frister", () => {
+  const r = rangerSaker(
+    [
+      { id: "avtale", status: "aktiv" as const, belop_totalt: 0, utfall: "nedbetalingsavtale" },
+      { id: "historikk", status: "aktiv" as const, belop_totalt: 0, utfall: null },
+      { id: "uten", status: "aktiv" as const, belop_totalt: 0, utfall: null },
+    ],
+    [frist("historikk", "2026-05-15", "b1")],
+    [brev("b1", "historikk", "2026-05-01")],
+    idag,
+  );
+  assert.deepEqual(r.map((x) => x.sak.id), ["uten", "avtale", "historikk"]);
+  assert.equal(r[1].grunn, "nedbetaling");
+});
+
+test("akseptert avtale med kommende avdragsfrist rangeres etter fristen", () => {
+  const r = velgViktigsteSak(
+    [{ id: "avtale", status: "aktiv" as const, belop_totalt: 0, utfall: "nedbetalingsavtale" }, sak("uten")],
+    [frist("avtale", "2026-11-11")],
+    [],
+    idag,
+  );
+  assert.equal(r?.sak.id, "avtale");
+  assert.equal(r?.grunn, "frist_snart");
+});
+
 // --- Medhold-kortet ---
 
 test("Medhold-kortet skjuler aldri en aktiv sak", () => {
