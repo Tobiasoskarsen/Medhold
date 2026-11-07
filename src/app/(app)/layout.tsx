@@ -3,11 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { BunnNav } from "@/components/ui";
 import { Bevegelsesramme } from "@/components/Bevegelsesramme";
 import { ViewOvergangProvider } from "@/components/ViewOvergang";
-import { APP_NAME } from "@/lib/brand";
 
 /**
- * Delt ramme for de innloggede skjermene: auth-vakt, bunn-navigasjon og den
- * ene ansvarsfraskrivelsen (guardrail — vises kun her, ikke gjentatt).
+ * Delt ramme for de innloggede skjermene: auth-vakt og bunn-navigasjon.
+ * Forbeholdet «ikke profesjonell rådgivning» står der appen gir vurderinger
+ * (brevforklaring, gebyrsjekk, utkast, Veiene ut), ikke fast på alle skjermer.
  */
 export default async function AppLayout({
   children,
@@ -24,11 +24,7 @@ export default async function AppLayout({
     <Bevegelsesramme>
       <ViewOvergangProvider>
         <div className="flex min-h-dvh flex-col pb-[var(--nav-plass)]">
-          <div className="flex-1">{children}</div>
-          <p className="mx-auto w-full max-w-[640px] px-5 pb-5 pt-6 text-center text-[11px] leading-relaxed text-dempet">
-            {APP_NAME} hjelper deg å holde oversikt — ikke profesjonell
-            rådgivning. Bekreft viktige ting med rett instans.
-          </p>
+          <div className="flex-1 pb-6">{children}</div>
           <BunnNav />
         </div>
       </ViewOvergangProvider>
