@@ -9,7 +9,8 @@ import { AvsluttedeListe } from "./AvsluttedeListe";
 import { GruppertSaksliste, type Gruppe, type GruppeRad } from "./GruppertSaksliste";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
 import { formaterBelop } from "@/lib/format";
-import { dagerTil } from "@/lib/dato";
+import { dagerTil, idagOslo } from "@/lib/dato";
+import { rangerSaker } from "@/lib/prioritet";
 import { erHastende, fristChipTekst } from "@/lib/frist";
 import { STATUS_ETIKETT, type SakStatus, type SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
@@ -56,22 +57,35 @@ export default async function KravListePage() {
         .order("sist_endret", { ascending: false }),
       supabase
         .from("frister")
-        .select("sak_id, forfallsdato")
+        .select("sak_id, brev_id, forfallsdato")
         .eq("fullfort", false),
       // Nyeste brev per sak (kun for funn-markøren) — ÉN spørring, ingen N+1.
       supabase
         .from("brev")
-        .select("sak_id, opprettet, gebyrsjekk")
+        .select("id, sak_id, brevdato, opprettet, gebyrsjekk")
         .order("opprettet", { ascending: false }),
     ]);
 
   const saker = (sakData ?? []) as SakRad[];
-  const frister = (fristData ?? []) as { sak_id: string; forfallsdato: string }[];
+  const frister = (fristData ?? []) as {
+    sak_id: string;
+    brev_id: string | null;
+    forfallsdato: string;
+  }[];
+  const brevRader = (brevData ?? []) as {
+    id: string;
+    sak_id: string;
+    brevdato: string | null;
+    opprettet: string;
+  }[];
 
+  // Samme rangering som Hjem (lib/prioritet.ts). En gammel utløpt frist vises
+  // ikke som «Frist utløpt», og drar ikke saken til toppen.
+  const rangering = rangerSaker(saker, frister, brevRader, idagOslo());
+  const rangPlass = new Map(rangering.map((r, i) => [r.sak.id, i]));
   const nesteFrist = new Map<string, string>();
-  for (const f of frister) {
-    const nå = nesteFrist.get(f.sak_id);
-    if (!nå || f.forfallsdato < nå) nesteFrist.set(f.sak_id, f.forfallsdato);
+  for (const r of rangering) {
+    if (r.frist && r.klasse !== "historikk") nesteFrist.set(r.sak.id, r.frist.forfallsdato);
   }
 
   // Nyeste brev er først (DB-sortert) → første treff per sak_id holdes.
@@ -96,7 +110,9 @@ export default async function KravListePage() {
     return 0;
   };
   const { trengerHandling, venter, avsluttet: avsluttede } = saksGrupper(saker);
-  const aktiveSortert = [...trengerHandling].sort(etterFrist);
+  const aktiveSortert = [...trengerHandling].sort(
+    (a, b) => (rangPlass.get(a.id) ?? 0) - (rangPlass.get(b.id) ?? 0),
+  );
   const venterSortert = [...venter].sort(etterFrist);
 
   function kortData(sak: SakRad) {

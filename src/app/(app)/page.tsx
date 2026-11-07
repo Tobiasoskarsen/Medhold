@@ -20,6 +20,7 @@ import { STADIUM_ETIKETT, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus, SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { hjemIngress } from "@/lib/oversikt";
+import { kanViseSeier, rangerSaker } from "@/lib/prioritet";
 import { kr, overLinjer, totalOver } from "@/lib/gebyrfunn-visning";
 import {
   dagerTilOppfolging,
@@ -140,14 +141,6 @@ export default async function HjemPage() {
   const harKrav = saker.length > 0;
   const aktiveSaker = saker.filter((s) => s.status !== "fullfort");
 
-  // Nyeste brev sin alvorlighet per sak (DB-sortert nyeste først → første
-  // treff per sak_id holdes).
-  const alvorligPerSak = new Map<string, boolean>();
-  for (const b of brevData ?? []) {
-    if (alvorligPerSak.has(b.sak_id)) continue;
-    alvorligPerSak.set(b.sak_id, !!b.alvorlig);
-  }
-
   // Gamle brev (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.2): en utløpt frist fra et
   // brev over 45 dager gammelt er historikk — ingen «En frist har gått ut» og
   // ingen rød «Frist utløpt»-chip. Fristens EGET brev avgjør (brev_id).
@@ -163,16 +156,14 @@ export default async function HjemPage() {
     !!f.brev_id && (gammeltPerBrev.get(f.brev_id) ?? false);
   const utlopte = frister.filter((f) => dagerTil(f.forfallsdato) < 0);
 
-  // Tidligste åpne frist per sak (frister er allerede sortert på dato).
-  const nesteFristPerSak = new Map<string, string>();
-  for (const f of frister) {
-    if (!nesteFristPerSak.has(f.sak_id)) nesteFristPerSak.set(f.sak_id, f.forfallsdato);
-  }
-
-  const topFrist = frister[0] ?? null;
-  const topSak = topFrist?.saker ?? aktiveSaker[0] ?? null;
+  // Viktigste sak og rekkefølgen på resten: én felles, testet regel
+  // (lib/prioritet.ts). Alvorlighet og kommende frister går foran gamle frister.
+  const rangert = rangerSaker(saker, frister, brevData ?? [], idag);
+  const topp = rangert[0] ?? null;
+  const topFrist = topp?.frist ?? null;
+  const topSak: SakKobling | null = topp?.sak ?? null;
   const venter = !!topSak && topSak.status === "venter_pa_svar" && !topFrist;
-  const topSakAlvorlig = topSak ? (alvorligPerSak.get(topSak.id) ?? false) : false;
+  const topSakAlvorlig = topp?.alvorlig ?? false;
 
   // Ingressens grunnlag (§5.1).
   const sakerDenneUka = new Set(
@@ -224,13 +215,9 @@ export default async function HjemPage() {
     }
   }
 
-  // Seier: nyeste sak er løst med medhold, og ingen presserende frist.
-  const seierSak =
-    !topFrist &&
-    saker[0]?.status === "fullfort" &&
-    saker[0]?.utfall === "medhold"
-      ? saker[0]
-      : null;
+  // Seier: nyeste sak er løst med medhold, og ingen saker er åpne. Kortet
+  // skal aldri ta plassen til en sak som krever oppmerksomhet.
+  const seierSak = kanViseSeier(saker) ? saker[0] : null;
 
   // Gebyrsjekk på heltekortet: samme nyeste brev som før, nå også totalen
   // til «{n} kr for mye»-chipen (ingen ny spørring).
@@ -249,20 +236,8 @@ export default async function HjemPage() {
   }
   const hjemHarOverGebyr = gebyrOver > 0;
 
-  // «Andre saker» (§5.3): aktive unntatt toppsaken. Med åpen frist først
-  // (etter dato), deretter resten etter sist_endret (spørringen er allerede
-  // nyeste først — stabil sort beholder det).
-  const andreSaker = aktiveSaker
-    .filter((s) => s.id !== topSak?.id)
-    .sort((a, b) => {
-      const fa = nesteFristPerSak.get(a.id);
-      const fb = nesteFristPerSak.get(b.id);
-      if (fa && fb) return fa < fb ? -1 : fa > fb ? 1 : 0;
-      if (fa) return -1;
-      if (fb) return 1;
-      return 0;
-    })
-    .slice(0, ANDRE_SAKER_MAKS);
+  // «Andre saker» (§5.3): samme rangering som toppsaken, uten den.
+  const andreSaker = rangert.slice(1, 1 + ANDRE_SAKER_MAKS);
 
   const navnPa = (s: SakKobling) => s.kreditor ?? s.tittel;
   const kreditorLinje = (s: SakKobling) => (
@@ -441,8 +416,11 @@ export default async function HjemPage() {
             </Link>
           </div>
           <ul className="rounded-kort border border-kant bg-flate px-4">
-            {andreSaker.map((s, i) => {
-              const frist = nesteFristPerSak.get(s.id);
+            {andreSaker.map((rad, i) => {
+              const s = rad.sak;
+              // En gammel utløpt frist er historikk: vis stadiet i stedet.
+              const frist =
+                rad.klasse !== "historikk" ? rad.frist?.forfallsdato : undefined;
               const dager = frist ? dagerTil(frist) : null;
               const [undertekst, hastende] =
                 s.status === "venter_pa_svar"

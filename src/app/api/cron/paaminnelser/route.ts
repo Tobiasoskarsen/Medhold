@@ -7,6 +7,8 @@ import {
 } from "@/lib/epost";
 import { oppfolgingsKandidater, type VenterSak } from "@/lib/oppfolging";
 import { idagOslo } from "@/lib/dato";
+import { skalVarsles } from "@/lib/prioritet";
+import type { SakStatus } from "@/lib/types";
 
 // Kjøres av Vercel Cron én gang i døgnet (se vercel.json). Kan ta litt tid hvis
 // mange e-poster skal ut — gi den rom slik at den ikke kuttes av timeouten.
@@ -29,12 +31,18 @@ type FristRad = {
   tittel: string;
   forfallsdato: string;
   bruker_id: string;
-  saker: { tittel: string } | { tittel: string }[] | null;
+  fullfort: boolean;
+  saker: SakKobling | SakKobling[] | null;
 };
+type SakKobling = { tittel: string; status: SakStatus };
+
+function sakKobling(saker: FristRad["saker"]): SakKobling | null {
+  if (!saker) return null;
+  return Array.isArray(saker) ? (saker[0] ?? null) : saker;
+}
 
 function sakTittel(saker: FristRad["saker"]): string | null {
-  if (!saker) return null;
-  return Array.isArray(saker) ? (saker[0]?.tittel ?? null) : saker.tittel;
+  return sakKobling(saker)?.tittel ?? null;
 }
 
 type OppfolgingResultat = {
@@ -161,7 +169,7 @@ export async function GET(req: NextRequest) {
   // Åpne frister med forfall innen 7 dager (på tvers av alle brukere).
   const { data: frister, error } = await supabase
     .from("frister")
-    .select("id, tittel, forfallsdato, bruker_id, saker(tittel)")
+    .select("id, tittel, forfallsdato, bruker_id, fullfort, saker(tittel, status)")
     .eq("fullfort", false)
     .gte("forfallsdato", idag)
     .lte("forfallsdato", senesteDato)
@@ -172,8 +180,12 @@ export async function GET(req: NextRequest) {
     return Response.json({ feil: "Databasefeil" }, { status: 500 });
   }
 
-  // Behold bare frister som treffer en terskel (7, 3 eller 1 dager igjen).
+  // Behold bare frister som skal varsles (ikke på avsluttede saker, ikke
+  // fullførte eller erstattede), og som treffer en terskel (7, 3 eller 1 dager).
   const kandidater = (frister ?? [])
+    .filter((f) =>
+      skalVarsles({ fullfort: f.fullfort, sakStatus: sakKobling(f.saker)?.status ?? null }),
+    )
     .map((f) => ({ ...f, terskel: dagerMellom(idag, f.forfallsdato) }))
     .filter((f) => (TERSKLER as readonly number[]).includes(f.terskel));
 

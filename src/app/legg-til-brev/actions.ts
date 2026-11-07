@@ -4,9 +4,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { FristForslag, SakUtfall } from "@/lib/types";
+import { SAK_UTFALL, type FristForslag, type SakStatus, type SakUtfall } from "@/lib/types";
 import { beregnFrist, foreslaStadium, type BrevType } from "@/lib/gjeld";
-import { utfallOvergang } from "@/lib/utfall";
+import { statusVedNyttBrev, utfallAvslutter } from "@/lib/utfall";
+import { erstattFrister } from "@/lib/saksstatus";
+import { idagOslo } from "@/lib/dato";
 import { AI_MODELL_RASK } from "@/lib/ai";
 import { maskerFodselsnummer } from "@/lib/maskering";
 import { tolkKr, tellOrd, kuttTilMaks } from "@/lib/format";
@@ -313,6 +315,10 @@ export type LagreBrevInput = {
   bekreftet: true;
   /** «Det stemmer likevel» ved sumavvik (delbetaling, renter o.l.). */
   sumStemmerLikevel: boolean;
+  /** Aktive frister på saken som brukeren sier at dette brevet erstatter. */
+  erstatterFrister: string[];
+  /** Brukeren har bekreftet at et utfall som avslutter saken skal brukes. */
+  avslutningBekreftet: boolean;
 };
 
 export type LagreBrevResultat =
@@ -332,6 +338,13 @@ export async function lagreBrev(
   // bekreftelse lagres ingenting, heller ikke ved et direkte kall.
   if (input.bekreftet !== true)
     return { ok: false, feil: "Bekreft tallene fra brevet før du lagrer." };
+
+  // Utfall: bare kjente verdier, og et utfall som avslutter saken krever
+  // eksplisitt bekreftelse, også ved direkte kall.
+  if (input.utfall !== null && !(SAK_UTFALL as readonly string[]).includes(input.utfall))
+    return { ok: false, feil: "Ukjent utfall." };
+  if (input.utfall && utfallAvslutter(input.utfall) && input.avslutningBekreftet !== true)
+    return { ok: false, feil: "Bekreft at saken skal avsluttes." };
 
   const linjer = input.kostnadslinjer ?? [];
 
@@ -367,19 +380,37 @@ export async function lagreBrev(
   let sakId: string;
   if (input.krav.modus === "eksisterende") {
     sakId = input.krav.sakId;
+    // Eierskap sjekkes eksplisitt (i tillegg til RLS), og gir dagens status.
+    const { data: sak } = await supabase
+      .from("saker")
+      .select("id, status")
+      .eq("id", sakId)
+      .eq("bruker_id", user.id)
+      .maybeSingle();
+    if (!sak) return { ok: false, feil: "Fant ikke saken." };
+
     const oppdatering: Record<string, unknown> = {};
     if (stadium) oppdatering.stadium = stadium;
     if (input.belop != null) oppdatering.belop_totalt = input.belop;
     if (input.saksnummer.trim()) oppdatering.saksnummer = input.saksnummer.trim();
-    // Bekreftet utfall (kode beslutter) overstyrer status/stadium.
-    if (input.utfall) {
-      const o = utfallOvergang(input.utfall);
-      oppdatering.utfall = o.utfall;
-      oppdatering.status = o.status;
-      if (o.stadium) oppdatering.stadium = o.stadium;
-    }
+    // Én regel (lib/utfall.ts): et bekreftet utfall bestemmer, ellers gjør en
+    // ny kommende frist saken aktiv, så fristen ikke skjules.
+    const ny = statusVedNyttBrev({
+      statusNa: sak.status as SakStatus,
+      utfall: input.utfall,
+      nyeFrister: input.valgteFrister.filter((f) => f.forfallsdato).map((f) => f.forfallsdato),
+      idag: idagOslo(),
+    });
+    if (ny.status !== sak.status) oppdatering.status = ny.status;
+    if (ny.utfall !== undefined) oppdatering.utfall = ny.utfall;
+    if (ny.stadium) oppdatering.stadium = ny.stadium;
     if (Object.keys(oppdatering).length > 0) {
-      await supabase.from("saker").update(oppdatering).eq("id", sakId);
+      const { error } = await supabase
+        .from("saker")
+        .update(oppdatering)
+        .eq("id", sakId)
+        .eq("bruker_id", user.id);
+      if (error) return { ok: false, feil: "Kunne ikke oppdatere saken. Prøv igjen." };
     }
   } else {
     const navn = input.krav.kreditor.trim() || input.avsender.trim() || "Nytt krav";
@@ -462,6 +493,12 @@ export async function lagreBrev(
       })),
     );
   }
+  // Eldre frister brukeren sier at dette brevet erstatter. Lukkes, slettes ikke.
+  if (input.krav.modus === "eksisterende" && (input.erstatterFrister ?? []).length > 0) {
+    const r = await erstattFrister(supabase, user.id, sakId, input.erstatterFrister, brev.id);
+    if (!r.ok) console.error("[legg-til-brev] Kunne ikke markere erstattede frister.");
+  }
+
   if (input.foreslatte_steg.length > 0) {
     await supabase.from("neste_steg").insert(
       input.foreslatte_steg.map((tekst, i) => ({

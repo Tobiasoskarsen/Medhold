@@ -183,12 +183,15 @@ export type Utkast = {
   opprettet: string;
 };
 
-// Utfall for en sak (0017 + 0019). Settes aldri automatisk — brukeren bekrefter.
+// Utfall for en sak (0017 + 0019 + 0026). Settes aldri automatisk — brukeren
+// bekrefter. Tilbud, akseptert avtale og ferdig betalt er tre ulike ting:
+// nedbetalingstilbud (åpen), nedbetalingsavtale (avsluttet), oppgjort (betalt).
 // `oppgjort` settes KUN via «Jeg har betalt» på Veier ut-skjermen.
 export const SAK_UTFALL = [
   "medhold",
   "delvis_medhold",
   "avvist",
+  "nedbetalingstilbud",
   "nedbetalingsavtale",
   "oppgjort",
 ] as const;
@@ -204,7 +207,8 @@ export const UTFALL_ETIKETT: Record<SakUtfall, string> = {
   medhold: "Medhold",
   delvis_medhold: "Delvis medhold",
   avvist: "Avvist",
-  nedbetalingsavtale: "Nedbetalingsavtale",
+  nedbetalingstilbud: "Tilbud om nedbetaling",
+  nedbetalingsavtale: "Nedbetalingsavtale inngått",
   oppgjort: "Oppgjort",
 };
 
@@ -213,6 +217,7 @@ export const UTFALL_STIL: Record<SakUtfall, string> = {
   medhold: "bg-gull-bg text-gull ring-gull/30",
   delvis_medhold: "bg-gull-bg text-gull ring-gull/30",
   avvist: "bg-flate-2 text-dempet ring-strek",
+  nedbetalingstilbud: "bg-flate-2 text-blekk ring-strek",
   nedbetalingsavtale: "bg-trygg/10 text-trygg ring-trygg/25",
   // Nøytral og verdig — ikke gull, ikke grønn suksess (token-basert).
   oppgjort: "bg-flate-2 text-blekk ring-strek",
