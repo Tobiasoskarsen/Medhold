@@ -1,6 +1,6 @@
 // Prompten for utkastgenerering, uten database eller Next-kontekst
 // (MEDHOLD_SIKKERHET_ARBEIDSORDRE §D.1, §D.3, §E.4). Ren funksjon av sakens
-// fakta: brukes av utkast/actions.ts (byggUtkastPrompt henter fakta fra
+// fakta: brukes av utkast/byggUtkastPrompt.ts (som henter fakta fra
 // databasen og kaller hit), streaming-ruten og scripts/fasit-utkast.ts — så
 // fasiten måler nøyaktig samme prompt og etterkontroll som appen.
 // Relative importer med .ts-endelse, så filen også kan kjøres direkte av Node.
