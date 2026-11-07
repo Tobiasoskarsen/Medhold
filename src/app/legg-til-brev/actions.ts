@@ -18,6 +18,7 @@ import {
 import { erAlvorligSak } from "@/lib/alvorsgrense";
 import type { FristSammenligning } from "@/lib/frist";
 import { kontrollerSum } from "@/lib/sumkontroll";
+import { validerBrevfiler } from "@/lib/brevfil";
 import {
   finnHovedstolAvvik,
   type HovedstolBrevInput,
@@ -251,10 +252,9 @@ export async function analyserBrevBilder(
   } = await supabase.auth.getUser();
   if (!user) redirect("/velkommen");
 
-  if (bilder.length === 0)
-    return { ok: false, feil: "Legg til minst ett bilde av brevet." };
-  if (bilder.length > 2)
-    return { ok: false, feil: "Maks to bilder per brev." };
+  // Samme regler som klienten: et direkte kall skal ikke omgå grensene.
+  const filFeil = validerBrevfiler(bilder);
+  if (filFeil) return { ok: false, feil: filFeil };
   if (!process.env.ANTHROPIC_API_KEY)
     return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
 

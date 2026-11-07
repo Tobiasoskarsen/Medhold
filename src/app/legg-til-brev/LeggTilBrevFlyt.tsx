@@ -42,12 +42,12 @@ import {
   type LagreBrevInput,
   type KravForslag,
 } from "./actions";
-import type { Bilde } from "@/lib/brevanalyse";
+import { MAKS_BILDER, MAKS_PDF_SIDER, MAKS_PDF_TEKST, validerBrevfiler } from "@/lib/brevfil";
+import { klargjorFil, type KlarFil } from "./klargjorFil";
 
 type AnalyseData = Extract<AnalyseResultat, { ok: true }>["analyse"];
 type KravValg = { id: string; navn: string; venter: boolean };
 type Inntak = "valg" | "tekst" | "bilde";
-type ValgtBilde = Bilde & { navn: string };
 
 function brevtypeEtikett(bt: BrevType): string {
   return bt === "annet" ? "Annet" : STADIUM_ETIKETT[bt];
@@ -91,22 +91,6 @@ function StegIndikator({ steg }: { steg: 1 | 2 | 3 }) {
   );
 }
 
-function lesFilSomBase64(fil: File): Promise<ValgtBilde> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => {
-      const s = String(r.result);
-      resolve({
-        media_type: fil.type,
-        data: s.slice(s.indexOf(",") + 1),
-        navn: fil.name,
-      });
-    };
-    r.onerror = () => reject(new Error("lesefeil"));
-    r.readAsDataURL(fil);
-  });
-}
-
 export function LeggTilBrevFlyt({
   krav,
   forvalgtKrav,
@@ -128,7 +112,8 @@ export function LeggTilBrevFlyt({
   }
   const [inntak, setInntak] = useState<Inntak>("valg");
   const [tekst, setTekst] = useState("");
-  const [bilder, setBilder] = useState<ValgtBilde[]>([]);
+  const [bilder, setBilder] = useState<KlarFil[]>([]);
+  const [klargjor, setKlargjor] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
   const [lagrer, setLagrer] = useState(false);
   const kameraInput = useRef<HTMLInputElement | null>(null);
@@ -317,18 +302,28 @@ export function LeggTilBrevFlyt({
   }
 
   async function velgFiler(filer: FileList | null) {
-    if (!filer) return;
+    if (!filer || filer.length === 0) return;
     setFeil(null);
-    const nye: ValgtBilde[] = [];
-    for (const f of Array.from(filer).slice(0, 2 - bilder.length)) {
-      try {
-        nye.push(await lesFilSomBase64(f));
-      } catch {
-        setFeil("Kunne ikke lese fila. Prøv en annen.");
-      }
-    }
-    setBilder((b) => [...b, ...nye].slice(0, 2));
+    setKlargjor(true);
     setInntak("bilde");
+    const nye: KlarFil[] = [];
+    let forsteFeil: string | null = null;
+    for (const f of Array.from(filer)) {
+      const r = await klargjorFil(f);
+      if (r.ok) nye.push(r.fil);
+      else forsteFeil ??= r.feil;
+    }
+    const alle = [...bilder, ...nye];
+    // Samlet kontroll: antall, PDF alene og det totale budsjettet. Blir det for
+    // mye, beholdes det som allerede var lagt til, og brukeren får vite hvorfor.
+    const samletFeil = validerBrevfiler(alle);
+    if (samletFeil && nye.length > 0) {
+      setFeil(samletFeil);
+    } else {
+      if (nye.length > 0) setBilder(alle);
+      if (forsteFeil) setFeil(forsteFeil);
+    }
+    setKlargjor(false);
   }
 
   async function lagre(destinasjon: "innsigelse" | "veier-ut" | "krav") {
@@ -399,6 +394,8 @@ export function LeggTilBrevFlyt({
     router.refresh();
   }
 
+  const harPdf = bilder.some((b) => b.media_type === "application/pdf");
+
   const feltKlasse =
     "mt-1.5 w-full rounded-kontroll border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
@@ -428,7 +425,11 @@ export function LeggTilBrevFlyt({
         accept="image/*"
         capture="environment"
         hidden
-        onChange={(e) => velgFiler(e.target.files)}
+        onChange={(e) => {
+          void velgFiler(e.target.files).finally(() => {
+            e.target.value = "";
+          });
+        }}
       />
       <input
         ref={filInput}
@@ -436,7 +437,11 @@ export function LeggTilBrevFlyt({
         accept="image/*,application/pdf"
         multiple
         hidden
-        onChange={(e) => velgFiler(e.target.files)}
+        onChange={(e) => {
+          void velgFiler(e.target.files).finally(() => {
+            e.target.value = "";
+          });
+        }}
       />
 
       <AnimatePresence mode="wait" custom={retning}>
@@ -469,7 +474,7 @@ export function LeggTilBrevFlyt({
                 <InntakKort
                   ikon={<Upload className="size-5" aria-hidden />}
                   tittel="Last opp fil"
-                  tekst="Bilde eller PDF fra enheten"
+                  tekst={`Bilde eller PDF (PDF: maks ${MAKS_PDF_TEKST} og ${MAKS_PDF_SIDER} sider)`}
                   onClick={() => filInput.current?.click()}
                 />
                 <InntakKort
@@ -507,7 +512,9 @@ export function LeggTilBrevFlyt({
           {inntak === "bilde" && (
             <>
               <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
-                {bilder.length}/2 bilder. Legg gjerne til baksiden også.
+                {harPdf
+                  ? "PDF-en leses alene."
+                  : `${bilder.length}/${MAKS_BILDER} bilder. Legg gjerne til baksiden også. En PDF legges inn alene (maks ${MAKS_PDF_TEKST} og ${MAKS_PDF_SIDER} sider).`}
               </p>
               <div className="mt-4 flex flex-col gap-2.5">
                 {bilder.map((b, i) => (
@@ -519,6 +526,7 @@ export function LeggTilBrevFlyt({
                     <button
                       type="button"
                       aria-label="Fjern"
+                      disabled={klargjor}
                       onClick={() =>
                         setBilder((prev) => prev.filter((_, n) => n !== i))
                       }
@@ -528,7 +536,12 @@ export function LeggTilBrevFlyt({
                     </button>
                   </div>
                 ))}
-                {bilder.length < 2 && (
+                {klargjor && (
+                  <p className="text-hjelp text-dempet" aria-live="polite">
+                    Klargjør filen …
+                  </p>
+                )}
+                {!harPdf && !klargjor && bilder.length < MAKS_BILDER && (
                   <button
                     type="button"
                     onClick={() => filInput.current?.click()}
@@ -540,7 +553,7 @@ export function LeggTilBrevFlyt({
               </div>
               {feil && <p className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
               <div className="mt-4 pb-8">
-                <Primærknapp onClick={lesBilder} disabled={bilder.length === 0}>
+                <Primærknapp onClick={lesBilder} disabled={bilder.length === 0 || klargjor}>
                   Les brevet
                 </Primærknapp>
               </div>
