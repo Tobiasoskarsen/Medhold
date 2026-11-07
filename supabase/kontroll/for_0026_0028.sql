@@ -1,11 +1,12 @@
--- Skrivefri kontroll før og etter migrasjon 0026 og 0027.
+-- Skrivefri kontroll før og etter migrasjon 0026, 0027 og 0028.
 --
 -- Én SELECT. Leser systemkatalogene og teller rader. Ingen rader fra appens
 -- tabeller vises, bare antall, så ingen personopplysninger hentes. Refererer
--- ikke direkte til kolonnene 0026 legger til, så den kan kjøres både før og etter.
+-- ikke direkte til kolonnene 0026 legger til, så den kan kjøres i alle tilstander.
 --
 -- Bruk: lim inn i Supabase SQL Editor og kjør. Slå av radgrensen i editoren.
--- Kolonnen «forventet» sier hva som er riktig før (F) og etter (E) migrasjonen.
+-- Kolonnen «forventet» sier hva som er riktig i hver tilstand. Produksjon har
+-- per 2026-11-07 kjørt 0026, men ikke 0027 eller 0028.
 
 with
 kolonner as (
@@ -29,7 +30,7 @@ select seksjon, objekt, verdi, forventet from (
   select 2, '2 kolonne', 'frister.' || c,
          case when exists (select 1 from kolonner where t = 'frister' and kolonner.c = x.c)
               then 'finnes' else 'mangler' end,
-         'F: mangler · E: finnes'
+         'etter 0026: finnes'
   from (values ('fullfort_at'), ('erstattet_at'), ('erstattet_av_brev_id')) x(c)
 
   union all
@@ -38,7 +39,7 @@ select seksjon, objekt, verdi, forventet from (
            select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
            where n.nspname = 'public' and p.proname = x.f
          ) then 'finnes' else 'mangler' end,
-         'F: mangler · E: finnes'
+         'etter 0027: finnes'
   from (values ('lagre_brev'), ('brev_statusovergang')) x(f)
 
   union all
@@ -48,7 +49,7 @@ select seksjon, objekt, verdi, forventet from (
            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
            where n.nspname = 'public' and p.proname = 'lagre_brev'
          ), 'funksjonen mangler'),
-         'E: false'
+         'etter 0027: false'
 
   union all
   select 4, '4 trigger', 'saker_set_sist_endret',
@@ -61,12 +62,14 @@ select seksjon, objekt, verdi, forventet from (
   union all
   select 5, '5 constraint', t || '.' || navn, def,
          case navn
-           when 'brev_id_sak_id_key' then 'F og E: finnes (krav fra 0024)'
-           when 'frister_brev_sak_fkey' then 'F og E: finnes (0024)'
-           when 'utkast_brev_sak_fkey' then 'F og E: finnes (0024)'
-           when 'saker_utfall_check' then 'E: inneholder nedbetalingstilbud'
-           when 'frister_erstattet_brev_sak_fkey' then 'E: finnes'
-           when 'frister_status_konsistent' then 'E: finnes'
+           when 'brev_id_sak_id_key' then 'finnes (krav fra 0024)'
+           when 'frister_brev_sak_fkey' then 'finnes (0024)'
+           when 'utkast_brev_sak_fkey' then 'finnes (0024)'
+           when 'saker_utfall_check' then 'etter 0026: inneholder nedbetalingstilbud'
+           when 'frister_erstattet_av_brev_id_fkey' then 'etter 0026: finnes · etter 0028: borte'
+           when 'frister_erstattet_er_lukket' then 'etter 0026: finnes · etter 0028: borte'
+           when 'frister_erstattet_brev_sak_fkey' then 'etter 0028: finnes'
+           when 'frister_status_konsistent' then 'etter 0028: finnes'
            else ''
          end
   from konstr

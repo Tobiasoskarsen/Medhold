@@ -59,6 +59,8 @@ export async function settUtfall(
   id: string,
   utfall: SakUtfall | null,
   bekreftetAvslutning: boolean,
+  /** Sakens sist_endret da brukeren så den. Endret siden? Da avvises endringen. */
+  forventetSistEndret: string,
 ): Promise<{ ok: true } | { ok: false; feil: string }> {
   if (!id) return { ok: false, feil: "Fant ikke saken." };
   const supabase = await createClient();
@@ -67,7 +69,14 @@ export async function settUtfall(
   } = await supabase.auth.getUser();
   if (!user) redirect("/velkommen");
 
-  const r = await settSakUtfall(supabase, user.id, id, utfall, bekreftetAvslutning);
+  const r = await settSakUtfall(
+    supabase,
+    user.id,
+    id,
+    utfall,
+    bekreftetAvslutning,
+    forventetSistEndret,
+  );
   if (!r.ok) return r;
 
   revalidatePath("/");
@@ -79,6 +88,7 @@ export async function settUtfall(
 /** Åpner en avsluttet sak igjen. Utfallet beholdes som historikk. */
 export async function gjenapneKrav(
   id: string,
+  forventetSistEndret: string,
 ): Promise<{ ok: true } | { ok: false; feil: string }> {
   if (!id) return { ok: false, feil: "Fant ikke saken." };
   const supabase = await createClient();
@@ -87,7 +97,7 @@ export async function gjenapneKrav(
   } = await supabase.auth.getUser();
   if (!user) redirect("/velkommen");
 
-  const r = await gjenapneSak(supabase, user.id, id);
+  const r = await gjenapneSak(supabase, user.id, id, forventetSistEndret);
   if (!r.ok) return r;
 
   revalidatePath("/");

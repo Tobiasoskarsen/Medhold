@@ -15,6 +15,7 @@ before(async () => {
   db = await byggDatabase("0025");
   await db.exec(lesMigrasjon("0026"));
   await db.exec(lesMigrasjon("0027"));
+  await db.exec(lesMigrasjon("0028"));
 });
 after(async () => db?.close());
 

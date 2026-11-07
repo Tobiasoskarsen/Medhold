@@ -13,11 +13,14 @@ import { utfallAvslutter } from "@/lib/utfall";
  */
 export function UtfallVelger({
   kravId,
+  sistEndret,
   onFerdig,
   iMeny = false,
   visTittel = true,
 }: {
   kravId: string;
+  /** Sakens sist_endret da siden ble lest (samtidighetsvern). */
+  sistEndret: string;
   onFerdig?: () => void;
   /** Rendres inni en `role="menu"` (KravMeny) — gir knappene `role="menuitem"`. */
   iMeny?: boolean;
@@ -43,7 +46,7 @@ export function UtfallVelger({
       }
     }
     startTransition(async () => {
-      const r = await settUtfall(kravId, utfall, bekreftet);
+      const r = await settUtfall(kravId, utfall, bekreftet, sistEndret);
       if (!r.ok) {
         try {
           sessionStorage.removeItem(seremoni);

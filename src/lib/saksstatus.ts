@@ -11,6 +11,8 @@ export type FristStatus = "aktiv" | "fullfort" | "erstattet";
 const FANT_IKKE_SAK = "Fant ikke saken.";
 const FANT_IKKE_FRIST = "Fant ikke fristen.";
 const KUNNE_IKKE_LAGRE = "Kunne ikke lagre. Prøv igjen.";
+export const SAK_ENDRET = "Saken er endret i mellomtiden. Last siden på nytt og prøv igjen.";
+export const FRIST_ENDRET = "Fristen er allerede endret. Last siden på nytt.";
 
 /** Statusen til en frist, slik den er lagret. */
 export function fristStatus(f: {
@@ -38,6 +40,10 @@ export async function eierSak(
 /**
  * Setter utfallet på en sak etter den ene regelen i utfall.ts. Et valg som
  * avslutter saken krever eksplisitt bekreftelse, også ved direkte kall.
+ *
+ * Samtidighet: oppdateringen gjelder bare hvis sist_endret er det samme som da
+ * brukeren så saken. Én betinget UPDATE, så det finnes ikke noe vindu mellom
+ * kontroll og skriving. En annen fane som har endret saken, gir SAK_ENDRET.
  */
 export async function settSakUtfall(
   db: SupabaseClient,
@@ -45,7 +51,9 @@ export async function settSakUtfall(
   sakId: string,
   utfall: SakUtfall | null,
   bekreftetAvslutning: boolean,
+  forventetSistEndret: string,
 ): Promise<Resultat> {
+  if (!forventetSistEndret) return { ok: false, feil: SAK_ENDRET };
   if (utfall !== null && !(SAK_UTFALL as readonly string[]).includes(utfall)) {
     return { ok: false, feil: "Ukjent utfall." };
   }
@@ -59,13 +67,19 @@ export async function settSakUtfall(
     .update(oppdateringForUtfall(utfall))
     .eq("id", sakId)
     .eq("bruker_id", brukerId)
+    .eq("sist_endret", forventetSistEndret)
     .select("id");
   if (error) return { ok: false, feil: KUNNE_IKKE_LAGRE };
-  if (!data || data.length === 0) return { ok: false, feil: FANT_IKKE_SAK };
+  // Saken finnes og eies (sjekket over), så ingen treff betyr at den er endret.
+  if (!data || data.length === 0) return { ok: false, feil: SAK_ENDRET };
   return { ok: true };
 }
 
-/** Marker en frist som fullført, eller angre (tilbake til aktiv). Sletter aldri. */
+/**
+ * Marker en frist som fullført, eller angre (tilbake til aktiv). Sletter aldri.
+ * Samtidighet: endringen gjelder bare fra tilstanden brukeren så (aktiv →
+ * fullført, eller lukket → aktiv). Er den allerede endret, gir det FRIST_ENDRET.
+ */
 export async function settFristStatus(
   db: SupabaseClient,
   brukerId: string,
@@ -94,9 +108,10 @@ export async function settFristStatus(
     })
     .eq("id", fristId)
     .eq("bruker_id", brukerId)
+    .eq("fullfort", ny !== "fullfort")
     .select("id");
   if (error) return { ok: false, feil: KUNNE_IKKE_LAGRE };
-  if (!data || data.length === 0) return { ok: false, feil: FANT_IKKE_FRIST };
+  if (!data || data.length === 0) return { ok: false, feil: FRIST_ENDRET };
   return { ok: true, sakId: frist.sak_id };
 }
 
@@ -108,7 +123,9 @@ export async function gjenapneSak(
   db: SupabaseClient,
   brukerId: string,
   sakId: string,
+  forventetSistEndret: string,
 ): Promise<Resultat> {
+  if (!forventetSistEndret) return { ok: false, feil: SAK_ENDRET };
   if (!(await eierSak(db, brukerId, sakId))) return { ok: false, feil: FANT_IKKE_SAK };
   const { data, error } = await db
     .from("saker")
@@ -116,9 +133,11 @@ export async function gjenapneSak(
     .eq("id", sakId)
     .eq("bruker_id", brukerId)
     .eq("status", "fullfort")
+    .eq("sist_endret", forventetSistEndret)
     .select("id");
   if (error) return { ok: false, feil: KUNNE_IKKE_LAGRE };
-  if (!data || data.length === 0) return { ok: false, feil: "Saken er allerede åpen." };
+  // Allerede åpen, eller endret i en annen fane: i begge tilfeller må siden lastes på nytt.
+  if (!data || data.length === 0) return { ok: false, feil: SAK_ENDRET };
   return { ok: true };
 }
 

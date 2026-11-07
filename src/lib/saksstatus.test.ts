@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  FRIST_ENDRET,
+  SAK_ENDRET,
   fristStatus,
   gjenapneSak,
   lagreBrevFeilmelding,
@@ -12,6 +14,7 @@ import {
 const ALICE = "alice";
 const MALLORY = "mallory";
 const NA = "2026-11-10T12:00:00.000Z";
+const SIST = "2026-11-09T08:00:00.123456+00:00";
 
 type Rad = Record<string, unknown>;
 
@@ -56,7 +59,7 @@ function fakeDb(tabeller: Record<string, Rad[]>, feilVedUpdate = false) {
 
 const data = () => ({
   saker: [
-    { id: "sA", bruker_id: ALICE, status: "venter_pa_svar", utfall: null, stadium: "inkassovarsel" } as Rad,
+    { id: "sA", bruker_id: ALICE, status: "venter_pa_svar", utfall: null, stadium: "inkassovarsel", sist_endret: SIST } as Rad,
   ],
   frister: [
     { id: "f1", sak_id: "sA", bruker_id: ALICE, fullfort: false, fullfort_at: null, erstattet_at: null, erstattet_av_brev_id: null } as Rad,
@@ -68,7 +71,7 @@ const data = () => ({
 
 test("statusendring på en annens sak avvises, og saken er urørt", async () => {
   const d = data();
-  const r = await settSakUtfall(fakeDb(d), MALLORY, "sA", "medhold", true);
+  const r = await settSakUtfall(fakeDb(d), MALLORY, "sA", "medhold", true, SIST);
   assert.deepEqual(r, { ok: false, feil: "Fant ikke saken." });
   assert.equal(d.saker[0].status, "venter_pa_svar");
   assert.equal(d.saker[0].utfall, null);
@@ -82,14 +85,14 @@ test("endring av en annens frist avvises, og fristen er urørt", async () => {
 });
 
 test("sak som ikke finnes gir feil", async () => {
-  const r = await settSakUtfall(fakeDb(data()), ALICE, "finnes-ikke", "avvist", false);
+  const r = await settSakUtfall(fakeDb(data()), ALICE, "finnes-ikke", "avvist", false, SIST);
   assert.equal(r.ok, false);
 });
 
 test("gjenåpning av en annens sak avvises", async () => {
   const d = data();
   d.saker[0].status = "fullfort";
-  const r = await gjenapneSak(fakeDb(d), MALLORY, "sA");
+  const r = await gjenapneSak(fakeDb(d), MALLORY, "sA", SIST);
   assert.equal(r.ok, false);
   assert.equal(d.saker[0].status, "fullfort");
 });
@@ -99,7 +102,7 @@ test("gjenåpning av en annens sak avvises", async () => {
 test("utfall som avslutter uten bekreftelse avvises", async () => {
   for (const u of ["medhold", "oppgjort", null] as const) {
     const d = data();
-    const r = await settSakUtfall(fakeDb(d), ALICE, "sA", u, false);
+    const r = await settSakUtfall(fakeDb(d), ALICE, "sA", u, false, SIST);
     assert.deepEqual(r, { ok: false, feil: "Bekreft at saken skal avsluttes." }, String(u));
     assert.equal(d.saker[0].status, "venter_pa_svar");
   }
@@ -107,7 +110,7 @@ test("utfall som avslutter uten bekreftelse avvises", async () => {
 
 test("avslutning med bekreftelse lagres", async () => {
   const d = data();
-  assert.deepEqual(await settSakUtfall(fakeDb(d), ALICE, "sA", "medhold", true), { ok: true });
+  assert.deepEqual(await settSakUtfall(fakeDb(d), ALICE, "sA", "medhold", true, SIST), { ok: true });
   assert.equal(d.saker[0].status, "fullfort");
   assert.equal(d.saker[0].utfall, "medhold");
 });
@@ -115,14 +118,14 @@ test("avslutning med bekreftelse lagres", async () => {
 test("«vet ikke» med bekreftelse avslutter og tømmer et gammelt utfall", async () => {
   const d = data();
   d.saker[0].utfall = "avvist";
-  await settSakUtfall(fakeDb(d), ALICE, "sA", null, true);
+  await settSakUtfall(fakeDb(d), ALICE, "sA", null, true, SIST);
   assert.equal(d.saker[0].status, "fullfort");
   assert.equal(d.saker[0].utfall, null);
 });
 
 test("akseptert avtale holder saken åpen med stadium nedbetaling", async () => {
   const d = data();
-  assert.deepEqual(await settSakUtfall(fakeDb(d), ALICE, "sA", "nedbetalingsavtale", false), { ok: true });
+  assert.deepEqual(await settSakUtfall(fakeDb(d), ALICE, "sA", "nedbetalingsavtale", false, SIST), { ok: true });
   assert.equal(d.saker[0].status, "aktiv");
   assert.equal(d.saker[0].stadium, "nedbetaling");
 });
@@ -130,7 +133,7 @@ test("akseptert avtale holder saken åpen med stadium nedbetaling", async () => 
 test("delvis medhold, avvist og tilbud holder saken åpen uten bekreftelse", async () => {
   for (const u of ["delvis_medhold", "avvist", "nedbetalingstilbud"] as const) {
     const d = data();
-    assert.deepEqual(await settSakUtfall(fakeDb(d), ALICE, "sA", u, false), { ok: true });
+    assert.deepEqual(await settSakUtfall(fakeDb(d), ALICE, "sA", u, false, SIST), { ok: true });
     assert.equal(d.saker[0].status, "aktiv", u);
     assert.equal(d.saker[0].utfall, u);
   }
@@ -138,13 +141,13 @@ test("delvis medhold, avvist og tilbud holder saken åpen uten bekreftelse", asy
 
 test("ukjent utfall avvises", async () => {
   const d = data();
-  const r = await settSakUtfall(fakeDb(d), ALICE, "sA", "tull" as never, true);
+  const r = await settSakUtfall(fakeDb(d), ALICE, "sA", "tull" as never, true, SIST);
   assert.equal(r.ok, false);
   assert.equal(d.saker[0].status, "venter_pa_svar");
 });
 
 test("databasefeil gir feilmelding, ikke stille suksess", async () => {
-  const r = await settSakUtfall(fakeDb(data(), true), ALICE, "sA", "avvist", false);
+  const r = await settSakUtfall(fakeDb(data(), true), ALICE, "sA", "avvist", false, SIST);
   assert.deepEqual(r, { ok: false, feil: "Kunne ikke lagre. Prøv igjen." });
 });
 
@@ -168,15 +171,53 @@ test("gjenåpning beholder utfallet som historikk", async () => {
   const d = data();
   d.saker[0].status = "fullfort";
   d.saker[0].utfall = "medhold";
-  assert.deepEqual(await gjenapneSak(fakeDb(d), ALICE, "sA"), { ok: true });
+  assert.deepEqual(await gjenapneSak(fakeDb(d), ALICE, "sA", SIST), { ok: true });
   assert.equal(d.saker[0].status, "aktiv");
   assert.equal(d.saker[0].utfall, "medhold");
 });
 
 test("gjenåpning av en åpen sak gir feil, ikke stille endring", async () => {
   const d = data();
-  const r = await gjenapneSak(fakeDb(d), ALICE, "sA");
-  assert.deepEqual(r, { ok: false, feil: "Saken er allerede åpen." });
+  const r = await gjenapneSak(fakeDb(d), ALICE, "sA", SIST);
+  assert.deepEqual(r, { ok: false, feil: SAK_ENDRET });
+  assert.equal(d.saker[0].status, "venter_pa_svar");
+});
+
+// --- Samtidighet i menyhandlingene ---
+
+test("utfall med utdatert sist_endret avvises, og saken er urørt", async () => {
+  const d = data();
+  const r = await settSakUtfall(fakeDb(d), ALICE, "sA", "medhold", true, "2026-11-01T00:00:00+00:00");
+  assert.deepEqual(r, { ok: false, feil: SAK_ENDRET });
+  assert.equal(d.saker[0].status, "venter_pa_svar");
+  assert.equal(d.saker[0].utfall, null);
+});
+
+test("utfall uten kjent sist_endret avvises", async () => {
+  const d = data();
+  const r = await settSakUtfall(fakeDb(d), ALICE, "sA", "avvist", false, "");
+  assert.deepEqual(r, { ok: false, feil: SAK_ENDRET });
+});
+
+test("gjenåpning med utdatert sist_endret avvises", async () => {
+  const d = data();
+  d.saker[0].status = "fullfort";
+  const r = await gjenapneSak(fakeDb(d), ALICE, "sA", "2026-11-01T00:00:00+00:00");
+  assert.deepEqual(r, { ok: false, feil: SAK_ENDRET });
+  assert.equal(d.saker[0].status, "fullfort");
+});
+
+test("frist som allerede er fullført i en annen fane gir feil", async () => {
+  const d = data();
+  assert.equal((await settFristStatus(fakeDb(d), ALICE, "f1", "fullfort", NA)).ok, true);
+  const andre = await settFristStatus(fakeDb(d), ALICE, "f1", "fullfort", NA);
+  assert.deepEqual(andre, { ok: false, feil: FRIST_ENDRET });
+});
+
+test("angre på en frist som allerede er aktiv gir feil", async () => {
+  const d = data();
+  const r = await settFristStatus(fakeDb(d), ALICE, "f1", "aktiv", NA);
+  assert.deepEqual(r, { ok: false, feil: FRIST_ENDRET });
 });
 
 test("feil fra lagre_brev blir forståelige meldinger", () => {

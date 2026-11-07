@@ -14,7 +14,7 @@
 -- Avvik i hovedstol beregnes av appen etterpå. Det er avledet fra brevene og
 -- kan beregnes på nytt, og påvirker ikke status eller frister.
 --
--- Kjør i Supabase SQL Editor etter 0026, FØR koden deployes.
+-- Kjør i Supabase SQL Editor etter 0026, FØR koden deployes. Uavhengig av 0028.
 -- Trygg å kjøre flere ganger.
 
 begin;

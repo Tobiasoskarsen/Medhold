@@ -508,7 +508,12 @@ export default async function KravDetaljPage({
         >
           <ChevronLeft className="size-6" strokeWidth={2} aria-hidden />
         </Link>
-        <KravMeny kravId={sak.id} lost={lost} utfall={utfall} />
+        <KravMeny
+          kravId={sak.id}
+          lost={lost}
+          utfall={utfall}
+          sistEndret={sak.sist_endret as string}
+        />
       </Toppstripe>
 
       <Sekvens>
@@ -616,7 +621,10 @@ export default async function KravDetaljPage({
               )}
             </p>
             <div className="-mx-[18px] -mb-[18px] mt-3 border-t-[0.5px] border-strek">
-              <VenterPaSvarUtvidelse kravId={sak.id} />
+              <VenterPaSvarUtvidelse
+                kravId={sak.id}
+                sistEndret={sak.sist_endret as string}
+              />
             </div>
           </Kort>
         </SekvensDel>

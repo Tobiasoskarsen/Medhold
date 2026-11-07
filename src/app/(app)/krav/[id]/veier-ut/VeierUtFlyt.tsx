@@ -20,10 +20,13 @@ export function VeierUtFlyt({
   sakId,
   brevId,
   total,
+  sistEndret,
 }: {
   sakId: string;
   brevId: string | null;
   total: number | null;
+  /** Sakens sist_endret da siden ble lest (samtidighetsvern). */
+  sistEndret: string;
 }) {
   const router = useRouter();
   const brevQuery = brevId ? `&brev=${brevId}` : "";
@@ -37,7 +40,7 @@ export function VeierUtFlyt({
     startLagre(async () => {
       setBetaltFeil(null);
       // «Ja, registrer betalingen» er bekreftelsen på at saken avsluttes.
-      const r = await settUtfall(sakId, "oppgjort", true);
+      const r = await settUtfall(sakId, "oppgjort", true, sistEndret);
       if (!r.ok) {
         setBetaltFeil(r.feil);
         return;

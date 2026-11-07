@@ -1,4 +1,4 @@
-// Migrasjon 0026 og 0027 mot ekte Postgres, med representative gamle data.
+// Migrasjon 0026, 0027 og 0028 mot ekte Postgres, med representative gamle data.
 // Dekker atomisk lagring, direkte kall, samtidighet, tilgang og fristmodellen.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -39,7 +39,7 @@ before(async () => {
   `);
   forMigrasjon = await rad(db, "select count(*)::int n from public.frister");
   // To ganger: migrasjonene skal tåle å kjøres på nytt.
-  for (const m of ["0026", "0026", "0027", "0027"]) await db.exec(lesMigrasjon(m));
+  for (const m of ["0026", "0027", "0028", "0027", "0028"]) await db.exec(lesMigrasjon(m));
 });
 after(async () => db?.close());
 
@@ -197,6 +197,36 @@ test("annen bruker og uinnlogget får ikke lagre", async () => {
   assert.match((await lagre(M, await eksisterende(SA))).feil ?? "", /MEDHOLD_FANT_IKKE_SAK/);
   assert.match((await lagre(null, await eksisterende(SA))).feil ?? "", /permission denied/);
   assert.deepEqual(await tilstand(), start);
+});
+
+// --- Menyhandlingenes samtidighetsvern mot ekte Postgres ----------------------
+
+// settSakUtfall og gjenapneSak sender sist_endret slik PostgREST leverte den
+// (JSON), og oppdaterer med .eq("sist_endret", verdien). Her kjøres samme
+// betingede UPDATE i databasen.
+test("betinget oppdatering på sist_endret: lik verdi treffer, endret verdi treffer ikke", async () => {
+  const lest = await rad(db, `select to_json(sist_endret) #>> '{}' v from public.saker where id = '${SC}'`);
+  // En annen fane endrer saken.
+  await db.exec(`update public.saker set saksnummer = 'Y2' where id = '${SC}'`);
+  const gammel = await som(db, A,
+    `update public.saker set utfall = 'avvist' where id = '${SC}' and bruker_id = '${A}' and sist_endret = $1`,
+    [lest.v]);
+  assert.equal(gammel.rader, 0, "utdatert sist_endret skal ikke treffe");
+
+  const ny = await rad(db, `select to_json(sist_endret) #>> '{}' v from public.saker where id = '${SC}'`);
+  const r = await som(db, A,
+    `update public.saker set saksnummer = 'Y3' where id = '${SC}' and bruker_id = '${A}' and sist_endret = $1`,
+    [ny.v]);
+  assert.equal(r.rader, 1, "sist_endret slik PostgREST leverer den skal treffe eksakt");
+});
+
+test("betinget fristendring: samme frist kan ikke fullføres to ganger", async () => {
+  const sql = `update public.frister set fullfort = true, fullfort_at = now() where id = '${F2}' and bruker_id = '${A}' and fullfort = false`;
+  const forste = await som(db, A, sql);
+  const andre = await som(db, A, sql);
+  assert.equal(forste.rader, 1);
+  assert.equal(andre.rader, 0);
+  await db.exec(`update public.frister set fullfort = false, fullfort_at = null where id = '${F2}'`);
 });
 
 // --- Vellykket lagring ----------------------------------------------------------

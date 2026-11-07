@@ -19,10 +19,13 @@ export function KravMeny({
   kravId,
   lost,
   utfall = null,
+  sistEndret,
 }: {
   kravId: string;
   lost: boolean;
   utfall?: SakUtfall | null;
+  /** Sakens sist_endret da siden ble lest (samtidighetsvern). */
+  sistEndret: string;
 }) {
   const [åpen, setÅpen] = useState(false);
   const [modus, setModus] = useState<"meny" | "utfall" | "slett" | "betalt" | "apne">(
@@ -38,7 +41,7 @@ export function KravMeny({
   function apneIgjen() {
     setFeil(null);
     startBetaling(async () => {
-      const r = await gjenapneKrav(kravId);
+      const r = await gjenapneKrav(kravId, sistEndret);
       if (!r.ok) {
         setFeil(r.feil);
         return;
@@ -50,7 +53,7 @@ export function KravMeny({
   function registrerBetalt() {
     setFeil(null);
     startBetaling(async () => {
-      const r = await settUtfall(kravId, "oppgjort", true);
+      const r = await settUtfall(kravId, "oppgjort", true, sistEndret);
       if (!r.ok) {
         setFeil(r.feil);
         return;
@@ -135,6 +138,7 @@ export function KravMeny({
         {modus === "utfall" && (
           <UtfallVelger
             kravId={kravId}
+            sistEndret={sistEndret}
             onFerdig={() => setÅpen(false)}
             visTittel={false}
           />

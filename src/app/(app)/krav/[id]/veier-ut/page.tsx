@@ -20,7 +20,7 @@ export default async function VeierUtPage({
 
   const { data: sak } = await supabase
     .from("saker")
-    .select("id, kreditor, tittel, belop_totalt")
+    .select("id, kreditor, tittel, belop_totalt, sist_endret")
     .eq("id", id)
     .maybeSingle();
   if (!sak) notFound();
@@ -67,6 +67,7 @@ export default async function VeierUtPage({
           sakId={sak.id}
           brevId={brevId}
           total={sak.belop_totalt}
+          sistEndret={sak.sist_endret as string}
         />
         <p className="mt-4 text-meta text-dempet">
           Generell veiledning — ikke profesjonell rådgivning. Bekreft viktige
