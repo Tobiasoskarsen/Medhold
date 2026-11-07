@@ -176,7 +176,9 @@ export function LeserBrev({
                   ) : (
                     <m.span
                       key="prikk"
-                      exit={{ scale: 0, opacity: 0 }}
+                      // Egen overgang: ellers arver den pulsens «repeat: Infinity»,
+                      // blir aldri ferdig og blinker bak haken for alltid.
+                      exit={{ scale: 0, opacity: 0, transition: { duration: 0.15 } }}
                       className={`absolute size-1.5 rounded-full ${
                         aktiv ? "bg-aksent-lys" : "bg-strek"
                       }`}
