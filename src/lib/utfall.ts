@@ -125,6 +125,19 @@ export function statusVedNyttBrev(i: {
   return { status: i.statusNa, gjenapnet: false, kommendeFrist };
 }
 
+/**
+ * Utfallet som gjelder nå. Et avsluttende utfall (medhold, oppgjort) på en sak
+ * som er åpnet igjen er historikk, ikke gjeldende. Bruk dette, ikke kolonnen
+ * direkte, når utfallet vises som sakens status.
+ */
+export function gjeldendeUtfall(
+  status: SakStatus,
+  utfall: SakUtfall | null,
+): SakUtfall | null {
+  if (!utfall) return null;
+  return status === "fullfort" || !utfallAvslutter(utfall) ? utfall : null;
+}
+
 export type UtfallVisning = {
   tittel: string;
   under: string | null;

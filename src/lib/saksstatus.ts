@@ -128,6 +128,9 @@ export function lagreBrevFeilmelding(melding: string | undefined | null): string
   if (m.includes("MEDHOLD_SAK_ENDRET"))
     return "Saken er endret i mellomtiden. Last siden på nytt og prøv igjen. Ingenting ble lagret.";
   if (m.includes("MEDHOLD_FANT_IKKE_SAK")) return "Fant ikke saken. Ingenting ble lagret.";
+  if (m.includes("MEDHOLD_AVSLUTNING_IKKE_BEKREFTET"))
+    return "Bekreft at saken skal avsluttes. Ingenting ble lagret.";
+  if (m.includes("MEDHOLD_UGYLDIG_UTFALL")) return "Ukjent utfall. Ingenting ble lagret.";
   if (m.includes("MEDHOLD_FRIST_ERSTATTET"))
     return "En av de eldre fristene er allerede endret. Last siden på nytt. Ingenting ble lagret.";
   return "Kunne ikke lagre brevet. Ingenting ble lagret. Prøv igjen.";

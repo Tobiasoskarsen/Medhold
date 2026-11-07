@@ -183,6 +183,8 @@ test("feil fra lagre_brev blir forståelige meldinger", () => {
   assert.match(lagreBrevFeilmelding("MEDHOLD_SAK_ENDRET"), /endret i mellomtiden/);
   assert.match(lagreBrevFeilmelding("x MEDHOLD_FANT_IKKE_SAK"), /Fant ikke saken/);
   assert.match(lagreBrevFeilmelding("MEDHOLD_FRIST_ERSTATTET"), /eldre fristene/);
+  assert.match(lagreBrevFeilmelding("MEDHOLD_AVSLUTNING_IKKE_BEKREFTET"), /Bekreft at saken/);
+  assert.match(lagreBrevFeilmelding("MEDHOLD_UGYLDIG_UTFALL"), /Ukjent utfall/);
   for (const m of [undefined, "noe annet"]) {
     assert.match(lagreBrevFeilmelding(m), /Ingenting ble lagret/);
   }

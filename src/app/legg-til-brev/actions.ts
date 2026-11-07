@@ -4,11 +4,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SAK_UTFALL, type FristForslag, type SakStatus, type SakUtfall } from "@/lib/types";
+import { SAK_UTFALL, type FristForslag, type SakUtfall } from "@/lib/types";
 import { beregnFrist, foreslaStadium, type BrevType } from "@/lib/gjeld";
-import { statusVedNyttBrev, utfallAvslutter } from "@/lib/utfall";
+import { utfallAvslutter } from "@/lib/utfall";
 import { lagreBrevFeilmelding } from "@/lib/saksstatus";
-import { idagOslo } from "@/lib/dato";
 import { AI_MODELL_RASK } from "@/lib/ai";
 import { maskerFodselsnummer } from "@/lib/maskering";
 import { tolkKr, tellOrd, kuttTilMaks } from "@/lib/format";
@@ -406,8 +405,8 @@ export async function lagreBrev(
     kilde: f.kilde,
   }));
 
-  // 1) Bygg hele lagringen. Statusregelen er den ene i lib/utfall.ts; databasen
-  //    låser saken og avviser lagringen hvis den er endret siden den ble lest.
+  // 1) Bygg hele lagringen. Databasen låser saken, regner ut statusen med samme
+  //    regel som lib/utfall.ts, og avviser lagringen hvis saken er endret.
   let nyttlast: Record<string, unknown>;
   if (input.krav.modus === "eksisterende") {
     const { data: sak } = await supabase
@@ -421,26 +420,21 @@ export async function lagreBrev(
     if (input.forventetSistEndret && input.forventetSistEndret !== sak.sist_endret)
       return { ok: false, feil: lagreBrevFeilmelding("MEDHOLD_SAK_ENDRET") };
 
-    const ny = statusVedNyttBrev({
-      statusNa: sak.status as SakStatus,
-      utfall: input.utfall,
-      nyeFrister: nyeFrister.map((f) => f.forfallsdato),
-      idag: idagOslo(),
-      gjenapne: input.gjenapne === true,
-    });
+    // Bare data og brukerens valg sendes. Statusen regnes ut i databasen
+    // (brev_statusovergang), så et direkte kall ikke kan omgå bekreftelsen.
     const endring: Record<string, unknown> = {};
     if (stadium) endring.stadium = stadium;
     if (input.belop != null) endring.belop_totalt = input.belop;
     if (input.saksnummer.trim()) endring.saksnummer = input.saksnummer.trim();
-    if (ny.status !== sak.status) endring.status = ny.status;
-    if (ny.utfall !== undefined) endring.utfall = ny.utfall;
-    if (ny.stadium) endring.stadium = ny.stadium;
 
     nyttlast = {
       modus: "eksisterende",
       sak_id: sak.id,
       forventet_status: sak.status,
       forventet_sist_endret: sak.sist_endret,
+      utfall: input.utfall,
+      avslutning_bekreftet: input.avslutningBekreftet === true,
+      gjenapne: input.gjenapne === true,
       sak: endring,
       brev: brevRad,
       frister: fristRader,

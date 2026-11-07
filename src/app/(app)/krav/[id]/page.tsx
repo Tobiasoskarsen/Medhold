@@ -44,6 +44,7 @@ import {
   UTFALL_STIL,
   type FristKilde,
   type UtkastType,
+  type SakStatus,
   type SakUtfall,
 } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
@@ -70,7 +71,7 @@ import { MarkerSendtKnapp } from "./MarkerSendtKnapp";
 import { SakensGangSeksjon } from "./SakensGangSeksjon";
 import { FristKnapp } from "./FristKnapp";
 import { relevantFrist } from "@/lib/prioritet";
-import { utfallVisning } from "@/lib/utfall";
+import { gjeldendeUtfall, utfallVisning } from "@/lib/utfall";
 import { fristStatus } from "@/lib/saksstatus";
 
 type BrevRad = {
@@ -173,6 +174,8 @@ export default async function KravDetaljPage({
   const lost = sak.status === "fullfort";
   const lostDato = (sak.sist_endret as string | null)?.slice(0, 10);
   const utfall = sak.utfall as SakUtfall | null;
+  // Et bevart medhold på en åpnet sak er historikk, ikke sakens status.
+  const utfallNa = gjeldendeUtfall(sak.status as SakStatus, utfall);
 
   const [{ data: brevData }, { data: fristData }, { data: utkastData }] =
     await Promise.all([
@@ -539,11 +542,11 @@ export default async function KravDetaljPage({
             {STATUS_ETIKETT.venter_pa_svar}
           </span>
         )}
-        {utfall && (
+        {utfallNa && (
           <span
-            className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
+            className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${UTFALL_STIL[utfallNa]}`}
           >
-            {UTFALL_ETIKETT[utfall]}
+            {UTFALL_ETIKETT[utfallNa]}
           </span>
         )}
       </div>

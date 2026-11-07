@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   avsluttendeForslag,
+  gjeldendeUtfall,
   forhandsvalgtUtfall,
   oppdateringForUtfall,
   statusVedNyttBrev,
@@ -147,6 +148,25 @@ test("tilbud på en ventende sak gjør den aktiv, ikke avsluttet", () => {
   const r = statusVedNyttBrev({ statusNa: "venter_pa_svar", utfall: "nedbetalingstilbud", nyeFrister: [], idag });
   assert.equal(r.status, "aktiv");
   assert.equal(r.utfall, "nedbetalingstilbud");
+});
+
+// --- Gjeldende utfall etter gjenåpning ---------------------------------------
+
+test("bevart medhold på en åpnet sak er ikke gjeldende utfall", () => {
+  assert.equal(gjeldendeUtfall("aktiv", "medhold"), null);
+  assert.equal(gjeldendeUtfall("venter_pa_svar", "oppgjort"), null);
+});
+
+test("utfall på en avsluttet sak er gjeldende", () => {
+  assert.equal(gjeldendeUtfall("fullfort", "medhold"), "medhold");
+  assert.equal(gjeldendeUtfall("fullfort", "nedbetalingsavtale"), "nedbetalingsavtale");
+});
+
+test("utfall som holder saken åpen er gjeldende på en åpen sak", () => {
+  for (const u of ["delvis_medhold", "avvist", "nedbetalingstilbud", "nedbetalingsavtale"] as const) {
+    assert.equal(gjeldendeUtfall("aktiv", u), u);
+  }
+  assert.equal(gjeldendeUtfall("aktiv", null), null);
 });
 
 // --- Tekster ---------------------------------------------------------------
