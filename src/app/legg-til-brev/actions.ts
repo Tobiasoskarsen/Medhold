@@ -9,7 +9,8 @@ import { beregnFrist, foreslaStadium, type BrevType } from "@/lib/gjeld";
 import { utfallAvslutter } from "@/lib/utfall";
 import { lagreBrevFeilmelding } from "@/lib/saksstatus";
 import { AI_MODELL_RASK } from "@/lib/ai";
-import { maskerFodselsnummer } from "@/lib/maskering";
+import { maskerAlleStrenger, maskerFodselsnummer } from "@/lib/maskering";
+import { logg } from "@/lib/logg";
 import { tolkKr, tellOrd, kuttTilMaks } from "@/lib/format";
 import {
   sjekkKostnader,
@@ -127,7 +128,7 @@ async function korrigerForklaring(
     const tekst = blokk && blokk.type === "text" ? blokk.text.trim() : "";
     return tekst || null;
   } catch {
-    console.error("[legg-til-brev] omskriving_feilet");
+    logg("error", "legg-til-brev", "omskriving_feilet");
     return null;
   }
 }
@@ -148,13 +149,9 @@ async function etterbehandle(
 }> {
   // Steg: maks 3, prioritert rekkefølge → trygt å kutte uten regenerering.
   analyse.foreslatte_steg = kuttTilMaks(analyse.foreslatte_steg, MAKS_STEG);
-  for (const steg of analyse.foreslatte_steg) {
-    if (tellOrd(steg) > MAKS_STEG_ORD) {
-      console.warn(
-        `[legg-til-brev] Foreslått steg over ${MAKS_STEG_ORD} ord: "${steg}"`,
-      );
-    }
-  }
+  // Bare antallet logges, aldri teksten (den er avledet av brevet).
+  const forLange = analyse.foreslatte_steg.filter((s) => tellOrd(s) > MAKS_STEG_ORD).length;
+  if (forLange > 0) logg("warn", "legg-til-brev", "steg_for_langt", { antall: forLange, maks: MAKS_STEG_ORD });
 
   // Forklaring: utenfor 80–180 ord → én regenerering (ikke en løkke).
   // Fortsatt utenfor taket etterpå → behold og logg, ikke blokkér brukeren.
@@ -165,9 +162,7 @@ async function etterbehandle(
     if (korrigert) {
       const nyttAntall = tellOrd(korrigert);
       if (nyttAntall > FORKLARING_TAK_OVER || nyttAntall < FORKLARING_TAK_UNDER) {
-        console.warn(
-          `[legg-til-brev] Forklaring fortsatt utenfor 80–180 ord etter omskriving (${nyttAntall} ord).`,
-        );
+        logg("warn", "legg-til-brev", "forklaring_utenfor_ordtak", { ord: nyttAntall });
       }
       analyse.forklaring = korrigert;
     }
@@ -237,7 +232,7 @@ export async function analyserBrevTekst(
   if (!process.env.ANTHROPIC_API_KEY)
     return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
 
-  const lest = await lesBrevTekst(new Anthropic(), rensket);
+  const lest = await lesBrevTekst(new Anthropic(), maskerFodselsnummer(rensket));
   if (!lest.ok) return { ok: false, feil: LESEFEIL[lest.feil] };
   const analyse: Analyse = lest.data;
 
@@ -388,7 +383,7 @@ export async function lagreBrev(
   }
 
   const nyeFrister = input.valgteFrister.filter((f) => f.forfallsdato);
-  const brevRad = {
+  const brevRad = maskerAlleStrenger({
     brevdato: input.brevdato || null,
     avsender: input.avsender.trim() || null,
     avsender_epost: input.avsender_epost.trim() || null,
@@ -406,9 +401,9 @@ export async function lagreBrev(
     fristfunn: input.fristfunn,
     alvorlig: input.alvorlig,
     belop_hovedstol: input.hovedstol,
-  };
+  });
   const fristRader = nyeFrister.map((f) => ({
-    tittel: f.tittel,
+    tittel: maskerFodselsnummer(f.tittel),
     forfallsdato: f.forfallsdato,
     kilde: f.kilde,
   }));
@@ -447,7 +442,7 @@ export async function lagreBrev(
       brev: brevRad,
       frister: fristRader,
       erstatter: input.erstatterFrister ?? [],
-      steg: input.foreslatte_steg,
+      steg: maskerAlleStrenger(input.foreslatte_steg),
     };
   } else {
     nyttlast = {
@@ -462,7 +457,7 @@ export async function lagreBrev(
       brev: brevRad,
       frister: fristRader,
       erstatter: [],
-      steg: input.foreslatte_steg,
+      steg: maskerAlleStrenger(input.foreslatte_steg),
     };
   }
 
@@ -473,7 +468,7 @@ export async function lagreBrev(
   });
   const resultat = lagret as { sak_id?: string; brev_id?: string } | null;
   if (lagreFeil || !resultat?.sak_id) {
-    console.error("[legg-til-brev] Lagring avvist:", lagreFeil?.code ?? "ukjent");
+    logg("error", "legg-til-brev", "lagring_avvist", { kode: lagreFeil?.code ?? "ukjent" });
     return { ok: false, feil: lagreBrevFeilmelding(lagreFeil?.message) };
   }
   const sakId = resultat.sak_id;
@@ -493,7 +488,7 @@ export async function lagreBrev(
       .update({ hovedstol_avvik: avvik })
       .eq("id", sakId)
       .eq("bruker_id", user.id);
-    if (error) console.error("[legg-til-brev] Hovedstolavvik ble ikke oppdatert.");
+    if (error) logg("error", "legg-til-brev", "hovedstolavvik_ikke_oppdatert", { kode: error.code });
   }
 
   revalidatePath("/");

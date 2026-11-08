@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { erGyldigFodselsnummer, maskerFodselsnummer } from "./maskering.ts";
+import { erGyldigFodselsnummer, maskerAlleStrenger, maskerFodselsnummer } from "./maskering.ts";
 
 // «01010150074» er konstruert til å passere begge mod11-kontrollene.
 const GYLDIG = "01010150074";
@@ -37,6 +37,37 @@ test("rører ikke sifre inne i et lengre tall", () => {
   // Det gyldige nummeret ligger inne i et 13-sifret tall → ikke et frittstående fnr.
   const lang = `99${GYLDIG}`;
   assert.equal(maskerFodselsnummer(lang), lang);
+});
+
+test("maskerer også med punktum eller bindestrek etter de seks første", () => {
+  assert.equal(maskerFodselsnummer("010101.50074"), "[fødselsnummer skjult]");
+  assert.equal(maskerFodselsnummer("010101-50074"), "[fødselsnummer skjult]");
+});
+
+test("rører ikke kontonummer med punktum eller KID", () => {
+  for (const s of ["Konto 1234.56.78903", "KID 0012345678903", "Saksnr GT-2026-20417"]) {
+    assert.equal(maskerFodselsnummer(s), s);
+  }
+});
+
+test("maskerAlleStrenger maskerer nestede tekstfelt og lar tall og datoer være", () => {
+  const brev = {
+    original_tekst: `Fnr ${GYLDIG}`,
+    forklaring: `Brevet gjelder ${GYLDIG}.`,
+    belop: 670.1,
+    brevdato: "2026-11-05",
+    foreslatte_steg: [`Send ${GYLDIG} til banken`],
+    kostnadslinjer: [{ type: "salaer", belop: 300, tekst: `Salær ${GYLDIG}` }],
+    alvorlig: false,
+    fristfunn: null,
+  };
+  const ut = maskerAlleStrenger(brev);
+  assert.ok(!JSON.stringify(ut).includes(GYLDIG));
+  assert.equal(ut.belop, 670.1);
+  assert.equal(ut.brevdato, "2026-11-05");
+  assert.equal(ut.kostnadslinjer[0].belop, 300);
+  assert.equal(ut.alvorlig, false);
+  assert.equal(ut.fristfunn, null);
 });
 
 test("beholder resten av teksten uendret", () => {

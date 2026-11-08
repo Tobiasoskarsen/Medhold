@@ -8,6 +8,8 @@ import { harPluss } from "@/lib/plan";
 import { type UtkastType } from "@/lib/types";
 import type { AvdragsForslag } from "@/lib/avdrag";
 import { genererUtkast, type Omfang } from "@/lib/utkast-prompt";
+import { logg, feilInfo } from "@/lib/logg";
+import { maskerFodselsnummer } from "@/lib/maskering";
 import type { VaktFunn } from "@/lib/utkast-vakt";
 import { byggUtkastPrompt } from "./byggUtkastPrompt";
 
@@ -61,13 +63,10 @@ export async function lagUtkast(
     innhold = r.tekst;
     advarsler = r.advarsler;
     if (r.regenerert && advarsler.length > 0) {
-      console.error(
-        `[lagUtkast] Vaktfunn står igjen etter regenerering (type=${type}):`,
-        advarsler.map((a) => a.rettelinje),
-      );
+      logg("warn", "lagUtkast", "vaktfunn_etter_regenerering", { utkasttype: type, antall: advarsler.length });
     }
   } catch (e) {
-    console.error("[lagUtkast] AI-generering feilet:", e);
+    logg("error", "lagUtkast", "generering_feilet", feilInfo(e));
     return { ok: false, feil: "Noe gikk galt. Prøv igjen om litt." };
   }
 
@@ -88,15 +87,12 @@ export async function lagUtkast(
       bruker_id: user.id,
       brev_id: brevId,
       type,
-      innhold,
+      innhold: maskerFodselsnummer(innhold),
     })
     .select("id")
     .single();
   if (lagreFeil || !lagret) {
-    console.error(
-      `[lagUtkast] Innsetting feilet (type=${type}, brev_id=${brevId}):`,
-      lagreFeil,
-    );
+    logg("error", "lagUtkast", "innsetting_feilet", { utkasttype: type, kode: lagreFeil?.code ?? "ukjent" });
     return { ok: false, feil: "Kunne ikke lagre utkastet. Prøv igjen." };
   }
 

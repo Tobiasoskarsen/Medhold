@@ -14,6 +14,8 @@ import {
 } from "@/lib/utkast-prompt";
 import { kontrollerUtkast, type VaktFunn } from "@/lib/utkast-vakt";
 import { klassifiserAiFeil, vurderStopp, type AiFeil } from "@/lib/ai-svar";
+import { logg } from "@/lib/logg";
+import { maskerFodselsnummer } from "@/lib/maskering";
 import { byggUtkastPrompt } from "../../(app)/krav/[id]/utkast/byggUtkastPrompt";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel (samme mønster
@@ -60,7 +62,8 @@ export async function POST(req: NextRequest) {
   const kravId = String(body.kravId ?? "");
   const brevId = body.brevId ? String(body.brevId) : null;
   const type = String(body.type ?? "");
-  const detaljer = String(body.detaljer ?? "");
+  // Fødselsnummer brukeren skriver inn, går hverken til AI-en eller inn i utkastet.
+  const detaljer = maskerFodselsnummer(String(body.detaljer ?? ""));
   const navn = String(body.navn ?? "");
   const avdrag = erAvdragsForslag(body.avdrag) ? body.avdrag : null;
   const omfang: Omfang | null =
@@ -132,7 +135,7 @@ export async function POST(req: NextRequest) {
           if (stopp) return { feil: stopp };
         } catch (feil) {
           const type = klassifiserAiFeil(feil);
-          console.error("[utkast-generer] strom_feilet", type);
+          logg("error", "utkast-generer", "strom_feilet", { feil: type });
           return { feil: type };
         }
         const tekst = fjernStjerner(fullt);
@@ -181,10 +184,12 @@ export async function POST(req: NextRequest) {
           // (guardrail 5). Brukeren ser dem i «Sjekk før du sender».
           advarsler = kontrollerUtkast(tekst, vaktFakta);
           if (advarsler.length > 0) {
-            console.error(
-              `[utkast-generer] Vaktfunn står igjen etter regenerering (type=${type}):`,
-              advarsler.map((a) => a.rettelinje),
-            );
+            // Bare antall og typer: rettelinjene inneholder beløp og datoer fra saken.
+            logg("warn", "utkast-generer", "vaktfunn_etter_regenerering", {
+              utkasttype: type,
+              antall: advarsler.length,
+              typer: [...new Set(advarsler.map((a) => a.type))].sort().join("."),
+            });
           }
         }
 
@@ -202,15 +207,15 @@ export async function POST(req: NextRequest) {
             bruker_id: user.id,
             brev_id: brevId,
             type,
-            innhold: tekst,
+            innhold: maskerFodselsnummer(tekst),
           })
           .select("id")
           .single();
         if (lagreFeil || !lagret) {
-          console.error(
-            `[utkast-generer] Innsetting feilet (type=${type}, brev_id=${brevId}):`,
-            lagreFeil,
-          );
+          logg("error", "utkast-generer", "innsetting_feilet", {
+            utkasttype: type,
+            kode: lagreFeil?.code ?? "ukjent",
+          });
           sendFeil("lagring");
           return;
         }

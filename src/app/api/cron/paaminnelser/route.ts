@@ -8,6 +8,7 @@ import {
 import { oppfolgingsKandidater, type VenterSak } from "@/lib/oppfolging";
 import { idagOslo } from "@/lib/dato";
 import { skalVarsles } from "@/lib/prioritet";
+import { logg } from "@/lib/logg";
 import type { SakStatus } from "@/lib/types";
 
 // Kjøres av Vercel Cron én gang i døgnet (se vercel.json). Kan ta litt tid hvis
@@ -176,7 +177,7 @@ export async function GET(req: NextRequest) {
     .returns<FristRad[]>();
 
   if (error) {
-    console.error("[cron] Kunne ikke hente frister:", error.message);
+    logg("error", "cron", "frister_feilet", { kode: error.code });
     return Response.json({ feil: "Databasefeil" }, { status: 500 });
   }
 

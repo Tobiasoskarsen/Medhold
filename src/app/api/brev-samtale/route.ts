@@ -5,6 +5,8 @@ import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
 import { formaterKortDato } from "@/lib/dato";
 import { AI_MODELL } from "@/lib/ai";
 import { klassifiserAiFeil, vurderStopp } from "@/lib/ai-svar";
+import { logg } from "@/lib/logg";
+import { maskerFodselsnummer } from "@/lib/maskering";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel.
 export const maxDuration = 60;
@@ -33,7 +35,8 @@ export async function POST(req: NextRequest) {
   }
 
   const brevId = String(body.brevId ?? "");
-  const melding = String(body.melding ?? "").trim();
+  // Fødselsnummer i spørsmålet går hverken til AI-en eller inn i samtalen.
+  const melding = maskerFodselsnummer(String(body.melding ?? "").trim());
   if (!brevId || !melding) return new Response("Mangler data", { status: 400 });
   if (melding.length > 4000)
     return new Response("Meldingen er for lang", { status: 400 });
@@ -145,7 +148,7 @@ export async function POST(req: NextRequest) {
           komplett = true;
         }
       } catch (feil) {
-        console.error("[brev-samtale] strom_feilet", klassifiserAiFeil(feil));
+        logg("error", "brev-samtale", "strom_feilet", { feil: klassifiserAiFeil(feil) });
         controller.enqueue(
           encoder.encode("\n\n[Beklager, noe gikk galt. Svaret er ikke lagret. Prøv igjen.]"),
         );
@@ -155,7 +158,7 @@ export async function POST(req: NextRequest) {
             brev_id: brevId,
             bruker_id: user.id,
             rolle: "assistent",
-            innhold: fullt,
+            innhold: maskerFodselsnummer(fullt),
           });
         }
         controller.close();
