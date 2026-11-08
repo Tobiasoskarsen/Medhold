@@ -1249,7 +1249,7 @@ commit;
 -- ============================================================
 
 -- Pakke A: dato-bevisst og idempotent lagring av brev (A2, A3).
--- Se supabase/migrasjoner/0029_dokumentasjon.md for full beskrivelse,
+-- Se supabase/dokumentasjon/0029_lagring_og_kvoter.md for full beskrivelse,
 -- deployrekkefølge og tilbakeføring.
 --
 -- A2  Et brev oppdaterer sakens beløp, stadium og saksnummer bare når det er
@@ -1274,6 +1274,17 @@ commit;
 -- Kjør i Supabase SQL Editor FØR koden deployes. Trygg å kjøre flere ganger.
 
 begin;
+
+-- lagre_brev under kaller brev_statusovergang. Plpgsql sjekker ikke det når
+-- funksjonen lages, så uten denne sperren ville feilen først vist seg ved
+-- første lagring.
+do $$
+begin
+  if to_regprocedure('public.brev_statusovergang(text, text, boolean, boolean, boolean)') is null then
+    raise exception 'MEDHOLD_0029: kjør 0027 før 0029';
+  end if;
+end;
+$$;
 
 -- ---------------------------------------------------------------------------
 -- A3: lagringsforsøk
