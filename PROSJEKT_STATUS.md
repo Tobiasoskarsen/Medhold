@@ -5,6 +5,14 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – fysisk bilde- og PDF-opplasting bekreftet
+
+Brukeren testet ett bilde og én PDF hver for seg i oppdatert preview på
+iPhone og bekreftet «Begge fungerer» gjennom lesing, bekreftelse og lagring.
+Dette er brukerutført fysisk bevis, ikke agentinstrumentert testing. Direkte
+kameraopptak, filstørrelser og formater er ikke særskilt oppgitt. Testlogg og
+åpne porter er oppdatert i R3_IPHONE15_MANUELL.md og R3_SLUTTKONTROLL.md.
+
 ### R3 – to feil rettet og integrasjonen kjørt på nytt
 
 Gjeldende samlet oversikt: docs/testing/R3_SLUTTKONTROLL.md. «1 kr» kom fra

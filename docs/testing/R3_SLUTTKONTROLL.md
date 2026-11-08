@@ -37,6 +37,7 @@ De to første feilene ble gjenskapt med røde tester før rettelsen 0ef2ec1.
 | Faktisk nettleser, verdioversikt | 1288/1250/38 ble vist, ingen «1 kr» fra referansen |
 | Faktisk nettleser, eldre feilmerket frist | «Fristen står oppgitt i brevet», historikk uten feil beregnet-merking |
 | Faktisk nettleser, to faner | A lagret, B beholdt egen tekst og viste konflikt, ny tredje fane viste As lagrede tekst |
+| Fysisk iPhone, opplasting | Brukeren bekreftet bilde og PDF hver for seg gjennom lesing, bekreftelse og lagring uten stopp; kamerakilde/størrelse ikke spesifisert |
 
 Supabase-rapporten er docs/testing/r2-supabase-resultat.json, kjøringsrevisjon
 0ef2ec1. Testen omfatter RLS A/B, kryss-sak/-brev, samtidighet, sendt-snapshot,
@@ -97,8 +98,10 @@ med nøyaktig testprosjekt; ingen produksjonsfallback. Ikke legg nøkler i rappo
 
 ## Porter agenten ikke kan erklære bestått
 
-- Fysisk iPhone: kamera, bilde/PDF-opplasting, VoiceOver, stor systemtekst og
-  konfliktprøven på selve telefonen. Desktopprøven erstatter ikke disse.
+- Fysisk iPhone: direkte kameraopptak, VoiceOver, stor systemtekst og
+  konfliktprøven på selve telefonen gjenstår. Bilde- og PDF-opplasting er
+  brukerbekreftet bestått, se tabellen over. Desktopprøven erstatter ikke
+  de øvrige fysiske prøvene.
 - Fysisk Android/Chrome/TalkBack er ikke tilgjengelig/testet.
 - Google i test er deaktivert og utsatt etter brukerens valg. Telefonlogin
   og faktisk mottaker i Mail er ikke verifisert.
