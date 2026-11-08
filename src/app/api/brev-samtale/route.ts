@@ -7,6 +7,7 @@ import { AI_MODELL } from "@/lib/ai";
 import { klassifiserAiFeil, vurderStopp } from "@/lib/ai-svar";
 import { logg } from "@/lib/logg";
 import { maskerFodselsnummer } from "@/lib/maskering";
+import { DOKUMENT_REGEL, avgrens } from "@/lib/dokumentdata";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel.
 export const maxDuration = 60;
@@ -18,7 +19,9 @@ Regler:
 - Du forklarer og hjelper, men gir ALDRI juridiske eller økonomiske vedtak, konklusjoner eller garantier.
 - Finn ALDRI opp fakta, frister, beløp eller paragrafer som ikke står i brevet, saken eller samtalen. Er noe uklart, si det heller.
 - Hold deg til saken og det brukeren spør om.
-- Når du gir konkrete råd, minn kort om at dette ikke er profesjonell rådgivning, og at viktige ting bør bekreftes med rett instans.`;
+- Når du gir konkrete råd, minn kort om at dette ikke er profesjonell rådgivning, og at viktige ting bør bekreftes med rett instans.
+
+${DOKUMENT_REGEL}`;
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -103,7 +106,7 @@ export async function POST(req: NextRequest) {
   });
 
   const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: `Her er teksten fra brevet:\n\n${brev.original_tekst}` },
+    { role: "user", content: `Her er teksten fra brevet:\n\n${avgrens(brev.original_tekst)}` },
     { role: "assistant", content: brev.forklaring },
     ...(tidligere ?? []).map((m) => ({
       role: (m.rolle === "bruker" ? "user" : "assistant") as "user" | "assistant",
