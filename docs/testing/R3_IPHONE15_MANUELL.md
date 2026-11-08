@@ -63,6 +63,11 @@ genererte `.next`-mappen. Ingen tester eller byggkontroller ble svekket.
 
 ## Observerte avvik og fortsatt åpne porter
 
+Systemtekst: brukeren økte iPhones tekststørrelse og rapporterte «den endret
+seg ikke». Kodekontroll viste faste px-størrelser i appens typografi. Dette
+beviser ikke støtte for systemtekst og er ikke markert bestått. Den tidligere
+brukerbekreftede prøven med 200 % Safari-sidezoom er et separat resultat.
+
 VoiceOver: brukeren presiserte «jo voiceover funka jo fint» etter prøven på
 iPhone. Den avgrensede prøven er derfor brukerbekreftet bestått, ikke utestet.
 Opplesingen av «Meg, besøkt, lenke slutt, navigering» ble rapportert; ingen
