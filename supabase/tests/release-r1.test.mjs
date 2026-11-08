@@ -31,6 +31,15 @@ function klient() {
   }};
 }
 const promptFil="src/app/(app)/krav/[id]/utkast/byggUtkastPrompt.ts";
+test("R2: lagret brev overstyrer nyere brev og manipulert URL; manglende brev gir ingen fallback",()=>{
+ const {velgUtkastbrev}=last("src/lib/utkastgrunnlag.ts");
+ const a={id:"a",avsender:"A",belop:1288},b={id:"b",avsender:"B",belop:9000};
+ assert.equal(velgUtkastbrev([b,a],{brev_id:"a"},"b").brev,a);
+ assert.deepEqual(velgUtkastbrev([b],{brev_id:"a"},"b"),{brev:null,utilgjengelig:true});
+ assert.equal(velgUtkastbrev([b],{brev_id:null},"b").utilgjengelig,true);
+ assert.equal(velgUtkastbrev([b],undefined,"feil").utilgjengelig,true);
+ assert.equal(velgUtkastbrev([b,a],undefined,undefined).brev,b);
+});
 test("R1: kun korrekt sak/brev godtas; ugyldig kobling stopper før kvote og AI",async()=>{
   const db=klient(); let kvoter=0, ai=0;
   const mocks={"@/lib/supabase/server":{createClient:async()=>db},"@/lib/plan":{harPluss:async()=>true},"@/lib/kvote-server":{startKvote:async()=>{kvoter++;throw Error("KVOTE");}},"@anthropic-ai/sdk":{default:class{constructor(){ai++;}}}};
