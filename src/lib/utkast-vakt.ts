@@ -174,12 +174,6 @@ type Pastand = { fraser: string[]; krav: string[]; rettelinje: string; bruker: s
 // «har eposten som bevis»). Se PROSJEKT_STATUS «Valg tatt underveis».
 const PASTANDER: Pastand[] = [
   {
-    fraser: ["har betalt", "betalte", "er betalt", "innbetalt", "innbetalte"],
-    krav: ["betal"],
-    rettelinje: "Personen har ikke skrevet at hen har betalt. Fjern påstanden.",
-    bruker: "at du har betalt",
-  },
-  {
     fraser: ["sa opp", "sagt opp", "oppsigelse", "oppsigelsen"],
     krav: ["opp"],
     rettelinje: "Personen har ikke skrevet at hen har sagt opp. Fjern påstanden.",
@@ -190,13 +184,6 @@ const PASTANDER: Pastand[] = [
     krav: ["klag", "reklam"],
     rettelinje: "Personen har ikke skrevet at hen har klaget. Fjern påstanden.",
     bruker: "at du har klaget",
-  },
-  {
-    fraser: ["ikke mottatt", "aldri mottatt", "aldri fått"],
-    krav: ["mottatt", "fått"],
-    rettelinje:
-      "Personen har ikke skrevet at hen ikke har mottatt noe. Fjern påstanden.",
-    bruker: "at du ikke har mottatt noe",
   },
   {
     fraser: [
@@ -227,6 +214,77 @@ function setninger(tekst: string): string[] {
     .split(/(?<=[.!?])\s+(?=[\p{Lu}«"])|\n+/u)
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+type Faktapastand = {
+  tema: "betaling" | "mottak" | "bestridelse";
+  negativ: boolean;
+  usikker: boolean;
+  hel: boolean;
+  delvis: boolean;
+  objekt: string | null;
+  belop: number[];
+};
+
+/**
+ * Avgrenset språkvakt, ikke en norsk språkforståer. Bare uttrykkelig støtte
+ * i brukerens detaljer kan bekrefte en betalingshistorikk. Tall/datoer fra
+ * brevet beviser ikke at brukeren har betalt eller mottatt en faktura.
+ * Ukjent ordstilling, hypotetiske og refererte utsagn brukes ikke som belegg.
+ */
+function faktapastander(tekst: string): Faktapastand[] {
+  const ledd = setninger(tekst).flatMap((s) =>
+    s.toLowerCase().split(/\s+(?:men|mens)\s+|;|,\s*(?=jeg\b)|\s+og\s+(?=(?:jeg|resten|hele|kravet|fakturaen)\b)/u),
+  );
+  return ledd.flatMap((s) => {
+    const betaling = /\b(?:betalt|betalte|innbetalt|innbetalte|oppgjort)\b|\bgjort\s+opp\b/u.test(s);
+    const mottak = /\b(?:har|hadde)\s+(?:(?:jeg|ikke|aldri|ennå|allerede|faktisk|nå)\s+)*(?:mottatt|fått)\b|\b(?:mottok|fikk)\s+(?:jeg\s+)?|\b(?:mottatt|fått)\b.*\b(?:har|hadde)\s+jeg\b/u.test(s);
+    const bestridelse = /\bbestrid(?:er|te)\b/u.test(s);
+    if (!betaling && !mottak && !bestridelse) return [];
+    const negativ = /\b(?:ikke|aldri|verken)\b/u.test(s);
+    const usikker = /\b(?:kanskje|muligens|tror|hvis|dersom|sier|sa|sagt|hevder|påstår|kan|ville|skal|vil)\b|\b(?:vet\s+ikke|usikker|ikke\s+bare)\b/u.test(s);
+    const objekt = /\bfaktura\p{L}*/u.test(s) ? "faktura"
+      : /\bgebyr\p{L}*/u.test(s) ? "gebyr"
+      : /\bhovedstol\p{L}*/u.test(s) ? "hovedstol"
+      : /\b(?:brevet|brev|varselet|inkassovarselet|betalingsoppfordringen)\b/u.test(s) ? "brev"
+      : /\bkrav\p{L}*/u.test(s) ? "krav" : null;
+    const belop = trekkUt(s).belop.map((b) => b.belop);
+    const hel = /\b(?:hele|alt|oppgjort)\b|\bgjort\s+opp\b|\b(?:kravet|fakturaen)\s+er\s+betalt\b/u.test(s);
+    const delvis = belop.length > 0 || /\b(?:delvis|delbetaling|delen|resten)\b/u.test(s);
+    const tema: Faktapastand["tema"] = betaling ? "betaling" : mottak ? "mottak" : "bestridelse";
+    // Flere tema i samme ledd har uklar rekkevidde for negasjonen. Ingen
+    // automatisk godkjenning av slike ledd, selv om nøkkelordene er like.
+    return [{ tema, negativ, usikker: usikker || Number(betaling) + Number(mottak) + Number(bestridelse) > 1,
+      hel, delvis, objekt, belop }];
+  });
+}
+
+function sammeObjekt(a: Faktapastand, b: Faktapastand): boolean {
+  return a.objekt === b.objekt || a.objekt === null || b.objekt === null;
+}
+
+function sjekkFaktapastander(utkast: string, fakta: VaktFakta): VaktFunn[] {
+  // Bevisst bare brukerens egne opplysninger; ikke original_tekst eller
+  // tillatteBelop (som kommer fra flere kilder og har en annen betydning).
+  const belegg = faktapastander(fakta.detaljer);
+  return faktapastander(utkast).flatMap((p): VaktFunn[] => {
+    const relevante = belegg.filter((b) => b.tema === p.tema && sammeObjekt(p, b));
+    const motstrid = relevante.some((b) => b.usikker || b.negativ !== p.negativ);
+    const stotte = relevante.some((b) => !b.usikker && b.negativ === p.negativ &&
+      (!p.hel || (b.hel && !b.delvis)) &&
+      (!b.delvis || p.belop.length > 0 || p.delvis) &&
+      p.belop.every((n) => b.belop.some((m) => Math.abs(n - m) <= 0.01)));
+    // Et svar kan anerkjenne selve brevet og uttrykke valgt standpunkt.
+    // Dette unntaket bekrefter ingen historisk betaling eller fakturamottak,
+    // og gjelder aldri når detaljene sier noe annet eller er usikre.
+    const standpunkt = p.tema === "bestridelse" && relevante.length === 0;
+    const brevMottatt = p.tema === "mottak" && p.objekt === "brev" && !p.negativ && relevante.length === 0;
+    if (!p.usikker && !motstrid && (stotte || standpunkt || brevMottatt)) return [];
+    const rettelinje = p.tema === "betaling" && !p.negativ
+      ? "Personen har ikke skrevet at hen har betalt. Fjern påstanden."
+      : `Påstanden om ${p.tema} mangler entydig støtte eller motsier brukerens opplysninger. Fjern eller rett påstanden; ikke gjett.`;
+    return [{ type: "pastand", tekst: `Sjekk påstanden om ${p.tema}: den mangler entydig støtte eller kan motsi det du har skrevet.`, rettelinje }];
+  });
 }
 
 // --- Kontroll --------------------------------------------------------------
@@ -306,15 +364,12 @@ export function kontrollerUtkast(utkast: string, fakta: VaktFakta): VaktFunn[] {
   }
 
   const detaljer = fakta.detaljer.toLowerCase();
+  for (const f of sjekkFaktapastander(utkast, fakta)) legg(f);
   for (const s of setninger(utkast)) {
     if (finnFraser(s, ["jeg", "meg"]).length === 0) continue;
     for (const p of PASTANDER) {
       if (finnFraser(s, p.fraser).length === 0) continue;
       if (p.krav.some((k) => detaljer.includes(k))) continue;
-      // Ved delvis bestridelse er det å betale den ubestridte delen en del av
-      // selve brevet, ikke en påstand personen må ha skrevet.
-      if (fakta.omfang === "delvis" && p.krav.includes("betal") && /ubestridt/iu.test(s))
-        continue;
       legg({
         type: "pastand",
         tekst: `Utkastet sier ${p.bruker}, men det har du ikke skrevet. Sjekk at det stemmer.`,
