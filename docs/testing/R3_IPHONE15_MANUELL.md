@@ -31,6 +31,7 @@ Kun syntetisk sak «Eksempel AS», TEST-IPHONE-01, ble brukt.
 | Mørk modus | Meg/Tema → Mørk, sak og utkast: brukeren bekreftet lesbar tekst/beløp/felt/knapper. Ingen instrumentert kontrastmåling |
 | Safari-sidezoom 200 % | Brukeren bekreftet at innhold og handlinger fortsatt fungerte. Dette beviser ikke stor iOS-systemtekst |
 | Bilde- og PDF-opplasting | Brukeren testet ett bilde og én PDF hver for seg i oppdatert preview og svarte «Begge fungerer» på lesing, bekreftelse og lagring uten stopp. Kamerakilde/format/størrelse er ikke oppgitt |
+| Direkte kameraopptak | Brukeren tok et nytt bilde av et testbrev via kamera i Safari og bekreftet «Hele kameraflyten fungerer» gjennom lesing, bekreftelse og lagring. Ingen instrumentert måling av format/størrelse |
 
 ## Fanebytte med redusert bevegelse – fysisk retest bestått
 
@@ -74,8 +75,8 @@ genererte `.next`-mappen. Ingen tester eller byggkontroller ble svekket.
   er senere rettet i klient/server og visning med lagret dokumentbevis.
   Regresjon og desktop-browserprøve bestått; se R3_SLUTTKONTROLL.md.
 - Bilde- og PDF-opplasting på fysisk enhet er senere brukerbekreftet bestått
-  (se tabellen). Direkte kameraopptak og faktisk mottakeradresse i Mail er
-  ikke særskilt bekreftet i denne reisen.
+  (se tabellen). Direkte kameraopptak er også senere bekreftet bestått.
+  Faktisk mottakeradresse i Mail er ikke særskilt bekreftet i denne reisen.
 - Stor systemtekst, VoiceOver og fysisk flerfane-konflikt er ikke bekreftet
   ennå. Fanebytte med redusert bevegelse er retestet over; Android/TalkBack
   mangler fortsatt.

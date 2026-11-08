@@ -5,6 +5,13 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – direkte kameraopptak bekreftet
+
+Brukeren tok et nytt bilde av et testbrev via kamera i Safari på iPhone og
+bekreftet hele flyten gjennom lesing, bekreftelse og lagring. Kameraport er
+dermed brukerbekreftet bestått. VoiceOver og stor systemtekst gjenstår.
+Ingen instrumentert måling av bildeformat/størrelse eller produksjonsendring.
+
 ### R3 – fysisk bilde- og PDF-opplasting bekreftet
 
 Brukeren testet ett bilde og én PDF hver for seg i oppdatert preview på
