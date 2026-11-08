@@ -2,6 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 
+test('R3: eldre-app-prøven krever opt-in før miljøfil eller database åpnes', () => {
+  const r = spawnSync(process.execPath, ['scripts/test-legacy-r3.mjs'], { encoding: 'utf8' });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /Krever --run-test-project/);
+});
+
 test('R3: CI uten full testkonfigurasjon feiler uten lokal fallback', () => {
   const env = { ...process.env, CI: 'true', TEST_SUPABASE_URL: '', TEST_SUPABASE_PUBLISHABLE_KEY: '', TEST_SUPABASE_SECRET_KEY: '' };
   const r = spawnSync(process.execPath, ['scripts/test-supabase-r2.mjs', '--run-test-project'], { env, encoding: 'utf8' });

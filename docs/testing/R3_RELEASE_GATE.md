@@ -1,5 +1,9 @@
 # R3 – release gate
 
+Nyeste status etter feilrettelser, ny Supabase-runde og faktisk to-fane-test:
+[R3_SLUTTKONTROLL.md](./R3_SLUTTKONTROLL.md). Tabellen og åpne porter nedenfor
+er historisk utgangspunkt der de er oppdatert i den rapporten.
+
 Etterkontroll 8. november: se [R3_NETTVERK_OG_TESTMILJO.md](./R3_NETTVERK_OG_TESTMILJO.md).
 GitHub-testmiljøet er nå konfigurert etter eksplisitt samtykke til overføring
 av testnøklene. Alle seks frontend-operasjonstyper er prøvd med lokale

@@ -66,11 +66,12 @@ genererte `.next`-mappen. Ingen tester eller byggkontroller ble svekket.
   å utsette dette oppsettet og opplyser at vanlig Medhold-Google fungerer.
   Google i test er derfor blokkert/utsatt, ikke bestått. Telefonlogin er ikke testet.
 - Ett skjermbilde fra «Sjekk før du sender» viser «1 kr» i verdioversikten,
-  selv om brevet har 1288/1250/38. Mulig uttrekks-/referansefeil, ikke
-  konkludert eller rettet i denne dokumentoppdateringen.
+  selv om brevet har 1288/1250/38. Senere gjenskapt og rettet: kort saksreferanse
+  ble tolket som beløp. Regresjon og desktop-browserprøve bestått; se R3_SLUTTKONTROLL.md.
 - Sakshistorikken viste «beregnet — sjekk brevet» for fristen, selv om
   testteksten og bekreftelseskortet hadde eksplisitt 22. november. Kildemerking
-  må undersøkes; riktig dato alene beviser ikke riktig kilde.
+  er senere rettet i klient/server og visning med lagret dokumentbevis.
+  Regresjon og desktop-browserprøve bestått; se R3_SLUTTKONTROLL.md.
 - Kamera, bilde/PDF-opplasting på fysisk enhet og faktisk mottakeradresse
   i Mail er ikke testet i denne reisen.
 - Stor systemtekst, VoiceOver og fysisk flerfane-konflikt er ikke bekreftet
@@ -78,5 +79,7 @@ genererte `.next`-mappen. Ingen tester eller byggkontroller ble svekket.
   mangler fortsatt.
 - Eldre app mot oppgradert klone, slutt-smoke etter faktisk integrasjon og
   GitHub-workflow etter separat godkjent merge er fortsatt åpne releaseporter.
+  Fire avgrensede eldre servermodul-prøver mot oppgradert testprosjekt er senere
+  bestått, men erstatter ikke en full historisk browserapp/klone.
 
 Denne rapporten godkjenner ikke privat beta eller produksjonsutrulling.

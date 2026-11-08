@@ -5,9 +5,9 @@
 // bekvemmelighet) — Kravkort/Nedtelling importerer den direkte fra
 // `@/lib/dato` i stedet (unngikk en unødvendig cross-lib-import her).
 
-/** ≤10 dager igjen (eller passert/i dag) → hastende, ellers nøytral. */
 import type { FristKilde } from "./types.ts";
 
+/** ≤10 dager igjen (eller passert/i dag) → hastende, ellers nøytral. */
 export function erHastende(dagerIgjen: number): boolean {
   return dagerIgjen <= 10;
 }

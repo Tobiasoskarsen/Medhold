@@ -1,0 +1,37 @@
+{
+  "tidspunkt": "2026-11-08T21:56:44.429Z",
+  "prosjekt": "evvzxblhaxaraaurbhsu",
+  "gammelApp": "6516bd317e4d01816c56e62b8c25a9c6efa2fe3d",
+  "testRevision": "0ef2ec160a2b71a382b4de229170a8da154d34cc",
+  "testkildeSha256": "a248d032e7a4c7454946246de47dbb8ccfec1529a6380759911d7b8676610fc2",
+  "brukerJWT": true,
+  "faktiskeGamleServermoduler": true,
+  "mockedeGrenser": [
+    "Next cache/navigation",
+    "UI-komponentreferanser",
+    "Pluss-sidegate"
+  ],
+  "begrensninger": [
+    "Ingen full gammel nettleserapp eller produksjonsklone",
+    "Gammel klient har ikke ny CAS-lagring og kan ikke brukes parallelt med ny klient under utrulling"
+  ],
+  "cleanup": true,
+  "results": [
+    {
+      "id": "LEGACY-LETTER-SAVE",
+      "status": "bestått"
+    },
+    {
+      "id": "LEGACY-DRAFT-INSERT",
+      "status": "bestått"
+    },
+    {
+      "id": "LEGACY-PAGE-READ",
+      "status": "bestått"
+    },
+    {
+      "id": "LEGACY-SENT-SNAPSHOT",
+      "status": "bestått"
+    }
+  ]
+}

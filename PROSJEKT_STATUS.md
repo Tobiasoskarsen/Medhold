@@ -5,6 +5,29 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – to feil rettet og integrasjonen kjørt på nytt
+
+Gjeldende samlet oversikt: docs/testing/R3_SLUTTKONTROLL.md. «1 kr» kom fra
+den korte referansen TEST-IPHONE-01; tokens gjenkjennes nå uten at ukjente
+referanser eller faktiske feilbeløp godtas. Fristkilden beholdes som eksplisitt
+også når lovdatoen er lik, både i bekreftelsen og på serveren. Saksvisningen
+bruker eksisterende dokumentbevis for eldre feilmerkede rader, uten DB-skriving.
+Begge feil var røde før rettelsen. Juridiske beregninger er uendret.
+
+Ny ekte test-Supabase/HTTP-runde: 26/26, cleanup=true. Fire faktiske gamle
+servermodul-prøver mot oppgradert testprosjekt er bestått. Dette er ikke en
+full gammel browserapp mot produksjonsklone: gammel klient mangler CAS og
+må ikke brukes parallelt under utrulling. Ingen påstand om risikofri rollback.
+Desktop-nettleser bekreftet korrekt verdioversikt/fristkilde og to-fane-konflikt:
+B beholdt tekst, ny tredje fane viste As lagrede tekst. Syntetisk konto ryddet.
+391 unit, full DB-/modulsuite og opt-in-regresjon, lint/type/build og prod-audit
+er grønne. Nye bilder og r3-legacy-resultat.json ligger i docs/testing/.
+
+GitHub-workflowen er fortsatt 404 på main; ikke omgått med merge eller svekket
+miljøvern. Fysiske resttester, full historisk browserklone, endelig main-smoke
+og separat godkjent produksjonsplan gjenstår. Ingen merge, migrasjon eller
+produksjonsdeploy i denne runden. Brukerens egen testkonto og filer er urørt.
+
 ### R3 – glimt ved fanebytte med redusert bevegelse
 
 Brukeren presiserte at et kort svart glimt bare oppstår inne i Medhold.
