@@ -1,5 +1,10 @@
 # Medhold R2 – integrasjon, stabilisering og releasekontroll
 
+Oppdatert etterkontroll: se [R2_REST_RAPPORT.md](./R2_REST_RAPPORT.md).
+Den supersederer tallene og de rettede observasjonene nedenfor: 26/26 ekte
+integrasjonstester, 84 lokale DB-/modultester, 0031 i test og lint uten varsler.
+Dette dokumentet beholdes som historikk fra første R2-runde.
+
 Gjennomført 8. november 2026. Ingen merge eller manuell deploy. Ingen produksjonsmigrasjon eller produksjonsendring.
 
 ## A. Verifisert miljø

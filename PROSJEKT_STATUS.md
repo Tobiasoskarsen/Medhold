@@ -5,6 +5,26 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R2 etterkontroll – 8. november 2026
+
+Oppfølging av PR #61: tidsbudsjett på 45 sekunder for modellstrømming og
+regenerering, ekte hengende nettverksfixture, stabile idempotensnøkler for
+cron-e-post og stopp ved ukjent varselhistorikk. Ingen e-post sendt i testene.
+Sendte utkast omtales som skrivebeskyttet sendt tekst; Google-feilnavigasjon
+bruker Next-router uten lint-unntak. Målrettede lockfiloppdateringer fjernet
+alle høye utviklingsvarsler; åtte moderate fra minimatch/TypeScript-ESLint
+gjenstår uten tvungen hovedversjonsendring.
+
+Ny regresjon viste at direkte anon-standardgrant kan overleve 0030 sitt
+REVOKE FROM PUBLIC. 0031 trekker tilbake også anon eksplisitt. Kjørt bare i
+`medhold test`, kontrollert i SQL-panelet og med ekte uinnlogget PostgREST.
+Ingen produksjonsendring. Ny skrivefri preflight:
+`supabase/kontroll/release_0030.sql`, testet før/etter migrasjon.
+
+Detaljer, eksakte tester og gjenværende begrensninger:
+`docs/testing/R2_REST_RAPPORT.md`. Denne seksjonen supplerer eldre historiske
+statuslinjer om at 0030 ikke var kjørt; 0030 og 0031 finnes nå i test.
+
 ### S1-D – faktatro oppsummering (under verifikasjon)
 
 Promptens krav om å utdype konkrete konsekvenser uten dokumentasjon er fjernet.

@@ -1,11 +1,17 @@
 {
   "prosjekt": "evvzxblhaxaraaurbhsu",
-  "tidspunkt": "2026-11-08T18:13:39.811Z",
-  "run": "eeb8f079-929f-4dc0-a7fe-2f5168b5d2d3",
+  "tidspunkt": "2026-11-08T18:40:54.854Z",
+  "run": "4698c43b-a751-40f5-95d9-36d830325ce7",
   "brukerJWT": true,
   "serviceRoleKunOppsettOgAdministrasjon": true,
   "cleanup": true,
   "results": [
+    {
+      "id": "RPC-ANON",
+      "scenario": "Uinnlogget bruker mangler execute etter 0031",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
     {
       "id": "HTTP-SERVER-VALIDATION",
       "scenario": "Ekte innlogget HTTP avviser feil dokument og avdrag uten kvotebruk",
@@ -104,7 +110,7 @@
       "scenario": "Samtidig redigering og sendt-RPC",
       "status": "bestått",
       "observed": {
-        "versjon": 4,
+        "versjon": 3,
         "snapshotStemmer": true
       }
     },
@@ -176,6 +182,17 @@
     },
     {
       "id": "HTTP-AI-TRUNCATED",
+      "scenario": "Kontrollert leverandørfeil: ingen ferdigtekst eller lagring",
+      "status": "bestått",
+      "observed": {
+        "lagredeUtkast": 0,
+        "ferdigmarkor": false,
+        "reservasjonAvsluttet": true,
+        "feilmarkor": true
+      }
+    },
+    {
+      "id": "HTTP-AI-HANG",
       "scenario": "Kontrollert leverandørfeil: ingen ferdigtekst eller lagring",
       "status": "bestått",
       "observed": {
