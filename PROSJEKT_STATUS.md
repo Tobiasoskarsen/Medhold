@@ -3284,3 +3284,11 @@ Valg tatt underveis: kvoteteksten viser hvor utkast åpnes og skiller sendt fra 
 389 enhetstester og 73 lokale DB-tester grønne. Lokal nettleser: lagring/gjenåpning/lagringsfeil/to-faners konflikt, faktasammendrag etter retting, støtteomfang, saksnummersøk og clipboardfeil. Mobilbredder 320/390/430 og desktop 1280 kontrollert; mørk mobilvisning visuelt kontrollert. Fysisk enhet og ekte Supabase-samtidighet gjenstår. Ingen migrasjon, merge eller manuell deploy.
 
 Sluttresultat: lint, typekontroll og produksjonsbygg er grønne. Byggets eksisterende varsel om flere lockfiler i worktree-oppsettet er dokumentert. Ingen midlertidige testruter er inkludert.
+
+## Release Fix R1
+
+Fire avgrensede rettelser på gren fra S1-F (0693734): riktig bruker/sak/brev før AI, autoritativ lagret dokumentkobling ved gjenåpning, serverberegnet avdragsplan i øre og serverberegnet frist/alvorlighet. Regresjoner kjører faktiske promptbygger, HTTP-route, utkastside og lagringsaction med lokale transportadaptere. Ingen nye avhengigheter eller migrasjoner.
+
+Valg tatt underveis: manglende originalbrev gir sikker begrenset tekstvisning; manuelle krav uten brev beholdes. Inkonsistente klientavdrag avvises i stedet for stille korrigering. Avvik mellom klient- og servervurdering stopper lagring og krever ny bekreftelse. Rå dokumentfrist sendes separat; klientens vurderingsfelt brukes kun til å oppdage visningsavvik.
+
+Rapport og separat Supabase-testplan: docs/testing/release-fix-r1.md. Ekte PostgREST, JWT/RLS og parallelle forbindelser er fortsatt ikke bekreftet. Ingen merge, manuell deploy eller produksjonsmigrasjon.
