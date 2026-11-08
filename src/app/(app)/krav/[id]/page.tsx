@@ -286,7 +286,6 @@ export default async function KravDetaljPage({
   // aktiv sak over 45 dager gammelt, er funnene historikk, og brukeren bes
   // legge til det nyeste brevet.
   const sisteBrevGammelt =
-    sak.status === "aktiv" &&
     !!sisteBrev &&
     erGammeltBrev(sisteBrev.brevdato, sisteBrev.opprettet, idag);
   const sisteBrevDato = sisteBrev
@@ -636,7 +635,7 @@ export default async function KravDetaljPage({
 
       {/* Viktigste varsel eller handlingsvalg. Alvorsvarsel overstyrer
           vanlige handlingsvalg (uendret betingelse). */}
-      {sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
+      {sak.status === "aktiv" && sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
         <SekvensDel>
           <GammeltBrevKort
             brevId={sisteBrev.id}

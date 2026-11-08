@@ -3,7 +3,7 @@
 // brukeren selv oppgir. Ingen råd om hva man BØR betale — bare matematikken.
 
 export type AvdragsForslag = {
-  manedsbelop: number; // kr, heltall
+  manedsbelop: number; // kr, inntil to desimaler
   antallMandeder: number; // rundet opp
   sisteAvdrag: number; // restbeløp siste måned
 };
@@ -11,20 +11,20 @@ export type AvdragsForslag = {
 /**
  * Nedbetalingsplan for `total` med `manedsbelop` per måned. `manedsbelop`
  * valideres: minst 1 kr, maks hele totalbeløpet (én måned). Beløp behandles
- * som hele kroner.
+ * som heltallsøre; avrunding skjer først ved inputgrensen.
  */
 export function beregnAvdrag(
   total: number,
   manedsbelop: number,
 ): AvdragsForslag {
-  const t = Math.max(0, Math.round(total));
+  const t = Number.isFinite(total) ? Math.max(0, Math.round(total * 100)) : 0;
   if (t === 0) return { manedsbelop: 0, antallMandeder: 0, sisteAvdrag: 0 };
 
-  let m = Math.round(manedsbelop);
-  if (m < 1) m = 1;
+  let m = Number.isFinite(manedsbelop) ? Math.round(manedsbelop * 100) : 100;
+  if (m < 100) m = 100;
   if (m > t) m = t; // maks = hele beløpet på én måned
 
   const antallMandeder = Math.ceil(t / m);
   const sisteAvdrag = t - (antallMandeder - 1) * m;
-  return { manedsbelop: m, antallMandeder, sisteAvdrag };
+  return { manedsbelop: m / 100, antallMandeder, sisteAvdrag: sisteAvdrag / 100 };
 }

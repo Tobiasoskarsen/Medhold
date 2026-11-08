@@ -11,7 +11,8 @@ import {
   useInntreden,
 } from "@/components/ui";
 import { haptikk } from "@/lib/haptikk";
-import { formaterBelop } from "@/lib/format";
+import { kr } from "@/lib/gebyrfunn-visning";
+import { tolkKr } from "@/lib/format";
 import { beregnAvdrag } from "@/lib/avdrag";
 import { STIGRING } from "@/lib/bevegelse";
 import { settUtfall } from "../../actions";
@@ -59,8 +60,8 @@ export function VeierUtFlyt({
   // Kort 2 — avdrag.
   const [manedInput, setManedInput] = useState("");
   const manedsbelop = useMemo(() => {
-    const n = Number(manedInput.replace(/\s/g, ""));
-    return manedInput.trim() && !Number.isNaN(n) ? n : null;
+    const n = tolkKr(manedInput);
+    return n != null && Number.isFinite(n) ? n : null;
   }, [manedInput]);
   const forslag =
     total != null && total > 0 && manedsbelop != null && manedsbelop >= 1
@@ -165,12 +166,12 @@ export function VeierUtFlyt({
           <div className="mt-3 rounded-kontroll bg-aksent/5 px-3.5 py-3">
             <p className="text-sm text-blekk">
               <span className="tall-s">
-                {formaterBelop(forslag.manedsbelop)} kr/mnd
+                {kr(forslag.manedsbelop)} kr/mnd
               </span>{" "}
               i {forslag.antallMandeder}{" "}
               {forslag.antallMandeder === 1 ? "måned" : "måneder"}
               {forslag.sisteAvdrag !== forslag.manedsbelop
-                ? ` (siste avdrag ${formaterBelop(forslag.sisteAvdrag)} kr)`
+                ? ` (siste avdrag ${kr(forslag.sisteAvdrag)} kr)`
                 : ""}
               .
             </p>

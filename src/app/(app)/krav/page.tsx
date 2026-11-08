@@ -120,6 +120,7 @@ export default async function KravListePage() {
     return {
       id: sak.id,
       navn: sak.kreditor ?? sak.tittel,
+      saksnummer: sak.saksnummer,
       delNavn: !sak.opprinnelig_kreditor,
       belop: formaterBelop(sak.belop_totalt),
       stadiumEtikett: sak.stadium ? STADIUM_ETIKETT[sak.stadium] : null,

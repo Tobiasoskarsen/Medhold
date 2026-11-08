@@ -119,7 +119,7 @@ export function UtkastFlyt({
   const visOmfang = type === "innsigelse" && gebyrDiff > 0;
   const omfang: Omfang = visOmfang ? omfangValg : "helt";
   // Omfanget utkastet faktisk ble laget med (til betalingsmerknaden).
-  const [omfangBrukt, setOmfangBrukt] = useState<Omfang | null>(null);
+  const [omfangBrukt, setOmfangBrukt] = useState<Omfang | null>(lagret?.vakt_fakta?.omfang ?? null);
 
   // «Sjekk før du sender» (§D.4): vaktfaktaene kommer fra serveren sammen med
   // utkastet; vakten kjøres på nytt her når brukeren har redigert (ved blur).
@@ -561,6 +561,8 @@ export function UtkastFlyt({
           {fase === "ferdig" ? (
             <textarea
               value={tekst}
+              readOnly={erSendt || lagrer}
+              aria-label="Utkast til brev"
               onChange={(e) => {
                 const ny = e.target.value;
                 setTekst(ny);
@@ -622,8 +624,8 @@ export function UtkastFlyt({
               {omfangBrukt === "delvis" && ubestridt !== null && (
                 <Kort className="mt-4">
                   <p className="text-[13.5px] text-blekk">
-                    Husk å betale {kr(ubestridt)} kr innen fristen. Da kommer
-                    det ikke nye kostnader på den delen.
+                    Husk å betale {kr(ubestridt)} kr innen fristen hvis du er
+                    enig i den delen. Kontroller betalingsopplysningene mot brevet.
                   </p>
                 </Kort>
               )}

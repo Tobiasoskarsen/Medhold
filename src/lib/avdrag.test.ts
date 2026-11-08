@@ -3,6 +3,14 @@ import assert from "node:assert/strict";
 
 import { beregnAvdrag } from "./avdrag.ts";
 
+test("øre beholdes i total og siste avdrag", () => {
+  for (const [total, maaned] of [[10119.50, 600], [3243.20, 500.10], [0.50, 600]]) {
+    const r = beregnAvdrag(total, maaned);
+    assert.equal((r.antallMandeder - 1) * Math.round(r.manedsbelop * 100) + Math.round(r.sisteAvdrag * 100), Math.round(total * 100));
+  }
+  assert.deepEqual(beregnAvdrag(10119.50, 600), {manedsbelop: 600, antallMandeder: 17, sisteAvdrag: 519.50});
+});
+
 test("akseptansekriterium: 3243 kr og 500 kr/mnd → 7 mnd, siste 243", () => {
   assert.deepEqual(beregnAvdrag(3243, 500), {
     manedsbelop: 500,
