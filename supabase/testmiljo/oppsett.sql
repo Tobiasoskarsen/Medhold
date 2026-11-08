@@ -1,6 +1,6 @@
 -- KUN FOR ET TOMT TESTPROSJEKT I SUPABASE. ALDRI I PRODUKSJON.
 --
--- Bygger hele Medhold-databasen fra bunnen: 0001–0030 uten 0014
+-- Bygger hele Medhold-databasen fra bunnen: 0001–0031 uten 0014
 -- (erstattet av 0025). Generert av scripts/lag-testmiljo-sql.mjs fra
 -- supabase/migrations. Ikke rediger denne fila; endre migrasjonene og generer på nytt.
 --
@@ -1797,4 +1797,15 @@ begin
 end; $$;
 revoke all on function public.registrer_utkast_sendt(uuid,integer) from public;
 grant execute on function public.registrer_utkast_sendt(uuid,integer) to authenticated;
+commit;
+
+-- ============================================================
+-- 0031_utkast_rpc_rettigheter.sql
+-- ============================================================
+
+-- 0030 fjernet PUBLIC-granten, men Supabase kan også ha direkte
+-- standardgrants til anon. Fjern begge eksplisitt; eiersjekk/RLS beholdes.
+begin;
+revoke all on function public.registrer_utkast_sendt(uuid, integer) from public, anon;
+grant execute on function public.registrer_utkast_sendt(uuid, integer) to authenticated;
 commit;
