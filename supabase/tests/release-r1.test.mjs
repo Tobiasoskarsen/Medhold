@@ -31,6 +31,28 @@ function klient() {
   }};
 }
 const promptFil="src/app/(app)/krav/[id]/utkast/byggUtkastPrompt.ts";
+test("R3: autoritativ plan beholder øre og avviser manipulerte forslag før kvote/AI",async()=>{
+ const {kontrollerAvdragsforslag:k}=last("src/lib/avdrag-server.ts");
+ const gyldig={manedsbelop:600,antallMandeder:17,sisteAvdrag:519.5};
+ assert.deepEqual(k(10119.5,gyldig),{ok:true,avdrag:gyldig});
+ assert.equal(k(.5,{manedsbelop:.5,antallMandeder:1,sisteAvdrag:.5}).ok,true);
+ assert.equal(k(100.25,{manedsbelop:50,antallMandeder:3,sisteAvdrag:.25}).ok,true);
+ const ugyldige=[null,0,-1,NaN,Infinity];
+ for(const n of ugyldige) assert.equal(k(n,gyldig).ok,false);
+ for(const n of [0,-1,NaN,Infinity,600.001]) assert.equal(k(10119.5,{...gyldig,manedsbelop:n}).ok,false);
+ for(const n of [0,-1,1.5,NaN,Infinity]) assert.equal(k(10119.5,{...gyldig,antallMandeder:n}).ok,false);
+ assert.equal(k(10119.5,{...gyldig,sisteAvdrag:520}).ok,false);
+ const db=klient();let kvoter=0,ai=0;
+ const mocks={"@/lib/supabase/server":{createClient:async()=>db},"@/lib/plan":{harPluss:async()=>true},"@/lib/kvote-server":{startKvote:async()=>{kvoter++;throw Error("KVOTE");}},"@anthropic-ai/sdk":{default:class{constructor(){ai++;}}}};
+ const prompt=last(promptFil,mocks).byggUtkastPrompt;
+ const p=await prompt(db,"sak-a","brev-a","nedbetalingsavtale","","Test",gyldig);
+ assert.ok(!("feil" in p));assert.ok(p.vaktFakta.tillatteBelop.includes(519.5));
+ const route=last("src/app/api/utkast-generer/route.ts",mocks), gammel=process.env.ANTHROPIC_API_KEY;process.env.ANTHROPIC_API_KEY="test";
+ try{for(const avdrag of [{...gyldig,sisteAvdrag:520},{...gyldig,antallMandeder:17.5},"ugyldig"]){
+ const r=await route.POST({json:async()=>({kravId:"sak-a",brevId:"brev-a",type:"nedbetalingsavtale",avdrag})});assert.equal(r.status,400);
+ }}finally{if(gammel===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=gammel;}
+ assert.equal(kvoter,0);assert.equal(ai,0);
+});
 test("R2: lagret brev overstyrer nyere brev og manipulert URL; manglende brev gir ingen fallback",()=>{
  const {velgUtkastbrev}=last("src/lib/utkastgrunnlag.ts");
  const a={id:"a",avsender:"A",belop:1288},b={id:"b",avsender:"B",belop:9000};

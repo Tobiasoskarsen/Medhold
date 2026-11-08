@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { harPluss } from "@/lib/plan";
 import { AI_MODELL, UTKAST_STRØM_MARKØR as MARKØR } from "@/lib/ai";
 import { UTKAST_TYPER, type UtkastType } from "@/lib/types";
-import type { AvdragsForslag } from "@/lib/avdrag";
 import {
   etterkontroll,
   fjernStjerner,
@@ -29,16 +28,6 @@ export const maxDuration = 60;
 // er en ny, romslig fornuftsgrense for et fritekstfelt ment å være kort.
 const DETALJER_MAKS_TEGN = 2000;
 
-function erAvdragsForslag(v: unknown): v is AvdragsForslag {
-  if (!v || typeof v !== "object") return false;
-  const a = v as Record<string, unknown>;
-  return (
-    typeof a.manedsbelop === "number" &&
-    typeof a.antallMandeder === "number" &&
-    typeof a.sisteAvdrag === "number"
-  );
-}
-
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const {
@@ -57,6 +46,7 @@ export async function POST(req: NextRequest) {
   };
   try {
     body = await req.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("Ugyldig forespørsel");
   } catch {
     return new Response("Ugyldig forespørsel", { status: 400 });
   }
@@ -67,7 +57,7 @@ export async function POST(req: NextRequest) {
   // Fødselsnummer brukeren skriver inn, går hverken til AI-en eller inn i utkastet.
   const detaljer = maskerFodselsnummer(String(body.detaljer ?? ""));
   const navn = String(body.navn ?? "");
-  const avdrag = erAvdragsForslag(body.avdrag) ? body.avdrag : null;
+  const avdrag = body.avdrag ?? null;
   const omfang: Omfang | null =
     body.omfang === "delvis" || body.omfang === "helt" ? body.omfang : null;
 
@@ -95,7 +85,7 @@ export async function POST(req: NextRequest) {
     avdrag,
     omfang,
   );
-  if ("feil" in prompt) return new Response(prompt.feil, { status: 404 });
+  if ("feil" in prompt) return new Response(prompt.feil, { status: prompt.status ?? 404 });
   const { system, meldinger, vaktFakta } = prompt;
 
   // Kvoten håndheves på serveren. Den samme bestillingen på nytt belastes ikke
