@@ -8,6 +8,9 @@ import { harPluss } from "@/lib/plan";
 import { type UtkastType } from "@/lib/types";
 import type { AvdragsForslag } from "@/lib/avdrag";
 import { genererUtkast, type Omfang } from "@/lib/utkast-prompt";
+import { AI_MODELL } from "@/lib/ai";
+import { forsokId } from "@/lib/kvote";
+import { startKvote } from "@/lib/kvote-server";
 import { logg, feilInfo } from "@/lib/logg";
 import { maskerFodselsnummer } from "@/lib/maskering";
 import type { VaktFunn } from "@/lib/utkast-vakt";
@@ -50,6 +53,14 @@ export async function lagUtkast(
   );
   if ("feil" in prompt) return { ok: false, feil: prompt.feil };
 
+  // Samme kvote som strømmeruten.
+  const kvote = await startKvote(
+    "utkast",
+    user.id,
+    forsokId("utkast", user.id, sakId, brevId, type, detaljer, navn, JSON.stringify(avdrag ?? null), omfang ?? null),
+  );
+  if (!kvote.ok) return { ok: false, feil: kvote.melding };
+
   // Etterkontroll: «AI tolker, kode beslutter» — også for stil og fakta.
   // Forbudte ord, lengde og vaktfunn → ÉN regenerering (ikke en løkke, av
   // kostnadshensyn). Det som fortsatt står igjen, logges og vises som
@@ -58,6 +69,8 @@ export async function lagUtkast(
   let advarsler: VaktFunn[];
   try {
     const r = await genererUtkast(new Anthropic(), prompt, prompt.vaktFakta);
+    // Modellen svarte (også om svaret var ubrukelig): forsøket er brukt.
+    await kvote.vakt.avslutt(true, { modell: AI_MODELL, ai_kall: r?.regenerert ? 2 : 1 });
     if (r === null)
       return { ok: false, feil: "Fikk ikke et brukbart utkast. Prøv igjen." };
     innhold = r.tekst;
@@ -66,6 +79,8 @@ export async function lagUtkast(
       logg("warn", "lagUtkast", "vaktfunn_etter_regenerering", { utkasttype: type, antall: advarsler.length });
     }
   } catch (e) {
+    // API-feil (nettverk, tidsavbrudd): belaster ikke brukeren.
+    await kvote.vakt.avslutt(false, { modell: AI_MODELL, feil: "ukjent" });
     logg("error", "lagUtkast", "generering_feilet", feilInfo(e));
     return { ok: false, feil: "Noe gikk galt. Prøv igjen om litt." };
   }

@@ -4,10 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
 import { formaterKortDato } from "@/lib/dato";
 import { AI_MODELL } from "@/lib/ai";
-import { klassifiserAiFeil, vurderStopp } from "@/lib/ai-svar";
+import { klassifiserAiFeil, vurderStopp, type AiFeil } from "@/lib/ai-svar";
 import { logg } from "@/lib/logg";
 import { maskerFodselsnummer } from "@/lib/maskering";
-import { DOKUMENT_REGEL, avgrens } from "@/lib/dokumentdata";
+import { DOKUMENT_REGEL } from "@/lib/dokumentdata";
+import { forsokId, skalBelastes } from "@/lib/kvote";
+import { startKvote } from "@/lib/kvote-server";
+import { SAMTALE_MAKS_TOKENS, byggSamtale } from "@/lib/samtale-prompt";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel.
 export const maxDuration = 60;
@@ -97,6 +100,15 @@ export async function POST(req: NextRequest) {
       ? `${SYSTEM_BASE}\n\nKort om saken (bruk kun som bakgrunn, ikke gjenta ukritisk):\n${kontekstlinjer.join("\n")}`
       : SYSTEM_BASE;
 
+  // Kvoten håndheves på serveren. Det samme spørsmålet på nytt belastes ikke
+  // to ganger. Brevet og samtalen kan fortsatt leses når kvoten er brukt opp.
+  const kvote = await startKvote("chat", user.id, forsokId("chat", user.id, brevId, melding));
+  if (!kvote.ok)
+    return new Response(kvote.melding, {
+      status: kvote.status,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+
   // Lagre brukermeldingen før vi svarer.
   await supabase.from("brev_samtale").insert({
     brev_id: brevId,
@@ -105,28 +117,29 @@ export async function POST(req: NextRequest) {
     innhold: melding,
   });
 
-  const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: `Her er teksten fra brevet:\n\n${avgrens(brev.original_tekst)}` },
-    { role: "assistant", content: brev.forklaring },
-    ...(tidligere ?? []).map((m) => ({
-      role: (m.rolle === "bruker" ? "user" : "assistant") as "user" | "assistant",
-      content: m.innhold,
-    })),
-    { role: "user", content: melding },
-  ];
+  // Begrenset historikk og lengde, så kostnaden per spørsmål har et tak.
+  const messages: Anthropic.MessageParam[] = byggSamtale({
+    originalTekst: brev.original_tekst,
+    forklaring: brev.forklaring,
+    tidligere: tidligere ?? [],
+    melding,
+  });
 
   const anthropic = new Anthropic();
   const encoder = new TextEncoder();
   let fullt = "";
   // Bare et komplett svar lagres i samtalen.
   let komplett = false;
+  let aiFeil: AiFeil | null = null;
+  let inn: number | undefined;
+  let ut: number | undefined;
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
         const claudeStream = anthropic.messages.stream({
           model: AI_MODELL,
-          max_tokens: 4000,
+          max_tokens: SAMTALE_MAKS_TOKENS,
           thinking: { type: "disabled" },
           system,
           messages,
@@ -141,7 +154,10 @@ export async function POST(req: NextRequest) {
           }
         }
         const slutt = await claudeStream.finalMessage();
-        if (vurderStopp(slutt.stop_reason)) {
+        inn = slutt.usage?.input_tokens;
+        ut = slutt.usage?.output_tokens;
+        aiFeil = vurderStopp(slutt.stop_reason);
+        if (aiFeil) {
           controller.enqueue(
             encoder.encode(
               "\n\n[Svaret ble avbrutt fordi det ble for langt. Det er ikke lagret. Prøv et kortere spørsmål.]",
@@ -151,11 +167,19 @@ export async function POST(req: NextRequest) {
           komplett = true;
         }
       } catch (feil) {
-        logg("error", "brev-samtale", "strom_feilet", { feil: klassifiserAiFeil(feil) });
+        aiFeil = klassifiserAiFeil(feil);
+        logg("error", "brev-samtale", "strom_feilet", { feil: aiFeil });
         controller.enqueue(
           encoder.encode("\n\n[Beklager, noe gikk galt. Svaret er ikke lagret. Prøv igjen.]"),
         );
       } finally {
+        await kvote.vakt.avslutt(skalBelastes(aiFeil), {
+          modell: AI_MODELL,
+          inn_tokens: inn,
+          ut_tokens: ut,
+          ai_kall: 1,
+          feil: aiFeil ?? undefined,
+        });
         if (komplett && fullt.trim()) {
           await supabase.from("brev_samtale").insert({
             brev_id: brevId,

@@ -8,7 +8,9 @@ import { SAK_UTFALL, type FristForslag, type SakUtfall } from "@/lib/types";
 import { beregnFrist, foreslaStadium, type BrevType } from "@/lib/gjeld";
 import { utfallAvslutter } from "@/lib/utfall";
 import { lagreBrevFeilmelding } from "@/lib/saksstatus";
-import { AI_MODELL_RASK } from "@/lib/ai";
+import { AI_MODELL, AI_MODELL_RASK } from "@/lib/ai";
+import { forsokId, skalBelastes } from "@/lib/kvote";
+import { startKvote, type Kvotevakt } from "@/lib/kvote-server";
 import { maskerAlleStrenger, maskerFodselsnummer } from "@/lib/maskering";
 import { logg } from "@/lib/logg";
 import { tolkKr, tellOrd, kuttTilMaks } from "@/lib/format";
@@ -147,7 +149,10 @@ async function etterbehandle(
   kravForslag: KravForslag | null;
   gebyrsjekk: GebyrsjekkResultat | null;
   alvorlig: boolean;
+  /** Antall ekstra AI-kall (omskriving av forklaringen). */
+  ekstraKall: number;
 }> {
+  let ekstraKall = 0;
   // Steg: maks 3, prioritert rekkefølge → trygt å kutte uten regenerering.
   analyse.foreslatte_steg = kuttTilMaks(analyse.foreslatte_steg, MAKS_STEG);
   // Bare antallet logges, aldri teksten (den er avledet av brevet).
@@ -159,6 +164,7 @@ async function etterbehandle(
   const ordtall = tellOrd(analyse.forklaring);
   if (ordtall > FORKLARING_TAK_OVER || ordtall < FORKLARING_TAK_UNDER) {
     const problem = ordtall > FORKLARING_TAK_OVER ? "for_lang" : "for_tynn";
+    ekstraKall++;
     const korrigert = await korrigerForklaring(analyse.forklaring, problem);
     if (korrigert) {
       const nyttAntall = tellOrd(korrigert);
@@ -213,7 +219,27 @@ async function etterbehandle(
   // brev.alvorlig; sannheten ved visning, rekalkuleres aldri.
   const alvorlig = erAlvorligSak(originalTekst);
 
-  return { beregnetFrist, kravForslag, gebyrsjekk, alvorlig };
+  return { beregnetFrist, kravForslag, gebyrsjekk, alvorlig, ekstraKall };
+}
+
+/**
+ * Avslutter kvoten for en analyse. En operasjonell feil (tidsavbrudd, nettverk,
+ * travel tjeneste) belaster ikke brukeren. Et svar, også et ubrukelig, gjør det:
+ * modellen har lest dokumentet.
+ */
+async function avsluttAnalyse(
+  vakt: Kvotevakt,
+  modell: string,
+  lest: { ok: boolean; feil?: AiFeil; bruk: { inn: number; ut: number } | null },
+  ekstraKall = 0,
+) {
+  await vakt.avslutt(skalBelastes(lest.ok ? null : (lest.feil ?? "ukjent")), {
+    modell,
+    inn_tokens: lest.bruk?.inn,
+    ut_tokens: lest.bruk?.ut,
+    ai_kall: 1 + ekstraKall,
+    feil: lest.ok ? undefined : lest.feil,
+  });
 }
 
 export async function analyserBrevTekst(
@@ -233,16 +259,24 @@ export async function analyserBrevTekst(
   if (!process.env.ANTHROPIC_API_KEY)
     return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
 
+  // Kvoten håndheves på serveren. Samme tekst på nytt belastes ikke to ganger.
+  const kvote = await startKvote("dokumentanalyse", user.id, forsokId("dokumentanalyse", user.id, rensket));
+  if (!kvote.ok) return { ok: false, feil: kvote.melding };
+
   const lest = await lesBrevTekst(new Anthropic(), maskerFodselsnummer(rensket));
-  if (!lest.ok) return { ok: false, feil: LESEFEIL[lest.feil] };
+  if (!lest.ok) {
+    await avsluttAnalyse(kvote.vakt, AI_MODELL_RASK, lest);
+    return { ok: false, feil: LESEFEIL[lest.feil] };
+  }
   const analyse: Analyse = lest.data;
 
   // Masker fødselsnumre før teksten lagres/vises videre (AI-kallet over kjørte
   // på originalen — det er den uunngåelige første sendingen). Alvorsgrensen
   // sjekkes mot samme (maskerte) tekst som lagres og vises senere.
   const original_tekst = maskerFodselsnummer(rensket);
-  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig } =
+  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig, ekstraKall } =
     await etterbehandle(supabase, analyse, original_tekst);
+  await avsluttAnalyse(kvote.vakt, AI_MODELL_RASK, lest, ekstraKall);
   return {
     ok: true,
     analyse,
@@ -269,14 +303,25 @@ export async function analyserBrevBilder(
   if (!process.env.ANTHROPIC_API_KEY)
     return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
 
+  const kvote = await startKvote(
+    "dokumentanalyse",
+    user.id,
+    forsokId("dokumentanalyse", user.id, ...bilder.map((b) => b.data)),
+  );
+  if (!kvote.ok) return { ok: false, feil: kvote.melding };
+
   const lest = await lesBrevBilder(new Anthropic(), bilder);
-  if (!lest.ok) return { ok: false, feil: LESEFEIL[lest.feil] };
+  if (!lest.ok) {
+    await avsluttAnalyse(kvote.vakt, AI_MODELL, lest);
+    return { ok: false, feil: LESEFEIL[lest.feil] };
+  }
   const analyse: Analyse & { ekstrahert_tekst: string } = lest.data;
 
   const { ekstrahert_tekst, ...rest } = analyse;
   const original_tekst = maskerFodselsnummer(ekstrahert_tekst);
-  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig } =
+  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig, ekstraKall } =
     await etterbehandle(supabase, rest, original_tekst);
+  await avsluttAnalyse(kvote.vakt, AI_MODELL, lest, ekstraKall);
   return {
     ok: true,
     analyse: rest,

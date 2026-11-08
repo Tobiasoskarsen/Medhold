@@ -15,6 +15,8 @@ import {
 import { kontrollerUtkast, type VaktFunn } from "@/lib/utkast-vakt";
 import { klassifiserAiFeil, vurderStopp, type AiFeil } from "@/lib/ai-svar";
 import { logg } from "@/lib/logg";
+import { forsokId, skalBelastes } from "@/lib/kvote";
+import { startKvote } from "@/lib/kvote-server";
 import { maskerFodselsnummer } from "@/lib/maskering";
 import { byggUtkastPrompt } from "../../(app)/krav/[id]/utkast/byggUtkastPrompt";
 
@@ -96,6 +98,24 @@ export async function POST(req: NextRequest) {
   if ("feil" in prompt) return new Response(prompt.feil, { status: 404 });
   const { system, meldinger, vaktFakta } = prompt;
 
+  // Kvoten håndheves på serveren. Den samme bestillingen på nytt belastes ikke
+  // to ganger. Lagrede utkast kan fortsatt åpnes når kvoten er brukt opp.
+  const kvote = await startKvote(
+    "utkast",
+    user.id,
+    forsokId("utkast", user.id, kravId, brevId, type, detaljer, navn, JSON.stringify(avdrag), omfang),
+  );
+  if (!kvote.ok)
+    return new Response(kvote.melding, {
+      status: kvote.status,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  let aiKall = 0;
+  let innTokens = 0;
+  let utTokens = 0;
+  // Første feil som stoppet utkastet; null når det ble ferdig.
+  let utfallFeil: AiFeil | "lagring" | null = null;
+
   const anthropic = new Anthropic();
   const encoder = new TextEncoder();
   const navnTrimmet = navn.trim();
@@ -113,6 +133,7 @@ export async function POST(req: NextRequest) {
         meld: UtkastMelding[],
       ): Promise<{ tekst: string } | { feil: AiFeil }> {
         let fullt = "";
+        aiKall++;
         try {
           const claudeStream = anthropic.messages.stream({
             model: AI_MODELL,
@@ -131,6 +152,8 @@ export async function POST(req: NextRequest) {
             }
           }
           const slutt = await claudeStream.finalMessage();
+          innTokens += slutt.usage?.input_tokens ?? 0;
+          utTokens += slutt.usage?.output_tokens ?? 0;
           const stopp = vurderStopp(slutt.stop_reason);
           if (stopp) return { feil: stopp };
         } catch (feil) {
@@ -144,6 +167,7 @@ export async function POST(req: NextRequest) {
 
       // Feilkoden følger rett etter markøren, så klienten kan si hva som skjedde.
       function sendFeil(kode: AiFeil | "lagring") {
+        utfallFeil = kode;
         send(MARKØR.FEIL + kode);
       }
 
@@ -229,6 +253,15 @@ export async function POST(req: NextRequest) {
         };
         send(MARKØR.FERDIG + JSON.stringify(slutt));
       } finally {
+        // Operasjonelle feil og en feilet lagring belaster ikke brukeren.
+        const feil = utfallFeil as AiFeil | "lagring" | null;
+        await kvote.vakt.avslutt(feil === "lagring" ? false : skalBelastes(feil), {
+          modell: AI_MODELL,
+          inn_tokens: innTokens,
+          ut_tokens: utTokens,
+          ai_kall: aiKall,
+          feil: feil ?? undefined,
+        });
         controller.close();
       }
     },

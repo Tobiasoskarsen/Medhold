@@ -197,6 +197,13 @@ export function UtkastFlyt({
         router.push("/pluss");
         return;
       }
+      // Grense nådd eller kvoten kunne ikke sjekkes: serveren sier hvorfor.
+      if (resp.status === 429 || resp.status === 409 || resp.status === 503) {
+        const grunn = (await resp.text()).slice(0, 400);
+        setGenererer(false);
+        setFeil(grunn || GENERISK_FEIL);
+        return;
+      }
       if (!resp.ok || !resp.body) {
         setGenererer(false);
         setFeil(GENERISK_FEIL);
