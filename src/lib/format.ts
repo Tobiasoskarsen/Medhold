@@ -1,5 +1,26 @@
 // Små formateringshjelpere for visning og tolkning av beløp.
 
+export type Kravbelop =
+  | { status: "ukjent" }
+  | { status: "ugyldig"; feil: string }
+  | { status: "gyldig"; ore: number; kroner: number };
+
+/** Streng inputgrense for manuelle krav. Beholder tolkKr for eksisterende bruk. */
+export function validerKravbelop(input: unknown): Kravbelop {
+  const feil = { status: "ugyldig", feil: "Skriv et positivt beløp eller 0, med maks to desimaler. Bruk komma for øre, for eksempel 3 243,20. La feltet stå tomt hvis beløpet er ukjent." } as const;
+  if (typeof input !== "string" || input.length > 40) return feil;
+  const s = input.trim().replace(/[\u00a0\u202f]/g, " ");
+  if (!s) return { status: "ukjent" };
+  // Ikke fjern vilkårlige tegn: det gjorde tidligere negative og ugyldige
+  // verdier uatskillelige fra positive beløp eller manglende opplysninger.
+  if (!/^(?:\d+|\d{1,3}(?: \d{3})+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$/.test(s)) return feil;
+  const [hele, desimal = ""] = s.split(",");
+  const ore = Number(hele.replace(/[ .]/g, "")) * 100 + Number(desimal.padEnd(2, "0"));
+  // Maks 9 999 999 999,99 kr: eksplisitt produktgrense, under JS safe integer.
+  if (!Number.isSafeInteger(ore) || ore > 999_999_999_999) return feil;
+  return { status: "gyldig", ore, kroner: tolkKr(s)! };
+}
+
 /** Beløp med norsk tusenskille, uten øre og uten «kr». Null → null. */
 export function formaterBelop(
   kroner: number | null | undefined,

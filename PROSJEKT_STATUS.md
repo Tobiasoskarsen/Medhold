@@ -5,6 +5,22 @@ etter hver fase.
 
 ## Faseoversikt
 
+### S1-B – manuelle beløp
+
+- Egen gren/PR etter S1-A. Felles `validerKravbelop` i format.ts gjenbruker
+  `tolkKr` etter streng formatvalidering. Juridiske beregninger er urørt.
+- Norsk komma og korrekt grupperte tusenskiller (vanlig/hardt/smalt hardt
+  mellomrom eller punktum) godtas. Tvetydig/blandet format avvises. Tomt
+  beløp er eksplisitt ukjent, ugyldig beløp blir aldri null i stillhet.
+- Negative beløp avvises; null godtas som registrert null. Produktgrense
+  9 999 999 999,99 kr, maks to desimaler. Øre beregnes som safe heltall.
+- Samme kontroll før klientinnsending og serverinnsetting. Mobiltastatur
+  bruker decimal. Eksisterende ukjente beløp og parserens øvrige kall er urørt.
+- Tester lagt til før implementeringen og observert feile. 386 enhetstester
+  består. Separat test av faktisk innsetting og praktisk nettlesertest av
+  den nye grenen gjenstår; de gamle feilene ble reprodusert i preview tidligere.
+- Ingen migrasjon, merge eller manuell deploy. Ingen reelle brukerdata endret.
+
 ### S1-A – negasjon i utkastvakten
 
 - Egen gren fra PR #53 (`1d9398f`); #52 og #53 er fortsatt åpne. Ingen
