@@ -3292,3 +3292,15 @@ Fire avgrensede rettelser på gren fra S1-F (0693734): riktig bruker/sak/brev f�
 Valg tatt underveis: manglende originalbrev gir sikker begrenset tekstvisning; manuelle krav uten brev beholdes. Inkonsistente klientavdrag avvises i stedet for stille korrigering. Avvik mellom klient- og servervurdering stopper lagring og krever ny bekreftelse. Rå dokumentfrist sendes separat; klientens vurderingsfelt brukes kun til å oppdage visningsavvik.
 
 Rapport og separat Supabase-testplan: docs/testing/release-fix-r1.md. Ekte PostgREST, JWT/RLS og parallelle forbindelser er fortsatt ikke bekreftet. Ingen merge, manuell deploy eller produksjonsmigrasjon.
+
+## R2 – ekte Supabase-integrasjon og releasekontroll
+
+Eksisterende medhold test (evvzxblhaxaraaurbhsu) er bekreftet. 0026–0029 sine relevante skjemaobjekter, RLS og funksjonsrettigheter kontrollert skrivefritt. Bare manglende 0030 installert i test; 3 eldre utkast bevart. Ingen 0031 nødvendig. Testprosjektet ble ikke nullstilt. Alle syntetiske kontoer og egne testdata ryddet; de opprinnelige antallene 13 saker / 3 brev / 3 frister / 3 utkast er bevart.
+
+24/24 ekte Supabase/HTTP-scenarioer grønne med bruker-JWT-er, inkludert RLS, kryss-sak/brev, parallelle PATCH, sendt-snapshot, atomisitet, idempotens, kvoter/429 og fire kontrollerte AI-feil. Faktisk nettleserreise med tekst- og PNG-analyse, beløpsretting, eksisterende sak, utkast/redigering/refresh, to faner, sendt/historikk og manglende original gjennomført. Syntetiske skjermbilder og JSON-rapport i docs/testing.
+
+Dokumentert null-body-krasj i brevchat rettet til 400 med regresjon. Next/eslint-config-next oppdatert til 16.4.5 og tre underavhengigheter sikkerhetsrettet; AI-modell og SDK er uendret. Produksjonsaudit: 0 varsler. Full audit har 13 build-/utviklingsvarsler, dokumentert uten force-fix. AGENTS.md er automatisk oppdatert av Next.
+
+389 enhetstester, 79 lokale DB-/modultester, TypeScript og produksjonsbygg grønne. Lint exit 0 med én regeladvarsel på eksisterende GoogleKnapp-navigasjon. Lokal innlogging/serverlagring/gjenåpning og hele HTTP-matrisen verifisert også etter Next-oppdateringen.
+
+Valg tatt underveis: lokal pilot bare i isolert testprosess, e-post/cron deaktivert. Preview-nøkkel etterkontrollert lik fungerende lokal testnøkkel; ingen miljøvariabel endret. Full rapport A–H: docs/testing/R2_RELEASE_RAPPORT.md. Produksjons-SHA 6516bd317e4d01816c56e62b8c25a9c6efa2fe3d bekreftet skrivefritt hos Vercel, men produksjonens migrasjonsstatus er ikke SQL-verifisert. Ingen merge, manuell deploy eller produksjonsmigrasjon. Anbefaling: delvis klar; konkrete gjenstående kontroller står i rapporten.
