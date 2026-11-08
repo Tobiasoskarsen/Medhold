@@ -5,6 +5,18 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – fysisk testreise på iPhone 15
+
+Brukeren har bekreftet Safari, e-postlogin, tekstanalyse/beløpsretting,
+utkastgenerering/redigering, eksplisitt serverlagring/gjenåpning i ny fane,
+hele teksten kopiert til Notater, emne/body i ekstern e-postklient, manuell
+sendt-status og skrivebeskyttet tekst, frist-fullføring/refresh og mørk modus.
+Det første bildet med lokal gjenopprettingsbuffer ble ikke godkjent som
+serverlagring. Google i test er deaktivert og eksplisitt utsatt av brukeren.
+To bildeobservasjoner må undersøkes: «1 kr» i verdioversikten og beregnet-
+merking på en eksplisitt frist. Ingen releasegodkjenning. Detaljer og
+avgrensninger i docs/testing/R3_IPHONE15_MANUELL.md. iOS-versjon er ukjent.
+
 ### R3 – nettverksfeil og beskyttet GitHub-miljø
 
 Produksjons-preflight er nå utført skrivefritt mot Medhold/leernzbmuldegiggnjib:

@@ -1,5 +1,9 @@
 # R3 – nettverk og testmiljø, etterkontroll
 
+Senere fysisk testbevis: [R3_IPHONE15_MANUELL.md](./R3_IPHONE15_MANUELL.md).
+Det oppdaterer de tidligere åpne Safari-, Notater-, e-posttekst- og
+mørk-modus-punktene nedenfor. Resten er fortsatt åpne porter.
+
 8. november 2026. Supplerer R3_RELEASE_GATE.md. Ingen merge, produksjons-
 migrasjon eller produksjonsdeploy. Juridiske regler og API-kontrakter urørt.
 
