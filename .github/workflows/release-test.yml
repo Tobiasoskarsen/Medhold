@@ -1,0 +1,54 @@
+name: Release integration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: medhold-release-test
+  cancel-in-progress: false
+
+jobs:
+  verify-environment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: read
+    steps:
+      - name: Krev eksisterende testmiljø med manuell godkjenning
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          protected=$(gh api "repos/${{ github.repository }}/environments/test" --jq 'any(.protection_rules[]; .type == "required_reviewers")')
+          test "$protected" = true
+
+  supabase-test:
+    needs: verify-environment
+    environment: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Fjern tidligere rapport før kjøring
+        run: rm -f docs/testing/r2-supabase-resultat.json
+      - name: Ekte test-Supabase, aldri produksjon
+        run: node scripts/test-supabase-r2.mjs --run-test-project
+        env:
+          TEST_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+          TEST_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.TEST_SUPABASE_PUBLISHABLE_KEY }}
+          TEST_SUPABASE_SECRET_KEY: ${{ secrets.TEST_SUPABASE_SECRET_KEY }}
+      - name: Sanitert integrasjonsrapport
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-integration-${{ github.sha }}
+          path: docs/testing/r2-supabase-resultat.json
+          if-no-files-found: ignore
+          retention-days: 14
