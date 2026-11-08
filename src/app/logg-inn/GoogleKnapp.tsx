@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { haptikk } from "@/lib/haptikk";
 
@@ -33,6 +34,7 @@ function GoogleG() {
  * location.origin, aldri hardkodet domene. Feiler pent til ?feil=google.
  */
 export function GoogleKnapp() {
+  const router = useRouter();
   const [laster, setLaster] = useState(false);
 
   async function fortsett() {
@@ -46,7 +48,7 @@ export function GoogleKnapp() {
     // Ved suksess navigerer nettleseren videre til Google. Bare feil returnerer.
     if (error) {
       setLaster(false);
-      window.location.href = "/logg-inn?feil=google";
+      router.replace("/logg-inn?feil=google");
     }
   }
 
