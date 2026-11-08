@@ -50,6 +50,10 @@ try {
   // Ingen bruker opprettes dersom 0030 eller testnøkkelen ikke fungerer.
   ok(await admin.from('utkast').select('id,versjon,sendt_innhold,vakt_fakta').limit(0));
   const A=await createUser('a'),B=await createUser('b');
+  await check('RPC-ANON','Uinnlogget bruker mangler execute etter 0031',async()=>{
+    const anon=createClient(EXPECTED,env.NEXT_PUBLIC_SUPABASE_ANON_KEY,options);
+    assert.equal((await anon.rpc('registrer_utkast_sendt',{p_id:randomUUID(),p_versjon:1})).error?.code,'42501');
+  });
   const sak=async(u,n)=>insert(u.db,'saker',{bruker_id:u.id,tittel:`R2-${run}-${n}`,status:'aktiv',stadium:'inkassovarsel',belop_totalt:10119.5});
   const sa=await sak(A,'A1'),sa2=await sak(A,'A2'),sb=await sak(B,'B1');
   const brev=async(u,s,n)=>insert(u.db,'brev',{sak_id:s.id,bruker_id:u.id,brevtype:'inkassovarsel',brevdato:'2026-07-20',avsender:`R2-${n}`,avsender_epost:`r2-${n}@example.invalid`,belop:1288,original_tekst:'Syntetisk testbrev',forklaring:'Syntetisk test'});
@@ -140,11 +144,13 @@ try {
   });
   if(process.argv.includes('--fault-upstream')){
     assert.equal(appUrl,'http://localhost:3015','Feilinnsprøyting krever den separate lokale feilappen');
-    for(const mode of ['TIMEOUT','NETWORK','JSON','TRUNCATED'])await check(`HTTP-AI-${mode}`,'Kontrollert leverandørfeil: ingen ferdigtekst eller lagring',async()=>{
+    for(const mode of ['TIMEOUT','NETWORK','JSON','TRUNCATED','HANG'])await check(`HTTP-AI-${mode}`,'Kontrollert leverandørfeil: ingen ferdigtekst eller lagring',async()=>{
+      const started=Date.now();
       const before=ok(await A.db.from('utkast').select('id').eq('sak_id',sa.id)).length;
       const r=await post({kravId:sa.id,brevId:ba.id,type:'innsigelse',detaljer:`R2FAULT:${mode}`});assert.equal(r.status,200);
       const text=await r.text();assert.ok(text.includes('\u0000__FEIL__\u0000'));assert.ok(!text.includes('\u0000__FERDIG__\u0000'));
-      if(mode==='TIMEOUT')assert.ok(text.endsWith('tidsavbrudd'));
+      if(mode==='TIMEOUT'||mode==='HANG')assert.ok(text.endsWith('tidsavbrudd'));
+      if(mode==='HANG')assert.ok(Date.now()-started>=40_000&&Date.now()-started<59_000,'Må avbrytes før funksjonsgrensen');
       if(mode==='TRUNCATED')assert.ok(text.endsWith('avbrutt'));
       assert.equal(ok(await A.db.from('utkast').select('id').eq('sak_id',sa.id)).length,before);
       const usage=ok(await admin.from('kvotebruk').select('status,feil').eq('bruker_id',A.id));

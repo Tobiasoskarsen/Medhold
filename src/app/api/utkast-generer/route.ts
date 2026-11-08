@@ -106,7 +106,10 @@ export async function POST(req: NextRequest) {
   // Første feil som stoppet utkastet; null når det ble ferdig.
   let utfallFeil: AiFeil | "lagring" | null = null;
 
-  const anthropic = new Anthropic();
+  // Samlet modellbudsjett for første forsøk og eventuell regenerering.
+  // La Vercels 60-sekundersgrense ha rom til feilmarkør og kvoteavslutning.
+  const modellSignal = AbortSignal.timeout(45_000);
+  const anthropic = new Anthropic({ maxRetries: 0 });
   const encoder = new TextEncoder();
   const navnTrimmet = navn.trim();
 
@@ -131,7 +134,7 @@ export async function POST(req: NextRequest) {
             thinking: { type: "disabled" },
             system,
             messages: meld,
-          });
+          }, { signal: modellSignal });
           for await (const event of claudeStream) {
             if (
               event.type === "content_block_delta" &&
@@ -147,7 +150,7 @@ export async function POST(req: NextRequest) {
           const stopp = vurderStopp(slutt.stop_reason);
           if (stopp) return { feil: stopp };
         } catch (feil) {
-          const type = klassifiserAiFeil(feil);
+          const type = modellSignal.aborted ? "tidsavbrudd" : klassifiserAiFeil(feil);
           logg("error", "utkast-generer", "strom_feilet", { feil: type });
           return { feil: type };
         }

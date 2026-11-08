@@ -10,6 +10,9 @@ if(env.NEXT_PUBLIC_SUPABASE_URL!=='https://evvzxblhaxaraaurbhsu.supabase.co')thr
 Object.assign(env,{ANTHROPIC_API_KEY:'synthetic-no-real-key',ANTHROPIC_BASE_URL:'http://127.0.0.1:3016',NEXT_PUBLIC_PILOT:'true',NEXT_PUBLIC_APP_URL:'http://localhost:3015',RESEND_API_KEY:'',CRON_SECRET:''});
 const upstream=createServer(async(req,res)=>{
   let raw='';for await(const chunk of req)raw+=chunk;
+  // Virkelig hengende lokal forbindelse: ingen headers eller data. Appens
+  // eget tidsbudsjett må avbryte; dette er ikke en simulert HTTP 408.
+  if(raw.includes('R2FAULT:HANG'))return;
   if(raw.includes('R2FAULT:TIMEOUT')){res.writeHead(408,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'timeout_error',message:'synthetic'}}));return;}
   if(raw.includes('R2FAULT:NETWORK')){req.socket.destroy();return;}
   res.writeHead(200,{'content-type':'text/event-stream'});

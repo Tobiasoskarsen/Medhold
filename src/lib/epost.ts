@@ -117,6 +117,7 @@ Skru av påminnelser under Meg: ${url}/meg`;
 export async function sendOppfolging(
   til: string,
   kreditor: string | null,
+  idempotensnokkel: string,
 ): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -175,6 +176,7 @@ Skru av slike e-poster under Meg: ${url}/meg`;
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotensnokkel,
       },
       body: JSON.stringify({
         from: fraAdresse(),
@@ -203,6 +205,7 @@ Skru av slike e-poster under Meg: ${url}/meg`;
 export async function sendFristPaaminnelse(
   til: string,
   frister: FristVarsel[],
+  idempotensnokkel: string,
 ): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -217,6 +220,7 @@ export async function sendFristPaaminnelse(
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotensnokkel,
       },
       body: JSON.stringify({
         from: fraAdresse(),
