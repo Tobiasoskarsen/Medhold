@@ -63,6 +63,11 @@ genererte `.next`-mappen. Ingen tester eller byggkontroller ble svekket.
 
 ## Observerte avvik og fortsatt åpne porter
 
+VoiceOver: brukeren presiserte «jo voiceover funka jo fint» etter prøven på
+iPhone. Den avgrensede prøven er derfor brukerbekreftet bestått, ikke utestet.
+Opplesingen av «Meg, besøkt, lenke slutt, navigering» ble rapportert; ingen
+konkret appfeil ble meldt. Dette er ikke en full VoiceOver-audit av alle flyter.
+
 - Google ga reproduserbar 400 «Unsupported provider: provider is not enabled».
   Offentlige testinnstillinger viste googleEnabled=false. Brukeren ønsker
   å utsette dette oppsettet og opplyser at vanlig Medhold-Google fungerer.
@@ -77,7 +82,7 @@ genererte `.next`-mappen. Ingen tester eller byggkontroller ble svekket.
 - Bilde- og PDF-opplasting på fysisk enhet er senere brukerbekreftet bestått
   (se tabellen). Direkte kameraopptak er også senere bekreftet bestått.
   Faktisk mottakeradresse i Mail er ikke særskilt bekreftet i denne reisen.
-- Stor systemtekst, VoiceOver og fysisk flerfane-konflikt er ikke bekreftet
+- Stor systemtekst og fysisk flerfane-konflikt er ikke bekreftet
   ennå. Fanebytte med redusert bevegelse er retestet over; Android/TalkBack
   mangler fortsatt.
 - Eldre app mot oppgradert klone, slutt-smoke etter faktisk integrasjon og

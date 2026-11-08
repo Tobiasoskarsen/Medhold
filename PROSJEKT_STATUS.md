@@ -5,6 +5,12 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – VoiceOver-prøve bekreftet
+
+Brukeren presiserte at VoiceOver fungerte fint på iPhone. Den avgrensede
+prøven er brukerbekreftet bestått; ingen full audit av alle flyter hevdes.
+Stor systemtekst og fysisk flerfane-konflikt gjenstår.
+
 ### R3 – direkte kameraopptak bekreftet
 
 Brukeren tok et nytt bilde av et testbrev via kamera i Safari på iPhone og

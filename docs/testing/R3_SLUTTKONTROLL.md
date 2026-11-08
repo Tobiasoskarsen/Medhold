@@ -99,7 +99,9 @@ med nøyaktig testprosjekt; ingen produksjonsfallback. Ikke legg nøkler i rappo
 
 ## Porter agenten ikke kan erklære bestått
 
-- Fysisk iPhone: VoiceOver, stor systemtekst og
+- VoiceOver-prøven på iPhone er brukerbekreftet bestått («funka jo fint»),
+  men er ikke en full tilgjengelighetsaudit av alle flyter.
+- Fysisk iPhone: stor systemtekst og
   konfliktprøven på selve telefonen gjenstår. Bilde- og PDF-opplasting er
   brukerbekreftet bestått, se tabellen over. Desktopprøven erstatter ikke
   de øvrige fysiske prøvene.
