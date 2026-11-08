@@ -274,9 +274,14 @@ export async function analyserBrevTekst(
   // på originalen — det er den uunngåelige første sendingen). Alvorsgrensen
   // sjekkes mot samme (maskerte) tekst som lagres og vises senere.
   const original_tekst = maskerFodselsnummer(rensket);
-  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig, ekstraKall } =
-    await etterbehandle(supabase, analyse, original_tekst);
-  await avsluttAnalyse(kvote.vakt, AI_MODELL_RASK, lest, ekstraKall);
+  let etter: Awaited<ReturnType<typeof etterbehandle>> | undefined;
+  try {
+    etter = await etterbehandle(supabase, analyse, original_tekst);
+  } finally {
+    // Modellen har lest brevet: forsøket er brukt, også om etterbehandlingen feiler.
+    await avsluttAnalyse(kvote.vakt, AI_MODELL_RASK, lest, etter?.ekstraKall ?? 0);
+  }
+  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig } = etter;
   return {
     ok: true,
     analyse,
@@ -319,9 +324,13 @@ export async function analyserBrevBilder(
 
   const { ekstrahert_tekst, ...rest } = analyse;
   const original_tekst = maskerFodselsnummer(ekstrahert_tekst);
-  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig, ekstraKall } =
-    await etterbehandle(supabase, rest, original_tekst);
-  await avsluttAnalyse(kvote.vakt, AI_MODELL, lest, ekstraKall);
+  let etter: Awaited<ReturnType<typeof etterbehandle>> | undefined;
+  try {
+    etter = await etterbehandle(supabase, rest, original_tekst);
+  } finally {
+    await avsluttAnalyse(kvote.vakt, AI_MODELL, lest, etter?.ekstraKall ?? 0);
+  }
+  const { beregnetFrist, kravForslag, gebyrsjekk, alvorlig } = etter;
   return {
     ok: true,
     analyse: rest,
