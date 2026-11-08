@@ -5,6 +5,27 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – nettverksfeil og beskyttet GitHub-miljø
+
+Produksjons-preflight er nå utført skrivefritt mot Medhold/leernzbmuldegiggnjib:
+0024/0026-relevante objekter finnes, mens 0027–0031s nye objekter mangler.
+Kun systemkataloger er lest/eksportert; ingen appdata eller skrivende SQL.
+Ny app må ikke deployes mot dette før separat godkjente migrasjoner.
+Etterkontrollen har 389 unit / 90 DB-/modultester, grønn lint/type/build.
+
+`test` i GitHub er opprettet med reviewer Tobiasoskarsen, admin-bypass av,
+og bare main/R3-grenen tillatt. Etter brukerens eksplisitte samtykke er kun
+test-Supabase sine tre verdier lagt i krypterte environment secrets. Ingen
+produksjonsnøkler. Dispatch stopper med 404 fordi workflowen ikke finnes på
+default-grenen; ikke omgått med merge eller endring av main.
+Faktisk klient/nettverksprøve mot localhost-proxy/test-Supabase: analyse,
+brevlagring, generering, utkastlagring, sendt og frist. To ubehandlede
+avvisninger i useTransition ga full feilside; sendt-/frist-handler fanger
+nå feil lokalt, beholder skjerm og gir retry. Tapte svar omtales som ukjent
+bekreftelse, ikke sikkert mislykket lagring. Fire handlerregresjoner lagt til.
+Brukeren har iPhone 15; iOS, fysisk kjede, Android og OS/Mail er ikke bevist.
+Detaljert bevis og begrensninger: docs/testing/R3_NETTVERK_OG_TESTMILJO.md.
+
 ### R3 – release gate (pågår, ingen produksjonsendring)
 
 Egen gren fra 10638d5, alle ti PR-heads kontrollert som ancestors. Normal CI

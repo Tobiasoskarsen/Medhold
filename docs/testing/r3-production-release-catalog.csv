@@ -1,0 +1,53 @@
+kategori,objekt,detalj
+constraint,brev_bruker_id_fkey,"FOREIGN KEY (bruker_id) REFERENCES auth.users(id) ON DELETE CASCADE, validert=true"
+constraint,brev_id_sak_id_key,"UNIQUE (id, sak_id), validert=true"
+constraint,brev_pkey,"PRIMARY KEY (id), validert=true"
+constraint,brev_sak_id_fkey,"FOREIGN KEY (sak_id) REFERENCES saker(id) ON DELETE CASCADE, validert=true"
+constraint,frister_brev_sak_fkey,"FOREIGN KEY (brev_id, sak_id) REFERENCES brev(id, sak_id) ON DELETE SET NULL (brev_id), validert=true"
+constraint,frister_bruker_id_fkey,"FOREIGN KEY (bruker_id) REFERENCES auth.users(id) ON DELETE CASCADE, validert=true"
+constraint,frister_erstattet_av_brev_id_fkey,"FOREIGN KEY (erstattet_av_brev_id) REFERENCES brev(id) ON DELETE SET NULL, validert=true"
+constraint,frister_erstattet_er_lukket,"CHECK (((erstattet_at IS NULL) OR fullfort)), validert=true"
+constraint,frister_kilde_check,"CHECK ((kilde = ANY (ARRAY['manuell'::text, 'brev_eksplisitt'::text, 'beregnet'::text]))), validert=true"
+constraint,frister_notat_check,"CHECK ((char_length(notat) <= 2000)), validert=true"
+constraint,frister_pkey,"PRIMARY KEY (id), validert=true"
+constraint,frister_sak_id_fkey,"FOREIGN KEY (sak_id) REFERENCES saker(id) ON DELETE CASCADE, validert=true"
+constraint,frister_tittel_check,"CHECK (((char_length(tittel) >= 1) AND (char_length(tittel) <= 200))), validert=true"
+constraint,utkast_brev_sak_fkey,"FOREIGN KEY (brev_id, sak_id) REFERENCES brev(id, sak_id) ON DELETE SET NULL (brev_id), validert=true"
+constraint,utkast_bruker_id_fkey,"FOREIGN KEY (bruker_id) REFERENCES auth.users(id) ON DELETE CASCADE, validert=true"
+constraint,utkast_pkey,"PRIMARY KEY (id), validert=true"
+constraint,utkast_sak_id_fkey,"FOREIGN KEY (sak_id) REFERENCES saker(id) ON DELETE CASCADE, validert=true"
+constraint,utkast_type_check,"CHECK ((type = ANY (ARRAY['innsigelse'::text, 'betalingsutsettelse'::text, 'nedbetalingsavtale'::text, 'klage'::text]))), validert=true"
+kolonne,utkast.brev_id,"uuid, nullable=YES, default=NULL"
+kolonne,utkast.sendt_at,"timestamp with time zone, nullable=YES, default=NULL"
+policy,brev.brev_delete_egne,"DELETE, roller={public}, using=(auth.uid() = bruker_id), check=NULL"
+policy,brev.brev_insert_egne,"INSERT, roller={public}, using=NULL, check=((auth.uid() = bruker_id) AND (EXISTS ( SELECT 1
+   FROM saker s
+  WHERE ((s.id = brev.sak_id) AND (s.bruker_id = auth.uid())))))"
+policy,brev.brev_select_egne,"SELECT, roller={public}, using=(auth.uid() = bruker_id), check=NULL"
+policy,brev.brev_update_egne,"UPDATE, roller={public}, using=(auth.uid() = bruker_id), check=((auth.uid() = bruker_id) AND (EXISTS ( SELECT 1
+   FROM saker s
+  WHERE ((s.id = brev.sak_id) AND (s.bruker_id = auth.uid())))))"
+policy,frister.frister_delete_egne,"DELETE, roller={public}, using=(auth.uid() = bruker_id), check=NULL"
+policy,frister.frister_insert_egne,"INSERT, roller={public}, using=NULL, check=((auth.uid() = bruker_id) AND (EXISTS ( SELECT 1
+   FROM saker s
+  WHERE ((s.id = frister.sak_id) AND (s.bruker_id = auth.uid())))))"
+policy,frister.frister_select_egne,"SELECT, roller={public}, using=(auth.uid() = bruker_id), check=NULL"
+policy,frister.frister_update_egne,"UPDATE, roller={public}, using=(auth.uid() = bruker_id), check=((auth.uid() = bruker_id) AND (EXISTS ( SELECT 1
+   FROM saker s
+  WHERE ((s.id = frister.sak_id) AND (s.bruker_id = auth.uid())))))"
+policy,saker.saker_delete_egne,"DELETE, roller={public}, using=(auth.uid() = bruker_id), check=NULL"
+policy,saker.saker_insert_egne,"INSERT, roller={public}, using=NULL, check=(auth.uid() = bruker_id)"
+policy,saker.saker_select_egne,"SELECT, roller={public}, using=(auth.uid() = bruker_id), check=NULL"
+policy,saker.saker_update_egne,"UPDATE, roller={public}, using=(auth.uid() = bruker_id), check=(auth.uid() = bruker_id)"
+policy,utkast.utkast_delete_egne,"DELETE, roller={public}, using=(auth.uid() = bruker_id), check=NULL"
+policy,utkast.utkast_insert_egne,"INSERT, roller={public}, using=NULL, check=((auth.uid() = bruker_id) AND (EXISTS ( SELECT 1
+   FROM saker s
+  WHERE ((s.id = utkast.sak_id) AND (s.bruker_id = auth.uid())))))"
+policy,utkast.utkast_select_egne,"SELECT, roller={public}, using=(auth.uid() = bruker_id), check=NULL"
+policy,utkast.utkast_update_egne,"UPDATE, roller={public}, using=(auth.uid() = bruker_id), check=((auth.uid() = bruker_id) AND (EXISTS ( SELECT 1
+   FROM saker s
+  WHERE ((s.id = utkast.sak_id) AND (s.bruker_id = auth.uid())))))"
+rls,brev,"aktiv=true, force=false"
+rls,frister,"aktiv=true, force=false"
+rls,saker,"aktiv=true, force=false"
+rls,utkast,"aktiv=true, force=false"

@@ -1,5 +1,11 @@
 # R3 – release gate
 
+Etterkontroll 8. november: se [R3_NETTVERK_OG_TESTMILJO.md](./R3_NETTVERK_OG_TESTMILJO.md).
+GitHub-testmiljøet er nå konfigurert etter eksplisitt samtykke til overføring
+av testnøklene. Alle seks frontend-operasjonstyper er prøvd med lokale
+nettverksbrudd; to klientfeil er rettet. Eldre beskrivelser nedenfor av disse
+åpne punktene er historisk utgangspunkt, ikke gjeldende sluttstatus.
+
 Utgangspunkt: R2 `10638d5a6c30be33c79179705e899d477436e10a`.
 Arbeidsgren: `codex/r3-release-gate`. Ingen produktfunksjoner, nye pakker,
 merge, produksjonsmigrasjoner eller produksjonsdeploy.
