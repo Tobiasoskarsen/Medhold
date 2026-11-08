@@ -17,8 +17,15 @@ etter hver fase.
 - Samme kontroll før klientinnsending og serverinnsetting. Mobiltastatur
   bruker decimal. Eksisterende ukjente beløp og parserens øvrige kall er urørt.
 - Tester lagt til før implementeringen og observert feile. 386 enhetstester
-  består. Separat test av faktisk innsetting og praktisk nettlesertest av
-  den nye grenen gjenstår; de gamle feilene ble reprodusert i preview tidligere.
+  består. Supplerende test kjører faktisk `opprettKrav` med lokal PGlite:
+  seks gyldige/ukjente verdier leses tilbake fra databasen, ni ugyldige
+  avvises før INSERT og uinnlogget opprettelse avvises. Auth/transport er
+  testadaptere, ikke live Supabase. Nettlesertest av faktisk NyttKravSkjema
+  viser norske feil for -100/NaN; gyldig 3 243,20 passerer klientkontrollen
+  og treffer auth-sperren på lokal testserver uten produksjonstilkobling.
+  Midlertidig testside fjernet. Ingen full live Supabase-endetilendetest.
+- Sluttkontroll etter supplering: 386 enhetstester, 72 PGlite-tester,
+  lint og produksjonsbygg med typekontroll består.
 - Ingen migrasjon, merge eller manuell deploy. Ingen reelle brukerdata endret.
 
 ### S1-A – negasjon i utkastvakten
