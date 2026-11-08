@@ -96,8 +96,9 @@ export function VeierUtFlyt({
           <Pill variant="suksess">Billigst</Pill>
         </div>
         <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
-          Stopper alle videre omkostninger. Når hele beløpet er betalt, avsluttes
-          saken, og det registreres ingen betalingsanmerkning for dette kravet.
+          Kontroller beløp og betalingsopplysninger mot brevet. Be kreditor
+          bekrefte at kravet er oppgjort. Medhold bekrefter ikke at betaling
+          fjerner alle kostnader eller hindrer en betalingsanmerkning.
         </p>
         <p className="mt-2 text-hjelp leading-relaxed text-dempet">
           Betal til kontonummeret som står i brevet —{" "}
@@ -210,8 +211,8 @@ export function VeierUtFlyt({
           Be om betalingsutsettelse
         </p>
         <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
-          Be om å utsette betalingen til en bestemt dato. Beløpet endres ikke — du
-          kjøper tid.
+          Be om å utsette betalingen til en bestemt dato. Kreditor må godta
+          forespørselen; renter og kostnader kan fortsatt endre beløpet.
         </p>
         <Primærknapp
           onClick={() =>

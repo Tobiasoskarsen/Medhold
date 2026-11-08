@@ -1,4 +1,5 @@
 import { NavLenke as Link } from "@/components/NavLenke";
+import { KontrollOmfang } from "@/components/KontrollOmfang";
 import { notFound } from "next/navigation";
 import { ChevronLeft, ChevronRight, FileText, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -542,6 +543,7 @@ export default async function KravDetaljPage({
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         {stadium && <StadiumLinje stadium={stadium} />}
+        <KontrollOmfang brevtype={stadium ?? null} />
         {sak.status === "venter_pa_svar" && (
           <span
             className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}

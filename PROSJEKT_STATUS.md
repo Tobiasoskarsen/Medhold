@@ -3268,3 +3268,9 @@ i Vercel-env, ellers gater `harPluss` utkast/bilde bak paywall.
 
 **Fase 5 — Ekte betaling (LÅST):** ikke start uten egen beskjed. Stripe
 Checkout + kundeportal koblet inn i `harPluss()`-punktet, pilotflagg av.
+
+## S1-E – tydelig kontrollomfang
+
+Omfangsmatrise og advokattekster: docs/testing/s1-e-stotteomfang.md. Ingen nye juridiske regler. Gebyrpanelet sier nå Innenfor beløpsgrensen, og samlet kostnadsdekning er uttrykkelig ukontrollert. Ustøttet juridisk frist vises på kontrollsteget, saken og brevet. Betaling og utsettelse gir ingen garanti om kostnader eller betalingsanmerkning.
+
+Valg tatt underveis: støtte avledes fra eksisterende FRIST_HJEMMEL, ikke nye ordsøk eller nye 14-dagersregler. Nye regler krever separat faglig kvalitetssikring. 388 enhetstester; praktisk gjennomgang og produksjonsbygg dokumenteres i PR.
