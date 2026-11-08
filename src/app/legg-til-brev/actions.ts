@@ -22,7 +22,7 @@ import {
   type GebyrsjekkResultat,
 } from "@/lib/gebyr";
 import { erAlvorligSak } from "@/lib/alvorsgrense";
-import type { FristSammenligning } from "@/lib/frist";
+import { fristKildeForDato, type FristSammenligning } from "@/lib/frist";
 import { kontrollerSum } from "@/lib/sumkontroll";
 import { validerBrevfiler } from "@/lib/brevfil";
 import {
@@ -394,7 +394,10 @@ export async function lagreBrev(
     };
   }
 
-  const nyeFrister = input.valgteFrister.filter((f) => f.forfallsdato);
+  const valgteFrister = input.valgteFrister.map((f) => ({
+    ...f, kilde: fristKildeForDato(f.kilde, f.forfallsdato ?? "", kontroll.fristfunn),
+  }));
+  const nyeFrister = valgteFrister.filter((f) => f.forfallsdato);
   const brevRad = maskerAlleStrenger({
     brevdato: input.brevdato || null,
     avsender: input.avsender.trim() || null,
@@ -404,7 +407,7 @@ export async function lagreBrev(
     original_tekst: input.original_tekst,
     forklaring: brevforklaring(input),
     foreslatte_steg: input.foreslatte_steg,
-    foreslatte_frister: input.valgteFrister,
+    foreslatte_frister: valgteFrister,
     kostnadslinjer: linjer.length > 0 ? linjer : null,
     gebyrsjekk:
       gebyrsjekk && (gebyrsjekk.linjer.length > 0 || gebyrsjekk.sumkontroll)

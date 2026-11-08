@@ -94,7 +94,10 @@ const ENHET_ETTER = /^\s*(?:virke)?(?:dag|døgn|uke|måned|år)/iu;
 
 function erToken(t: string): boolean {
   const sifre = (t.match(/\p{N}/gu) ?? []).length;
-  if (sifre < 4) return false;
+  // Korte referanser som TEST-IPHONE-01 er også referanser, ikke «1 kr».
+  // Krev bokstaver og skilletegn ved færre enn fire sifre; vanlige små
+  // beløp beholdes som tall og ukjente referanser kontrolleres fortsatt.
+  if (sifre === 0 || (sifre < 4 && !(/\p{L}/u.test(t) && /[-.]/u.test(t)))) return false;
   if (!/[\p{L}.-]/u.test(t)) return false;
   // Beløp med punktum som tusenskille («3.201») og «1288kr» er beløp, ikke tokens.
   if (/^\d{1,3}(?:\.\d{3})+$/.test(t)) return false;

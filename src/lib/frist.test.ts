@@ -1,12 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { sammenlignFrist, erGammeltBrev, brevAlderDager } from "./frist.ts";
+import { sammenlignFrist, erGammeltBrev, brevAlderDager, fristKildeForDato } from "./frist.ts";
 import type { BeregnetFrist } from "./gjeld.ts";
 
 function beregnet(forfallsdato: string, tittel = "Betalingsfrist"): BeregnetFrist {
   return { tittel, forfallsdato, kilde: "beregnet" };
 }
+
+test("R3: eksplisitt kilde beholdes ved lik, kortere og lengre dato", () => {
+  for (const dato of ["2026-11-15", "2026-11-22", "2026-11-29"]) {
+    const funn = sammenlignFrist({ tittel: "Frist i brevet", forfallsdato: dato }, beregnet("2026-11-22"));
+    assert.equal(fristKildeForDato("beregnet", dato, funn), "brev_eksplisitt");
+    assert.equal(fristKildeForDato("manuell", dato, funn), "manuell");
+    assert.equal(fristKildeForDato("beregnet", "2026-12-01", funn), "beregnet");
+  }
+  assert.equal(fristKildeForDato("beregnet", "2026-11-22", sammenlignFrist(null, beregnet("2026-11-22"))), "beregnet");
+  assert.equal(fristKildeForDato("beregnet", "2026-11-22", null), "beregnet");
+});
 
 test("begge null gir null", () => {
   assert.equal(sammenlignFrist(null, null), null);

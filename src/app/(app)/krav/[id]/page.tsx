@@ -1,5 +1,6 @@
 import { NavLenke as Link } from "@/components/NavLenke";
 import { KontrollOmfang } from "@/components/KontrollOmfang";
+import { fristKildeForDato } from "@/lib/frist";
 import { notFound } from "next/navigation";
 import { ChevronLeft, ChevronRight, FileText, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -199,7 +200,10 @@ export default async function KravDetaljPage({
     ]);
 
   const brevListe = (brevData ?? []) as BrevRad[];
-  const frister = (fristData ?? []) as FristRad[];
+  const frister = ((fristData ?? []) as FristRad[]).map((f) => ({
+    ...f,
+    kilde: fristKildeForDato(f.kilde, f.forfallsdato, brevListe.find((b) => b.id === f.brev_id)?.fristfunn ?? null),
+  }));
   const utkast = (utkastData ?? []) as {
     id: string;
     type: UtkastType;
