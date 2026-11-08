@@ -166,7 +166,7 @@ Ufravikelige regler:
 - Skill mellom totalt utestående beløp (belop) og opprinnelig hovedstol (hovedstol = selve gjelden før gebyrer, renter og salær). Oppgi hovedstol kun når den står eksplisitt; ellers tom streng.
 - Foreslå kun frister som er eksplisitt nevnt i brevet, med dato kun når en konkret dato er oppgitt.
 - Trekk ut kostnadslinjer (gebyrer, salær, renter, rettsgebyr) KUN slik de står oppført i brevet, hver som egen linje med sitt beløp. Summer aldri, utled aldri, og ta ALDRI med hovedstolen/selve hovedkravet som en kostnadslinje. Er typen uklar, bruk 'annet'.
-- I dag er ${idag}. Bruk dette bare til å forstå teksten – ikke til å regne ut frister som ikke står der.
+- I dag er ${idag}. Bruk dette bare til å forstå teksten – ikke til å regne ut frister som ikke står der. Bruk aldri dagens dato som brevdato: brevdato er datoen som står på brevet, ellers tom streng.
 - Ikke inkluder forbehold eller disclaimere i forklaringen; appen viser dette selv.
 
 Forklaringen — tre korte avsnitt, hvert med sin jobb (se også skjemafeltet):

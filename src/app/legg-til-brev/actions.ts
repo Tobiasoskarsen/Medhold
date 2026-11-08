@@ -288,6 +288,8 @@ export async function analyserBrevBilder(
   };
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export type LagreBrevInput = {
   krav:
     | { modus: "ny"; kreditor: string }
@@ -326,6 +328,10 @@ export type LagreBrevInput = {
   gjenapne: boolean;
   /** Sakens sist_endret da siden ble lest. Endret siden? Da avvises lagringen. */
   forventetSistEndret: string | null;
+  /** Brukeren vil bruke tallene fra et brev som ikke er det nyeste (A2). */
+  oppdaterSak: boolean;
+  /** Samme nøkkel for samme lagringsforsøk. Et nytt forsøk lagrer ikke på nytt (A3). */
+  lagringsnokkel: string;
 };
 
 export type LagreBrevResultat =
@@ -345,6 +351,10 @@ export async function lagreBrev(
   // bekreftelse lagres ingenting, heller ikke ved et direkte kall.
   if (input.bekreftet !== true)
     return { ok: false, feil: "Bekreft tallene fra brevet før du lagrer." };
+
+  // Uten gyldig nøkkel kan et nytt forsøk lage et brev til, så det avvises.
+  if (typeof input.lagringsnokkel !== "string" || !UUID.test(input.lagringsnokkel))
+    return { ok: false, feil: "Last inn siden på nytt og prøv igjen." };
 
   // Utfall: bare kjente verdier, og et utfall som avslutter saken krever
   // eksplisitt bekreftelse, også ved direkte kall.
@@ -420,9 +430,9 @@ export async function lagreBrev(
       .eq("bruker_id", user.id)
       .maybeSingle();
     if (!sak) return { ok: false, feil: "Fant ikke saken." };
-    // En annen fane har endret saken siden siden ble lest.
-    if (input.forventetSistEndret && input.forventetSistEndret !== sak.sist_endret)
-      return { ok: false, feil: lagreBrevFeilmelding("MEDHOLD_SAK_ENDRET") };
+    // Databasen avviser lagringen hvis saken er endret siden siden ble lest.
+    // Sjekken skjer der, etter nøkkelen, så et nytt forsøk på et brev som
+    // allerede ble lagret får det samme svaret og ikke «saken er endret».
 
     // Bare data og brukerens valg sendes. Statusen regnes ut i databasen
     // (brev_statusovergang), så et direkte kall ikke kan omgå bekreftelsen.
@@ -435,7 +445,9 @@ export async function lagreBrev(
       modus: "eksisterende",
       sak_id: sak.id,
       forventet_status: sak.status,
-      forventet_sist_endret: sak.sist_endret,
+      forventet_sist_endret: input.forventetSistEndret ?? sak.sist_endret,
+      oppdater_sak: input.oppdaterSak === true,
+      nokkel: input.lagringsnokkel,
       utfall: input.utfall,
       avslutning_bekreftet: input.avslutningBekreftet === true,
       gjenapne: input.gjenapne === true,
@@ -448,6 +460,7 @@ export async function lagreBrev(
   } else {
     nyttlast = {
       modus: "ny",
+      nokkel: input.lagringsnokkel,
       sak: {
         tittel: input.krav.kreditor.trim() || input.avsender.trim() || "Nytt krav",
         kreditor: input.krav.kreditor.trim() || input.avsender.trim() || null,

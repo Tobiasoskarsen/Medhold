@@ -15,7 +15,7 @@ export default async function LeggTilBrevPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/velkommen");
 
-  const [{ data }, { data: fristData }] = await Promise.all([
+  const [{ data }, { data: fristData }, { data: brevData }] = await Promise.all([
     supabase
       .from("saker")
       .select("id, kreditor, tittel, status, sist_endret")
@@ -26,6 +26,8 @@ export default async function LeggTilBrevPage({
       .select("id, sak_id, tittel, forfallsdato")
       .eq("fullfort", false)
       .order("forfallsdato", { ascending: true }),
+    // Brevdatoene per sak, så brukeren ser før lagring om brevet er nyest.
+    supabase.from("brev").select("sak_id, brevdato"),
   ]);
 
   const krav = (data ?? []).map((s) => ({
@@ -35,6 +37,9 @@ export default async function LeggTilBrevPage({
     status: s.status as SakStatus,
     // Saken slik den så ut da siden ble lest: lagringen avvises hvis den er endret.
     sistEndret: s.sist_endret as string,
+    brevdatoer: (brevData ?? [])
+      .filter((b) => b.sak_id === s.id)
+      .map((b) => (b.brevdato as string | null) ?? null),
     frister: (fristData ?? [])
       .filter((f) => f.sak_id === s.id)
       .map((f) => ({
