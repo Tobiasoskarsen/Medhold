@@ -1,0 +1,114 @@
+{
+  "metadata": {
+    "info": 0,
+    "low": 0,
+    "moderate": 9,
+    "high": 4,
+    "critical": 0,
+    "total": 13
+  },
+  "packages": [
+    {
+      "name": "@tailwindcss/postcss",
+      "severity": "moderate",
+      "isDirect": true,
+      "fixAvailable": true
+    },
+    {
+      "name": "@typescript-eslint/eslint-plugin",
+      "severity": "moderate",
+      "isDirect": false,
+      "fixAvailable": true
+    },
+    {
+      "name": "@typescript-eslint/parser",
+      "severity": "moderate",
+      "isDirect": false,
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "15.5.29",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@typescript-eslint/type-utils",
+      "severity": "moderate",
+      "isDirect": false,
+      "fixAvailable": true
+    },
+    {
+      "name": "@typescript-eslint/typescript-estree",
+      "severity": "moderate",
+      "isDirect": false,
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "15.5.29",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@typescript-eslint/utils",
+      "severity": "moderate",
+      "isDirect": false,
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "15.5.29",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "brace-expansion",
+      "severity": "high",
+      "isDirect": false,
+      "fixAvailable": true
+    },
+    {
+      "name": "browserslist",
+      "severity": "high",
+      "isDirect": false,
+      "fixAvailable": true
+    },
+    {
+      "name": "eslint-config-next",
+      "severity": "moderate",
+      "isDirect": true,
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "15.5.29",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "js-yaml",
+      "severity": "high",
+      "isDirect": false,
+      "fixAvailable": true
+    },
+    {
+      "name": "minimatch",
+      "severity": "moderate",
+      "isDirect": false,
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "15.5.29",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "postcss",
+      "severity": "high",
+      "isDirect": false,
+      "fixAvailable": true
+    },
+    {
+      "name": "typescript-eslint",
+      "severity": "moderate",
+      "isDirect": false,
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "15.5.29",
+        "isSemVerMajor": true
+      }
+    }
+  ]
+}
