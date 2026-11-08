@@ -31,6 +31,14 @@ function klient(ekstra = {}) {
   }};
 }
 const promptFil="src/app/(app)/krav/[id]/utkast/byggUtkastPrompt.ts";
+test("R2: brevchat avviser null og array som JSON-body uten AI-kall",async()=>{
+ let ai=0;
+ const route=last("src/app/api/brev-samtale/route.ts",{"@/lib/supabase/server":{createClient:async()=>({auth:{getUser:async()=>({data:{user:{id:'a'}}})}})},"@anthropic-ai/sdk":{default:class{constructor(){ai++;}}}});
+ for(const body of [null,[],"tekst",1]){
+   const r=await route.POST({json:async()=>body});assert.equal(r.status,400);
+ }
+ assert.equal(ai,0);
+});
 test("R4: faktisk lagreBrev lagrer serverfunn, manipulasjon krever ny bekreftelse",async()=>{
  const {kontrollerBrevfunn:k}=last("src/lib/brevkontroll.ts");
  const data={brevtype:"inkassovarsel",brevdato:"2026-07-20",original_tekst:"Varsel om tvangssalg",fristIBrevet:{tittel:"Frist",forfallsdato:"2026-07-27"}};
