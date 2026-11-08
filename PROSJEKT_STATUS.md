@@ -5,6 +5,17 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – glimt ved fanebytte med redusert bevegelse
+
+Brukeren presiserte at et kort svart glimt bare oppstår inne i Medhold.
+Template, Sekvens og Skjermramme startet fortsatt med skjult innhold ved
+redusert bevegelse; de viser nå innholdet straks. CSS-sikring gjelder også
+SSR før hydrering, avgrenset til innholdsrammene. Vanlige animasjoner beholdes.
+Fem regresjonstester og lokal Chrome-prøve av ekte serverrendret HTML/CSS
+dekker rettelsen; fysisk iPhone-retest kreves før glimtet kan kalles løst.
+Safari-sidezoom 200 % er nå brukerbekreftet, stor systemtekst/VoiceOver gjenstår.
+Ingen migrasjon, merge eller produksjonsdeploy. Se R3_IPHONE15_MANUELL.md.
+
 ### R3 – fysisk testreise på iPhone 15
 
 Brukeren har bekreftet Safari, e-postlogin, tekstanalyse/beløpsretting,

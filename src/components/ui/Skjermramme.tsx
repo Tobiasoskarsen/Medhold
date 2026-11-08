@@ -1,7 +1,7 @@
 "use client";
 
 import { Children, type ReactNode } from "react";
-import { m } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { INNTREDEN, STIGRING, MAKS_STAGGER, FJAER } from "@/lib/bevegelse";
 
 /**
@@ -21,6 +21,7 @@ export function Skjermramme({
   animerInn?: boolean;
   bred?: boolean;
 }) {
+  const redusert = useReducedMotion();
   const ramme = `mx-auto w-full max-w-[640px] px-5 ${bred ? "lg:max-w-[1040px]" : ""} ${className}`;
 
   if (!animerInn) {
@@ -28,16 +29,18 @@ export function Skjermramme({
   }
 
   const barn = Children.toArray(children);
+  // Behold samme DOM før/etter hydrering og ved endret systemvalg.
   return (
-    <m.div className={ramme} initial="initial" animate="animate">
+    <m.div className={ramme} initial={redusert ? false : "initial"} animate="animate">
       {barn.map((child, i) => (
         <m.div
           key={i}
+          className="skjerm-inntreden"
           variants={{
             initial: INNTREDEN.initial,
             animate: {
               ...INNTREDEN.animate,
-              transition: {
+              transition: redusert ? { duration: 0 } : {
                 ...FJAER,
                 delay: Math.min(i, MAKS_STAGGER - 1) * STIGRING,
               },

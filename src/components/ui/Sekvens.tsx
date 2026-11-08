@@ -58,7 +58,7 @@ export function useSekvensForsinkelse(): number {
 
 /**
  * INNTREDEN-props (initial/animate/transition) for en gitt forsinkelse,
- * reduced-motion-korrekt (kun opasitet, ingen y, ingen delay — Motion3 §2.1).
+ * Ved redusert bevegelse vises innholdet straks, uten skjulte mellomrammer.
  * Delt av SekvensDel og steder som kjeder egne del-lister etter en Del sin
  * forsinkelse (useSekvensForsinkelse) i stedet for å bruke en ny Sekvens.
  *
@@ -70,9 +70,9 @@ export function useInntreden(delay = 0, varighet: number = VARIGHET.normal) {
   const redusert = useReducedMotion();
   if (redusert) {
     return {
-      initial: { opacity: 0 },
+      initial: false as const,
       animate: { opacity: 1 },
-      transition: { duration: varighet },
+      transition: { duration: 0 },
     };
   }
   return {
@@ -103,7 +103,7 @@ export function SekvensDel({
 
   return (
     <SekvensForsinkelseContext.Provider value={effektivDelay}>
-      <m.div {...props} className={className}>{children}</m.div>
+      <m.div {...props} className={`skjerm-inntreden ${className ?? ""}`}>{children}</m.div>
     </SekvensForsinkelseContext.Provider>
   );
 }

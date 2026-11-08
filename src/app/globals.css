@@ -336,6 +336,12 @@ body {
 
 /* Ingen dekorativ animasjon — respekter brukerens valg. */
 @media (prefers-reduced-motion: reduce) {
+  /* Også synlig før hydrering: Motion kan serverrendre opacity:0 selv om
+     klienten senere hopper over inntreden. Avgrenset til innholdsrammer. */
+  .skjerm-inntreden {
+    opacity: 1 !important;
+    transform: none !important;
+  }
   *,
   *::before,
   *::after {

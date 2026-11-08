@@ -29,6 +29,33 @@ Kun syntetisk sak «Eksempel AS», TEST-IPHONE-01, ble brukt.
 | Beholdt sendt tekst | Gjenåpnet fra historikk, ny setning beholdt, skrivebeskyttet, bekreftet av brukeren |
 | Friststatus | Fullført, refresh og «Angre» i historikk bekreftet |
 | Mørk modus | Meg/Tema → Mørk, sak og utkast: brukeren bekreftet lesbar tekst/beløp/felt/knapper. Ingen instrumentert kontrastmåling |
+| Safari-sidezoom 200 % | Brukeren bekreftet at innhold og handlinger fortsatt fungerte. Dette beviser ikke stor iOS-systemtekst |
+
+## Fanebytte med redusert bevegelse – rettelse, fysisk retest gjenstår
+
+Brukeren bekreftet funksjonene med «Reduser bevegelse», men rapporterte et
+kort svart glimt mellom Medholds faner, og presiserte at det bare skjedde
+inne i appen. Dette er et åpent fysisk avvik, ikke en bestått bevegelsesprøve.
+
+Kodegjennomgangen fant at template alltid startet med opacity:0, at Sekvens
+fortsatt tonet inn under redusert bevegelse, og at Skjermramme beholdt skjulte
+stagger-barn. Disse tre innholdsrammene viser nå innholdet straks ved redusert
+bevegelse. En avgrenset mediaregel sikrer synlighet også i serverrendret HTML
+før hydrering. Vanlig animasjon og eksisterende delte overganger beholdes.
+
+Fem komponentregresjoner dekker redusert/vanlig bevegelse, delt overgang og
+SSR-markering. De tre feiltilfellene feilet før rettelsen. Lokal headless
+Chrome med ekte serverrendring fra React/Motion og appens CSS viste alle tre
+rammer med computed opacity:1 og transform:none før hydrering når media-valget
+var reduce. Dette var en isolert UI-prøve uten innlogging, ikke Safari eller
+en full navigasjonsprøve. Om rettelsen fjerner det fysiske svarte glimtet må
+fortsatt bekreftes på brukerens iPhone.
+
+Sluttkontroll: `npm test` 389/389, `npm run test:db` 95/95 (inkludert fem nye
+regresjoner), `npm run lint`, `npx tsc --noEmit` og `npm run build` grønne.
+Første lokale forsøk fikk EPERM ved filtilgang og Turbopack-underprosessfeil;
+DB-testene passerte uten sandbox og bygget passerte etter tømming av kun den
+genererte `.next`-mappen. Ingen tester eller byggkontroller ble svekket.
 
 ## Observerte avvik og fortsatt åpne porter
 
@@ -44,8 +71,9 @@ Kun syntetisk sak «Eksempel AS», TEST-IPHONE-01, ble brukt.
   må undersøkes; riktig dato alene beviser ikke riktig kilde.
 - Kamera, bilde/PDF-opplasting på fysisk enhet og faktisk mottakeradresse
   i Mail er ikke testet i denne reisen.
-- 200 % sidezoom, stor systemtekst, VoiceOver, reduced motion og fysisk
-  flerfane-konflikt er ikke bekreftet ennå. Android/TalkBack mangler fortsatt.
+- Stor systemtekst, VoiceOver og fysisk flerfane-konflikt er ikke bekreftet
+  ennå. Redusert bevegelse må retestes etter rettelsen over. Android/TalkBack
+  mangler fortsatt.
 - Eldre app mot oppgradert klone, slutt-smoke etter faktisk integrasjon og
   GitHub-workflow etter separat godkjent merge er fortsatt åpne releaseporter.
 
