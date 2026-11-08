@@ -1,0 +1,41 @@
+{
+  "tidspunkt": "2026-11-08T15:19:24.218Z",
+  "resultater": [
+    {
+      "id": "42",
+      "feltStemmer": true,
+      "type": "betalingsoppfordring",
+      "avsender": "Testinkasso AS",
+      "belop": "14221,70",
+      "modellforklaringTilManuellKontroll": "Testinkasso AS sender betalingsoppfordring på vegne av Testelektro AS for elektrikerarbeid. Hovedstolen er 12 800 kr. Dertil kommer purregebyr 38 kr, inkassovarselgebyr 38 kr, inkassosalær 1 200 kr og renter 145,70 kr. Totalt skal du betale 14 221,70 kr innen 20. november 2026.",
+      "brukerrettet": "Opplysninger fra brevet: Avsender er Testinkasso AS. Registrert brevtype er betalingsoppfordring.\n\nOppgitt totalbeløp: 14 221,7 kr. Brevdato: 6. november 2026. Saksnummer: TEST-42.\n\nKontroller opplysningene mot brevet. Denne oppsummeringen bekrefter ikke at kravet er riktig. Støttede gebyrer og frister vurderes separat; tidligere hendelser og fremtidig rettslig prosess er ikke fastslått her."
+    },
+    {
+      "id": "43",
+      "feltStemmer": true,
+      "type": "betalingsoppfordring",
+      "avsender": "Testinkasso AS",
+      "belop": "670,10",
+      "modellforklaringTilManuellKontroll": "Testinkasso AS sender betalingsoppfordring for ubetalt abonnement hos Teststrømming AS (strømmetjeneste for film). Originalgjelden var 179 kr. Nå skal du betale totalt 670,10 kr innen 19. november 2026. Beløpet består av originalgjelden pluss gebyrer, gebyr fra inkassofirmaet, salær og renter.",
+      "brukerrettet": "Opplysninger fra brevet: Avsender er Testinkasso AS. Registrert brevtype er betalingsoppfordring.\n\nOppgitt totalbeløp: 670,1 kr. Brevdato: 5. november 2026. Saksnummer: TEST-43.\n\nKontroller opplysningene mot brevet. Denne oppsummeringen bekrefter ikke at kravet er riktig. Støttede gebyrer og frister vurderes separat; tidligere hendelser og fremtidig rettslig prosess er ikke fastslått her."
+    },
+    {
+      "id": "44",
+      "feltStemmer": true,
+      "type": "namsmann",
+      "avsender": "Testinkasso AS",
+      "belop": "10119,50",
+      "modellforklaringTilManuellKontroll": "Testinkasso AS varsler om tvangsfullbyrdelse på vegne av Testkino AS. Forliksrådet har avgjort saken. Dersom betalingen ikke skjer innen fristen, vil de begjære utlegg. Hovedstolen er 6500 kr, og ulike gebyrer og renter er lagt til. Totalt skal 10119,50 kr betales innen 14. november 2026.",
+      "brukerrettet": "Opplysninger fra brevet: Avsender er Testinkasso AS. Registrert brevtype er namsmann.\n\nOppgitt totalbeløp: 10 119,5 kr. Brevdato: 7. november 2026. Saksnummer: TEST-44.\n\nKontroller opplysningene mot brevet. Denne oppsummeringen bekrefter ikke at kravet er riktig. Støttede gebyrer og frister vurderes separat; tidligere hendelser og fremtidig rettslig prosess er ikke fastslått her."
+    },
+    {
+      "id": "gammelt",
+      "feltStemmer": true,
+      "type": "inkassovarsel",
+      "avsender": "Testbutikk AS",
+      "belop": "1100",
+      "modellforklaringTilManuellKontroll": "Du har mottatt et inkassovarsel fra Testbutikk AS datert 20. juli 2026. De krever 1100 kr — det består av en opprinnelig gjeld på 1000 kr pluss et inkassovarselgebyr på 100 kr. De ber deg betale innen 27. juli 2026.",
+      "brukerrettet": "Opplysninger fra brevet: Avsender er Testbutikk AS. Registrert brevtype er inkassovarsel.\n\nOppgitt totalbeløp: 1 100 kr. Brevdato: 20. juli 2026. Saksnummer: TEST-GAMMELT.\n\nKontroller opplysningene mot brevet. Denne oppsummeringen bekrefter ikke at kravet er riktig. Støttede gebyrer og frister vurderes separat; tidligere hendelser og fremtidig rettslig prosess er ikke fastslått her."
+    }
+  ]
+}

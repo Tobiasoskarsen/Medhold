@@ -5,6 +5,24 @@ etter hver fase.
 
 ## Faseoversikt
 
+### S1-D – faktatro oppsummering (under verifikasjon)
+
+Promptens krav om å utdype konkrete konsekvenser uten dokumentasjon er fjernet.
+Ny brukerrettet oppsummering bygges deterministisk fra avsender, type, dato,
+total og saksnummer. Den følger rettede felt i kontrollsteget og beregnes på
+nytt på serveren ved lagring. Fritekst om hva varen/tjenesten gjelder utledes
+ikke i denne oppsummeringen; originalteksten beholdes. Tidligere lagrede
+forklaringer er ikke omskrevet. Gebyr-/fristmotor er urørt og vises separat.
+Det ekstra AI-kallet som ba om mer substans/konsekvenser er fjernet.
+387 enhetstester består. Fire faktiske modellkjøringer med syntetiske 42/43/44
+og gammelt brev gir riktig type/avsender/total. Rå forklaring er gjennomlest:
+ingen tidligere observerte oppdiktede hendelser eller strøm-feiltolkning i
+disse fire kjøringene. Dette er ikke statistisk bevis på fremtidig modellkvalitet.
+Rapport: `docs/testing/s1-d-modellrapport.json`, kjørbart skript i `scripts/`.
+Praktisk nettlesertest av hele kontrollsteget etter retting gjenstår.
+Ny tekst til advokatgjennomgang: «Denne oppsummeringen bekrefter ikke at kravet
+er riktig» og skillet mellom dokumentopplysninger og separate kontroller.
+
 ### S1-C – utkastlagring (under verifikasjon)
 
 Egen pakke: eksplisitt lagring, synlig lagringsstatus/feil, versjonsbetinget

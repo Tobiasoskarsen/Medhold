@@ -3,6 +3,18 @@ import assert from "node:assert/strict";
 
 import { formaterBelop, tolkKr, tellOrd, kuttTilMaks } from "./format.ts";
 import { validerKravbelop } from "./format.ts";
+import { brevforklaring } from "./brevforklaring.ts";
+
+test("S1-D: oppsummering følger rettede felt uten oppdiktet historikk", () => {
+  const f = { avsender: "Strømmeriket AS", brevtype: "inkassovarsel", brevdato: "2026-07-20", belop: 1100, saksnummer: "TEST-1" };
+  const t = brevforklaring(f);
+  assert.match(t, /Strømmeriket AS/);
+  assert.match(t, /1[ \u00a0]100/);
+  assert.doesNotMatch(t, /arrest|strømabonnement|siste steg|allerede varslet|vil bli sendt/);
+  assert.match(brevforklaring({ ...f, belop: 289 }), /289 kr/);
+  assert.doesNotMatch(brevforklaring({ ...f, belop: 289 }), /1[ \u00a0]100/);
+  assert.match(brevforklaring({ ...f, belop: null, avsender: "", brevdato: "" }), /ukjent/);
+});
 
 test("S1-B: norske beløp valideres uten tap av øre", () => {
   for (const s of ["3243,20", "3 243,20", "3 243,20", "3 243,20"]) {
