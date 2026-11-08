@@ -31,11 +31,13 @@ Kun syntetisk sak «Eksempel AS», TEST-IPHONE-01, ble brukt.
 | Mørk modus | Meg/Tema → Mørk, sak og utkast: brukeren bekreftet lesbar tekst/beløp/felt/knapper. Ingen instrumentert kontrastmåling |
 | Safari-sidezoom 200 % | Brukeren bekreftet at innhold og handlinger fortsatt fungerte. Dette beviser ikke stor iOS-systemtekst |
 
-## Fanebytte med redusert bevegelse – rettelse, fysisk retest gjenstår
+## Fanebytte med redusert bevegelse – fysisk retest bestått
 
 Brukeren bekreftet funksjonene med «Reduser bevegelse», men rapporterte et
 kort svart glimt mellom Medholds faner, og presiserte at det bare skjedde
-inne i appen. Dette er et åpent fysisk avvik, ikke en bestått bevegelsesprøve.
+inne i appen. Etter rettelsen f760eef i oppdatert test-preview svarte brukeren
+«Ja, glimtet er borte» på retest av Hjem/Saker/Meg med redusert bevegelse på.
+Dette avviket er dermed brukerbekreftet rettet på iPhone 15/Safari.
 
 Kodegjennomgangen fant at template alltid startet med opacity:0, at Sekvens
 fortsatt tonet inn under redusert bevegelse, og at Skjermramme beholdt skjulte
@@ -48,8 +50,8 @@ SSR-markering. De tre feiltilfellene feilet før rettelsen. Lokal headless
 Chrome med ekte serverrendring fra React/Motion og appens CSS viste alle tre
 rammer med computed opacity:1 og transform:none før hydrering når media-valget
 var reduce. Dette var en isolert UI-prøve uten innlogging, ikke Safari eller
-en full navigasjonsprøve. Om rettelsen fjerner det fysiske svarte glimtet må
-fortsatt bekreftes på brukerens iPhone.
+en full navigasjonsprøve. Den etterfølgende fysiske retesten over bekreftet
+at det rapporterte glimtet var borte; dette beviser ikke alle andre overganger.
 
 Sluttkontroll: `npm test` 389/389, `npm run test:db` 95/95 (inkludert fem nye
 regresjoner), `npm run lint`, `npx tsc --noEmit` og `npm run build` grønne.
@@ -72,7 +74,7 @@ genererte `.next`-mappen. Ingen tester eller byggkontroller ble svekket.
 - Kamera, bilde/PDF-opplasting på fysisk enhet og faktisk mottakeradresse
   i Mail er ikke testet i denne reisen.
 - Stor systemtekst, VoiceOver og fysisk flerfane-konflikt er ikke bekreftet
-  ennå. Redusert bevegelse må retestes etter rettelsen over. Android/TalkBack
+  ennå. Fanebytte med redusert bevegelse er retestet over; Android/TalkBack
   mangler fortsatt.
 - Eldre app mot oppgradert klone, slutt-smoke etter faktisk integrasjon og
   GitHub-workflow etter separat godkjent merge er fortsatt åpne releaseporter.

@@ -12,7 +12,9 @@ Template, Sekvens og Skjermramme startet fortsatt med skjult innhold ved
 redusert bevegelse; de viser nå innholdet straks. CSS-sikring gjelder også
 SSR før hydrering, avgrenset til innholdsrammene. Vanlige animasjoner beholdes.
 Fem regresjonstester og lokal Chrome-prøve av ekte serverrendret HTML/CSS
-dekker rettelsen; fysisk iPhone-retest kreves før glimtet kan kalles løst.
+dekker rettelsen. Brukeren retestet oppdatert preview (f760eef) på iPhone 15
+i Safari og bekreftet «Ja, glimtet er borte» ved Hjem/Saker/Meg med redusert
+bevegelse på. Dette konkrete avviket er dermed fysisk retestet og rettet.
 Safari-sidezoom 200 % er nå brukerbekreftet, stor systemtekst/VoiceOver gjenstår.
 Ingen migrasjon, merge eller produksjonsdeploy. Se R3_IPHONE15_MANUELL.md.
 
