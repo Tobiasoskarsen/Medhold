@@ -119,19 +119,15 @@ async function main() {
       feilet.push({ brev: f.brev, grunn: "PDF mangler i fasit/brev/" });
       continue;
     }
-    let analyse: Analyse | null;
-    try {
-      const data = readFileSync(pdf).toString("base64");
-      analyse = await lesBrevBilder(anthropic, [{ media_type: "application/pdf", data }]);
-    } catch (e) {
-      console.error(`[fasit-lesing] ${f.brev}: lesingen feilet`, e);
-      feilet.push({ brev: f.brev, grunn: `lesingen feilet: ${(e as Error).message}` });
+    const data = readFileSync(pdf).toString("base64");
+    const r = await lesBrevBilder(anthropic, [{ media_type: "application/pdf", data }]);
+    if (!r.ok) {
+      // Feiltypen (avbrutt, ugyldig_struktur, tidsavbrudd …) skiller lesefeil
+      // fra regelfeil i rapporten.
+      feilet.push({ brev: f.brev, grunn: `lesingen feilet: ${r.feil}` });
       continue;
     }
-    if (!analyse) {
-      feilet.push({ brev: f.brev, grunn: "ikke et brukbart svar fra modellen" });
-      continue;
-    }
+    const analyse: Analyse = r.data;
     lest++;
     const fikk = somFasit(analyse);
     let belopsbom = false;

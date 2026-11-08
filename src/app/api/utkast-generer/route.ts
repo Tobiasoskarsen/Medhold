@@ -13,6 +13,7 @@ import {
   type UtkastMelding,
 } from "@/lib/utkast-prompt";
 import { kontrollerUtkast, type VaktFunn } from "@/lib/utkast-vakt";
+import { klassifiserAiFeil, vurderStopp, type AiFeil } from "@/lib/ai-svar";
 import { byggUtkastPrompt } from "../../(app)/krav/[id]/utkast/byggUtkastPrompt";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel (samme mønster
@@ -103,11 +104,11 @@ export async function POST(req: NextRequest) {
       }
 
       // Strømmer én generasjon (system+meldinger) til klienten og returnerer
-      // den fullstendige, stjerne-rensede teksten (samme rensing som
-      // dagens genererTekst() gjorde før den returnerte til lagUtkast).
+      // den fullstendige, stjerne-rensede teksten, eller hvorfor den ikke ble
+      // ferdig. Et avkuttet utkast (max_tokens, avslag) er aldri ferdig.
       async function strømOgSamle(
         meld: UtkastMelding[],
-      ): Promise<string | null> {
+      ): Promise<{ tekst: string } | { feil: AiFeil }> {
         let fullt = "";
         try {
           const claudeStream = anthropic.messages.stream({
@@ -126,19 +127,30 @@ export async function POST(req: NextRequest) {
               send(event.delta.text);
             }
           }
+          const slutt = await claudeStream.finalMessage();
+          const stopp = vurderStopp(slutt.stop_reason);
+          if (stopp) return { feil: stopp };
         } catch (feil) {
-          console.error("[utkast-generer] strøm feilet", feil);
-          return null;
+          const type = klassifiserAiFeil(feil);
+          console.error("[utkast-generer] strom_feilet", type);
+          return { feil: type };
         }
-        return fjernStjerner(fullt);
+        const tekst = fjernStjerner(fullt);
+        return tekst ? { tekst } : { feil: "ugyldig_struktur" };
+      }
+
+      // Feilkoden følger rett etter markøren, så klienten kan si hva som skjedde.
+      function sendFeil(kode: AiFeil | "lagring") {
+        send(MARKØR.FEIL + kode);
       }
 
       try {
-        let tekst = await strømOgSamle(meldinger);
-        if (tekst === null) {
-          send(MARKØR.FEIL);
+        const forste = await strømOgSamle(meldinger);
+        if ("feil" in forste) {
+          sendFeil(forste.feil);
           return;
         }
+        let tekst = forste.tekst;
 
         // Etterkontroll: «AI tolker, kode beslutter» — også for stil og
         // fakta. Forbudte ord, for langt utkast og vaktfunn (§D.3) → ÉN
@@ -156,8 +168,15 @@ export async function POST(req: NextRequest) {
           ];
 
           send(MARKØR.JUSTERER);
-          const tekst2 = await strømOgSamle(meldinger2);
-          if (tekst2 !== null) tekst = tekst2;
+          const andre = await strømOgSamle(meldinger2);
+          // Klienten har allerede begynt å vise den nye teksten. Feiler den,
+          // lagres ingenting: et halvt nytt utkast skal ikke stå igjen på
+          // skjermen mens et annet blir lagret.
+          if ("feil" in andre) {
+            sendFeil(andre.feil);
+            return;
+          }
+          tekst = andre.tekst;
           // Vakten på nytt: det som står igjen er advarsler, aldri en sperre
           // (guardrail 5). Brukeren ser dem i «Sjekk før du sender».
           advarsler = kontrollerUtkast(tekst, vaktFakta);
@@ -167,9 +186,6 @@ export async function POST(req: NextRequest) {
               advarsler.map((a) => a.rettelinje),
             );
           }
-          // tekst2 === null: behold første forsøk (tekst) — samme «behold og
-          // logg, ikke blokkér brukeren»-prinsipp som dagens lagUtkast bruker
-          // når selve regenereringen (ikke etterkontrollen) feiler.
         }
 
         // Husk navnet til neste gang (§6). Best-effort.
@@ -195,7 +211,7 @@ export async function POST(req: NextRequest) {
             `[utkast-generer] Innsetting feilet (type=${type}, brev_id=${brevId}):`,
             lagreFeil,
           );
-          send(MARKØR.FEIL);
+          sendFeil("lagring");
           return;
         }
 

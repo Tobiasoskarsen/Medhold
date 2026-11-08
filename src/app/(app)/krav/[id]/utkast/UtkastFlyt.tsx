@@ -34,6 +34,17 @@ const MAKS_MARKØR_LEN = Math.max(
 
 const GENERISK_FEIL = "Noe gikk galt. Prøv igjen om litt.";
 
+/** Feilkoden serveren sender etter FEIL-markøren (api/utkast-generer). */
+const UTKAST_FEIL: Record<string, string> = {
+  avbrutt:
+    "Utkastet ble for langt og ble avbrutt. Ingenting er lagret. Prøv igjen, gjerne med kortere opplysninger.",
+  ugyldig_struktur: "Utkastet ble ufullstendig. Ingenting er lagret. Prøv igjen.",
+  tidsavbrudd: "Det tok for lang tid å skrive utkastet. Ingenting er lagret. Prøv igjen.",
+  nettverk: "Fikk ikke kontakt med skrivetjenesten. Ingenting er lagret. Prøv igjen om litt.",
+  tjeneste: "Skrivetjenesten er travel akkurat nå. Ingenting er lagret. Prøv igjen om litt.",
+  lagring: "Utkastet ble skrevet, men ikke lagret. Prøv igjen.",
+};
+
 type Omfang = "delvis" | "helt";
 
 // Samme flate i alle faser, så teksten ikke hopper fra strømming til redigering.
@@ -197,6 +208,8 @@ export function UtkastFlyt({
       let buffer = "";
       let ferdigId: string | null = null;
       let feilet = false;
+      // Etter FEIL-markøren kommer feilkoden, som kan fordeles på flere reads.
+      let feilKode = "";
       // Sant fra FERDIG-markøren er funnet: ID-en kan fortsette i SENERE
       // reads (markøren og id-en er ikke garantert å ankomme i samme
       // biffer/chunk) — alt som kommer etterpå er id, helt til strømmen
@@ -211,6 +224,10 @@ export function UtkastFlyt({
 
         if (idModus) {
           ferdigId = (ferdigId ?? "") + del;
+          continue;
+        }
+        if (feilet) {
+          feilKode += del;
           continue;
         }
         buffer += del;
@@ -238,6 +255,7 @@ export function UtkastFlyt({
           }
           if (i === iFeil) {
             feilet = true;
+            feilKode = buffer.slice(i + UTKAST_STRØM_MARKØR.FEIL.length);
             buffer = "";
             break;
           }
@@ -249,8 +267,7 @@ export function UtkastFlyt({
           ventendeErstatning = true;
           buffer = buffer.slice(i + UTKAST_STRØM_MARKØR.JUSTERER.length);
         }
-        if (feilet) break;
-        if (fantFerdig) continue;
+        if (feilet || fantFerdig) continue;
 
         // Hold tilbake en hale som kan være en påbegynt markør, ikke innhold.
         if (buffer.length > MAKS_MARKØR_LEN - 1) {
@@ -260,20 +277,23 @@ export function UtkastFlyt({
         }
       }
 
-      if (feilet || !ferdigId) {
+      // Sluttmarkøren bærer { id, advarsler, fakta } som JSON (route.ts).
+      // Mangler den, eller er den avkuttet, er utkastet ikke bekreftet lagret.
+      let slutt: { id: string; fakta: VaktFakta | null } | null = null;
+      if (!feilet && ferdigId) {
+        try {
+          const p = JSON.parse(ferdigId) as { id?: unknown; fakta?: VaktFakta };
+          if (typeof p.id === "string" && p.id) slutt = { id: p.id, fakta: p.fakta ?? null };
+        } catch {
+          slutt = null;
+        }
+      }
+      if (!slutt) {
         setFase("skjema");
         setGenererer(false);
-        setFeil(GENERISK_FEIL);
+        setTekst("");
+        setFeil(UTKAST_FEIL[feilKode.trim()] ?? GENERISK_FEIL);
         return;
-      }
-
-      // Sluttmarkøren bærer { id, advarsler, fakta } som JSON (route.ts).
-      let slutt: { id: string; fakta: VaktFakta | null };
-      try {
-        const p = JSON.parse(ferdigId) as { id: string; fakta?: VaktFakta };
-        slutt = { id: p.id, fakta: p.fakta ?? null };
-      } catch {
-        slutt = { id: ferdigId, fakta: null };
       }
       setUtkastId(slutt.id);
       setVaktFakta(slutt.fakta);

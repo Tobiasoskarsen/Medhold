@@ -18,6 +18,7 @@ import {
   finnForbudteOrd,
 } from "./utkast-stemme.ts";
 import { kontrollerUtkast, type VaktFakta, type VaktFunn } from "./utkast-vakt.ts";
+import { vurderStopp } from "./ai-svar.ts";
 
 export type Omfang = "delvis" | "helt";
 
@@ -322,8 +323,10 @@ async function genererTekst(
     system,
     messages: meldinger,
   });
+  // Et avkuttet utkast er aldri et ferdig svarbrev.
+  if (vurderStopp(svar.stop_reason)) return null;
   const blokk = svar.content.find((b) => b.type === "text");
-  if (!blokk || blokk.type !== "text") return null;
+  if (!blokk || blokk.type !== "text" || !blokk.text.trim()) return null;
   return fjernStjerner(blokk.text);
 }
 

@@ -30,6 +30,23 @@ import {
   type Analyse,
   type Bilde,
 } from "@/lib/brevanalyse";
+import { vurderStopp, type AiFeil } from "@/lib/ai-svar";
+
+/**
+ * Hva brukeren får vite når lesingen ikke ga et brukbart svar. Ingenting lagres
+ * i noen av tilfellene, og meldingen sier hvorfor i stedet for å skylde på bildet.
+ */
+const LESEFEIL: Record<AiFeil, string> = {
+  avbrutt:
+    "Brevet var for langt til å bli lest ferdig. Ingenting er lagret. Prøv med færre sider, eller lim inn teksten fra siden med kravet.",
+  ugyldig_struktur:
+    "Lesingen ga et ufullstendig resultat. Ingenting er lagret. Prøv igjen.",
+  tidsavbrudd:
+    "Lesingen tok for lang tid. Ingenting er lagret. Prøv igjen, gjerne med færre sider.",
+  nettverk: "Fikk ikke kontakt med lesetjenesten. Ingenting er lagret. Prøv igjen om litt.",
+  tjeneste: "Lesetjenesten er travel akkurat nå. Ingenting er lagret. Prøv igjen om litt.",
+  ukjent: "Noe gikk galt under lesingen. Ingenting er lagret. Prøv igjen om litt.",
+};
 
 // NB: ingen re-eksport av typer herfra. En «use server»-fil gjør hver eksport
 // om til en server action-referanse — `export type { Bilde }` ble kompilert
@@ -104,10 +121,13 @@ async function korrigerForklaring(
         },
       ],
     });
+    // Et avkuttet omskrevet svar brukes ikke: originalen beholdes.
+    if (vurderStopp(svar.stop_reason)) return null;
     const blokk = svar.content.find((b) => b.type === "text");
-    return blokk && blokk.type === "text" ? blokk.text.trim() : null;
-  } catch (feil) {
-    console.error("[legg-til-brev] Omskriving av forklaring feilet:", feil);
+    const tekst = blokk && blokk.type === "text" ? blokk.text.trim() : "";
+    return tekst || null;
+  } catch {
+    console.error("[legg-til-brev] omskriving_feilet");
     return null;
   }
 }
@@ -217,15 +237,9 @@ export async function analyserBrevTekst(
   if (!process.env.ANTHROPIC_API_KEY)
     return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
 
-  let analyse: Analyse;
-  try {
-    const lest = await lesBrevTekst(new Anthropic(), rensket);
-    if (!lest)
-      return { ok: false, feil: "Fikk ikke et brukbart svar. Prøv igjen." };
-    analyse = lest;
-  } catch {
-    return { ok: false, feil: "Noe gikk galt under analysen. Prøv igjen om litt." };
-  }
+  const lest = await lesBrevTekst(new Anthropic(), rensket);
+  if (!lest.ok) return { ok: false, feil: LESEFEIL[lest.feil] };
+  const analyse: Analyse = lest.data;
 
   // Masker fødselsnumre før teksten lagres/vises videre (AI-kallet over kjørte
   // på originalen — det er den uunngåelige første sendingen). Alvorsgrensen
@@ -259,15 +273,9 @@ export async function analyserBrevBilder(
   if (!process.env.ANTHROPIC_API_KEY)
     return { ok: false, feil: "AI er ikke konfigurert (mangler API-nøkkel)." };
 
-  let analyse: Analyse & { ekstrahert_tekst: string };
-  try {
-    const lest = await lesBrevBilder(new Anthropic(), bilder);
-    if (!lest)
-      return { ok: false, feil: "Fikk ikke et brukbart svar. Prøv igjen." };
-    analyse = lest;
-  } catch {
-    return { ok: false, feil: "Kunne ikke lese bildet. Prøv et tydeligere bilde." };
-  }
+  const lest = await lesBrevBilder(new Anthropic(), bilder);
+  if (!lest.ok) return { ok: false, feil: LESEFEIL[lest.feil] };
+  const analyse: Analyse & { ekstrahert_tekst: string } = lest.data;
 
   const { ekstrahert_tekst, ...rest } = analyse;
   const original_tekst = maskerFodselsnummer(ekstrahert_tekst);

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { STADIUM_ETIKETT, type Stadium } from "@/lib/gjeld";
 import { formaterKortDato } from "@/lib/dato";
 import { AI_MODELL } from "@/lib/ai";
+import { klassifiserAiFeil, vurderStopp } from "@/lib/ai-svar";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel.
 export const maxDuration = 60;
@@ -111,6 +112,8 @@ export async function POST(req: NextRequest) {
   const anthropic = new Anthropic();
   const encoder = new TextEncoder();
   let fullt = "";
+  // Bare et komplett svar lagres i samtalen.
+  let komplett = false;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -131,13 +134,23 @@ export async function POST(req: NextRequest) {
             controller.enqueue(encoder.encode(event.delta.text));
           }
         }
+        const slutt = await claudeStream.finalMessage();
+        if (vurderStopp(slutt.stop_reason)) {
+          controller.enqueue(
+            encoder.encode(
+              "\n\n[Svaret ble avbrutt fordi det ble for langt. Det er ikke lagret. Prøv et kortere spørsmål.]",
+            ),
+          );
+        } else {
+          komplett = true;
+        }
       } catch (feil) {
-        console.error("brev-samtale: strøm feilet", feil);
+        console.error("[brev-samtale] strom_feilet", klassifiserAiFeil(feil));
         controller.enqueue(
-          encoder.encode("\n\n[Beklager, noe gikk galt. Prøv igjen.]"),
+          encoder.encode("\n\n[Beklager, noe gikk galt. Svaret er ikke lagret. Prøv igjen.]"),
         );
       } finally {
-        if (fullt.trim()) {
+        if (komplett && fullt.trim()) {
           await supabase.from("brev_samtale").insert({
             brev_id: brevId,
             bruker_id: user.id,
