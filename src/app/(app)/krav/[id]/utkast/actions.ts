@@ -103,6 +103,7 @@ export async function lagUtkast(
       brev_id: brevId,
       type,
       innhold: maskerFodselsnummer(innhold),
+      vakt_fakta: prompt.vaktFakta,
     })
     .select("id")
     .single();
@@ -112,7 +113,7 @@ export async function lagUtkast(
   }
 
   revalidatePath(`/krav/${sakId}`);
-  return { ok: true, id: lagret.id, innhold, advarsler };
+  return { ok: true, id: lagret.id, innhold: maskerFodselsnummer(innhold), advarsler };
 }
 
 /**
@@ -122,6 +123,7 @@ export async function lagUtkast(
  */
 export async function markerUtkastSendt(
   utkastId: string,
+  forventetVersjon?: number,
 ): Promise<{ ok: true; sakId: string } | { ok: false; feil: string }> {
   const supabase = await createClient();
   const {
@@ -132,28 +134,35 @@ export async function markerUtkastSendt(
   // RLS sikrer at man kun når sitt eget utkast.
   const { data: utkast } = await supabase
     .from("utkast")
-    .select("id, sak_id, sendt_at")
+    .select("id, sak_id, sendt_at, versjon")
     .eq("id", utkastId)
     .maybeSingle();
   if (!utkast) return { ok: false, feil: "Fant ikke utkastet." };
 
-  if (!utkast.sendt_at) {
-    const { error } = await supabase
-      .from("utkast")
-      .update({ sendt_at: new Date().toISOString() })
-      .eq("id", utkastId);
-    if (error) return { ok: false, feil: "Kunne ikke lagre. Prøv igjen." };
-  }
-
-  // Kun aktiv → venter_pa_svar; fullførte/ventende saker røres ikke.
-  await supabase
-    .from("saker")
-    .update({ status: "venter_pa_svar" })
-    .eq("id", utkast.sak_id)
-    .eq("status", "aktiv");
+  const { error } = await supabase.rpc("registrer_utkast_sendt", {
+    p_id: utkastId, p_versjon: forventetVersjon ?? utkast.versjon,
+  });
+  if (error) return { ok: false, feil: "Kunne ikke registrere sendt. Utkastet kan være endret; åpne det på nytt." };
 
   revalidatePath("/");
   revalidatePath("/krav");
   revalidatePath(`/krav/${utkast.sak_id}`);
   return { ok: true, sakId: utkast.sak_id };
+}
+
+/** Ingen AI-kall. Versjonsbetinget UPDATE stopper stille overskriving fra to faner. */
+export async function lagreRedigertUtkast(id: string, sakId: string, versjon: number, tekst: string): Promise<
+  { ok: true; tekst: string; versjon: number } | { ok: false; feil: string }
+> {
+  if (typeof tekst !== "string" || !tekst.trim() || tekst.length > 50000 || !Number.isInteger(versjon))
+    return { ok: false, feil: "Utkastet må inneholde tekst og være under 50 000 tegn." };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, feil: "Logg inn igjen før du lagrer." };
+  const tryggTekst = maskerFodselsnummer(tekst);
+  const { data, error } = await supabase.from("utkast").update({ innhold: tryggTekst })
+    .eq("id", id).eq("sak_id", sakId).eq("bruker_id", user.id)
+    .eq("versjon", versjon).is("sendt_at", null).select("innhold, versjon").maybeSingle();
+  if (error || !data) return { ok: false, feil: "Ikke lagret. Utkastet er endret eller sendt i en annen fane. Ta vare på teksten og åpne det på nytt." };
+  return { ok: true, tekst: data.innhold, versjon: data.versjon };
 }

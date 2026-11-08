@@ -10,6 +10,7 @@ import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { beregnAvdrag, type AvdragsForslag } from "@/lib/avdrag";
 import { gebyrDifferanse, ubestridtDel } from "@/lib/utkast-prompt";
 import { UtkastFlyt } from "./UtkastFlyt";
+import type { VaktFakta } from "@/lib/utkast-vakt";
 
 function erUtkastType(v: string | undefined): v is UtkastType {
   return !!v && (UTKAST_TYPER as readonly string[]).includes(v);
@@ -20,10 +21,10 @@ export default async function UtkastPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ type?: string; brev?: string; manedsbelop?: string }>;
+  searchParams: Promise<{ type?: string; brev?: string; manedsbelop?: string; utkast?: string }>;
 }) {
   const { id } = await params;
-  const { type, brev: brevParam, manedsbelop } = await searchParams;
+  const { type, brev: brevParam, manedsbelop, utkast: utkastParam } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -40,6 +41,11 @@ export default async function UtkastPage({
     .eq("id", id)
     .maybeSingle();
   if (!sak) notFound();
+  const { data: utkastListe, error: utkastFeil } = await supabase.from("utkast")
+    .select("id, type, brev_id, innhold, versjon, sendt_at, sendt_innhold, vakt_fakta")
+    .eq("sak_id", id).eq("bruker_id", user.id).order("opprettet", { ascending: false });
+  const valgtUtkast = utkastParam ? utkastListe?.find((u) => u.id === utkastParam) : undefined;
+  if (utkastParam && !valgtUtkast && !utkastFeil) notFound();
 
   // Nyeste brev på kravet (grunnlag for utkastet), evt. det oppgitte.
   const { data: brevListe } = await supabase
@@ -61,7 +67,7 @@ export default async function UtkastPage({
   const gebyrDiff = gebyrDifferanse(gs);
   const ubestridt = ubestridtDel(sak.belop_totalt ?? brev?.belop ?? null, gs);
 
-  const starttype = erUtkastType(type) ? type : "innsigelse";
+  const starttype = erUtkastType(valgtUtkast?.type) ? valgtUtkast.type : erUtkastType(type) ? type : "innsigelse";
 
   // Navnelinjen i brevet (§6): husket verdi først, ellers profil-fornavnet.
   const meta = user.user_metadata as
@@ -102,6 +108,9 @@ export default async function UtkastPage({
 
       <div className="mt-6">
         <UtkastFlyt
+          eierId={user.id}
+          key={valgtUtkast?.id ?? "nytt"}
+          lagret={valgtUtkast ? { ...valgtUtkast, vakt_fakta: valgtUtkast.vakt_fakta as VaktFakta | null } : undefined}
           sakId={sak.id}
           brevId={brev?.id ?? null}
           avsender={brev?.avsender ?? null}
@@ -109,13 +118,19 @@ export default async function UtkastPage({
           kreditor={sak.kreditor ?? sak.tittel}
           saksnummer={sak.saksnummer ?? null}
           starttype={starttype}
-          typeValgt={erUtkastType(type)}
+          typeValgt={!!valgtUtkast || erUtkastType(type)}
           harOverGebyr={harOverGebyr}
           gebyrDiff={gebyrDiff}
           ubestridt={ubestridt}
           avdrag={avdrag}
           navnStart={navnStart}
         />
+        {utkastFeil && <p role="alert">Kunne ikke hente lagrede utkast. Prøv igjen før du lager et nytt.</p>}
+        {!!utkastListe?.length && <section className="mt-6"><h2 className="seksjonstittel">Lagrede utkast</h2><ul>
+          {utkastListe.map((u) => <li key={u.id}><Link className="trykk inline-block min-h-11 underline py-2" href={`/krav/${id}/utkast?utkast=${u.id}`}>
+            {u.type} – {u.sendt_at ? "Registrert sendt" : "Åpne og rediger"}
+          </Link></li>)}
+        </ul></section>}
       </div>
     </Skjermramme>
   );
