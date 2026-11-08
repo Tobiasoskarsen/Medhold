@@ -5,6 +5,20 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – release gate (pågår, ingen produksjonsendring)
+
+Egen gren fra 10638d5, alle ti PR-heads kontrollert som ancestors. Normal CI
+får bygg og produksjonsaudit; manuell testworkflow krever et eksisterende
+testmiljø med reviewer og bruker egne TEST_SUPABASE-secrets uten filfallback.
+Miljøoppslag ga 404, derfor ikke påstått konfigurert/kjørt i GitHub.
+Ekte cron-modul/adapter er kjørt mot Resend og en avgrenset syntetisk konto:
+dryRun, parallelle kall, én unik melding, én kvittering, retry uten ny melding.
+Brukeren bekreftet nøyaktig én mottatt melding. Testdata er ryddet bort.
+Fysisk iPhone er tilgjengelig, men testresultater er ikke rapportert; Android,
+frontend-nettverksbrudd og eksternt Mail/OS-clipboard er fortsatt åpne.
+Ingen loginmetode er fjernet og ingen ny migrasjon laget i R3.
+Se `docs/testing/R3_RELEASE_GATE.md` for matrise, avvik og release/rollback-plan.
+
 ### R2 etterkontroll – 8. november 2026
 
 Oppfølging av PR #61: tidsbudsjett på 45 sekunder for modellstrømming og

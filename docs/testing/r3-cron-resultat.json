@@ -1,0 +1,16 @@
+{
+  "prosjekt": "evvzxblhaxaraaurbhsu",
+  "tidspunkt": "2026-11-08T18:54:47.783Z",
+  "syntetisk": true,
+  "eidMottaker": true,
+  "cleanup": true,
+  "dryRun": true,
+  "unikeAksepterteMeldinger": 1,
+  "kvitteringer": 1,
+  "retryUtenNyMelding": true,
+  "leverandorOppslagStatus": 200,
+  "leverandorHendelse": "sent",
+  "status": "bestått",
+  "innboksBekreftetAvBruker": true,
+  "antallMottattBekreftet": 1
+}

@@ -1,0 +1,15 @@
+26eac90 (HEAD -> codex/r3-release-gate) test: legg til avgrenset cron-prove mot ekte leverandor
+54bd7c3 ci: legg til bygg audit og beskyttet manuell releasekontroll
+10638d5 (origin/codex/r2-supabase-integrasjon, codex/r2-supabase-integrasjon) chore: oppdater byggavhengigheter og dokumenter R2-etterkontroll
+5237722 fix: tydeliggjor sendt tekst og bruk intern feilnavigasjon
+a5e9af8 fix: avgrens modellventing og dedupliser cron-forsok
+2bac363 fix: fjern arvet anon-rettighet til sendt-RPC
+c5a5617 test: verifiser R2 mot ekte Supabase og dokumenter releasekontroll
+3ae0306 fix: oppdater Next og sarbare produksjonsavhengigheter
+ad3e256 fix: avvis ugyldig JSON-body i brevchat
+df34568 (origin/codex/release-fix-r1, codex/release-fix-r1) fix: beregn brevets fristfunn og alvorlighet pa serveren
+52376de fix: kontroller avdragsplan pa server mot saksbelop
+015c172 fix: gjenapne utkast med lagret dokumentkobling
+ebe14c3 fix: bind utkastgrunnlag til innlogget bruker og riktig sak
+0693734 (origin/codex/s1-f-presisjon, codex/s1-f-presisjon) fix: bevar ore i avdrag og presiser utkast og historikk
+3235747 (origin/codex/s1-e-kontrollomfang, codex/s1-e-kontrollomfang) fix: tydeliggjor kontrollomfang og betalingsforbehold
