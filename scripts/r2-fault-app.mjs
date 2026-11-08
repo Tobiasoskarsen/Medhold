@@ -10,6 +10,12 @@ if(env.NEXT_PUBLIC_SUPABASE_URL!=='https://evvzxblhaxaraaurbhsu.supabase.co')thr
 Object.assign(env,{ANTHROPIC_API_KEY:'synthetic-no-real-key',ANTHROPIC_BASE_URL:'http://127.0.0.1:3016',NEXT_PUBLIC_PILOT:'true',NEXT_PUBLIC_APP_URL:'http://localhost:3015',RESEND_API_KEY:'',CRON_SECRET:''});
 const upstream=createServer(async(req,res)=>{
   let raw='';for await(const chunk of req)raw+=chunk;
+  if(raw.includes('R3SYNTHETIC')){
+    // Kun loopback-fixture for klient-/transporttest, ikke modellkvalitet.
+    const text=JSON.stringify({forklaring:'Syntetisk test.',brevtype:'inkassovarsel',avsender:'R3 test',avsender_epost:'test@example.invalid',brevdato:'2026-11-08',belop:'1288',hovedstol:'1250',saksnummer:'R3-TEST',svar_utfall:'uklart',foreslatte_steg:[],foreslatte_frister:[],kostnadslinjer:[{type:'purregebyr',belop:38,tekst:'Purregebyr 38 kr'}]});
+    res.writeHead(200,{'content-type':'application/json'});
+    res.end(JSON.stringify({id:'r3_fixture',type:'message',role:'assistant',model:'synthetic',content:[{type:'text',text}],stop_reason:'end_turn',stop_sequence:null,usage:{input_tokens:1,output_tokens:1}}));return;
+  }
   // Virkelig hengende lokal forbindelse: ingen headers eller data. Appens
   // eget tidsbudsjett må avbryte; dette er ikke en simulert HTTP 408.
   if(raw.includes('R2FAULT:HANG'))return;
