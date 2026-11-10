@@ -1,0 +1,21 @@
+{
+  "project": "leernzbmuldegiggnjib",
+  "backupHashVerified": true,
+  "archiveReadable": true,
+  "restoreScope": "auth/public schema and data, local PostgreSQL only",
+  "restored": true,
+  "localServerStopped": true,
+  "migrationsRehearsed": [
+    "0027",
+    "0028",
+    "0029",
+    "0030",
+    "0031"
+  ],
+  "existingRowCountsUnchanged": true,
+  "productionMigrationsRun": false,
+  "productionPauseExecuted": false,
+  "productionDeployRun": false,
+  "candidate": "9cfbb17e804af9028001a205bb18ddbaaac1c0c4",
+  "blockedOn": "Explicit approval of temporary production downtime; auto-review rejected pause request before execution"
+}

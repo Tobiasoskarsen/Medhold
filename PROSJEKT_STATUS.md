@@ -5,6 +5,20 @@ etter hver fase.
 
 ## Faseoversikt
 
+### Produksjonsrelease 10. november 2026 – fullført
+
+Etter eksplisitt godkjenning av migrasjoner/deploy og separat godkjent
+vedlikeholdsstans er 0027–0031 kjørt atomisk og etterkontrollert i produksjon.
+Privat backup er hash-/leseverifisert; auth/public er faktisk gjenopprettet
+lokalt, og nøyaktig migrasjonsbunt bestod prøven med uendrede radantall.
+Godkjent main 9cfbb17 er aktiv som dpl_8RkYoEUfPfdMeVyaqEQKNXyvoJvu på
+https://app2-chi-five.vercel.app. Offentlig HTTP-/tilgangssmoke bestått og
+login visuelt kontrollert. Ingen produksjons-e-post eller brukerhandlingstest
+hevdes. Første Vercel-bygg ble BLOCKED under pause; tidligere app ble åpnet
+igjen før et nytt staged bygg og promote. Stansen var lengre enn planlagt.
+Sperren mot automatiske main-deployer beholdes. Se
+docs/testing/PRODUKSJONSRELEASE_2026-11-10.md for bevis og begrensninger.
+
 ### R3 – fysisk to-fane-konflikt bekreftet 10. november
 
 Brukeren bekreftet den beskrevne Safari-prøven på iPhone: A lagret, B fikk
