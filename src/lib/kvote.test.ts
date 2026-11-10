@@ -145,7 +145,7 @@ test("meldingene sier hva som er nådd og hva som fortsatt virker", () => {
     kvoteMelding({ ok: false, grunn: "kvote", handling, grense, nullstilles: "2026-11-08T13:30:00Z" }, naa);
   assert.match(m("dokumentanalyse", 5), /5 dokumentanalyser.*kl\. 14:31.*fortsatt åpne/);
   assert.match(m("chat", 20), /20 spørsmål.*fortsatt lese/);
-  assert.match(m("utkast", 3), /3 nye utkast.*fortsatt åpne og redigere/);
+  assert.match(m("utkast", 3), /3 nye utkast.*under saken.*ikke er registrert sendt, kan redigeres/);
   assert.match(kvoteMelding({ ok: false, grunn: "pagar", handling: null, grense: null, nullstilles: null }), /behandles allerede/);
   assert.match(kvoteMelding({ ok: false, grunn: "feil", handling: null, grense: null, nullstilles: null }), /får ikke sjekket/);
 });

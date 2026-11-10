@@ -44,10 +44,10 @@ export function GruppertSaksliste({
 
   const q = sok.trim().toLowerCase();
   const filtrerteGrupper = q
-    ? grupper.filter((g) => g.navn.toLowerCase().includes(q))
+    ? grupper.filter((g) => g.navn.toLowerCase().includes(q) || g.saker.some((s) => s.tittel.toLowerCase().includes(q)))
     : grupper;
   const filtrerteEnkelt = q
-    ? enkeltstaende.filter((s) => s.navn.toLowerCase().includes(q))
+    ? enkeltstaende.filter((s) => s.navn.toLowerCase().includes(q) || s.saksnummer?.toLowerCase().includes(q))
     : enkeltstaende;
   const ingenTreff =
     q.length > 0 && filtrerteGrupper.length === 0 && filtrerteEnkelt.length === 0;
@@ -68,8 +68,8 @@ export function GruppertSaksliste({
         <input
           value={sok}
           onChange={(e) => setSok(e.target.value)}
-          placeholder="Søk etter kreditor …"
-          aria-label="Søk etter kreditor"
+          placeholder="Søk etter kreditor eller saksnummer …"
+          aria-label="Søk etter kreditor eller saksnummer"
           className="w-full bg-transparent text-sm text-blekk outline-none placeholder:text-dempet"
         />
       </div>
@@ -84,7 +84,7 @@ export function GruppertSaksliste({
       {filtrerteGrupper.length > 0 && (
         <div className={`flex flex-col gap-2.5 ${q ? "mt-4" : ""}`}>
           {filtrerteGrupper.map((g) => {
-            const åpen = åpne.has(g.navn);
+            const åpen = åpne.has(g.navn) || !!q;
             return (
               <div
                 key={g.navn}

@@ -63,6 +63,8 @@ export function Kravkort({
    *  KONSISTENS_ARBEIDSORDRE §3.2) — distinkt varseltrekant, ikke § (som er
    *  forbeholdt gebyrfunn), slik at de to ikke forveksles på et lite kort. */
   harHovedstolAvvik?: boolean;
+  /** Kun lokal søking i data som allerede er hentet for brukeren. */
+  saksnummer?: string | null;
 }) {
   const router = useRouter();
   const { start } = useViewOvergang();

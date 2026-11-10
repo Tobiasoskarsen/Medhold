@@ -3274,3 +3274,13 @@ Checkout + kundeportal koblet inn i `harPluss()`-punktet, pilotflagg av.
 Omfangsmatrise og advokattekster: docs/testing/s1-e-stotteomfang.md. Ingen nye juridiske regler. Gebyrpanelet sier nå Innenfor beløpsgrensen, og samlet kostnadsdekning er uttrykkelig ukontrollert. Ustøttet juridisk frist vises på kontrollsteget, saken og brevet. Betaling og utsettelse gir ingen garanti om kostnader eller betalingsanmerkning.
 
 Valg tatt underveis: støtte avledes fra eksisterende FRIST_HJEMMEL, ikke nye ordsøk eller nye 14-dagersregler. Nye regler krever separat faglig kvalitetssikring. 388 enhetstester; praktisk gjennomgang og produksjonsbygg dokumenteres i PR.
+
+## S1-F og samlet sluttkontroll
+
+Sluttrapport: docs/testing/s1-sluttkontroll.md. Avdrag regnes i heltallsøre: 10 119,50 / 600 gir 17 måneder og siste 519,50, uten differanse. Betalingsforslaget viser øre. Gruppert søk støtter kreditor og saksnummer i eksisterende lokale data. Historiske funn beholder alder ved avslutning/gjenåpning; nyere-brev-kortet er fortsatt kun aktivt. Lange fristtitler brytes over linjer på små skjermer.
+
+Valg tatt underveis: kvoteteksten viser hvor utkast åpnes og skiller sendt fra redigerbart. Sluttkontrollen sikret også skrivebeskyttet sendt tekst og felt under lagring, bevart omfang fra vaktfakta og fjernet en gjenværende betalingsgaranti. Ingen ny indeks for fakturanummer som ikke finnes i listegrunnlaget.
+
+389 enhetstester og 73 lokale DB-tester grønne. Lokal nettleser: lagring/gjenåpning/lagringsfeil/to-faners konflikt, faktasammendrag etter retting, støtteomfang, saksnummersøk og clipboardfeil. Mobilbredder 320/390/430 og desktop 1280 kontrollert; mørk mobilvisning visuelt kontrollert. Fysisk enhet og ekte Supabase-samtidighet gjenstår. Ingen migrasjon, merge eller manuell deploy.
+
+Sluttresultat: lint, typekontroll og produksjonsbygg er grønne. Byggets eksisterende varsel om flere lockfiler i worktree-oppsettet er dokumentert. Ingen midlertidige testruter er inkludert.

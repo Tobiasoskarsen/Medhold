@@ -205,7 +205,7 @@ export function kvoteMelding(svar: Extract<KvoteSvar, { ok: false }>, naa: Date 
     case "chat":
       return `Du har sendt ${n ?? "mange"} spørsmål det siste døgnet. Du kan spørre igjen ${nar}. Brevet og samtalen kan du fortsatt lese.`;
     case "utkast":
-      return `Du har laget ${n ?? "alle"} nye utkast det siste døgnet. Du kan lage et nytt ${nar}. Utkastene du har lagret, kan du fortsatt åpne og redigere.`;
+      return `Du har laget ${n ?? "alle"} nye utkast det siste døgnet. Du kan lage et nytt ${nar}. Lagrede utkast finner du under saken. Utkast som ikke er registrert sendt, kan redigeres.`;
     case "innlogging_epost":
       return `Det er bedt om mange koder til denne e-postadressen. Prøv igjen ${nar}, eller bruk den siste koden du fikk.`;
     case "innlogging_ip":

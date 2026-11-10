@@ -32,14 +32,14 @@ export function FristRad({
   const historisk = d < 0 && gammeltBrev;
   return (
     <div
-      className={`flex items-center justify-between gap-3 rounded-kort border border-kant bg-flate px-4 py-3 ${className}`}
+      className={`flex flex-wrap items-center justify-between gap-3 rounded-kort border border-kant bg-flate px-4 py-3 ${className}`}
     >
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-[140px] flex-1 items-center gap-3">
         <span className="hidden size-9 shrink-0 items-center justify-center rounded-liten bg-flate-2 min-[360px]:flex" aria-hidden>
           <CalendarDays className="size-[18px] text-dempet" strokeWidth={2} />
         </span>
         <div className="min-w-0">
-          <p className="radtekst truncate">{tittel}</p>
+          <p className="radtekst break-words">{tittel}</p>
           <p className="whitespace-nowrap text-brod font-bold text-blekk">{langDato(forfallsdato)}</p>
         </div>
       </div>
