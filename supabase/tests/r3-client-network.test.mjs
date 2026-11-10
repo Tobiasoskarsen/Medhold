@@ -20,7 +20,7 @@ function load(file, mocks, cache = new Map()) {
 function harness(actions) {
   const updates=[],pending=[],navigation=[];
   return {updates,pending,navigation,mocks:{
-    react:{useState:init=>[typeof init==='function'?init():init,value=>updates.push(value)],useEffect(){},useMemo:fn=>fn(),useTransition:()=>[false,fn=>pending.push(fn())]},
+    react:{useState:init=>[typeof init==='function'?init():init,value=>updates.push(value)],useRef:init=>({current:init}),useEffect(){},useMemo:fn=>fn(),useTransition:()=>[false,fn=>pending.push(fn())]},
     'next/navigation':{useRouter:()=>({push:url=>navigation.push(url),refresh:()=>navigation.push('refresh')})},
     'motion/react':{m:{div:'div',span:'span'},useReducedMotion:()=>true,AnimatePresence:'div'},
     '@/components/ui':{Kort:'section','Primærknapp':'button'},

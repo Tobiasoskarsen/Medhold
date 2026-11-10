@@ -510,7 +510,7 @@ export default async function KravDetaljPage({
 
   return (
     <Skjermramme className="pt-2.5" animerInn={false}>
-      {lagret && brevListe.some(b => b.id === lagret) && <LagretBrevMerknad sakId={id} brevId={lagret} />}
+      {lagret && brevListe.some(b => b.id === lagret) && <LagretBrevMerknad sakId={id} brevId={lagret} saksnavn={sak.kreditor ?? sak.tittel} frister={frister.filter(f => f.brev_id === lagret)} />}
       <Toppstripe className="mb-1">
         <Link
           href="/krav"

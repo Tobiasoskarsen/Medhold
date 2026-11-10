@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Avkrysning } from "@/components/ui/Avkrysning";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AnimatePresence, m } from "motion/react";
 import { X, Camera, Upload, Type, Trash2 } from "lucide-react";
 import { Primærknapp } from "@/components/ui";
@@ -43,6 +44,7 @@ import { KontrollOversikt } from "./KontrollOversikt";
 import { BrevReferanse } from "./BrevReferanse";
 import { SakOgFrister } from "./SakOgFrister";
 import { LagretBrev } from "./LagretBrev";
+import { useUlagretVern } from "@/components/useUlagretVern";
 import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
 import { kontrollerSum } from "@/lib/sumkontroll";
 import { brevforklaring } from "@/lib/brevforklaring";
@@ -191,6 +193,18 @@ export function LeggTilBrevFlyt({
   const [linjer, setLinjer] = useState<Kostnadslinje[]>([]);
   const [bekreftet, setBekreftet] = useState(false);
   const [stemmerLikevel, setStemmerLikevel] = useState(false);
+
+  const harUlagretArbeid = !lagretBrev && (tekst.trim().length > 0 || bilder.length > 0 || analyse !== null);
+  const forlatMelding = lagrer || lagringUkjent
+    ? "Lagringen er ikke avklart. Går du ut, mister du muligheten til å prøve samme forsøk igjen her. Se etter brevet i Saker før du legger det inn på nytt. Vil du forlate siden?"
+    : "Brevet og rettelsene er ikke lagret. Vil du forlate siden og forkaste arbeidet?";
+  useUlagretVern(harUlagretArbeid, forlatMelding);
+
+  function avbryt() {
+    if (harUlagretArbeid && !window.confirm(forlatMelding)) return;
+    if (inntak !== "valg" && steg === 1) setInntak("valg");
+    else router.back();
+  }
 
   // Linjer uten beløp (en nylig lagt til, ikke utfylt «+ Legg til gebyr») teller ikke.
   const gyldigeLinjer = useMemo(() => linjer.filter((l) => l.belop > 0), [linjer]);
@@ -496,8 +510,8 @@ export function LeggTilBrevFlyt({
         <button
           type="button"
           aria-label="Avbryt"
-          onClick={() => (inntak !== "valg" && steg === 1 ? setInntak("valg") : router.back())}
-          className="trykk -ml-1 flex size-8 items-center justify-center text-dempet transition hover:text-blekk"
+          onClick={avbryt}
+          className="trykk -ml-1 flex size-11 items-center justify-center rounded-liten text-dempet transition hover:text-blekk focus-visible:outline-2 focus-visible:outline-aksent"
         >
           <X className="size-5" aria-hidden />
         </button>
@@ -681,7 +695,9 @@ export function LeggTilBrevFlyt({
           transition={{ duration: VARIGHET.rolig, ease: EASING }}
           className="flex flex-1 flex-col pb-8"
         >
-          {lagretBrev ? <LagretBrev {...lagretBrev} /> : <BrevGjennomgang
+          {lagretBrev ? <LagretBrev {...lagretBrev} /> : <>
+          {lagringUkjent && <p className="mb-3 text-hjelp text-dempet"><Link href="/krav" className="inline-flex min-h-11 items-center rounded-liten font-semibold text-aksent underline focus-visible:outline-2 focus-visible:outline-aksent">Se etter brevet i Saker</Link>. Ikke legg det inn på nytt før du har kontrollert historikken.</p>}
+          <BrevGjennomgang
             bekreftet={kanLagre}
             opplysningerLast={lagringUkjent}
             lagrer={lagrer}
@@ -1121,7 +1137,7 @@ export function LeggTilBrevFlyt({
           </div>
           )}
             </>}
-          />}
+          /></>}
         </m.div>
       )}
       </AnimatePresence>

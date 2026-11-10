@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Copy, Check, Mail, Loader2 } from "lucide-react";
@@ -22,8 +22,9 @@ import {
   type UtkastType,
 } from "@/lib/types";
 import type { AvdragsForslag } from "@/lib/avdrag";
-import { lagreRedigertUtkast, markerUtkastSendt } from "./actions";
+import { hentUtkastStatus, lagreRedigertUtkast, markerUtkastSendt } from "./actions";
 import { maskerFodselsnummer } from "@/lib/maskering";
+import { useUlagretVern } from "@/components/useUlagretVern";
 
 // Lengste markør avgjør hvor mange tegn i halen av bufferet som må holdes
 // tilbake (kan være et påbegynt, men ennå ikke fullstendig mottatt markørtegn).
@@ -57,7 +58,7 @@ const FASER = ["Opplysninger", "Skriver", "Les og rediger"] as const;
 /** Hvor i flyten brukeren er. Ren visning av de tre eksisterende fasene. */
 function FaseLinje({ aktiv }: { aktiv: 0 | 1 | 2 }) {
   return (
-    <ol className="mb-5 flex items-center gap-1.5 text-meta font-medium text-dempet">
+    <ol className="mb-5 flex flex-wrap items-center gap-1.5 text-meta font-medium text-dempet">
       {FASER.map((f, i) => (
         <li
           key={f}
@@ -143,42 +144,22 @@ export function UtkastFlyt({
   const [lagretTekst, setLagretTekst] = useState(startTekst);
   const [versjon, setVersjon] = useState(lagret?.versjon ?? 1);
   const [lagrer, setLagrer] = useState(false);
-  const erSendt = !!lagret?.sendt_at;
+  const [sendtBekreftet, setSendtBekreftet] = useState(false);
+  const [sendtUkjent, setSendtUkjent] = useState(false);
+  const [lagringUkjent, setLagringUkjent] = useState(false);
+  const skriveLas = useRef(false);
+  const erSendt = !!lagret?.sendt_at || sendtBekreftet;
   const ulagret = tekst !== lagretTekst;
-  useEffect(() => {
-    if (!ulagret || fase !== "ferdig") return;
-    const varsel = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
-    const lenke = (e: MouseEvent) => {
-      if (e.target instanceof Element && e.target.closest("a[href]") &&
-        !window.confirm("Du har ulagrede endringer. Vil du forlate siden uten å lagre?")) {
-        e.preventDefault(); e.stopPropagation();
-      }
-    };
-    window.addEventListener("beforeunload", varsel);
-    document.addEventListener("click", lenke, true);
-    return () => { window.removeEventListener("beforeunload", varsel); document.removeEventListener("click", lenke, true); };
-  }, [ulagret, fase]);
+  useUlagretVern(ulagret && fase === "ferdig" && !erSendt,
+    "Du har ulagrede endringer. De finnes bare i denne fanen. Vil du forlate siden uten å lagre?");
   const [justerer, setJusterer] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
   const [utkastId, setUtkastId] = useState<string | null>(lagret?.id ?? null);
   const backupNokkel = eierId && utkastId ? `medhold-utkast-${eierId}-${utkastId}` : null;
   useEffect(() => {
-    if (!backupNokkel || erSendt) return;
-    let aktiv = true;
-    // Etter hydrering; sessionStorage er kun en gjenopprettingsbuffer i denne
-    // fanen, aldri en serverbekreftet lagring eller en sendt tekstversjon.
-    queueMicrotask(() => {
-      if (!aktiv) return;
-      try {
-        const b = JSON.parse(sessionStorage.getItem(backupNokkel) ?? "null");
-        if (b && typeof b.tekst === "string" && b.tekst.length <= 50000 && Number.isInteger(b.versjon)) {
-          setTekst(b.tekst); setKontrollTekst(b.tekst); setVersjon(b.versjon);
-          setFeil("Ulagret tekst er gjenopprettet fra denne fanen. Kontroller og lagre den. Hvis en annen fane har endret utkastet, vil serveren avvise overskriving.");
-        }
-      } catch { /* Bufferen er valgfri; serverlagring er autoritativ. */ }
-    });
-    return () => { aktiv = false; };
-  }, [backupNokkel, erSendt]);
+    // Fjern kun dette utkastets eldre buffer; les/lagre aldri tekst lokalt.
+    if (backupNokkel) { try { sessionStorage.removeItem(backupNokkel); } catch { /* Ingen ny lokal kopi. */ } }
+  }, [backupNokkel]);
   const [kopiert, setKopiert] = useState(false);
   const [sender, startSending] = useTransition();
   const redusert = useReducedMotion();
@@ -406,20 +387,40 @@ export function UtkastFlyt({
   }
 
   function jegHarSendtDet() {
+    if (skriveLas.current || erSendt) return;
     if (!utkastId || ulagret || lagrer) { setFeil("Lagre utkastet før du registrerer det som sendt."); return; }
+    skriveLas.current = true;
     startSending(async () => {
       setFeil(null);
       try {
+        if (sendtUkjent) {
+          const status = await hentUtkastStatus(utkastId, sakId);
+          if (!status.ok) { setFeil(status.feil); return; }
+          if (status.sendt) {
+            setSendtBekreftet(true); setSendtUkjent(false);
+            setTekst(status.tekst); setKontrollTekst(status.tekst); setLagretTekst(status.tekst); setVersjon(status.versjon);
+            setFeil("Serveren bekrefter at du har registrert brevet som sendt. Den bevarte tekstversjonen vises. Medhold har ikke sendt brevet.");
+            return;
+          }
+          setSendtUkjent(false);
+          setFeil("Serveren viser at brevet ikke er registrert sendt. Kontroller utkastet før du eventuelt registrerer det.");
+          if (status.versjon !== versjon) setFeil("Utkastet er endret i en annen fane. Åpne det på nytt før du registrerer det som sendt.");
+          return;
+        }
         const r = await markerUtkastSendt(utkastId, versjon);
         if (!r.ok) {
           setFeil(r.feil);
           return;
         }
+        setSendtBekreftet(true);
         haptikk("suksess");
-        router.push(`/krav/${r.sakId}`);
-        router.refresh();
+        try { router.push(`/krav/${r.sakId}`); router.refresh(); }
+        catch { setFeil("Sendtregistreringen er lagret. Åpne saken fra lenken nedenfor. Medhold har ikke sendt brevet."); }
       } catch {
-        setFeil("Kunne ikke bekrefte registreringen. Teksten er beholdt. Prøv igjen, eller åpne utkastet på nytt for å kontrollere status.");
+        setSendtUkjent(true);
+        setFeil("Kunne ikke bekrefte registreringen. Teksten er beholdt. Kontroller serverstatus med knappen nedenfor før du gjør noe mer.");
+      } finally {
+        skriveLas.current = false;
       }
     });
   }
@@ -522,7 +523,7 @@ export function UtkastFlyt({
               <span className="font-normal text-dempet"> (valgfritt)</span>
             )}
             <textarea
-              readOnly={erSendt || lagrer}
+              readOnly={erSendt || lagrer || sender || sendtUkjent}
               value={detaljer}
               onChange={(e) => setDetaljer(e.target.value)}
               rows={5}
@@ -566,15 +567,11 @@ export function UtkastFlyt({
           {fase === "ferdig" ? (
             <textarea
               value={tekst}
-              readOnly={erSendt || lagrer}
+              readOnly={erSendt || lagrer || sender || sendtUkjent}
               aria-label="Utkast til brev"
               onChange={(e) => {
                 const ny = e.target.value;
                 setTekst(ny);
-                if (backupNokkel) {
-                  try { sessionStorage.setItem(backupNokkel, JSON.stringify({ tekst: maskerFodselsnummer(ny), versjon })); }
-                  catch { setFeil("Lokal sikkerhetskopi er utilgjengelig. Lagre før du forlater siden."); }
-                }
               }}
               onBlur={() => setKontrollTekst(tekst)}
               rows={16}
@@ -605,23 +602,36 @@ export function UtkastFlyt({
 
           {fase === "ferdig" && (
             <>
-              <p role="status" className="mt-3 text-hjelp text-dempet">{erSendt ? (lagret?.sendt_innhold ? "Registrert sendt – bevart tekstversjon." : "Eldre sendt utkast: eksakt sendt tekst er ikke dokumentert.") : ulagret ? "Ulagrede endringer" : "Utkast lagret"}</p>
-              {!erSendt && <button type="button" disabled={!ulagret || lagrer} className="trykk min-h-11 underline" onClick={async () => {
-                if (!utkastId) return;
+              <p role="status" className="mt-3 text-hjelp text-dempet">{erSendt ? (lagret?.sendt_innhold || sendtBekreftet ? "Registrert sendt – bevart tekstversjon." : "Eldre sendt utkast: eksakt sendt tekst er ikke dokumentert.") : ulagret ? "Ulagrede endringer" : "Utkast lagret"}</p>
+              {erSendt && <a href={`/krav/${sakId}`} className="inline-flex min-h-11 items-center rounded-liten font-semibold text-aksent underline focus-visible:outline-2 focus-visible:outline-aksent">Åpne saken</a>}
+              {!erSendt && <button type="button" disabled={!ulagret || lagrer || sender || sendtUkjent} className="trykk min-h-11 underline" onClick={async () => {
+                if (!utkastId || skriveLas.current) return;
+                skriveLas.current = true;
                 setLagrer(true); setFeil(null);
                 try {
+                  if (lagringUkjent) {
+                    const status = await hentUtkastStatus(utkastId, sakId);
+                    if (!status.ok) { setFeil(status.feil); return; }
+                    if (status.sendt || status.versjon !== versjon) {
+                      if (status.sendt || status.tekst === maskerFodselsnummer(tekst)) {
+                        setTekst(status.tekst); setKontrollTekst(status.tekst); setLagretTekst(status.tekst); setVersjon(status.versjon);
+                        setSendtBekreftet(status.sendt); setLagringUkjent(false); return;
+                      }
+                      setFeil("Serveren har en annen tekstversjon. Din tekst er beholdt. Ingen overskriving er utført; åpne den lagrede versjonen i en annen fane for å sammenligne."); return;
+                    }
+                    setLagringUkjent(false);
+                  }
                   const r = await lagreRedigertUtkast(utkastId, sakId, versjon, tekst);
                   if (!r.ok) { setFeil(r.feil); return; }
                   setTekst(r.tekst); setKontrollTekst(r.tekst); setLagretTekst(r.tekst); setVersjon(r.versjon);
-                  if (backupNokkel) { try { sessionStorage.removeItem(backupNokkel); } catch { /* lagret på server */ } }
-                } catch { setFeil("Kunne ikke bekrefte lagringen. Teksten er beholdt. Prøv igjen, eller åpne utkastet på nytt for å kontrollere status."); }
-                finally { setLagrer(false); }
+                } catch { setLagringUkjent(true); setFeil("Kunne ikke bekrefte lagringen. Teksten er beholdt i denne fanen. Neste forsøk kontrollerer serverversjonen før noe lagres."); }
+                finally { setLagrer(false); skriveLas.current = false; }
               }}>{lagrer ? "Lagrer …" : "Lagre endringer"}</button>}
               {feil && <p role="alert" className="text-dom-rod">{feil}</p>}
               <p className="mt-3 text-hjelp leading-relaxed text-dempet">
                 {erSendt
                   ? "Dette er teksten du registrerte som sendt. Den kan ikke endres."
-                  : `Les gjennom og endre det som trengs — så sender du det selv${avsender ? ` til ${avsender}` : ""}.`}
+                  : `Lagre endringene før du lukker siden. Ulagret tekst finnes bare i denne fanen. Du sender brevet selv${avsender ? ` til ${avsender}` : ""}.`}
               </p>
               <p className="mt-1.5 text-meta text-dempet">
                 Automatisk utkast — ikke profesjonell rådgivning.
@@ -751,7 +761,7 @@ export function UtkastFlyt({
                   >
                     <span className="inline-flex items-center gap-2">
                       <Check className="size-4" aria-hidden />
-                      {sender ? "Lagrer …" : "Jeg har sendt det"}
+                      {sender ? "Kontrollerer …" : sendtUkjent ? "Kontroller sendtstatus" : "Jeg har sendt det"}
                     </span>
                   </Primærknapp>
                 </div>

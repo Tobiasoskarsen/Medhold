@@ -23,7 +23,7 @@ import { tolkKr } from "@/lib/format";
 import { kr } from "@/lib/gebyrfunn-visning";
 
 const FELT =
-  "w-full rounded-kontroll border border-strek bg-flate px-3 py-2 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
+  "w-full min-h-11 scroll-mt-28 rounded-kontroll border border-strek bg-flate px-3 py-2 text-base text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
 
 function krTekst(s: string): string {
   const n = tolkKr(s);
@@ -84,7 +84,7 @@ function Rad({
                 initial={{ opacity: 0.3 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: VARIGHET.rolig, ease: EASING }}
-                className={`${fremhevet ? "tall-s" : "text-sm font-semibold"} tabular-nums text-blekk`}
+                className={`${fremhevet ? "tall-s" : "text-sm font-semibold"} min-w-0 break-words tabular-nums text-blekk`}
               >
                 {verdi}
               </m.span>
@@ -207,6 +207,7 @@ export function Bekreftelse({
           felt={(ferdig) => (
             <input
               type="date"
+              aria-label="Brevdato"
               autoFocus
               value={brevdato}
               onChange={(e) => onBrevdato(e.target.value)}
@@ -224,6 +225,7 @@ export function Bekreftelse({
             <input
               type="text"
               inputMode="decimal"
+              aria-label="Å betale i kroner"
               autoFocus
               value={belop}
               onChange={(e) => onBelop(e.target.value)}
@@ -241,6 +243,7 @@ export function Bekreftelse({
             <input
               type="text"
               inputMode="decimal"
+              aria-label="Hovedstol i kroner"
               autoFocus
               value={hovedstolTekst}
               onChange={(e) => onHovedstol(e.target.value)}
@@ -295,6 +298,7 @@ export function Bekreftelse({
               type="date"
               autoFocus
               value={fristIBrevet}
+              aria-label="Frist i brevet"
               onChange={(e) => onFristIBrevet(e.target.value)}
               onBlur={ferdig}
               onKeyDown={avsluttVedEnter(ferdig)}
