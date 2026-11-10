@@ -122,6 +122,27 @@ med nøyaktig testprosjekt; ingen produksjonsfallback. Ikke legg nøkler i rappo
 
 ## Kontrollert videre rekkefølge
 
+Etterkontroll 10. november: r3-pr-preflight-2026-11-10.json viser alle 11
+PR-heads som ancestors til 25f721f. Alle nåværende base/head-par er MERGEABLE.
+#53–#62 har SUCCESS på CI; #52 har bare Vercel-kontroller. Dette beviser ikke
+at en senere squash/rebase blir konfliktfri eller at endelig main er testet.
+Ingen nye funksjonelle kodefeil ble konkludert i denne avgrensede etterkontrollen;
+den er ikke en ny uavhengig linjegjennomgang av hele diffen på 160 filer.
+
+Brukeren ønsker ikke flere manuelle repetisjoner nå. Stor systemtekst og
+fysisk Android dokumenteres derfor som kjente begrensninger, ikke nye prøver
+brukeren må gjenta i denne runden. De er heller ikke erklært bestått.
+
+Før main endres må en konkret, godkjent stans av automatisk Vercel-produksjons-
+utrulling være kontrollert. GitHub-merge er ikke i seg selv en trygg isolert
+testhandling når main kan utløse deploy. Etter integrasjon kan workflowen
+startes og krever fortsatt menneskelig godkjenning av testmiljøet. Ingen
+workflow-trigger, reviewer-regel eller produksjonsinnstilling er endret her.
+
+Den eksisterende supabase/tilbakeforing/0029_tilbake.sql er destruktiv og skal
+ikke brukes som standard release-rollback. En advarsel er lagt i fila uten
+å endre SQL-operasjonene. R3-planen beholder additive data og snapshots.
+
 1. Lukk fysiske porter, avklar test-Google separat, og gjennomgå PR-diffene.
 2. Ved eksplisitt integrasjonsgodkjenning: behold produksjonsutrulling stoppet,
    integrer #52–#62 i base/head-rekkefølge, verifiser ancestry og checks etter
