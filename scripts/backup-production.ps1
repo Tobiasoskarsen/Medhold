@@ -17,7 +17,7 @@ if (-not $PSCmdlet.ShouldProcess("Medhold produksjon ($projectRef)", 'Les Postgr
 $backupFolder = Join-Path $env:LOCALAPPDATA ('Medhold/private-backups/' + [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ'))
 New-Item -ItemType Directory -Path $backupFolder | Out-Null
 $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-& icacls $backupFolder /inheritance:r /grant:r "${sid}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' | Out-Null
+& icacls $backupFolder /inheritance:r /grant:r "*${sid}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Kunne ikke sikre backupmappen. Ingen database er kontaktet.' }
 $dumpFile = Join-Path $backupFolder 'database.dump'
 $errorFile = Join-Path $backupFolder 'private-errors.log'

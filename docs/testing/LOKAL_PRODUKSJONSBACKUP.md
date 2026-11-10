@@ -42,3 +42,9 @@ https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-resto
 Validering: PowerShell-parser uten feil, -WhatIf uten databasekontakt,
 verktøyversjoner 17.11, og git check-ignore for binærarkiv/verktøy. Faktisk
 databaseforbindelse, eksport og restore er foreløpig utestet.
+
+Etter brukerens første forsøk ble SID-syntaksen for icacls rettet: numeriske
+SID-er må ha *-prefiks. Separat lokal prøve bekreftet beskyttet ACL, kun
+gjeldende bruker og SYSTEM som eksplisitte rettigheter, og fungerende
+skriving/lesing av en ufarlig testfil. Produksjonsdatabasen var ikke kontaktet
+ved brukerens ACL-feil eller denne prøven.
