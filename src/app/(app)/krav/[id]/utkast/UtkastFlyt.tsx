@@ -614,8 +614,9 @@ export function UtkastFlyt({
               }}>{lagrer ? "Lagrer …" : "Lagre endringer"}</button>}
               {feil && <p role="alert" className="text-dom-rod">{feil}</p>}
               <p className="mt-3 text-hjelp leading-relaxed text-dempet">
-                Les gjennom og endre det som trengs — så sender du det selv
-                {avsender ? ` til ${avsender}` : ""}.
+                {erSendt
+                  ? "Dette er teksten du registrerte som sendt. Den kan ikke endres."
+                  : `Les gjennom og endre det som trengs — så sender du det selv${avsender ? ` til ${avsender}` : ""}.`}
               </p>
               <p className="mt-1.5 text-meta text-dempet">
                 Automatisk utkast — ikke profesjonell rådgivning.
@@ -640,7 +641,7 @@ export function UtkastFlyt({
 
               {sjekk && (
                 <Kort className="mt-4">
-                  <h2 className="seksjonstittel text-blekk">Sjekk før du sender</h2>
+                  <h2 className="seksjonstittel text-blekk">{erSendt ? "Kontroll av sendt tekst" : "Sjekk før du sender"}</h2>
                   {sjekk.advarsler.length > 0 && (
                     <ul className="mt-2 flex flex-col gap-1">
                       {sjekk.advarsler.map((a, i) => (
@@ -668,12 +669,12 @@ export function UtkastFlyt({
                     </ul>
                   )}
                   <p className="mt-2 text-meta text-dempet">
-                    Du sender brevet selv, så les det gjennom før du sender.
+                    {erSendt ? "Registreringen betyr at du har sendt brevet selv. Medhold har ikke sendt det." : "Du sender brevet selv, så les det gjennom før du sender."}
                   </p>
                 </Kort>
               )}
 
-              <h2 className="seksjonstittel mt-seksjon text-blekk">Send brevet selv</h2>
+              <h2 className="seksjonstittel mt-seksjon text-blekk">{erSendt ? "Kopi av sendt tekst" : "Send brevet selv"}</h2>
               <div className="mt-gruppe">
                 {forLangtForMailto ? (
                   <Primærknapp onClick={apneEpost} disabled={ulagret || lagrer}>
@@ -735,7 +736,7 @@ export function UtkastFlyt({
 
               {/* Egen seksjon: dette er en registrering brukeren gjør etter å
                   ha sendt selv — appen sender aldri noe. */}
-              <div className="mt-seksjon border-t-[0.5px] border-strek pt-5">
+              {!erSendt && <div className="mt-seksjon border-t-[0.5px] border-strek pt-5">
                 <h2 className="seksjonstittel text-blekk">Har du sendt brevet?</h2>
                 <div className="mt-gruppe">
                   <Primærknapp
@@ -753,7 +754,7 @@ export function UtkastFlyt({
                   Da settes saken til «Venter på svar». Medhold sender ikke noe
                   selv, men minner deg på å følge opp hvis det drøyer.
                 </p>
-              </div>
+              </div>}
             </>
           )}
         </>

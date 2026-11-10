@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
   let body: { brevId?: string; melding?: string };
   try {
     body = await req.json();
+    if (!body || typeof body !== "object" || Array.isArray(body))
+      return new Response("Ugyldig forespørsel", { status: 400 });
   } catch {
     return new Response("Ugyldig forespørsel", { status: 400 });
   }

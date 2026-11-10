@@ -72,7 +72,7 @@ async function kjorOppfolging(
   const sakIds = venter.map((s) => s.id as string);
 
   // Nyeste aktivitet per sak = seneste av (utkast.sendt_at, brev.opprettet).
-  const [{ data: utkast }, { data: brev }, { data: alt }] = await Promise.all([
+  const [utkastSvar, brevSvar, historikkSvar] = await Promise.all([
     supabase
       .from("utkast")
       .select("sak_id, sendt_at")
@@ -84,6 +84,12 @@ async function kjorOppfolging(
       .select("sak_id")
       .in("sak_id", sakIds),
   ]);
+  const lesefeil = utkastSvar.error ?? brevSvar.error ?? historikkSvar.error;
+  if (lesefeil) {
+    logg("error", "cron", "oppfolgingsgrunnlag_feilet", { kode: lesefeil.code });
+    return tom; // Ukjent aktivitet/historikk skal aldri tolkes som «ikke sendt».
+  }
+  const utkast = utkastSvar.data, brev = brevSvar.data, alt = historikkSvar.data;
 
   const sisteAktivitet = new Map<string, string>();
   const oppdater = (id: string, ts: string | null) => {
@@ -137,12 +143,13 @@ async function kjorOppfolging(
       sendt++;
       continue;
     }
-    const ok = await sendOppfolging(bruker.epost, k.kreditor);
+    const ok = await sendOppfolging(bruker.epost, k.kreditor, `oppfolging/${k.sakId}`);
     if (!ok) continue;
     sendt++;
-    await supabase
+    const { error: loggFeil } = await supabase
       .from("sendte_oppfolginger")
       .upsert({ sak_id: k.sakId, bruker_id: k.brukerId }, { onConflict: "sak_id", ignoreDuplicates: true });
+    if (loggFeil) logg("error", "cron", "oppfolgingskvittering_feilet", { kode: loggFeil.code });
   }
 
   return { kandidater: kandidater.length, sendt, avmeldt };
@@ -196,13 +203,17 @@ export async function GET(req: NextRequest) {
   }
 
   // Hvilke (frist, terskel) har vi allerede varslet om?
-  const { data: alleredeSendt } = await supabase
+  const { data: alleredeSendt, error: varselFeil } = await supabase
     .from("sendte_varsler")
     .select("frist_id, terskel")
     .in(
       "frist_id",
       kandidater.map((f) => f.id),
     );
+  if (varselFeil) {
+    logg("error", "cron", "varselhistorikk_feilet", { kode: varselFeil.code });
+    return Response.json({ feil: "Databasefeil" }, { status: 500 });
+  }
   const sendtSett = new Set(
     (alleredeSendt ?? []).map((r) => `${r.frist_id}:${r.terskel}`),
   );
@@ -236,7 +247,7 @@ export async function GET(req: NextRequest) {
     }
 
     const varsler: FristVarsel[] = brukerFrister
-      .sort((a, b) => a.forfallsdato.localeCompare(b.forfallsdato))
+      .sort((a, b) => a.forfallsdato.localeCompare(b.forfallsdato) || a.id.localeCompare(b.id))
       .map((f) => ({
         tittel: f.tittel,
         forfallsdato: f.forfallsdato,
@@ -248,12 +259,14 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    const ok = await sendFristPaaminnelse(bruker.email, varsler);
+    // Én samle-e-post per bruker/dag. Resend dedupliserer parallelle kall og
+    // retry i 24 timer. Endret payload med samme nøkkel avvises, ikke resendes.
+    const ok = await sendFristPaaminnelse(bruker.email, varsler, `frister/${brukerId}/${idag}`);
     if (!ok) continue;
     sendt++;
 
     // Logg hver varslet (frist, terskel) så vi ikke sender dem på nytt.
-    await supabase.from("sendte_varsler").upsert(
+    const { error: loggFeil } = await supabase.from("sendte_varsler").upsert(
       brukerFrister.map((f) => ({
         frist_id: f.id,
         bruker_id: brukerId,
@@ -261,6 +274,7 @@ export async function GET(req: NextRequest) {
       })),
       { onConflict: "frist_id,terskel", ignoreDuplicates: true },
     );
+    if (loggFeil) logg("error", "cron", "varselkvittering_feilet", { kode: loggFeil.code });
   }
 
   const oppfolging = await kjorOppfolging(supabase, dryRun);
