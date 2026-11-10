@@ -41,6 +41,7 @@ import { Bekreftelse } from "./Bekreftelse";
 import { BrevGjennomgang } from "./BrevGjennomgang";
 import { KontrollOversikt } from "./KontrollOversikt";
 import { BrevReferanse } from "./BrevReferanse";
+import { SakOgFrister } from "./SakOgFrister";
 import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
 import { kontrollerSum } from "@/lib/sumkontroll";
 import { brevforklaring } from "@/lib/brevforklaring";
@@ -780,13 +781,7 @@ export function LeggTilBrevFlyt({
 
             </>}
             handling={<>
-              <details className="rounded-kort border border-strek bg-flate p-4" open={!!kravForslag || fristSammenligning?.status === "avvik_kortere"}>
-                <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk focus-visible:outline-2 focus-visible:outline-aksent">
-                  Sak, frister og huskeliste
-                  <span className="mt-1 block text-meta font-normal text-dempet">{kravModus === "ny" ? "Ny sak" : valgtKravObj?.navn || "Velg sak"} · {valgteFrister.length} {valgteFrister.length === 1 ? "valgt frist" : "valgte frister"}</span>
-                  {valgteFrister[0]?.forfallsdato && <span className="mt-1 block text-meta font-normal text-dempet">Neste valgte frist: {formaterKortDato(valgteFrister.map(f => f.forfallsdato).filter((d): d is string => !!d).sort()[0])}</span>}
-                </summary>
-                <p className="mt-2 text-meta text-dempet">Valgte frister og steg lagres sammen med brevet.</p>
+              <SakOgFrister sakNavn={kravModus === "ny" ? "Ny sak" : valgtKravObj?.navn || "Velg sak"} frister={valgteFrister} fristfunn={fristSammenligning} alvorlig={alvorlig} harMatch={!!kravForslag} kreverBekreftelse={kreverAvslutning || valgtKravAvsluttet || datoMerknad !== null}>
           <div className="mt-5">
             <p className="text-hjelp font-medium text-blekk">Hører til</p>
             {kravForslag && kravModus === "ny" && (
@@ -944,7 +939,7 @@ export function LeggTilBrevFlyt({
             </details>
           )}
 
-              </details>
+              </SakOgFrister>
           {valgtKravVenter && (
             <div className="mt-5">
               <p className="text-hjelp font-medium text-blekk">
