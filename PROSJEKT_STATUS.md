@@ -3,6 +3,12 @@
 Løpende status for implementeringen av `MEDHOLD_ARBEIDSORDRE.md`. Oppdateres
 etter hver fase.
 
+## Visuell finpuss av brevkontrollen – 10. november 2026
+
+Videreført på PR #65: lettere nummererte steg, fjærbasert fremdriftslinje og kort retningsbestemt inntreden (200 ms). Ingen exit-venting. Redusert bevegelse gir initialt synlig innhold og null varighet. Fjernet den ekstra inntredenen på gebyrpanelet for å unngå dobbeltanimasjon. Beløpet «Å betale» er tydeligere, redigeringsrader har minst 44 px trykkflate, og detaljfelter har synlig tastaturfokus. På skjermer under 380 px står nummer over etikett. Ingen nye avhengigheter eller endringer i beregninger/serverkontrakter.
+
+Verifisering: 397/397 tester, inkludert to nye bevegelsestester. Produksjonsbygg med typekontroll bestått. Lokal nettleser: 390 px gjennom alle tre deler og tilbake; 320 px visuelt kontrollert, fokus går til ny overskrift. Bilder oppdatert i docs/design/brevkontroll. Syntetisk modelladapter og separat testkonto brukt; kontoen ryddet. Ingen ny fysisk iPhone- eller mørkmodusprøve i denne runden. Ikke produksjonsdeployet.
+
 ## Oppdelt brevkontroll – 10. november 2026
 
 Egen UI-gren: `codex/brevkontroll-steg`. Den lange gjennomgangen etter lesing er delt i Opplysninger, Kontroll og Neste steg. Fremdrift og tilbakeknapp følger visningen. Tall, datoer og sumkontroll er synlige i første del; avsenderfelter, oppsummering og huskeliste kan foldes ut. Bekreftelse og eventuell sumavviksbekreftelse kreves fortsatt før kontroll og handlingsvalg. Endret brevtype trekker også bekreftelsen tilbake. Alle verdier og lagring eies fortsatt av den eksisterende brevflyten. Ingen server-, database- eller juridiske endringer.

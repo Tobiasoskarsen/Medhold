@@ -692,7 +692,7 @@ export function LeggTilBrevFlyt({
           />
 
           <details className="mt-4 rounded-kort border border-strek bg-flate p-4">
-            <summary className="min-h-11 cursor-pointer text-hjelp font-semibold text-blekk">Avsender og brevtype · {avsender || "Mangler avsender"}</summary>
+            <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk outline-offset-4 focus-visible:outline-2 focus-visible:outline-aksent">Avsender og brevtype · {avsender || "Mangler avsender"}</summary>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <label className="col-span-2 block text-hjelp font-medium text-blekk">
               Avsender
@@ -746,8 +746,8 @@ export function LeggTilBrevFlyt({
             </>}
             kontroll={<>
               <details className="rounded-kort border border-strek bg-flate p-4">
-                <summary className="min-h-11 cursor-pointer text-hjelp font-semibold text-blekk">Oppsummering av brevet</summary>
-          <div className="mt-4 rounded-kort border-[0.5px] border-strek bg-flate p-4">
+                <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk outline-offset-4 focus-visible:outline-2 focus-visible:outline-aksent">Oppsummering av brevet</summary>
+          <div className="mt-3 border-t border-strek pt-3">
             <p className="whitespace-pre-line text-sm leading-relaxed text-blekk">
               {brevforklaring({ avsender, brevtype, brevdato, belop: tolkKr(belop), saksnummer })}
             </p>
@@ -758,19 +758,15 @@ export function LeggTilBrevFlyt({
 
               </details>
           {kanLagre ? (
-            // Funnene kommer rolig inn idet tallene er bekreftet.
-            <m.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={FJAER}
-            >
+            // BrevGjennomgang eier inntredenen, slik at funnene ikke dobbeltanimeres.
+            <div>
               <Gebyrsjekk
                 resultat={gebyrsjekk}
                 hovedstol={hovedstolGrunnlag}
                 className="mt-5"
               />
               <KontrollOmfang brevtype={brevtype} />
-            </m.div>
+            </div>
           ) : (
             <p className="mt-5 text-hjelp text-dempet">
               Bekreft tallene over, så sjekker vi gebyrer og frister.
@@ -1055,7 +1051,7 @@ export function LeggTilBrevFlyt({
 
           {analyse.foreslatte_steg.length > 0 && (
             <details className="mt-5 rounded-kort border border-strek bg-flate p-4">
-              <summary className="min-h-11 cursor-pointer text-hjelp font-semibold text-blekk">Huskeliste · {analyse.foreslatte_steg.length} foreslåtte steg</summary>
+              <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk outline-offset-4 focus-visible:outline-2 focus-visible:outline-aksent">Huskeliste · {analyse.foreslatte_steg.length} foreslåtte steg</summary>
               <p className="text-hjelp font-medium text-blekk">
                 Foreslåtte steg
               </p>
