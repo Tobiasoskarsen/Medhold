@@ -8,7 +8,7 @@
 // sendes ALDRI til utkast-prompten — ren UI-tilstand.
 import { useId, useState, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { ChevronDown, ChevronRight, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Clock3 } from "lucide-react";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
@@ -152,6 +152,9 @@ export function Veivalg({
   svarMål,
   betaleMål,
   ekstra,
+  senereMål,
+  lagreForst = false,
+  lagrer = false,
   className = "",
 }: {
   /** Sakens nyeste brev har et lagret gebyrsjekk-funn (`over`). Deterministisk
@@ -163,6 +166,9 @@ export function Veivalg({
   betaleMål: VeivalgMål;
   /** Ekstra innhold rendret nederst (steg 3s «Bestem senere»-lenke). */
   ekstra?: ReactNode;
+  senereMål?: VeivalgMål;
+  lagreForst?: boolean;
+  lagrer?: boolean;
   className?: string;
 }) {
   const [åpen, setÅpen] = useState(false);
@@ -179,11 +185,11 @@ export function Veivalg({
 
   return (
     <div className={className}>
-      <h2 className="seksjonstittel text-blekk">
+      <h2 className={lagreForst ? "sr-only" : "seksjonstittel text-blekk"}>
         Hva vil du gjøre?
       </h2>
       <p className="mt-1 text-hjelp leading-relaxed text-dempet">
-        Du kan ombestemme deg når som helst. Du sender brevet selv.
+        {lagreForst ? "Brevet er ikke lagret ennå. Alle tre valg lagrer brevet, valgte frister og huskelisten først. Ingenting sendes automatisk." : "Du kan ombestemme deg når som helst. Du sender brevet selv."}
       </p>
 
       <div className="mt-gruppe flex flex-col gap-2">
@@ -195,7 +201,7 @@ export function Veivalg({
           }
           ikonBg="bg-dom-rod-bg"
           tittel="Svar på kravet"
-          undertekst="Lag et utkast du kan redigere og sende selv."
+          undertekst={lagreForst ? "Lag et svar du kan lese gjennom, endre og sende selv." : "Lag et utkast du kan redigere og sende selv."}
           anbefalt={harGebyrfunn}
           begrunnelse={
             gebyrDifferanse
@@ -208,10 +214,11 @@ export function Veivalg({
           ikon={<Check className="size-[18px] text-trygg" aria-hidden />}
           ikonBg="bg-trygg/10"
           tittel="Finn en betalingsløsning"
-          undertekst="Se alternativer for betaling, utsettelse og avdrag."
+          undertekst={lagreForst ? "Se muligheter for avdrag eller å be om mer tid." : "Se alternativer for betaling, utsettelse og avdrag."}
           anbefalt={false}
           mål={betaleMål}
         />
+        {senereMål && <VeivalgKort ikon={<Clock3 className="size-[18px] text-dempet" aria-hidden />} ikonBg="bg-flate-2" tittel="Bestem senere" undertekst="Lagre brevet og kom tilbake når du vil." anbefalt={false} mål={senereMål} />}
       </div>
 
       <button
@@ -319,6 +326,7 @@ export function Veivalg({
         )}
       </AnimatePresence>
 
+      {lagrer && <p role="status" className="mt-3 text-hjelp font-semibold text-aksent">Lagrer brevet … Vent på bekreftelse.</p>}
       {ekstra}
     </div>
   );

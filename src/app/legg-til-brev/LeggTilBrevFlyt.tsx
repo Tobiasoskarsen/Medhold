@@ -1101,16 +1101,9 @@ export function LeggTilBrevFlyt({
                 onKlikk: () => lagre("veier-ut"),
                 deaktivert: lagrer || !kanLagreBrev,
               }}
-              ekstra={
-                <button
-                  type="button"
-                  disabled={lagrer || !kanLagreBrev}
-                  onClick={() => lagre("krav")}
-                  className="trykk mt-3 block text-hjelp text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk disabled:opacity-60"
-                >
-                  {lagrer ? "Lagrer …" : "Bestem senere — lagre i tidslinjen"}
-                </button>
-              }
+              lagreForst
+              lagrer={lagrer}
+              senereMål={{ type: "klikk", onKlikk: () => lagre("krav"), deaktivert: lagrer || !kanLagreBrev }}
             />
           </div>
           )}
