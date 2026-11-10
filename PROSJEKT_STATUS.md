@@ -5,6 +5,14 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – fysisk to-fane-konflikt bekreftet 10. november
+
+Brukeren bekreftet den beskrevne Safari-prøven på iPhone: A lagret, B fikk
+konflikt og beholdt egen tekst, og ny fane viste As lagrede tekst. Denne
+fysiske porten er brukerbekreftet bestått. Stor systemtekst er fortsatt ikke
+bekreftet; tidligere 200 % sidezoom er et separat resultat. Ingen kode,
+migrasjon, merge eller produksjonsendring i denne dokumentoppdateringen.
+
 ### R3 – VoiceOver-prøve bekreftet
 
 Brukeren presiserte at VoiceOver fungerte fint på iPhone. Den avgrensede

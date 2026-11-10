@@ -101,8 +101,9 @@ med nøyaktig testprosjekt; ingen produksjonsfallback. Ikke legg nøkler i rappo
 
 - VoiceOver-prøven på iPhone er brukerbekreftet bestått («funka jo fint»),
   men er ikke en full tilgjengelighetsaudit av alle flyter.
-- Fysisk iPhone: stor systemtekst og
-  konfliktprøven på selve telefonen gjenstår. Bilde- og PDF-opplasting er
+- Fysisk iPhone: stor systemtekst gjenstår. To-fane-konfliktprøven på selve
+  telefonen ble brukerbekreftet bestått 10. november 2026: A lagret, B beholdt
+  tekst og fikk konflikt, og ny fane viste As tekst. Bilde- og PDF-opplasting er
   brukerbekreftet bestått, se tabellen over. Desktopprøven erstatter ikke
   de øvrige fysiske prøvene.
 - Fysisk Android/Chrome/TalkBack er ikke tilgjengelig/testet.

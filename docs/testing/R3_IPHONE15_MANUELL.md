@@ -63,6 +63,11 @@ genererte `.next`-mappen. Ingen tester eller byggkontroller ble svekket.
 
 ## Observerte avvik og fortsatt åpne porter
 
+10. november 2026: brukeren bekreftet «ja det funka» på den konkrete
+to-fane-prøven i Safari på iPhone. A lagret først, B fikk konflikt og beholdt
+egen tekst, og ny fane viste As lagrede tekst. Prøven er brukerbekreftet
+bestått; ingen instrumentert telefonmåling eller faktisk sending hevdes.
+
 Systemtekst: brukeren økte iPhones tekststørrelse og rapporterte «den endret
 seg ikke». Kodekontroll viste faste px-størrelser i appens typografi. Dette
 beviser ikke støtte for systemtekst og er ikke markert bestått. Den tidligere
@@ -87,7 +92,7 @@ konkret appfeil ble meldt. Dette er ikke en full VoiceOver-audit av alle flyter.
 - Bilde- og PDF-opplasting på fysisk enhet er senere brukerbekreftet bestått
   (se tabellen). Direkte kameraopptak er også senere bekreftet bestått.
   Faktisk mottakeradresse i Mail er ikke særskilt bekreftet i denne reisen.
-- Stor systemtekst og fysisk flerfane-konflikt er ikke bekreftet
+- Stor systemtekst er ikke bekreftet
   ennå. Fanebytte med redusert bevegelse er retestet over; Android/TalkBack
   mangler fortsatt.
 - Eldre app mot oppgradert klone, slutt-smoke etter faktisk integrasjon og
