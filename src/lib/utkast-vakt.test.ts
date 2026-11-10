@@ -9,6 +9,8 @@ import {
   type VaktGrunnlag,
 } from "./utkast-vakt.ts";
 import { REFERANSEBREV, REFERANSEBREV_TILLEGG } from "./utkast-stemme.ts";
+import { etterkontroll, genererUtkast } from "./utkast-prompt.ts";
+import type Anthropic from "@anthropic-ai/sdk";
 
 function grunnlag(over: Partial<VaktGrunnlag>): VaktGrunnlag {
   return {
@@ -179,9 +181,9 @@ test("«Jeg har betalt» med «betalte» i detaljer → ingen funn", () => {
   assert.deepEqual(funn, []);
 });
 
-test("påstand uten «jeg»/«meg» i setningen → ingen funn", () => {
+test("S1-A: passiv betalingspåstand krever også belegg", () => {
   const funn = kontrollerUtkast("Kravet er betalt.", byggVaktFakta(brev13));
-  assert.deepEqual(funn, []);
+  assert.deepEqual(funn.map((f) => f.type), ["pastand"]);
 });
 
 test("delvis omfang + «jeg betaler ikke kravet» → omfang-funn", () => {
@@ -200,12 +202,12 @@ test("helt omfang + «jeg betaler ikke kravet» → ingen funn", () => {
   assert.deepEqual(funn, []);
 });
 
-test("delvis: «jeg har betalt den ubestridte delen» er alltid tillatt", () => {
+test("S1-A: delvis omfang beviser ikke at den ubestridte delen allerede er betalt", () => {
   const funn = kontrollerUtkast(
     "Jeg har betalt den ubestridte delen.",
     byggVaktFakta({ ...brev13, omfang: "delvis" }),
   );
-  assert.deepEqual(funn, []);
+  assert.deepEqual(funn.map((f) => f.type), ["pastand"]);
 });
 
 test("«14 dager» → ingen funn", () => {
@@ -283,4 +285,94 @@ test("verdierMedKilde: første kilde i rekkefølgen, null når ukjent", () => {
     { type: "belop", verdi: "289 kr", kilde: null },
     { type: "dato", verdi: "20. juli 2026", kilde: "fra brevet" },
   ]);
+});
+
+// S1-A: motstrid og manglende belegg må gi oppmerksomhet, ikke godkjennes
+// fordi begge tekstene inneholder samme ordstamme.
+const s1Avvik = [
+  ["Jeg har ikke betalt", "Jeg har betalt"],
+  ["Jeg har betalt", "Jeg har ikke betalt"],
+  ["Jeg skal betale neste uke", "Jeg har allerede betalt"],
+  ["Jeg har betalt 100 kr", "Hele kravet er oppgjort"],
+  ["Jeg bestrider gebyrene", "Jeg bestrider ikke gebyrene"],
+  ["Jeg har ikke mottatt fakturaen", "Jeg har mottatt fakturaen"],
+  ["Jeg har aldri betalt.", "Allerede i går betalte jeg."],
+  ["Betalt har jeg ikke!", "Jeg har betalt."],
+  ["Jeg har betalt.", "Betalt har jeg aldri."],
+  ["Jeg vil betale.", "Kravet er betalt."],
+  ["Jeg har innbetalt 100 kr.", "Jeg har gjort opp hele kravet."],
+  ["Jeg har betalt 100 kr.", "Jeg har betalt 200 kr."],
+  ["Jeg har ikke mottatt fakturaen.", "Fakturaen har jeg allerede mottatt."],
+  ["Jeg mottok fakturaen.", "Jeg har aldri fått fakturaen."],
+  ["Gebyrene bestrider jeg.", "Gebyrene bestrider jeg ikke."],
+  ["Jeg bestrider ikke gebyrene.", "Jeg bestrider gebyrene."],
+  ["Jeg har betalt 100 kr, men resten er ikke betalt.", "Hele kravet er oppgjort."],
+  ["Jeg har ikke sagt at jeg har betalt.", "Jeg har betalt."],
+  ["Jeg vet ikke om jeg har betalt.", "Jeg har betalt."],
+  ["Jeg kan ha betalt.", "Jeg har betalt."],
+  ["Kreditor sier at jeg har betalt.", "Jeg har betalt."],
+  ["Jeg har ikke betalt fakturaen. Jeg har betalt gebyret.", "Jeg har betalt fakturaen."],
+];
+for (const [detaljer, utkast] of s1Avvik) {
+  test(`S1-A flagger: ${detaljer} → ${utkast}`, () => {
+    const fakta = byggVaktFakta({ ...brev13, detaljer });
+    // Tall kan finnes i brevet uten å bevise at brukeren har betalt dem.
+    fakta.tillatteBelop.push(100, 200);
+    assert.ok(kontrollerUtkast(utkast, fakta).some((f) => f.type === "pastand"));
+  });
+}
+
+for (const tekst of [
+  "Jeg har betalt 100 kr.",
+  "Jeg betalte 100 kr.",
+  "Jeg har ikke betalt fakturaen.",
+  "Jeg har aldri mottatt fakturaen.",
+  "Jeg bestrider gebyrene.",
+]) {
+  test(`S1-A godtar samme uttrykkelige brukeropplysning: ${tekst}`, () => {
+    const fakta = byggVaktFakta({ ...brev13, detaljer: tekst });
+    assert.deepEqual(kontrollerUtkast(tekst, fakta), []);
+  });
+}
+
+test("S1-A: dokumentets betalingspåstand er ikke brukerens bekreftelse", () => {
+  const fakta = byggVaktFakta({ ...brev13, originalTekst: "Hele kravet er betalt.", detaljer: "" });
+  assert.ok(kontrollerUtkast("Jeg har betalt.", fakta).some((f) => f.type === "pastand"));
+});
+
+test("S1-A: delvis omfang tillater betalingsplan, men ikke oppdiktet tidligere betaling", () => {
+  const fakta = byggVaktFakta({ ...brev13, omfang: "delvis" });
+  assert.deepEqual(kontrollerUtkast("Jeg betaler den ubestridte delen innen fristen.", fakta), []);
+  assert.ok(kontrollerUtkast("Jeg har betalt den ubestridte delen.", fakta).some((f) => f.type === "pastand"));
+});
+
+test("S1-A: samme vakt utløser serverens ene regenerering", async () => {
+  const fakta = byggVaktFakta({ ...brev13, detaljer: "Jeg har ikke betalt." });
+  const svar = ["Jeg har betalt.", "Jeg har ikke betalt."];
+  const kall: Anthropic.MessageCreateParamsNonStreaming[] = [];
+  const ai = { messages: { create: async (p: Anthropic.MessageCreateParamsNonStreaming) => {
+    kall.push(p);
+    return { stop_reason: "end_turn", content: [{ type: "text", text: svar[kall.length - 1] }] };
+  } } } as unknown as Anthropic;
+  const resultat = await genererUtkast(ai, { system: "test", meldinger: [] }, fakta);
+  assert.equal(kall.length, 2);
+  assert.equal(resultat?.tekst, "Jeg har ikke betalt.");
+  assert.equal(resultat?.regenerert, true);
+  assert.deepEqual(resultat?.advarsler, []);
+  assert.match(String(kall[1].messages.at(-1)?.content), /Fjern påstanden/);
+});
+
+test("S1-A: vedvarende motstrid gir advarsel etter én regenerering, ikke ny løkke", async () => {
+  const fakta = byggVaktFakta({ ...brev13, detaljer: "Jeg skal betale neste uke." });
+  let antall = 0;
+  const ai = { messages: { create: async () => {
+    antall++;
+    return { stop_reason: "end_turn", content: [{ type: "text", text: "Jeg har betalt." }] };
+  } } } as unknown as Anthropic;
+  const resultat = await genererUtkast(ai, { system: "test", meldinger: [] }, fakta);
+  assert.equal(antall, 2);
+  assert.equal(resultat?.tekst, "Jeg har betalt.");
+  assert.deepEqual(resultat?.advarsler.map((f) => f.type), ["pastand"]);
+  const kontroll = etterkontroll("Jeg har betalt 289 kr etter § 9.", fakta);
+  assert.deepEqual(kontroll.vaktFunn.map((f) => f.type), ["belop", "paragraf", "pastand"]);
 });

@@ -5,6 +5,45 @@ etter hver fase.
 
 ## Faseoversikt
 
+### S1-A – negasjon i utkastvakten
+
+- Egen gren fra PR #53 (`1d9398f`); #52 og #53 er fortsatt åpne. Ingen
+  produksjonsmigrasjoner, deploy eller endringer av reelle brukerdata.
+- Rotårsak: delstrengen `betal` i detaljene godkjente også «ikke betalt» og
+  fremtidig betaling. Passiv form ble hoppet over, og delvis omfang godkjente
+  en oppdiktet gjennomført betaling av den ubestridte delen.
+- `kontrollerUtkast` skiller nå gjenkjent betalingshistorikk, negasjon,
+  beløp/delbetaling, mottak og bestridelse. Bare uttrykkelige brukerdetaljer
+  brukes som belegg for betalingshistorikk; et beløp i brevet er ikke bevis
+  på betaling. Usikre, refererte og motstridende ledd gir advarsel.
+- Eksisterende én regenerering og etterfølgende advarsler brukes uendret,
+  både på serveren og ved redigering i klienten. Vakten blokkerer ikke brevet.
+- Tester lagt til før rettelsen og observert feile. Alle sju obligatoriske
+  tilfeller, ordstilling/bøying, passiv form, usikkerhet, ulike betalingsobjekter,
+  kildeavgrensning og regenerering dekkes. To gamle tester er skjerpet:
+  passiv betaling og «har betalt den ubestridte delen» krever nå belegg.
+- Praktisk test: faktisk `UtkastFlyt` i lokal Next-app med fiktiv strømrespons.
+  «Har ikke betalt» mot «har betalt» viser advarsel; retting ved blur fjerner
+  den. Ingen AI-, database- eller sendt-handling kjørt. Midlertidig testside
+  fjernet. Turbopack-dev krasjet i CSS-underprosess; lokal UI-test brukte det
+  dokumenterte `--webpack`-alternativet uten endring av prosjektkonfigurasjonen.
+- Begrensning: avgrenset heuristisk språkvakt, ikke generell norsk semantikk.
+  Ukjente formuleringer kan overses, og konservativ matching kan varsle for
+  korrekte tekster. Oppsigelse/klage/dokumentasjon har fortsatt den eksisterende
+  kontrollen og er ikke utvidet i denne pakken. Anerkjennelse av selve brevet
+  og valgt bestridelsesstandpunkt tillates uten eget historisk belegg når det
+  ikke finnes gjenkjent motstrid; fakturamottak får ikke dette unntaket.
+- Ingen migrasjoner eller nye avhengigheter. Låste avhengigheter ble installert
+  med `npm ci`; audit rapporterer eksisterende sårbarheter (19). Ingen
+  avhengighetsoppgradering eller `audit fix` er blandet inn i S1-A.
+- Sluttkontroll: 384 enhetstester (54 i utkast-vakt), 71 PGlite-tester,
+  lint og typekontroll er grønne. Produksjonsbygget er kjørt etter at
+  generert dev-cache for den fjernede testsiden ble ryddet.
+- Nye brukerrettede tekster til advokatgjennomgang: «Sjekk påstanden om
+  betaling/mottak/bestridelse: den mangler entydig støtte eller kan motsi det
+  du har skrevet.» Ingen nye juridiske vurderinger.
+- S1-B–F er ikke påbegynt.
+
 | Fase | Beskrivelse | Status |
 |---|---|---|
 | 0 | Rebrand + designfundament | ✅ Ferdig |
