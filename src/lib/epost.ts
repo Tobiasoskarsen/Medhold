@@ -3,6 +3,7 @@
 
 import { fristNærhet, formaterDato } from "@/lib/dato";
 import { APP_NAME } from "@/lib/brand";
+import { logg, feilInfo } from "@/lib/logg";
 
 export type FristVarsel = {
   tittel: string;
@@ -184,13 +185,12 @@ Skru av slike e-poster under Meg: ${url}/meg`;
       }),
     });
     if (!res.ok) {
-      const detalj = await res.text().catch(() => "");
-      console.error(`[epost] Resend svarte ${res.status} (oppfølging): ${detalj}`);
+      logg("error", "epost", "resend_avviste", { formal: "oppfolging", status: res.status });
       return false;
     }
     return true;
   } catch (e) {
-    console.error("[epost] Uventet feil ved oppfølging:", e);
+    logg("error", "epost", "uventet_feil", { formal: "oppfolging", ...feilInfo(e) });
     return false;
   }
 }
@@ -228,13 +228,12 @@ export async function sendFristPaaminnelse(
     });
 
     if (!res.ok) {
-      const detalj = await res.text().catch(() => "");
-      console.error(`[epost] Resend svarte ${res.status}: ${detalj}`);
+      logg("error", "epost", "resend_avviste", { formal: "frist", status: res.status });
       return false;
     }
     return true;
   } catch (e) {
-    console.error("[epost] Uventet feil ved utsending:", e);
+    logg("error", "epost", "uventet_feil", { formal: "frist", ...feilInfo(e) });
     return false;
   }
 }
@@ -290,13 +289,12 @@ Har du ikke bedt om den, kan du se bort fra denne e-posten.`;
       }),
     });
     if (!res.ok) {
-      const detalj = await res.text().catch(() => "");
-      console.error(`[epost] Resend svarte ${res.status} (kode): ${detalj}`);
+      logg("error", "epost", "resend_avviste", { formal: "kode", status: res.status });
       return false;
     }
     return true;
   } catch (e) {
-    console.error("[epost] Uventet feil ved kode-utsending:", e);
+    logg("error", "epost", "uventet_feil", { formal: "kode", ...feilInfo(e) });
     return false;
   }
 }

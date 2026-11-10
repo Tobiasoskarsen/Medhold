@@ -33,6 +33,16 @@ export function BrevSamtale({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ brevId, melding: m }),
       });
+      // Grense nådd eller kvoten kunne ikke sjekkes: serveren sier hvorfor.
+      if (res.status === 429 || res.status === 409 || res.status === 503) {
+        const grunn = (await res.text()).slice(0, 400);
+        setMeldinger((p) => {
+          const c = [...p];
+          c[c.length - 1] = { rolle: "assistent", innhold: grunn || "Prøv igjen senere." };
+          return c;
+        });
+        return;
+      }
       if (!res.ok || !res.body) throw new Error();
       const reader = res.body.getReader();
       const dec = new TextDecoder();

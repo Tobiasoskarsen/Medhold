@@ -26,14 +26,30 @@ export function erGyldigFodselsnummer(elleveSifre: string): boolean {
   return k1 !== null && k2 !== null && k1 === s[9] && k2 === s[10];
 }
 
-// 11 sifre, med valgfritt ett mellomrom etter de 6 første (vanlig skrivemåte),
-// og ikke som del av et lengre siffertall.
-const KANDIDAT = /(?<!\d)\d{6} ?\d{5}(?!\d)/g;
+// 11 sifre, med valgfritt ett skilletegn (mellomrom, punktum eller bindestrek)
+// etter de 6 første, og ikke som del av et lengre siffertall.
+const KANDIDAT = /(?<!\d)\d{6}[ .-]?\d{5}(?!\d)/g;
 
 /** Erstatter gyldige fødselsnumre i teksten med en tydelig etikett. */
 export function maskerFodselsnummer(tekst: string): string {
   return tekst.replace(KANDIDAT, (treff) => {
-    const rene = treff.replace(/\s/g, "");
+    const rene = treff.replace(/[\s.-]/g, "");
     return erGyldigFodselsnummer(rene) ? "[fødselsnummer skjult]" : treff;
   });
+}
+
+/**
+ * Maskerer fødselsnumre i alle tekstverdier i et objekt eller en liste, også
+ * nestede. Tall, datoer og andre verdier røres ikke, så beløp og frister
+ * beholdes. Brukes på serveren før lagring, uansett hva klienten sendte.
+ */
+export function maskerAlleStrenger<T>(verdi: T): T {
+  if (typeof verdi === "string") return maskerFodselsnummer(verdi) as T;
+  if (Array.isArray(verdi)) return verdi.map((v) => maskerAlleStrenger(v)) as T;
+  if (verdi && typeof verdi === "object") {
+    const ut: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(verdi as Record<string, unknown>)) ut[k] = maskerAlleStrenger(v);
+    return ut as T;
+  }
+  return verdi;
 }

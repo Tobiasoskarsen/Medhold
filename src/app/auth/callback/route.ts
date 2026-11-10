@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { internRedirect } from "@/lib/redirect";
+import { logg, feilInfo } from "@/lib/logg";
 
 /**
  * OAuth-tilbakekall (PKCE code flow) — Google-innlogging via Supabase.
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
           await supabase.auth.updateUser({ data: nyeFelter });
         }
       } catch (feil) {
-        console.error("Google fornavn/onboarding-berikelse feilet", feil);
+        logg("error", "auth-callback", "berikelse_feilet", feilInfo(feil));
       }
       return NextResponse.redirect(new URL(next, request.url));
     }

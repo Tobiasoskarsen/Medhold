@@ -18,6 +18,8 @@ import {
   finnForbudteOrd,
 } from "./utkast-stemme.ts";
 import { kontrollerUtkast, type VaktFakta, type VaktFunn } from "./utkast-vakt.ts";
+import { vurderStopp } from "./ai-svar.ts";
+import { BRUKER_REGEL, DOKUMENT_REGEL, avgrens } from "./dokumentdata.ts";
 
 export type Omfang = "delvis" | "helt";
 
@@ -57,9 +59,10 @@ type FewShot = { bruker: string; svar: string };
 const FS_BESTRID_HELT: FewShot = {
   bruker: `Brevet det svares på:
 
-Betalingsoppfordring fra Pulsløft Treningssenter AS. Saksnummer FK-2026-88213. Datert 12. juli 2026. Krever 3 243,20 kr for medlemskap januar–mars 2026.
+${avgrens("Betalingsoppfordring fra Pulsløft Treningssenter AS. Saksnummer FK-2026-88213. Datert 12. juli 2026. Krever 3 243,20 kr for medlemskap januar–mars 2026.")}
 
-Det personen selv oppgir: sa opp i november, har eposten som bevis
+Det personen selv oppgir:
+${avgrens("sa opp i november, har eposten som bevis", "brukerens_opplysninger")}
 
 Navnet mitt: Kari Eksempel`,
   svar: REFERANSEBREV.innsigelse,
@@ -68,7 +71,7 @@ Navnet mitt: Kari Eksempel`,
 const FS_BESTRID_DELVIS: FewShot = {
   bruker: `Brevet det svares på:
 
-Betalingsoppfordring. Saksnummer KY-2026-3341. Datert 13. juli 2026. Hovedkrav 2 400 kr. Inkassosalær 800 kr.
+${avgrens("Betalingsoppfordring. Saksnummer KY-2026-3341. Datert 13. juli 2026. Hovedkrav 2 400 kr. Inkassosalær 800 kr.")}
 
 Fakta fra Medhold: Inkassosalæret på 800 kr overstiger lovlig maksimalsats. Høyeste tillatte salær for et krav i denne størrelsen er 750 kr.
 
@@ -81,7 +84,7 @@ Navnet mitt: Kari Eksempel`,
 const FS_NEDBETALING: FewShot = {
   bruker: `Brevet det svares på:
 
-Betalingsoppfordring. Saksnummer FK-2026-88213. Datert 12. juli 2026. Krav 3 243,20 kr.
+${avgrens("Betalingsoppfordring. Saksnummer FK-2026-88213. Datert 12. juli 2026. Krav 3 243,20 kr.")}
 
 Fakta fra Medhold: Nedbetalingsforslag: 500 kr per måned i 7 måneder (siste avdrag 243,20 kr).
 
@@ -94,9 +97,10 @@ Navnet mitt: Kari Eksempel`,
 const FS_UTSETTELSE: FewShot = {
   bruker: `Brevet det svares på:
 
-Inkassovarsel. Saksnummer AG-2026-04471. Datert 10. juli 2026. Betalingsfrist 24. juli 2026.
+${avgrens("Inkassovarsel. Saksnummer AG-2026-04471. Datert 10. juli 2026. Betalingsfrist 24. juli 2026.")}
 
-Det personen selv oppgir: får lønn 15.
+Det personen selv oppgir:
+${avgrens("får lønn 15.", "brukerens_opplysninger")}
 
 Navnet mitt: Kari Eksempel`,
   svar: REFERANSEBREV.betalingsutsettelse,
@@ -249,15 +253,18 @@ Ufravikelige regler:
 - Ikke gi garantier om utfallet. Ikke lat som du er advokat.${gebyrRegel}${omfangRegel}${avtaleRegel}${rettsligRegel}${navnRegel}
 - IKKE ta med emnelinjen (linjen som starter med «Emne:») i svaret ditt, selv om referansebrevene har den — appen bygger emnelinjen selv. Start rett på «Hei,».
 - Skriv kun selve brevteksten (ingen forklaring rundt, ingen «her er utkastet»).
+
+${DOKUMENT_REGEL}
+${BRUKER_REGEL}
 - Eksemplene i samtalen viser ønsket tone, lengde og struktur. Navn, beløp, datoer og saksnumre i eksemplene er kun illustrasjon — bruk alltid sakens faktiske verdier, aldri eksemplenes.`;
 
   const bruker = [
-    g.originalTekst ? `Brevet det svares på:\n\n${g.originalTekst}` : null,
+    g.originalTekst ? `Brevet det svares på:\n\n${avgrens(g.originalTekst)}` : null,
     gebyrFakta ? `Fakta fra Medhold: ${gebyrFakta}` : null,
     omfangFakta ? `Fakta fra Medhold: ${omfangFakta}` : null,
     avdragFakta ? `Fakta fra Medhold: ${avdragFakta}` : null,
     detalj
-      ? `Det personen selv oppgir: ${detalj}`
+      ? `Det personen selv oppgir:\n${avgrens(detalj, "brukerens_opplysninger")}`
       : "Personen har ikke oppgitt utfyllende detaljer.",
     navnTrimmet ? `Navnet mitt: ${navnTrimmet}` : null,
   ]
@@ -322,8 +329,10 @@ async function genererTekst(
     system,
     messages: meldinger,
   });
+  // Et avkuttet utkast er aldri et ferdig svarbrev.
+  if (vurderStopp(svar.stop_reason)) return null;
   const blokk = svar.content.find((b) => b.type === "text");
-  if (!blokk || blokk.type !== "text") return null;
+  if (!blokk || blokk.type !== "text" || !blokk.text.trim()) return null;
   return fjernStjerner(blokk.text);
 }
 

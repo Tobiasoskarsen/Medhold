@@ -13,6 +13,11 @@ import {
   type UtkastMelding,
 } from "@/lib/utkast-prompt";
 import { kontrollerUtkast, type VaktFunn } from "@/lib/utkast-vakt";
+import { klassifiserAiFeil, vurderStopp, type AiFeil } from "@/lib/ai-svar";
+import { logg } from "@/lib/logg";
+import { forsokId, skalBelastes } from "@/lib/kvote";
+import { startKvote } from "@/lib/kvote-server";
+import { maskerFodselsnummer } from "@/lib/maskering";
 import { byggUtkastPrompt } from "../../(app)/krav/[id]/utkast/byggUtkastPrompt";
 
 // AI-svar kan ta tid å strømme — gi funksjonen rom på Vercel (samme mønster
@@ -59,7 +64,8 @@ export async function POST(req: NextRequest) {
   const kravId = String(body.kravId ?? "");
   const brevId = body.brevId ? String(body.brevId) : null;
   const type = String(body.type ?? "");
-  const detaljer = String(body.detaljer ?? "");
+  // Fødselsnummer brukeren skriver inn, går hverken til AI-en eller inn i utkastet.
+  const detaljer = maskerFodselsnummer(String(body.detaljer ?? ""));
   const navn = String(body.navn ?? "");
   const avdrag = erAvdragsForslag(body.avdrag) ? body.avdrag : null;
   const omfang: Omfang | null =
@@ -92,6 +98,24 @@ export async function POST(req: NextRequest) {
   if ("feil" in prompt) return new Response(prompt.feil, { status: 404 });
   const { system, meldinger, vaktFakta } = prompt;
 
+  // Kvoten håndheves på serveren. Den samme bestillingen på nytt belastes ikke
+  // to ganger. Lagrede utkast kan fortsatt åpnes når kvoten er brukt opp.
+  const kvote = await startKvote(
+    "utkast",
+    user.id,
+    forsokId("utkast", user.id, kravId, brevId, type, detaljer, navn, JSON.stringify(avdrag), omfang),
+  );
+  if (!kvote.ok)
+    return new Response(kvote.melding, {
+      status: kvote.status,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  let aiKall = 0;
+  let innTokens = 0;
+  let utTokens = 0;
+  // Første feil som stoppet utkastet; null når det ble ferdig.
+  let utfallFeil: AiFeil | "lagring" | null = null;
+
   const anthropic = new Anthropic();
   const encoder = new TextEncoder();
   const navnTrimmet = navn.trim();
@@ -103,12 +127,13 @@ export async function POST(req: NextRequest) {
       }
 
       // Strømmer én generasjon (system+meldinger) til klienten og returnerer
-      // den fullstendige, stjerne-rensede teksten (samme rensing som
-      // dagens genererTekst() gjorde før den returnerte til lagUtkast).
+      // den fullstendige, stjerne-rensede teksten, eller hvorfor den ikke ble
+      // ferdig. Et avkuttet utkast (max_tokens, avslag) er aldri ferdig.
       async function strømOgSamle(
         meld: UtkastMelding[],
-      ): Promise<string | null> {
+      ): Promise<{ tekst: string } | { feil: AiFeil }> {
         let fullt = "";
+        aiKall++;
         try {
           const claudeStream = anthropic.messages.stream({
             model: AI_MODELL,
@@ -126,19 +151,33 @@ export async function POST(req: NextRequest) {
               send(event.delta.text);
             }
           }
+          const slutt = await claudeStream.finalMessage();
+          innTokens += slutt.usage?.input_tokens ?? 0;
+          utTokens += slutt.usage?.output_tokens ?? 0;
+          const stopp = vurderStopp(slutt.stop_reason);
+          if (stopp) return { feil: stopp };
         } catch (feil) {
-          console.error("[utkast-generer] strøm feilet", feil);
-          return null;
+          const type = klassifiserAiFeil(feil);
+          logg("error", "utkast-generer", "strom_feilet", { feil: type });
+          return { feil: type };
         }
-        return fjernStjerner(fullt);
+        const tekst = fjernStjerner(fullt);
+        return tekst ? { tekst } : { feil: "ugyldig_struktur" };
+      }
+
+      // Feilkoden følger rett etter markøren, så klienten kan si hva som skjedde.
+      function sendFeil(kode: AiFeil | "lagring") {
+        utfallFeil = kode;
+        send(MARKØR.FEIL + kode);
       }
 
       try {
-        let tekst = await strømOgSamle(meldinger);
-        if (tekst === null) {
-          send(MARKØR.FEIL);
+        const forste = await strømOgSamle(meldinger);
+        if ("feil" in forste) {
+          sendFeil(forste.feil);
           return;
         }
+        let tekst = forste.tekst;
 
         // Etterkontroll: «AI tolker, kode beslutter» — også for stil og
         // fakta. Forbudte ord, for langt utkast og vaktfunn (§D.3) → ÉN
@@ -156,20 +195,26 @@ export async function POST(req: NextRequest) {
           ];
 
           send(MARKØR.JUSTERER);
-          const tekst2 = await strømOgSamle(meldinger2);
-          if (tekst2 !== null) tekst = tekst2;
+          const andre = await strømOgSamle(meldinger2);
+          // Klienten har allerede begynt å vise den nye teksten. Feiler den,
+          // lagres ingenting: et halvt nytt utkast skal ikke stå igjen på
+          // skjermen mens et annet blir lagret.
+          if ("feil" in andre) {
+            sendFeil(andre.feil);
+            return;
+          }
+          tekst = andre.tekst;
           // Vakten på nytt: det som står igjen er advarsler, aldri en sperre
           // (guardrail 5). Brukeren ser dem i «Sjekk før du sender».
           advarsler = kontrollerUtkast(tekst, vaktFakta);
           if (advarsler.length > 0) {
-            console.error(
-              `[utkast-generer] Vaktfunn står igjen etter regenerering (type=${type}):`,
-              advarsler.map((a) => a.rettelinje),
-            );
+            // Bare antall og typer: rettelinjene inneholder beløp og datoer fra saken.
+            logg("warn", "utkast-generer", "vaktfunn_etter_regenerering", {
+              utkasttype: type,
+              antall: advarsler.length,
+              typer: [...new Set(advarsler.map((a) => a.type))].sort().join("."),
+            });
           }
-          // tekst2 === null: behold første forsøk (tekst) — samme «behold og
-          // logg, ikke blokkér brukeren»-prinsipp som dagens lagUtkast bruker
-          // når selve regenereringen (ikke etterkontrollen) feiler.
         }
 
         // Husk navnet til neste gang (§6). Best-effort.
@@ -186,16 +231,16 @@ export async function POST(req: NextRequest) {
             bruker_id: user.id,
             brev_id: brevId,
             type,
-            innhold: tekst,
+            innhold: maskerFodselsnummer(tekst),
           })
           .select("id")
           .single();
         if (lagreFeil || !lagret) {
-          console.error(
-            `[utkast-generer] Innsetting feilet (type=${type}, brev_id=${brevId}):`,
-            lagreFeil,
-          );
-          send(MARKØR.FEIL);
+          logg("error", "utkast-generer", "innsetting_feilet", {
+            utkasttype: type,
+            kode: lagreFeil?.code ?? "ukjent",
+          });
+          sendFeil("lagring");
           return;
         }
 
@@ -208,6 +253,15 @@ export async function POST(req: NextRequest) {
         };
         send(MARKØR.FERDIG + JSON.stringify(slutt));
       } finally {
+        // Operasjonelle feil og en feilet lagring belaster ikke brukeren.
+        const feil = utfallFeil as AiFeil | "lagring" | null;
+        await kvote.vakt.avslutt(feil === "lagring" ? false : skalBelastes(feil), {
+          modell: AI_MODELL,
+          inn_tokens: innTokens,
+          ut_tokens: utTokens,
+          ai_kall: aiKall,
+          feil: feil ?? undefined,
+        });
         controller.close();
       }
     },

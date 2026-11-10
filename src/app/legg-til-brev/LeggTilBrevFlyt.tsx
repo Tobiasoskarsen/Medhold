@@ -33,6 +33,7 @@ import {
   utfallAvslutter,
 } from "@/lib/utfall";
 import { tolkKr } from "@/lib/format";
+import { datovurderingTekst, vurderBrevdato } from "@/lib/brevdato";
 import { FORKLARING_DISCLAIMER } from "@/lib/brand";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { Veivalg } from "@/components/Veivalg";
@@ -58,6 +59,8 @@ type KravValg = {
   venter: boolean;
   status: SakStatus;
   sistEndret: string;
+  /** Brevdatoene til brevene saken har (null = udatert). */
+  brevdatoer: (string | null)[];
   /** Aktive frister på saken, så brukeren kan si om det nye brevet erstatter dem. */
   frister: { id: string; tittel: string; forfallsdato: string }[];
 };
@@ -168,6 +171,11 @@ export function LeggTilBrevFlyt({
   const [erstatter, setErstatter] = useState<Record<string, boolean>>({});
   // En avsluttet sak åpnes bare når brukeren krysser av for det.
   const [gjenapne, setGjenapne] = useState(false);
+  // Eldre, like gamle eller udaterte brev endrer ikke saken uten at brukeren velger det.
+  const [oppdaterSakLikevel, setOppdaterSakLikevel] = useState(false);
+  // Én nøkkel per analysert dokument. Samme nøkkel ved nytt forsøk gjør at et
+  // brev som faktisk ble lagret, ikke lagres to ganger.
+  const [lagringsnokkel, setLagringsnokkel] = useState<string | null>(null);
   // Bekreftelseskortet (MEDHOLD_SIKKERHET_ARBEIDSORDRE §A.2): redigerbare
   // kopier av det AI-en leste. Alt under beregnes fra disse, ikke fra analyse.
   const [hovedstolTekst, setHovedstolTekst] = useState("");
@@ -291,6 +299,8 @@ export function LeggTilBrevFlyt({
     setAvslutningBekreftet(false);
     setErstatter({});
     setGjenapne(false);
+    setOppdaterSakLikevel(false);
+    setLagringsnokkel(crypto.randomUUID());
     gaTil(3);
   }
 
@@ -381,12 +391,16 @@ export function LeggTilBrevFlyt({
       })
     : null;
   const valgtKravAvsluttet = valgtKravObj?.status === "fullfort";
+  const datovurdering = valgtKravObj
+    ? vurderBrevdato(brevdato || null, valgtKravObj.brevdatoer)
+    : null;
+  const datoMerknad = datovurdering ? datovurderingTekst(datovurdering) : null;
   const erstatterIder = (valgtKravObj?.frister ?? [])
     .filter((f) => erstatter[f.id])
     .map((f) => f.id);
 
   async function lagre(destinasjon: "innsigelse" | "veier-ut" | "krav") {
-    if (!analyse || !kanLagreBrev) return;
+    if (!analyse || !kanLagreBrev || !lagringsnokkel) return;
     setLagrer(true);
     setFeil(null);
 
@@ -418,9 +432,20 @@ export function LeggTilBrevFlyt({
       avslutningBekreftet,
       gjenapne: valgtKravAvsluttet && gjenapne,
       forventetSistEndret: valgtKravObj?.sistEndret ?? null,
+      oppdaterSak: datoMerknad !== null && oppdaterSakLikevel,
+      lagringsnokkel,
     };
 
-    const r = await lagreBrev(input);
+    let r: Awaited<ReturnType<typeof lagreBrev>>;
+    try {
+      r = await lagreBrev(input);
+    } catch {
+      // Svaret kom aldri fram. Nøkkelen beholdes, så et nytt forsøk ikke lagrer
+      // brevet to ganger hvis det første faktisk gikk gjennom.
+      setFeil("Fikk ikke kontakt med Medhold. Sjekk nettet og prøv igjen.");
+      setLagrer(false);
+      return;
+    }
     if (!r.ok) {
       setFeil(r.feil);
       setLagrer(false);
@@ -997,6 +1022,22 @@ export function LeggTilBrevFlyt({
               <label className="mt-2 flex items-start gap-2.5 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk">
                 <Avkrysning checked={gjenapne} onChange={setGjenapne} className="mt-0.5" />
                 Åpne saken igjen. Tidligere utfall blir stående i historikken.
+              </label>
+            </div>
+          )}
+
+          {datoMerknad && (
+            <div className="mt-5">
+              <p className="rounded-kontroll bg-flate-2 px-3.5 py-3 text-hjelp text-blekk">
+                {datoMerknad}
+              </p>
+              <label className="mt-2 flex items-start gap-2.5 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk">
+                <Avkrysning
+                  checked={oppdaterSakLikevel}
+                  onChange={setOppdaterSakLikevel}
+                  className="mt-0.5"
+                />
+                Bruk beløpet, stadiet og saksnummeret fra dette brevet på saken likevel.
               </label>
             </div>
           )}
