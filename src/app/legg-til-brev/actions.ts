@@ -332,7 +332,7 @@ export type LagreBrevInput = {
 };
 
 export type LagreBrevResultat =
-  | { ok: true; sakId: string }
+  | { ok: true; sakId: string; brevId: string }
   | { ok: false; feil: string; kontroll?: { alvorlig: boolean; fristfunn: FristSammenligning | null } };
 
 export async function lagreBrev(
@@ -485,7 +485,7 @@ export async function lagreBrev(
     p: nyttlast,
   });
   const resultat = lagret as { sak_id?: string; brev_id?: string } | null;
-  if (lagreFeil || !resultat?.sak_id) {
+  if (lagreFeil || !resultat?.sak_id || !resultat.brev_id) {
     logg("error", "legg-til-brev", "lagring_avvist", { kode: lagreFeil?.code ?? "ukjent" });
     return { ok: false, feil: lagreBrevFeilmelding(lagreFeil?.message) };
   }
@@ -512,5 +512,5 @@ export async function lagreBrev(
   revalidatePath("/");
   revalidatePath("/krav");
   revalidatePath(`/krav/${sakId}`);
-  return { ok: true, sakId };
+  return { ok: true, sakId, brevId: resultat.brev_id };
 }

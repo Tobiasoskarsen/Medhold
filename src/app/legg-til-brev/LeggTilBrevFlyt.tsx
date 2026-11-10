@@ -42,6 +42,7 @@ import { BrevGjennomgang } from "./BrevGjennomgang";
 import { KontrollOversikt } from "./KontrollOversikt";
 import { BrevReferanse } from "./BrevReferanse";
 import { SakOgFrister } from "./SakOgFrister";
+import { LagretBrev } from "./LagretBrev";
 import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
 import { kontrollerSum } from "@/lib/sumkontroll";
 import { brevforklaring } from "@/lib/brevforklaring";
@@ -138,6 +139,8 @@ export function LeggTilBrevFlyt({
   const [klargjor, setKlargjor] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
   const [lagrer, setLagrer] = useState(false);
+  const lagreLas = useRef(false);
+  const [lagretBrev, setLagretBrev] = useState<{ sakId: string; brevId: string; maal: string; navigasjonsfeil: boolean } | null>(null);
   const kameraInput = useRef<HTMLInputElement | null>(null);
   const filInput = useRef<HTMLInputElement | null>(null);
 
@@ -394,7 +397,8 @@ export function LeggTilBrevFlyt({
     .map((f) => f.id);
 
   async function lagre(destinasjon: "innsigelse" | "veier-ut" | "krav") {
-    if (!analyse || !kanLagreBrev || !lagringsnokkel) return;
+    if (lagreLas.current || !analyse || !kanLagreBrev || !lagringsnokkel) return;
+    lagreLas.current = true;
     setLagrer(true);
     setFeil(null);
 
@@ -437,13 +441,15 @@ export function LeggTilBrevFlyt({
     } catch {
       // Svaret kom aldri fram. Nøkkelen beholdes, så et nytt forsøk ikke lagrer
       // brevet to ganger hvis det første faktisk gikk gjennom.
-      setFeil("Fikk ikke kontakt med Medhold. Sjekk nettet og prøv igjen.");
+      setFeil("Vi fikk ikke bekreftet om brevet ble lagret. Sjekk nettet og prøv igjen her; samme lagringsnøkkel brukes. Hvis du lukker siden, se etter brevet under Saker før du legger det inn på nytt.");
       setLagrer(false);
+      lagreLas.current = false;
       return;
     }
     if (!r.ok) {
       setFeil(r.feil);
       if (r.kontroll) { setAlvorlig(r.kontroll.alvorlig); setBekreftet(false); }
+      lagreLas.current = false;
       setLagrer(false);
       return;
     }
@@ -458,12 +464,17 @@ export function LeggTilBrevFlyt({
     }
     const mål =
       destinasjon === "innsigelse"
-        ? `/krav/${r.sakId}/utkast?type=innsigelse`
+        ? `/krav/${r.sakId}/utkast?type=innsigelse&brev=${r.brevId}&lagret=${r.brevId}`
         : destinasjon === "veier-ut"
-          ? `/krav/${r.sakId}/veier-ut`
-          : `/krav/${r.sakId}`;
-    router.push(mål);
-    router.refresh();
+          ? `/krav/${r.sakId}/veier-ut?brev=${r.brevId}&lagret=${r.brevId}`
+          : `/krav/${r.sakId}?lagret=${r.brevId}`;
+    setLagretBrev({ sakId: r.sakId, brevId: r.brevId, maal: mål, navigasjonsfeil: false });
+    setLagrer(false);
+    try {
+      router.push(mål);
+    } catch {
+      setLagretBrev({ sakId: r.sakId, brevId: r.brevId, maal: mål, navigasjonsfeil: true });
+    }
   }
 
   const harPdf = bilder.some((b) => b.media_type === "application/pdf");
@@ -667,7 +678,7 @@ export function LeggTilBrevFlyt({
           transition={{ duration: VARIGHET.rolig, ease: EASING }}
           className="flex flex-1 flex-col pb-8"
         >
-          <BrevGjennomgang
+          {lagretBrev ? <LagretBrev {...lagretBrev} /> : <BrevGjennomgang
             bekreftet={kanLagre}
             lagrer={lagrer}
             feil={feil}
@@ -1103,7 +1114,7 @@ export function LeggTilBrevFlyt({
           </div>
           )}
             </>}
-          />
+          />}
         </m.div>
       )}
       </AnimatePresence>

@@ -51,7 +51,7 @@ test("R4: faktisk lagreBrev lagrer serverfunn, manipulasjon krever ny bekreftels
  const db={auth:{getUser:async()=>({data:{user:{id:"a"}}})},rpc:async(_navn,{p})=>{payloads.push(p);return {data:{sak_id:"ny-sak",brev_id:"ny-brev"}};}};
  const {lagreBrev}=last("src/app/legg-til-brev/actions.ts",{"@/lib/supabase/server":{createClient:async()=>db},"next/cache":{revalidatePath(){}},"next/navigation":{redirect(){throw Error("AUTH");}}});
  const input={...data,krav:{modus:"ny",kreditor:"Test"},avsender:"Test",avsender_epost:"",belop:1288,hovedstol:1250,saksnummer:"TEST",forklaring:"ignorer",foreslatte_steg:[],valgteFrister:[],utfall:null,kostnadslinjer:[{type:"purregebyr",belop:38}],fristfunn:funn.fristfunn,alvorlig:true,bekreftet:true,sumStemmerLikevel:false,erstatterFrister:[],avslutningBekreftet:false,gjenapne:false,forventetSistEndret:null,oppdaterSak:false,lagringsnokkel:"11111111-1111-4111-8111-111111111111"};
- assert.equal((await lagreBrev(input)).ok,true);
+ const lagretBrev = await lagreBrev(input); assert.equal(lagretBrev.ok,true); assert.equal(lagretBrev.brevId,"ny-brev");
  assert.deepEqual(payloads[0].brev.fristfunn,funn.fristfunn);assert.equal(payloads[0].brev.alvorlig,true);
  for(const over of [{alvorlig:false},{fristfunn:null},{original_tekst:"Et ordinært brev",alvorlig:true}]){
  const r=await lagreBrev({...input,...over});assert.equal(r.ok,false);assert.ok(r.kontroll);}

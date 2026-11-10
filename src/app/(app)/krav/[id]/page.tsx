@@ -1,3 +1,4 @@
+import { LagretBrevMerknad } from "@/components/LagretBrevMerknad";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { KontrollOmfang } from "@/components/KontrollOmfang";
 import { fristKildeForDato } from "@/lib/frist";
@@ -151,10 +152,13 @@ function kr(n: number): string {
 
 export default async function KravDetaljPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ lagret?: string }>;
 }) {
   const { id } = await params;
+  const { lagret } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -506,6 +510,7 @@ export default async function KravDetaljPage({
 
   return (
     <Skjermramme className="pt-2.5" animerInn={false}>
+      {lagret && brevListe.some(b => b.id === lagret) && <LagretBrevMerknad sakId={id} brevId={lagret} />}
       <Toppstripe className="mb-1">
         <Link
           href="/krav"
