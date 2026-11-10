@@ -1,5 +1,6 @@
 "use server";
 import { brevforklaring } from "@/lib/brevforklaring";
+import { kontrollerBrevfunn } from "@/lib/brevkontroll";
 
 import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
@@ -313,6 +314,7 @@ export type LagreBrevInput = {
   /** Brukeren har krysset av «Ja, dette stemmer med brevet» (§A.2). Uten
    *  den avvises lagringen — også ved direkte kall (guardrail 4). */
   bekreftet: true;
+  fristIBrevet: { tittel: string; forfallsdato: string } | null;
   /** «Det stemmer likevel» ved sumavvik (delbetaling, renter o.l.). */
   sumStemmerLikevel: boolean;
   /** Aktive frister på saken som brukeren sier at dette brevet erstatter. */
@@ -331,7 +333,7 @@ export type LagreBrevInput = {
 
 export type LagreBrevResultat =
   | { ok: true; sakId: string }
-  | { ok: false; feil: string };
+  | { ok: false; feil: string; kontroll?: { alvorlig: boolean; fristfunn: FristSammenligning | null } };
 
 export async function lagreBrev(
   input: LagreBrevInput,
@@ -359,6 +361,10 @@ export async function lagreBrev(
     return { ok: false, feil: "Bekreft at saken skal avsluttes." };
 
   const linjer = input.kostnadslinjer ?? [];
+  const kontroll = kontrollerBrevfunn(input);
+  if (!kontroll.ok) return kontroll;
+  if (kontroll.alvorlig !== input.alvorlig || JSON.stringify(kontroll.fristfunn) !== JSON.stringify(input.fristfunn))
+    return { ok: false, feil: "Serverkontrollen avviker fra det som ble vist. Ingenting er lagret. Kontroller oppdatert alvorlighetsvarsel og frist før du bekrefter på nytt.", kontroll };
 
   // Sumkontrollen regnes på nytt fra det brukeren bekreftet (kode beslutter).
   // Går tallene ikke opp, må brukeren ha krysset av «stemmer likevel».
@@ -404,8 +410,8 @@ export async function lagreBrev(
       gebyrsjekk && (gebyrsjekk.linjer.length > 0 || gebyrsjekk.sumkontroll)
         ? gebyrsjekk
         : null,
-    fristfunn: input.fristfunn,
-    alvorlig: input.alvorlig,
+    fristfunn: kontroll.fristfunn,
+    alvorlig: kontroll.alvorlig,
     belop_hovedstol: input.hovedstol,
   });
   const fristRader = nyeFrister.map((f) => ({

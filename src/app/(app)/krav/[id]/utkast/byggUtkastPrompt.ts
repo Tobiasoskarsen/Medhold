@@ -5,7 +5,6 @@ import "server-only";
 import type { createClient } from "@/lib/supabase/server";
 import type { UtkastType } from "@/lib/types";
 import type { GebyrsjekkResultat, Kostnadslinje } from "@/lib/gebyr";
-import type { AvdragsForslag } from "@/lib/avdrag";
 import { idagOslo } from "@/lib/dato";
 import {
   byggPrompt,
@@ -15,6 +14,7 @@ import {
   type UtkastMelding,
 } from "@/lib/utkast-prompt";
 import { byggVaktFakta, type VaktFakta } from "@/lib/utkast-vakt";
+import { kontrollerAvdragsforslag } from "@/lib/avdrag-server";
 
 /**
  * Henter sakens fakta (brev, gebyrsjekk, stadium, frist) og bygger prompten
@@ -32,12 +32,14 @@ export async function byggUtkastPrompt(
   type: UtkastType,
   detaljer: string,
   navn: string,
-  avdrag?: AvdragsForslag | null,
+  avdrag?: unknown,
   omfangValgt?: Omfang | null,
 ): Promise<
   | { system: string; meldinger: UtkastMelding[]; vaktFakta: VaktFakta }
-  | { feil: string }
+  | { feil: string; status?: number }
 > {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { feil: "Fant ikke saken eller brevet." };
   // Hent brevet det svares på (RLS sikrer eierskap).
   let brev: {
     original_tekst: string | null;
@@ -56,14 +58,19 @@ export async function byggUtkastPrompt(
           "original_tekst, gebyrsjekk, brevdato, belop, belop_hovedstol, kostnadslinjer",
         )
         .eq("id", brevId)
+        .eq("sak_id", sakId)
+        .eq("bruker_id", user.id)
         .maybeSingle(),
       supabase
         .from("frister")
         .select("forfallsdato")
         .eq("brev_id", brevId)
+        .eq("sak_id", sakId)
+        .eq("bruker_id", user.id)
         .order("forfallsdato", { ascending: true })
         .limit(1),
     ]);
+    if (!b) return { feil: "Fant ikke saken eller brevet." };
     brev = b;
     fristdato = (frister?.[0]?.forfallsdato as string | undefined) ?? null;
   }
@@ -76,14 +83,22 @@ export async function byggUtkastPrompt(
     .from("saker")
     .select("stadium, belop_totalt")
     .eq("id", sakId)
+    .eq("bruker_id", user.id)
     .maybeSingle();
   if (!sak) return { feil: "Fant ikke saken." };
+  if (!brevId) {
+    const { data: eksisterende } = await supabase.from("brev").select("id")
+      .eq("sak_id", sakId).eq("bruker_id", user.id).limit(1);
+    if (eksisterende?.length) return { feil: "Velg brevet du vil svare på fra saken." };
+  }
 
   // Kode beslutter omfanget: «delvis» krever et gebyrfunn (§D.1).
   const omfang = gjeldendeOmfang(type, gs, omfangValgt);
   const belopTotalt =
     (sak.belop_totalt as number | null) ?? brev?.belop ?? null;
-  const avdragForType = type === "nedbetalingsavtale" ? (avdrag ?? null) : null;
+  const kontroll = kontrollerAvdragsforslag(sak.belop_totalt, avdrag);
+  if (!kontroll.ok) return { feil: kontroll.feil, status: 400 };
+  const avdragForType = type === "nedbetalingsavtale" ? kontroll.avdrag : null;
 
   const { system, meldinger } = byggPrompt({
     type,

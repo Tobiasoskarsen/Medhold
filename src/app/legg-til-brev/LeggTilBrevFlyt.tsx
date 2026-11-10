@@ -13,11 +13,10 @@ import {
   BREVTYPER,
   STADIUM_ETIKETT,
   LOVBESTEMT_FRIST_DAGER,
-  beregnFrist,
   type BrevType,
 } from "@/lib/gjeld";
 import { formaterKortDato, formaterDato, idagOslo } from "@/lib/dato";
-import { sammenlignFrist, type FristSammenligning } from "@/lib/frist";
+import type { FristSammenligning } from "@/lib/frist";
 import {
   UTFALL_VALGBARE,
   UTFALL_ETIKETT,
@@ -43,6 +42,7 @@ import { Bekreftelse } from "./Bekreftelse";
 import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
 import { kontrollerSum } from "@/lib/sumkontroll";
 import { brevforklaring } from "@/lib/brevforklaring";
+import { kontrollerBrevfunn } from "@/lib/brevkontroll";
 import {
   analyserBrevTekst,
   analyserBrevBilder,
@@ -216,12 +216,9 @@ export function LeggTilBrevFlyt({
   // Fristfunnet regnes på nytt fra den bekreftede datoen (§A.4): retter
   // brukeren brevdatoen, brevtypen eller fristen, følger funnet med.
   const fristSammenligning = useMemo<FristSammenligning | null>(() => {
-    const beregnet = brevtype && brevdato ? beregnFrist(brevtype, brevdato) : null;
-    return sammenlignFrist(
-      relevantEksplisitt,
-      beregnet ? { tittel: beregnet.tittel, forfallsdato: beregnet.forfallsdato } : null,
-    );
-  }, [brevtype, brevdato, relevantEksplisitt]);
+    const kontroll = kontrollerBrevfunn({ brevtype: brevtype || null, brevdato, original_tekst: originalTekst, fristIBrevet: relevantEksplisitt });
+    return kontroll.ok ? kontroll.fristfunn : null;
+  }, [brevtype, brevdato, relevantEksplisitt, originalTekst]);
 
   // Hver retting i bekreftelseskortet nullstiller bekreftelsen — det som ble
   // bekreftet, var tallene slik de sto da.
@@ -427,6 +424,7 @@ export function LeggTilBrevFlyt({
       kostnadslinjer: gyldigeLinjer,
       hovedstol: tolkKr(hovedstolTekst),
       fristfunn: fristSammenligning,
+      fristIBrevet: relevantEksplisitt,
       alvorlig,
       bekreftet: true,
       sumStemmerLikevel: stemmerLikevel,
@@ -450,6 +448,7 @@ export function LeggTilBrevFlyt({
     }
     if (!r.ok) {
       setFeil(r.feil);
+      if (r.kontroll) { setAlvorlig(r.kontroll.alvorlig); setBekreftet(false); }
       setLagrer(false);
       return;
     }

@@ -11,6 +11,7 @@ import { beregnAvdrag, type AvdragsForslag } from "@/lib/avdrag";
 import { gebyrDifferanse, ubestridtDel } from "@/lib/utkast-prompt";
 import { UtkastFlyt } from "./UtkastFlyt";
 import type { VaktFakta } from "@/lib/utkast-vakt";
+import { velgUtkastbrev } from "@/lib/utkastgrunnlag";
 
 function erUtkastType(v: string | undefined): v is UtkastType {
   return !!v && (UTKAST_TYPER as readonly string[]).includes(v);
@@ -39,6 +40,7 @@ export default async function UtkastPage({
     .from("saker")
     .select("id, kreditor, tittel, saksnummer, belop_totalt")
     .eq("id", id)
+    .eq("bruker_id", user.id)
     .maybeSingle();
   if (!sak) notFound();
   const { data: utkastListe, error: utkastFeil } = await supabase.from("utkast")
@@ -52,20 +54,24 @@ export default async function UtkastPage({
     .from("brev")
     .select("id, avsender, avsender_epost, brevdato, opprettet, gebyrsjekk, belop")
     .eq("sak_id", id)
+    .eq("bruker_id", user.id)
     .order("brevdato", { ascending: false, nullsFirst: false })
     .order("opprettet", { ascending: false });
 
-  const brev =
-    (brevParam && brevListe?.find((b) => b.id === brevParam)) ||
-    brevListe?.[0] ||
-    null;
+  const { brev, utilgjengelig } = velgUtkastbrev(brevListe ?? [], valgtUtkast, brevParam);
+  if (utilgjengelig || (utkastParam && utkastFeil)) {
+    return <Skjermramme><h1 className="tittel-s">Dokumentgrunnlaget er utilgjengelig</h1>
+      <p role="alert">Vi kan ikke bekrefte det opprinnelige brevet. Ingen andre brev er valgt i stedet. Åpne saken og kontroller grunnlaget før du sender.</p>
+      {valgtUtkast && <pre className="mt-4 whitespace-pre-wrap break-words">{valgtUtkast.sendt_innhold ?? valgtUtkast.innhold}</pre>}
+      <Link href={`/krav/${id}`}>Tilbake til saken</Link></Skjermramme>;
+  }
 
   const gs = (brev?.gebyrsjekk as GebyrsjekkResultat | null) ?? null;
   const harOverGebyr = (gs?.antallOver ?? 0) > 0;
   // Til «Hva er du uenig i?» og betalingsmerknaden (§D.1) — samme rene
   // utregning som prompten bruker.
   const gebyrDiff = gebyrDifferanse(gs);
-  const ubestridt = ubestridtDel(sak.belop_totalt ?? brev?.belop ?? null, gs);
+  const ubestridt = ubestridtDel(valgtUtkast ? brev?.belop ?? null : sak.belop_totalt ?? brev?.belop ?? null, gs);
 
   const starttype = erUtkastType(valgtUtkast?.type) ? valgtUtkast.type : erUtkastType(type) ? type : "innsigelse";
 
@@ -78,7 +84,7 @@ export default async function UtkastPage({
   // Avdragsforslag fra Veier ut (kun for nedbetalingsavtale, med totalbeløp).
   const manedTall = manedsbelop ? Number(manedsbelop) : NaN;
   const avdrag: AvdragsForslag | null =
-    starttype === "nedbetalingsavtale" &&
+    !valgtUtkast && starttype === "nedbetalingsavtale" &&
     sak.belop_totalt != null &&
     sak.belop_totalt > 0 &&
     !Number.isNaN(manedTall) &&
@@ -116,7 +122,7 @@ export default async function UtkastPage({
           avsender={brev?.avsender ?? null}
           avsenderEpost={brev?.avsender_epost ?? null}
           kreditor={sak.kreditor ?? sak.tittel}
-          saksnummer={sak.saksnummer ?? null}
+          saksnummer={valgtUtkast ? null : sak.saksnummer ?? null}
           starttype={starttype}
           typeValgt={!!valgtUtkast || erUtkastType(type)}
           harOverGebyr={harOverGebyr}
