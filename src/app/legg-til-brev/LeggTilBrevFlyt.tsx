@@ -41,6 +41,7 @@ import { LeserBrev } from "./LeserBrev";
 import { Bekreftelse } from "./Bekreftelse";
 import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
 import { kontrollerSum } from "@/lib/sumkontroll";
+import { brevforklaring } from "@/lib/brevforklaring";
 import {
   analyserBrevTekst,
   analyserBrevBilder,
@@ -418,7 +419,7 @@ export function LeggTilBrevFlyt({
       belop: tolkKr(belop),
       saksnummer,
       original_tekst: originalTekst,
-      forklaring: analyse.forklaring,
+      forklaring: brevforklaring({ avsender, brevtype, brevdato, belop: tolkKr(belop), saksnummer }),
       foreslatte_steg: valgteSteg,
       valgteFrister,
       utfall: utfallSomGjelder,
@@ -699,7 +700,7 @@ export function LeggTilBrevFlyt({
 
           <div className="mt-4 rounded-kort border-[0.5px] border-strek bg-flate p-4">
             <p className="whitespace-pre-line text-sm leading-relaxed text-blekk">
-              {analyse.forklaring}
+              {brevforklaring({ avsender, brevtype, brevdato, belop: tolkKr(belop), saksnummer })}
             </p>
           </div>
           <p className="mt-1.5 text-meta text-dempet">

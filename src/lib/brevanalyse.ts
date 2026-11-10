@@ -25,7 +25,7 @@ const SVAR_SKJEMA = {
     forklaring: {
       type: "string",
       description:
-        "Forklaring på enkelt, kort, rolig norsk — 80–140 ord i TRE korte avsnitt (linjeskift mellom dem), ingen overskrifter. Avsnitt 1 «Hva dette er» (1–2 setninger: brevtype, avsender, beløp, hva kravet gjelder). Avsnitt 2 «Hva det betyr for deg» (2–3 setninger: hvor i prosessen saken står, hva som konkret skjer hvis man ikke gjør noe innen fristen — f.eks. mer salær, forliksråd, betalingsanmerkning, det faktiske neste trinnet for DETTE brevet — og evt. det som skiller brevet fra et standardbrev). Avsnitt 3 «Det viktigste nå» (én setning som peker på det som haster mest). Start ALDRI med hilsen eller «du har mottatt» — start rett på «Dette er …». INGEN forbehold/disclaimer (appen viser det selv).",
+        "Kort gjengivelse av eksplisitte dokumentfakta, uten utledet historikk, prosess eller juridiske konsekvenser.",
     },
     brevtype: {
       type: "string",
@@ -141,17 +141,6 @@ const SVAR_SKJEMA = {
 
 // Fraser forklaringen ALDRI skal inneholde (analyse-kort-ordren §1.1) —
 // polstring/empati-innledninger som spiser ord uten å tilføre informasjon.
-const FYLL_FORBUD = [
-  "det er forståelig",
-  "det er helt normalt",
-  "ta det med ro",
-  "ikke få panikk",
-  "vi forstår at",
-  "dette kan virke overveldende",
-  "først og fremst",
-  "det er viktig å merke seg",
-  "kort oppsummert",
-];
 
 function systemprompt(idag: string): string {
   return `Du hjelper en person som har fått et brev om gjeld/inkasso og ofte er overveldet.
@@ -169,13 +158,7 @@ Ufravikelige regler:
 - I dag er ${idag}. Bruk dette bare til å forstå teksten – ikke til å regne ut frister som ikke står der. Bruk aldri dagens dato som brevdato: brevdato er datoen som står på brevet, ellers tom streng.
 - Ikke inkluder forbehold eller disclaimere i forklaringen; appen viser dette selv.
 
-Forklaringen — tre korte avsnitt, hvert med sin jobb (se også skjemafeltet):
-1. «Hva dette er» — 1–2 setninger: brevtype, avsender, beløp, hva kravet gjelder.
-2. «Hva det betyr for deg» — 2–3 setninger: hvor i prosessen saken står, hva som KONKRET skjer hvis man ikke gjør noe innen fristen (det faktiske neste trinnet for DETTE brevet — f.eks. mer salær, forliksråd, betalingsanmerkning, ikke en generisk formulering), og eventuelt det som skiller akkurat dette brevet fra et standardbrev (f.eks. varsel om rettslig inndriving).
-3. «Det viktigste nå» — én setning som peker på den ene tingen som haster mest.
-4. 80–140 ord totalt. Linjeskift mellom avsnittene, ingen overskrifter.
-5. Start ALDRI med hilsen («hei») eller «du har mottatt» — start rett på «Dette er …».
-6. Bruk ALDRI disse ordene/frasene: ${FYLL_FORBUD.map((f) => `«${f}»`).join(", ")}.
+Forklaringen: Gjengi kun uttrykkelige dokumentfakta. Ikke utled tidligere varsler, rettslig stadium utover dokumenttypen, sikre konsekvenser, neste rettsinstans eller lovlighet. Bevar forskjellen mellom strøm og strømmetjeneste. Ukjent forblir ukjent. Den endelige brukerrettede oppsummeringen lages av kode fra de strukturerte feltene.
 
 Foreslåtte steg — regler (se også skjemafeltet):
 - Sikt på 2–3 steg. Maks 3.
