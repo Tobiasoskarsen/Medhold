@@ -140,6 +140,7 @@ export function LeggTilBrevFlyt({
   const [feil, setFeil] = useState<string | null>(null);
   const [lagrer, setLagrer] = useState(false);
   const lagreLas = useRef(false);
+  const [lagringUkjent, setLagringUkjent] = useState(false);
   const [lagretBrev, setLagretBrev] = useState<{ sakId: string; brevId: string; maal: string; navigasjonsfeil: boolean } | null>(null);
   const kameraInput = useRef<HTMLInputElement | null>(null);
   const filInput = useRef<HTMLInputElement | null>(null);
@@ -439,6 +440,7 @@ export function LeggTilBrevFlyt({
     try {
       r = await lagreBrev(input);
     } catch {
+      setLagringUkjent(true);
       // Svaret kom aldri fram. Nøkkelen beholdes, så et nytt forsøk ikke lagrer
       // brevet to ganger hvis det første faktisk gikk gjennom.
       setFeil("Vi fikk ikke bekreftet om brevet ble lagret. Sjekk nettet og prøv igjen her; samme lagringsnøkkel brukes. Hvis du lukker siden, se etter brevet under Saker før du legger det inn på nytt.");
@@ -1109,6 +1111,7 @@ export function LeggTilBrevFlyt({
               }}
               lagreForst
               lagrer={lagrer}
+              lagringUkjent={lagringUkjent}
               senereMål={{ type: "klikk", onKlikk: () => lagre("krav"), deaktivert: lagrer || !kanLagreBrev }}
             />
           </div>

@@ -155,6 +155,7 @@ export function Veivalg({
   senereMål,
   lagreForst = false,
   lagrer = false,
+  lagringUkjent = false,
   className = "",
 }: {
   /** Sakens nyeste brev har et lagret gebyrsjekk-funn (`over`). Deterministisk
@@ -169,6 +170,7 @@ export function Veivalg({
   senereMål?: VeivalgMål;
   lagreForst?: boolean;
   lagrer?: boolean;
+  lagringUkjent?: boolean;
   className?: string;
 }) {
   const [åpen, setÅpen] = useState(false);
@@ -183,13 +185,19 @@ export function Veivalg({
     ? anbefalVei(svar as VeivalgSvar)
     : null;
 
+  const lagringstekst = lagrer
+    ? "Venter på bekreftelse av lagringen. Ingenting sendes automatisk."
+    : lagringUkjent
+      ? "Lagringsresultatet er ukjent. Et nytt forsøk her bruker samme lagringsnøkkel. Ingenting sendes automatisk."
+      : "Brevet er ikke lagret ennå. Alle tre valg lagrer brevet, valgte frister og huskelisten først. Ingenting sendes automatisk.";
+
   return (
     <div className={className}>
       <h2 className={lagreForst ? "sr-only" : "seksjonstittel text-blekk"}>
         Hva vil du gjøre?
       </h2>
       <p className="mt-1 text-hjelp leading-relaxed text-dempet">
-        {lagreForst ? "Brevet er ikke lagret ennå. Alle tre valg lagrer brevet, valgte frister og huskelisten først. Ingenting sendes automatisk." : "Du kan ombestemme deg når som helst. Du sender brevet selv."}
+        {lagreForst ? lagringstekst : "Du kan ombestemme deg når som helst. Du sender brevet selv."}
       </p>
 
       <div className="mt-gruppe flex flex-col gap-2" aria-busy={lagrer}>
@@ -326,7 +334,6 @@ export function Veivalg({
         )}
       </AnimatePresence>
 
-      {lagrer && <p role="status" className="mt-3 text-hjelp font-semibold text-aksent">Lagrer brevet … Vent på bekreftelse.</p>}
       {ekstra}
     </div>
   );

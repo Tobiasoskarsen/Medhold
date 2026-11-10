@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
-import { formaterBelop } from "@/lib/format";
+import { kr } from "@/lib/gebyrfunn-visning";
 import { VeierUtFlyt } from "./VeierUtFlyt";
 
 export default async function VeierUtPage({
@@ -38,7 +38,7 @@ export default async function VeierUtPage({
   const brevId = brevListe?.[0]?.id ?? null;
 
   const kreditor = sak.kreditor ?? sak.tittel;
-  const belop = formaterBelop(sak.belop_totalt);
+  const belop = sak.belop_totalt == null ? null : kr(sak.belop_totalt);
   const eyebrow = [kreditor, belop ? `${belop} kr` : null]
     .filter(Boolean)
     .join(" · ");
