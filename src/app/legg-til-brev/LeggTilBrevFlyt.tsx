@@ -201,9 +201,10 @@ export function LeggTilBrevFlyt({
   useUlagretVern(harUlagretArbeid, forlatMelding);
 
   function avbryt() {
+    // Metodebytte forlater ikke siden og beholder både tekst og valgte filer.
+    if (inntak !== "valg" && steg === 1) { setInntak("valg"); return; }
     if (harUlagretArbeid && !window.confirm(forlatMelding)) return;
-    if (inntak !== "valg" && steg === 1) setInntak("valg");
-    else router.back();
+    router.back();
   }
 
   // Linjer uten beløp (en nylig lagt til, ikke utfylt «+ Legg til gebyr») teller ikke.

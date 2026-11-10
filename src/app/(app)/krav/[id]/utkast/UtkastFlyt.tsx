@@ -154,6 +154,10 @@ export function UtkastFlyt({
     "Du har ulagrede endringer. De finnes bare i denne fanen. Vil du forlate siden uten å lagre?");
   const [justerer, setJusterer] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
+  // Revalidering kan levere autoritativ sendt-status selv om action-svaret tapes.
+  const synligFeil = erSendt && sendtUkjent
+    ? "Serveren bekrefter at brevet er registrert sendt. Den bevarte tekstversjonen vises. Medhold har ikke sendt brevet."
+    : feil;
   const [utkastId, setUtkastId] = useState<string | null>(lagret?.id ?? null);
   const backupNokkel = eierId && utkastId ? `medhold-utkast-${eierId}-${utkastId}` : null;
   useEffect(() => {
@@ -627,7 +631,7 @@ export function UtkastFlyt({
                 } catch { setLagringUkjent(true); setFeil("Kunne ikke bekrefte lagringen. Teksten er beholdt i denne fanen. Neste forsøk kontrollerer serverversjonen før noe lagres."); }
                 finally { setLagrer(false); skriveLas.current = false; }
               }}>{lagrer ? "Lagrer …" : "Lagre endringer"}</button>}
-              {feil && <p role="alert" className="text-dom-rod">{feil}</p>}
+              {synligFeil && <p role="alert" className="text-dom-rod">{synligFeil}</p>}
               <p className="mt-3 text-hjelp leading-relaxed text-dempet">
                 {erSendt
                   ? "Dette er teksten du registrerte som sendt. Den kan ikke endres."
@@ -746,8 +750,6 @@ export function UtkastFlyt({
                   Ble ikke hele brevet med? Bruk Kopier og lim inn.
                 </p>
               </div>
-
-              {feil && <p role="alert" className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
 
               {/* Egen seksjon: dette er en registrering brukeren gjør etter å
                   ha sendt selv — appen sender aldri noe. */}

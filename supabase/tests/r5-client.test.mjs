@@ -35,7 +35,7 @@ function draft(actions, navigate = () => {}) {
   };
   const { UtkastFlyt } = load('src/app/(app)/krav/[id]/utkast/UtkastFlyt.tsx', mocks);
   const props = { sakId: sid, brevId: uid, eierId: uid, avsender: 'Test', avsenderEpost: 'test@example.invalid', kreditor: 'Test', saksnummer: null, starttype: 'innsigelse', typeValgt: true, harOverGebyr: false, gebyrDiff: 0, ubestridt: null, navnStart: '', lagret: { id: uid, innhold: 'Opprinnelig tekst.', versjon: 1, sendt_at: null, sendt_innhold: null, vakt_fakta: null } };
-  const h = { urls, effects, render() { i = 0; effects.length = 0; return UtkastFlyt(props); },
+  const h = { urls, effects, props, render() { i = 0; effects.length = 0; return UtkastFlyt(props); },
     button(label) { const b = nodes(h.render()).find(n => n.props.onClick && text(n) === label); assert.ok(b, label); return b; },
     edit(value) { nodes(h.render()).find(n => n.type === 'textarea').props.onChange({ target: { value } }); },
     async send() { h.button('Jeg har sendt det').props.onClick(); await Promise.all(pending.splice(0)); },
@@ -69,6 +69,11 @@ test('R5: synkron sendt-lås stopper dobbelttrykk før rerender', async () => {
 test('R5: navigasjonsfeil etter bekreftet sendt er ikke ukjent lagring', async () => {
   const h = draft({ markerUtkastSendt: async () => ({ ok: true, sakId: sid }) }, () => { throw Error('router'); });
   await h.send(); assert.ok(text(h.render()).includes('Sendtregistreringen er lagret')); assert.ok(!text(h.render()).includes('Kontroller sendtstatus'));
+});
+test('R5: revaliderte sendt-props overstyrer en utdatert beskjed om ukjent svar', async () => {
+  const h = draft({ markerUtkastSendt: async () => { throw Error('lost'); } });
+  await h.send(); h.props.lagret.sendt_at = '2026-11-10T22:00:00Z'; h.props.lagret.sendt_innhold = h.props.lagret.innhold;
+  const t = text(h.render()); assert.ok(t.includes('Serveren bekrefter')); assert.ok(!t.includes('knappen nedenfor før du gjør noe mer'));
 });
 for (const outcome of ['same', 'conflict', 'unsent']) test(`R5: tapt utkastlagring avklares (${outcome}) uten stille overskriving`, async () => {
   let writes = 0, reads = 0;
