@@ -13,7 +13,7 @@ export function SakOgFrister({ sakNavn, frister, fristfunn, alvorlig, harMatch, 
     <section aria-label="Sak og registrering">
       {kort && <p role="note" className="mb-3 rounded-kontroll bg-dom-rod-bg p-3 text-hjelp text-blekk">
         <strong className="text-dom-rod">Fristen i brevet kan være for kort.</strong>{" "}
-        Brevet oppgir {formaterKortDato(fristfunn.eksplisittDato as string)}. Kontroller fristvalget nedenfor. Advarselen gjelder også om du ikke registrerer fristen.
+        Brevet oppgir {fristfunn.eksplisittDato ? formaterKortDato(fristfunn.eksplisittDato) : "ingen bekreftet dato"}. Kontroller fristvalget nedenfor. Advarselen gjelder også om du ikke registrerer fristen.
       </p>}
       {alvorlig && <p role="alert" className="mb-3 rounded-kontroll bg-dom-rod-bg p-3 text-hjelp text-blekk">Brevet er markert med et alvorlig varsel. Lagre brevet i saken for å finne varselet og hjelpetilbudene.</p>}
       <details className="rounded-kort border border-strek bg-flate p-4" open={harMatch || kort}>

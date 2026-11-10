@@ -71,7 +71,9 @@ export function BrevGjennomgang({ bekreftet, opplysninger, kontroll, handling, f
         <m.div key={side} initial={reduserBevegelse ? false : { opacity: 0, x: retning * GLID_DYBDE }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: reduserBevegelse ? 0 : VARIGHET.normal, ease: EASING }}>
-          {side === 0 ? opplysninger : side === 1 ? kontroll : handling}
+          <fieldset disabled={lagrer} className="min-w-0" aria-label="Brevopplysninger og handlingsvalg">
+            {side === 0 ? opplysninger : side === 1 ? kontroll : handling}
+          </fieldset>
         </m.div>
         {feil && <p role="alert" className="mt-4 text-hjelp text-dom-rod">{feil}</p>}
         <footer className="sticky bottom-0 z-10 -mx-5 mt-6 border-t border-strek bg-bakgrunn px-5 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">

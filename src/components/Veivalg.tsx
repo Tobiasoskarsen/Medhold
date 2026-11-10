@@ -76,15 +76,15 @@ function VeivalgKort({
   return (
     <MålKnapp
       mål={mål}
-      className="trykk flex min-h-[68px] w-full items-center gap-3 rounded-kort border border-kant bg-flate px-4 py-3 text-left"
+      className="trykk flex min-h-[68px] w-full items-center gap-3 rounded-kort border border-kant bg-flate px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent focus-visible:ring-offset-2 focus-visible:ring-offset-bakgrunn"
       style={{ boxShadow: anbefalt ? "var(--anbefalt-glod)" : "var(--kort-skygge)" }}
     >
       <span
-        className={`flex size-9 shrink-0 items-center justify-center rounded-liten ${ikonBg}`}
+        aria-hidden="true" className={`flex size-9 shrink-0 items-center justify-center rounded-liten ${ikonBg}`}
       >
         {ikon}
       </span>
-      <span className="min-w-0 flex-1">
+      <span className="min-w-0 flex-1 break-words">
         <span className="radtittel block text-blekk">{tittel}</span>
         <span className="radtekst mt-0.5 block">{undertekst}</span>
         {anbefalt && begrunnelse && (
@@ -192,7 +192,7 @@ export function Veivalg({
         {lagreForst ? "Brevet er ikke lagret ennå. Alle tre valg lagrer brevet, valgte frister og huskelisten først. Ingenting sendes automatisk." : "Du kan ombestemme deg når som helst. Du sender brevet selv."}
       </p>
 
-      <div className="mt-gruppe flex flex-col gap-2">
+      <div className="mt-gruppe flex flex-col gap-2" aria-busy={lagrer}>
         <VeivalgKort
           ikon={
             <span className="text-[17px] font-bold text-dom-rod">
