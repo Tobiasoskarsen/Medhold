@@ -16,16 +16,22 @@ import {
   beregnFrist,
   type BrevType,
 } from "@/lib/gjeld";
-import { formaterKortDato, formaterDato } from "@/lib/dato";
+import { formaterKortDato, formaterDato, idagOslo } from "@/lib/dato";
 import { sammenlignFrist, type FristSammenligning } from "@/lib/frist";
 import {
   UTFALL_VALGBARE,
   UTFALL_ETIKETT,
   type FristForslag,
   type FristKilde,
+  type SakStatus,
   type SakUtfall,
 } from "@/lib/types";
-import { svarUtfallTilSak } from "@/lib/utfall";
+import {
+  avsluttendeForslag,
+  forhandsvalgtUtfall,
+  statusVedNyttBrev,
+  utfallAvslutter,
+} from "@/lib/utfall";
 import { tolkKr } from "@/lib/format";
 import { FORKLARING_DISCLAIMER } from "@/lib/brand";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
@@ -46,7 +52,15 @@ import { MAKS_BILDER, MAKS_PDF_SIDER, MAKS_PDF_TEKST, validerBrevfiler } from "@
 import { klargjorFil, type KlarFil } from "./klargjorFil";
 
 type AnalyseData = Extract<AnalyseResultat, { ok: true }>["analyse"];
-type KravValg = { id: string; navn: string; venter: boolean };
+type KravValg = {
+  id: string;
+  navn: string;
+  venter: boolean;
+  status: SakStatus;
+  sistEndret: string;
+  /** Aktive frister på saken, så brukeren kan si om det nye brevet erstatter dem. */
+  frister: { id: string; tittel: string; forfallsdato: string }[];
+};
 type Inntak = "valg" | "tekst" | "bilde";
 
 function brevtypeEtikett(bt: BrevType): string {
@@ -148,6 +162,12 @@ export function LeggTilBrevFlyt({
   const [alvorlig, setAlvorlig] = useState(false);
   const [stegAv, setStegAv] = useState<Record<number, boolean>>({});
   const [utfall, setUtfall] = useState<SakUtfall | "">("");
+  // Et AI-forslag som ville avsluttet saken vises bare som hint, aldri som valg.
+  const [aiAvsluttende, setAiAvsluttende] = useState<SakUtfall | null>(null);
+  const [avslutningBekreftet, setAvslutningBekreftet] = useState(false);
+  const [erstatter, setErstatter] = useState<Record<string, boolean>>({});
+  // En avsluttet sak åpnes bare når brukeren krysser av for det.
+  const [gjenapne, setGjenapne] = useState(false);
   // Bekreftelseskortet (MEDHOLD_SIKKERHET_ARBEIDSORDRE §A.2): redigerbare
   // kopier av det AI-en leste. Alt under beregnes fra disse, ikke fra analyse.
   const [hovedstolTekst, setHovedstolTekst] = useState("");
@@ -217,6 +237,13 @@ export function LeggTilBrevFlyt({
     kravModus === "eksisterende" &&
     krav.find((k) => k.id === valgtKrav)?.venter === true;
 
+  const valgtKravObj =
+    kravModus === "eksisterende" ? (krav.find((k) => k.id === valgtKrav) ?? null) : null;
+  const utfallSomGjelder: SakUtfall | null = valgtKravVenter && utfall ? utfall : null;
+  // Et utfall som avslutter saken må bekreftes (lagreBrev håndhever det samme).
+  const kreverAvslutning = utfallSomGjelder !== null && utfallAvslutter(utfallSomGjelder);
+  const kanLagreBrev = kanLagre && (!kreverAvslutning || avslutningBekreftet);
+
   function anvendAnalyse(r: Extract<AnalyseResultat, { ok: true }>) {
     setAnalyse(r.analyse);
     setOriginalTekst(r.original_tekst);
@@ -258,7 +285,12 @@ export function LeggTilBrevFlyt({
       Object.fromEntries(andreEksplisitte.map((f, i) => [i, !!f.forfallsdato])),
     );
     // Forhåndsvalgt utfall fra AI (null ved «uklart» → ingen forhåndsvalg).
-    setUtfall(svarUtfallTilSak(r.analyse.svar_utfall) ?? "");
+    // Bare utfall som lar saken stå åpen kan være forhåndsvalgt.
+    setUtfall(forhandsvalgtUtfall(r.analyse.svar_utfall) ?? "");
+    setAiAvsluttende(avsluttendeForslag(r.analyse.svar_utfall));
+    setAvslutningBekreftet(false);
+    setErstatter({});
+    setGjenapne(false);
     gaTil(3);
   }
 
@@ -326,23 +358,38 @@ export function LeggTilBrevFlyt({
     setKlargjor(false);
   }
 
+  // Fristene som lagres med brevet. Brukes også til å vise om saken åpnes igjen.
+  const andreValgte = fristForslag.filter((f, i) => f.forfallsdato && fristAv[i]);
+  const sammenligningValgt: FristForslag[] =
+    fristSammenligning && fristSammenligningAv
+      ? [
+          {
+            tittel: fristSammenligning.visTittel,
+            forfallsdato: fristSammenligning.visForfallsdato,
+            kilde: fristSammenligningKilde(fristSammenligning.status),
+          },
+        ]
+      : [];
+  const valgteFrister = [...sammenligningValgt, ...andreValgte];
+  const statusForslag = valgtKravObj
+    ? statusVedNyttBrev({
+        statusNa: valgtKravObj.status,
+        utfall: utfallSomGjelder,
+        nyeFrister: valgteFrister.map((f) => f.forfallsdato),
+        idag: idagOslo(),
+        gjenapne,
+      })
+    : null;
+  const valgtKravAvsluttet = valgtKravObj?.status === "fullfort";
+  const erstatterIder = (valgtKravObj?.frister ?? [])
+    .filter((f) => erstatter[f.id])
+    .map((f) => f.id);
+
   async function lagre(destinasjon: "innsigelse" | "veier-ut" | "krav") {
-    if (!analyse || !kanLagre) return;
+    if (!analyse || !kanLagreBrev) return;
     setLagrer(true);
     setFeil(null);
 
-    const andreValgte = fristForslag.filter((f, i) => f.forfallsdato && fristAv[i]);
-    const sammenligningValgt: FristForslag[] =
-      fristSammenligning && fristSammenligningAv
-        ? [
-            {
-              tittel: fristSammenligning.visTittel,
-              forfallsdato: fristSammenligning.visForfallsdato,
-              kilde: fristSammenligningKilde(fristSammenligning.status),
-            },
-          ]
-        : [];
-    const valgteFrister = [...sammenligningValgt, ...andreValgte];
     const valgteSteg = analyse.foreslatte_steg.filter((_, i) => stegAv[i] !== false);
 
     const input: LagreBrevInput = {
@@ -360,13 +407,17 @@ export function LeggTilBrevFlyt({
       forklaring: analyse.forklaring,
       foreslatte_steg: valgteSteg,
       valgteFrister,
-      utfall: valgtKravVenter && utfall ? utfall : null,
+      utfall: utfallSomGjelder,
       kostnadslinjer: gyldigeLinjer,
       hovedstol: tolkKr(hovedstolTekst),
       fristfunn: fristSammenligning,
       alvorlig,
       bekreftet: true,
       sumStemmerLikevel: stemmerLikevel,
+      erstatterFrister: erstatterIder,
+      avslutningBekreftet,
+      gjenapne: valgtKravAvsluttet && gjenapne,
+      forventetSistEndret: valgtKravObj?.sistEndret ?? null,
     };
 
     const r = await lagreBrev(input);
@@ -783,19 +834,79 @@ export function LeggTilBrevFlyt({
                       type="radio"
                       name="utfall"
                       checked={utfall === u}
-                      onChange={() => setUtfall(u)}
+                      onChange={() => {
+                        setUtfall(u);
+                        setAvslutningBekreftet(false);
+                      }}
                       className="accent-aksent"
                     />
-                    {UTFALL_ETIKETT[u]}
+                    <span>
+                      {UTFALL_ETIKETT[u]}
+                      <span className="block text-xs text-dempet">
+                        {utfallAvslutter(u) ? "Avslutter saken" : "Saken forblir åpen"}
+                      </span>
+                    </span>
                   </label>
                 ))}
                 <button
                   type="button"
-                  onClick={() => setUtfall("")}
+                  onClick={() => {
+                    setUtfall("");
+                    setAvslutningBekreftet(false);
+                  }}
                   className="mt-1 self-start text-hjelp text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk"
                 >
                   Vet ikke / la stå tomt
                 </button>
+              </div>
+              {aiAvsluttende && !utfall && (
+                <p className="mt-2 text-hjelp text-dempet">
+                  Brevet kan tyde på «{UTFALL_ETIKETT[aiAvsluttende]}». Velg det
+                  selv hvis det stemmer.
+                </p>
+              )}
+              {kreverAvslutning && (
+                <label className="mt-3 flex items-start gap-2.5 rounded-kontroll bg-flate-2 px-3.5 py-3 text-sm text-blekk">
+                  <Avkrysning
+                    checked={avslutningBekreftet}
+                    onChange={setAvslutningBekreftet}
+                    className="mt-0.5"
+                  />
+                  Ja, avslutt saken. Du får ikke flere fristvarsler for den.
+                </label>
+              )}
+            </div>
+          )}
+
+          {valgtKravObj && valgtKravObj.frister.length > 0 && (
+            <div className="mt-5">
+              <p className="text-hjelp font-medium text-blekk">
+                Eldre frister i saken
+              </p>
+              <p className="mt-0.5 text-hjelp text-dempet">
+                Kryss av fristene dette brevet erstatter. De blir stående i
+                historikken.
+              </p>
+              <div className="mt-2 flex flex-col gap-2">
+                {valgtKravObj.frister.map((f) => (
+                  <label
+                    key={f.id}
+                    className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-blekk">
+                        {f.tittel}
+                      </span>
+                      <span className="text-xs text-dempet">
+                        {formaterKortDato(f.forfallsdato)}
+                      </span>
+                    </span>
+                    <Avkrysning
+                      checked={!!erstatter[f.id]}
+                      onChange={(v) => setErstatter((s) => ({ ...s, [f.id]: v }))}
+                    />
+                  </label>
+                ))}
               </div>
             </div>
           )}
@@ -870,6 +981,32 @@ export function LeggTilBrevFlyt({
             </div>
           )}
 
+          {valgtKravAvsluttet && (
+            <div className="mt-5">
+              <p className="text-hjelp font-medium text-blekk">Saken er avsluttet</p>
+              <p className="mt-0.5 text-hjelp text-dempet">
+                Brevet lagres i saken uansett. Saken åpnes bare igjen hvis du
+                velger det.
+              </p>
+              {statusForslag?.kommendeFrist && !gjenapne && (
+                <p className="mt-2 rounded-kontroll bg-varsel-bg px-3.5 py-2.5 text-hjelp text-varsel-tekst">
+                  Brevet har en ny frist. Mens saken er avsluttet, vises den ikke
+                  på Hjem, og du får ikke varsel om den.
+                </p>
+              )}
+              <label className="mt-2 flex items-start gap-2.5 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-3 text-sm text-blekk">
+                <Avkrysning checked={gjenapne} onChange={setGjenapne} className="mt-0.5" />
+                Åpne saken igjen. Tidligere utfall blir stående i historikken.
+              </label>
+            </div>
+          )}
+
+          {statusForslag?.gjenapnet && !valgtKravAvsluttet && (
+            <p className="mt-5 rounded-kontroll bg-flate-2 px-3.5 py-3 text-hjelp text-blekk">
+              Saken flyttes til «Trenger handling», fordi brevet har en ny frist.
+            </p>
+          )}
+
           {analyse.foreslatte_steg.length > 0 && (
             <div className="mt-5">
               <p className="text-hjelp font-medium text-blekk">
@@ -903,17 +1040,17 @@ export function LeggTilBrevFlyt({
               svarMål={{
                 type: "klikk",
                 onKlikk: () => lagre("innsigelse"),
-                deaktivert: lagrer || !kanLagre,
+                deaktivert: lagrer || !kanLagreBrev,
               }}
               betaleMål={{
                 type: "klikk",
                 onKlikk: () => lagre("veier-ut"),
-                deaktivert: lagrer || !kanLagre,
+                deaktivert: lagrer || !kanLagreBrev,
               }}
               ekstra={
                 <button
                   type="button"
-                  disabled={lagrer || !kanLagre}
+                  disabled={lagrer || !kanLagreBrev}
                   onClick={() => lagre("krav")}
                   className="trykk mt-3 block text-hjelp text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk disabled:opacity-60"
                 >

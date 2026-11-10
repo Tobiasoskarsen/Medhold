@@ -12,13 +12,19 @@ import { UtfallVelger } from "./UtfallVelger";
  * (Utvidbar → UtfallVelger) på klientsiden; siden mottar kun `kravId`
  * (en streng, trygt serialiserbar).
  */
-export function VenterPaSvarUtvidelse({ kravId }: { kravId: string }) {
+export function VenterPaSvarUtvidelse({
+  kravId,
+  sistEndret,
+}: {
+  kravId: string;
+  sistEndret: string;
+}) {
   return (
     <Utvidbar
       ikon={HelpCircle}
       etikett="Har du fått svar? Registrer utfallet"
     >
-      <UtfallVelger kravId={kravId} />
+      <UtfallVelger kravId={kravId} sistEndret={sistEndret} />
     </Utvidbar>
   );
 }

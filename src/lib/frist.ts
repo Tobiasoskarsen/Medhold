@@ -68,7 +68,7 @@ export type FristSammenligning = {
 };
 
 /** Hele dager mellom to rene datoer (YYYY-MM-DD), tolket som UTC-midnatt. */
-function dagerMellom(fra: string, til: string): number {
+export function dagerMellom(fra: string, til: string): number {
   const a = Date.parse(`${fra}T00:00:00Z`);
   const b = Date.parse(`${til}T00:00:00Z`);
   return Math.round((b - a) / 86_400_000);

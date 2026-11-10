@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SAK_UTFALL, type SakUtfall } from "@/lib/types";
+import type { SakUtfall } from "@/lib/types";
 import { STADIER } from "@/lib/gjeld";
+import { gjenapneSak, settFristStatus, settSakUtfall } from "@/lib/saksstatus";
 
 /** Oppretter et krav manuelt (uten brev). Brukeren kan legge til brev senere. */
 export async function opprettKrav(input: {
@@ -50,28 +51,81 @@ export async function opprettKrav(input: {
   return { ok: true, sakId: sak.id };
 }
 
-/** Markerer et krav som løst (status='fullfort') og lagrer valgfritt utfall.
- *  Utløser løst-sak-seremonien. RLS sørger for at man kun endrer sitt eget. */
-export async function markerLost(
+/**
+ * Registrerer utfallet på et krav etter den ene regelen i lib/utfall.ts. Et
+ * valg som avslutter saken krever bekreftelse. Eierskap sjekkes i settSakUtfall.
+ */
+export async function settUtfall(
   id: string,
-  utfall?: SakUtfall | null,
-): Promise<void> {
-  if (!id) return;
+  utfall: SakUtfall | null,
+  bekreftetAvslutning: boolean,
+  /** Sakens sist_endret da brukeren så den. Endret siden? Da avvises endringen. */
+  forventetSistEndret: string,
+): Promise<{ ok: true } | { ok: false; feil: string }> {
+  if (!id) return { ok: false, feil: "Fant ikke saken." };
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/velkommen");
 
-  const oppdatering: Record<string, unknown> = { status: "fullfort" };
-  if (utfall && (SAK_UTFALL as readonly string[]).includes(utfall)) {
-    oppdatering.utfall = utfall;
-  }
-  await supabase.from("saker").update(oppdatering).eq("id", id);
+  const r = await settSakUtfall(
+    supabase,
+    user.id,
+    id,
+    utfall,
+    bekreftetAvslutning,
+    forventetSistEndret,
+  );
+  if (!r.ok) return r;
 
   revalidatePath("/");
   revalidatePath("/krav");
   revalidatePath(`/krav/${id}`);
+  return { ok: true };
+}
+
+/** Åpner en avsluttet sak igjen. Utfallet beholdes som historikk. */
+export async function gjenapneKrav(
+  id: string,
+  forventetSistEndret: string,
+): Promise<{ ok: true } | { ok: false; feil: string }> {
+  if (!id) return { ok: false, feil: "Fant ikke saken." };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  const r = await gjenapneSak(supabase, user.id, id, forventetSistEndret);
+  if (!r.ok) return r;
+
+  revalidatePath("/");
+  revalidatePath("/krav");
+  revalidatePath(`/krav/${id}`);
+  return { ok: true };
+}
+
+/** Marker en frist som fullført, eller angre. Sletter aldri fristen. */
+export async function endreFrist(
+  fristId: string,
+  ny: "aktiv" | "fullfort",
+): Promise<{ ok: true } | { ok: false; feil: string }> {
+  if (!fristId || (ny !== "aktiv" && ny !== "fullfort"))
+    return { ok: false, feil: "Fant ikke fristen." };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/velkommen");
+
+  const r = await settFristStatus(supabase, user.id, fristId, ny);
+  if (!r.ok) return { ok: false, feil: r.feil };
+
+  revalidatePath("/");
+  revalidatePath("/krav");
+  revalidatePath(`/krav/${r.sakId}`);
+  return { ok: true };
 }
 
 /** Sletter et krav (sak). RLS sørger for at man kun sletter sitt eget. */

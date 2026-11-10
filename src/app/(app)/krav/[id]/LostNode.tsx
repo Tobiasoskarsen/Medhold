@@ -9,7 +9,7 @@ import type { SakUtfall } from "@/lib/types";
 // Nodefarge per utfall (samme animasjon). Gull er eksklusivt for medhold
 // (fargeregelen); avtale = trygt-blågrønn, oppgjort = nøytral, ellers handling.
 function nodeFarge(utfall?: SakUtfall | null): string {
-  if (utfall === "medhold" || utfall === "delvis_medhold") return "bg-gull text-gull-tekst";
+  if (utfall === "medhold") return "bg-gull text-gull-tekst";
   if (utfall === "nedbetalingsavtale") return "bg-trygg text-bakgrunn";
   if (utfall === "oppgjort") return "bg-dempet text-bakgrunn";
   return "bg-aksent text-aksent-tekst";

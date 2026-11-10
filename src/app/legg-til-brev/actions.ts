@@ -4,9 +4,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { FristForslag, SakUtfall } from "@/lib/types";
+import { SAK_UTFALL, type FristForslag, type SakUtfall } from "@/lib/types";
 import { beregnFrist, foreslaStadium, type BrevType } from "@/lib/gjeld";
-import { utfallOvergang } from "@/lib/utfall";
+import { utfallAvslutter } from "@/lib/utfall";
+import { lagreBrevFeilmelding } from "@/lib/saksstatus";
 import { AI_MODELL_RASK } from "@/lib/ai";
 import { maskerFodselsnummer } from "@/lib/maskering";
 import { tolkKr, tellOrd, kuttTilMaks } from "@/lib/format";
@@ -313,6 +314,14 @@ export type LagreBrevInput = {
   bekreftet: true;
   /** «Det stemmer likevel» ved sumavvik (delbetaling, renter o.l.). */
   sumStemmerLikevel: boolean;
+  /** Aktive frister på saken som brukeren sier at dette brevet erstatter. */
+  erstatterFrister: string[];
+  /** Brukeren har bekreftet at et utfall som avslutter saken skal brukes. */
+  avslutningBekreftet: boolean;
+  /** En avsluttet sak åpnes bare når brukeren eksplisitt har valgt det. */
+  gjenapne: boolean;
+  /** Sakens sist_endret da siden ble lest. Endret siden? Da avvises lagringen. */
+  forventetSistEndret: string | null;
 };
 
 export type LagreBrevResultat =
@@ -332,6 +341,13 @@ export async function lagreBrev(
   // bekreftelse lagres ingenting, heller ikke ved et direkte kall.
   if (input.bekreftet !== true)
     return { ok: false, feil: "Bekreft tallene fra brevet før du lagrer." };
+
+  // Utfall: bare kjente verdier, og et utfall som avslutter saken krever
+  // eksplisitt bekreftelse, også ved direkte kall.
+  if (input.utfall !== null && !(SAK_UTFALL as readonly string[]).includes(input.utfall))
+    return { ok: false, feil: "Ukjent utfall." };
+  if (input.utfall && utfallAvslutter(input.utfall) && input.avslutningBekreftet !== true)
+    return { ok: false, feil: "Bekreft at saken skal avsluttes." };
 
   const linjer = input.kostnadslinjer ?? [];
 
@@ -363,114 +379,113 @@ export async function lagreBrev(
     };
   }
 
-  // 1) Finn eller opprett kravet (saken), og hold nøkkelfeltene oppdatert.
-  let sakId: string;
+  const nyeFrister = input.valgteFrister.filter((f) => f.forfallsdato);
+  const brevRad = {
+    brevdato: input.brevdato || null,
+    avsender: input.avsender.trim() || null,
+    avsender_epost: input.avsender_epost.trim() || null,
+    brevtype: input.brevtype,
+    belop: input.belop,
+    original_tekst: input.original_tekst,
+    forklaring: input.forklaring,
+    foreslatte_steg: input.foreslatte_steg,
+    foreslatte_frister: input.valgteFrister,
+    kostnadslinjer: linjer.length > 0 ? linjer : null,
+    gebyrsjekk:
+      gebyrsjekk && (gebyrsjekk.linjer.length > 0 || gebyrsjekk.sumkontroll)
+        ? gebyrsjekk
+        : null,
+    fristfunn: input.fristfunn,
+    alvorlig: input.alvorlig,
+    belop_hovedstol: input.hovedstol,
+  };
+  const fristRader = nyeFrister.map((f) => ({
+    tittel: f.tittel,
+    forfallsdato: f.forfallsdato,
+    kilde: f.kilde,
+  }));
+
+  // 1) Bygg hele lagringen. Databasen låser saken, regner ut statusen med samme
+  //    regel som lib/utfall.ts, og avviser lagringen hvis saken er endret.
+  let nyttlast: Record<string, unknown>;
   if (input.krav.modus === "eksisterende") {
-    sakId = input.krav.sakId;
-    const oppdatering: Record<string, unknown> = {};
-    if (stadium) oppdatering.stadium = stadium;
-    if (input.belop != null) oppdatering.belop_totalt = input.belop;
-    if (input.saksnummer.trim()) oppdatering.saksnummer = input.saksnummer.trim();
-    // Bekreftet utfall (kode beslutter) overstyrer status/stadium.
-    if (input.utfall) {
-      const o = utfallOvergang(input.utfall);
-      oppdatering.utfall = o.utfall;
-      oppdatering.status = o.status;
-      if (o.stadium) oppdatering.stadium = o.stadium;
-    }
-    if (Object.keys(oppdatering).length > 0) {
-      await supabase.from("saker").update(oppdatering).eq("id", sakId);
-    }
-  } else {
-    const navn = input.krav.kreditor.trim() || input.avsender.trim() || "Nytt krav";
-    const { data: sak, error } = await supabase
+    const { data: sak } = await supabase
       .from("saker")
-      .insert({
-        bruker_id: user.id,
-        tittel: navn,
+      .select("id, status, sist_endret")
+      .eq("id", input.krav.sakId)
+      .eq("bruker_id", user.id)
+      .maybeSingle();
+    if (!sak) return { ok: false, feil: "Fant ikke saken." };
+    // En annen fane har endret saken siden siden ble lest.
+    if (input.forventetSistEndret && input.forventetSistEndret !== sak.sist_endret)
+      return { ok: false, feil: lagreBrevFeilmelding("MEDHOLD_SAK_ENDRET") };
+
+    // Bare data og brukerens valg sendes. Statusen regnes ut i databasen
+    // (brev_statusovergang), så et direkte kall ikke kan omgå bekreftelsen.
+    const endring: Record<string, unknown> = {};
+    if (stadium) endring.stadium = stadium;
+    if (input.belop != null) endring.belop_totalt = input.belop;
+    if (input.saksnummer.trim()) endring.saksnummer = input.saksnummer.trim();
+
+    nyttlast = {
+      modus: "eksisterende",
+      sak_id: sak.id,
+      forventet_status: sak.status,
+      forventet_sist_endret: sak.sist_endret,
+      utfall: input.utfall,
+      avslutning_bekreftet: input.avslutningBekreftet === true,
+      gjenapne: input.gjenapne === true,
+      sak: endring,
+      brev: brevRad,
+      frister: fristRader,
+      erstatter: input.erstatterFrister ?? [],
+      steg: input.foreslatte_steg,
+    };
+  } else {
+    nyttlast = {
+      modus: "ny",
+      sak: {
+        tittel: input.krav.kreditor.trim() || input.avsender.trim() || "Nytt krav",
         kreditor: input.krav.kreditor.trim() || input.avsender.trim() || null,
         saksnummer: input.saksnummer.trim() || null,
         belop_totalt: input.belop,
         stadium,
-        status: "aktiv",
-        kategori: "okonomi",
-      })
-      .select("id")
-      .single();
-    if (error || !sak)
-      return { ok: false, feil: "Kunne ikke opprette kravet. Prøv igjen." };
-    sakId = sak.id;
+      },
+      brev: brevRad,
+      frister: fristRader,
+      erstatter: [],
+      steg: input.foreslatte_steg,
+    };
   }
 
-  // 2) Lagre brevet.
-  const { data: brev, error: brevFeil } = await supabase
-    .from("brev")
-    .insert({
-      sak_id: sakId,
-      bruker_id: user.id,
-      brevdato: input.brevdato || null,
-      avsender: input.avsender.trim() || null,
-      avsender_epost: input.avsender_epost.trim() || null,
-      brevtype: input.brevtype,
-      belop: input.belop,
-      original_tekst: input.original_tekst,
-      forklaring: input.forklaring,
-      foreslatte_steg: input.foreslatte_steg,
-      foreslatte_frister: input.valgteFrister,
-      kostnadslinjer: linjer.length > 0 ? linjer : null,
-      gebyrsjekk:
-        gebyrsjekk && (gebyrsjekk.linjer.length > 0 || gebyrsjekk.sumkontroll)
-          ? gebyrsjekk
-          : null,
-      fristfunn: input.fristfunn,
-      alvorlig: input.alvorlig,
-      belop_hovedstol: input.hovedstol,
-    })
-    .select("id")
-    .single();
-  if (brevFeil || !brev)
-    return { ok: false, feil: "Kunne ikke lagre brevet. Prøv igjen." };
+  // 2) Sak, brev, nye frister, erstattede frister og steg i én transaksjon
+  //    (lagre_brev, migrasjon 0027). Feiler ett steg, lagres ingenting.
+  const { data: lagret, error: lagreFeil } = await supabase.rpc("lagre_brev", {
+    p: nyttlast,
+  });
+  const resultat = lagret as { sak_id?: string; brev_id?: string } | null;
+  if (lagreFeil || !resultat?.sak_id) {
+    console.error("[legg-til-brev] Lagring avvist:", lagreFeil?.code ?? "ukjent");
+    return { ok: false, feil: lagreBrevFeilmelding(lagreFeil?.message) };
+  }
+  const sakId = resultat.sak_id;
 
-  // 2b) Hovedstol-konsistens på tvers av saken (MEDHOLD_HOVEDSTOL_KONSISTENS-
-  // ARBEIDSORDRE §2): beregnes IKKE ved hver sidevisning — kun her, rett etter
-  // et NYTT brev er lagret på en EKSISTERENDE sak (en helt ny sak har per
-  // definisjon bare ett brev, ingenting å sammenligne). Lagret jsonb er
-  // sannheten ved visning (krav-detalj/saks-listen), rekalkuleres aldri der.
+  // 3) Hovedstol-konsistens (MEDHOLD_HOVEDSTOL_KONSISTENS-ARBEIDSORDRE §2) er
+  //    avledet fra brevene og kan beregnes på nytt. Den lagres etter
+  //    transaksjonen og påvirker ikke status eller frister. En helt ny sak har
+  //    bare ett brev, så det er ingenting å sammenligne.
   if (input.krav.modus === "eksisterende") {
     const { data: alleBrev } = await supabase
       .from("brev")
       .select("id, brevdato, belop_hovedstol, opprettet")
       .eq("sak_id", sakId);
     const avvik = finnHovedstolAvvik((alleBrev ?? []) as HovedstolBrevInput[]);
-    await supabase
+    const { error } = await supabase
       .from("saker")
       .update({ hovedstol_avvik: avvik })
-      .eq("id", sakId);
-  }
-
-  // 3) Frister (med riktig kilde) og steg.
-  const frister = input.valgteFrister.filter((f) => f.forfallsdato);
-  if (frister.length > 0) {
-    await supabase.from("frister").insert(
-      frister.map((f) => ({
-        sak_id: sakId,
-        bruker_id: user.id,
-        tittel: f.tittel,
-        forfallsdato: f.forfallsdato,
-        brev_id: brev.id,
-        kilde: f.kilde,
-      })),
-    );
-  }
-  if (input.foreslatte_steg.length > 0) {
-    await supabase.from("neste_steg").insert(
-      input.foreslatte_steg.map((tekst, i) => ({
-        sak_id: sakId,
-        bruker_id: user.id,
-        tekst,
-        rekkefolge: i,
-      })),
-    );
+      .eq("id", sakId)
+      .eq("bruker_id", user.id);
+    if (error) console.error("[legg-til-brev] Hovedstolavvik ble ikke oppdatert.");
   }
 
   revalidatePath("/");

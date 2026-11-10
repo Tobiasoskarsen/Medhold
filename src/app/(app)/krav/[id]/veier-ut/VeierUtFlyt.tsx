@@ -14,16 +14,19 @@ import { haptikk } from "@/lib/haptikk";
 import { formaterBelop } from "@/lib/format";
 import { beregnAvdrag } from "@/lib/avdrag";
 import { STIGRING } from "@/lib/bevegelse";
-import { markerLost } from "../../actions";
+import { settUtfall } from "../../actions";
 
 export function VeierUtFlyt({
   sakId,
   brevId,
   total,
+  sistEndret,
 }: {
   sakId: string;
   brevId: string | null;
   total: number | null;
+  /** Sakens sist_endret da siden ble lest (samtidighetsvern). */
+  sistEndret: string;
 }) {
   const router = useRouter();
   const brevQuery = brevId ? `&brev=${brevId}` : "";
@@ -31,10 +34,17 @@ export function VeierUtFlyt({
   // Kort 1 — betal alt.
   const [betaltBekreft, setBetaltBekreft] = useState(false);
   const [lagrer, startLagre] = useTransition();
+  const [betaltFeil, setBetaltFeil] = useState<string | null>(null);
 
   function jegHarBetalt() {
     startLagre(async () => {
-      await markerLost(sakId, "oppgjort");
+      setBetaltFeil(null);
+      // «Ja, registrer betalingen» er bekreftelsen på at saken avsluttes.
+      const r = await settUtfall(sakId, "oppgjort", true, sistEndret);
+      if (!r.ok) {
+        setBetaltFeil(r.feil);
+        return;
+      }
       try {
         sessionStorage.setItem(`medhold-lost-nettopp-${sakId}`, "1");
       } catch {
@@ -115,6 +125,9 @@ export function VeierUtFlyt({
                 Avbryt
               </button>
             </div>
+            {betaltFeil && (
+              <p className="mt-2 text-hjelp text-dom-rod">{betaltFeil}</p>
+            )}
           </div>
         ) : (
           <Primærknapp onClick={() => setBetaltBekreft(true)} className="mt-3.5">

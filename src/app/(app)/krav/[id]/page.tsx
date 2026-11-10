@@ -44,6 +44,7 @@ import {
   UTFALL_STIL,
   type FristKilde,
   type UtkastType,
+  type SakStatus,
   type SakUtfall,
 } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
@@ -68,6 +69,10 @@ import { Toppstripe } from "@/components/ui/Toppstripe";
 import { LostNode } from "./LostNode";
 import { MarkerSendtKnapp } from "./MarkerSendtKnapp";
 import { SakensGangSeksjon } from "./SakensGangSeksjon";
+import { FristKnapp } from "./FristKnapp";
+import { relevantFrist } from "@/lib/prioritet";
+import { gjeldendeUtfall, utfallVisning } from "@/lib/utfall";
+import { fristStatus } from "@/lib/saksstatus";
 
 type BrevRad = {
   id: string;
@@ -88,6 +93,8 @@ type FristRad = {
   kilde: FristKilde;
   brev_id: string | null;
   fullfort: boolean;
+  fullfort_at: string | null;
+  erstattet_at: string | null;
 };
 
 function stor(s: string): string {
@@ -167,6 +174,8 @@ export default async function KravDetaljPage({
   const lost = sak.status === "fullfort";
   const lostDato = (sak.sist_endret as string | null)?.slice(0, 10);
   const utfall = sak.utfall as SakUtfall | null;
+  // Et bevart medhold på en åpnet sak er historikk, ikke sakens status.
+  const utfallNa = gjeldendeUtfall(sak.status as SakStatus, utfall);
 
   const [{ data: brevData }, { data: fristData }, { data: utkastData }] =
     await Promise.all([
@@ -180,7 +189,7 @@ export default async function KravDetaljPage({
         .order("opprettet", { ascending: false }),
       supabase
         .from("frister")
-        .select("id, tittel, forfallsdato, kilde, brev_id, fullfort")
+        .select("id, tittel, forfallsdato, kilde, brev_id, fullfort, fullfort_at, erstattet_at")
         .eq("sak_id", id),
       supabase
         .from("utkast")
@@ -206,10 +215,16 @@ export default async function KravDetaljPage({
     if (!cur || f.forfallsdato < cur.forfallsdato) fristForBrev.set(f.brev_id, f);
   }
 
-  // Nærmeste aktive frist totalt (til Nedtelling-kortet).
-  const nesteFrist = [...aktiveFrister].sort((a, b) =>
-    a.forfallsdato < b.forfallsdato ? -1 : 1,
-  )[0];
+  // Sakens viktigste aktive frist: samme regel som Hjem, så en gammel utløpt
+  // frist ikke står over en ny. En avsluttet sak viser ingen frist.
+  const idag = idagOslo();
+  const nesteFrist = lost
+    ? undefined
+    : relevantFrist(
+        aktiveFrister,
+        brevListe.map((b) => ({ ...b, sak_id: id })),
+        idag,
+      )?.frist;
 
   // Brevet en BEREGNET frist stammer fra — til «Hvordan regnet vi dette ut»
   // under Nedtellingen (§3.3). Kun relevant når kilde === 'beregnet'.
@@ -269,7 +284,6 @@ export default async function KravDetaljPage({
   // Gamle brev (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.2): er nyeste brev i en
   // aktiv sak over 45 dager gammelt, er funnene historikk, og brukeren bes
   // legge til det nyeste brevet.
-  const idag = idagOslo();
   const sisteBrevGammelt =
     sak.status === "aktiv" &&
     !!sisteBrev &&
@@ -309,6 +323,8 @@ export default async function KravDetaljPage({
       fristPill: frist ? fristPillTekst(frist) : undefined,
       fremhevet: !!frist,
       href: `/krav/${id}/brev/${b.id}`,
+      ekstra:
+        frist && !lost ? <FristKnapp fristId={frist.id} handling="fullfort" /> : undefined,
     };
   });
 
@@ -336,7 +352,24 @@ export default async function KravDetaljPage({
       tittel: f.tittel,
       fristPill: fristPillTekst(f),
       fremhevet: true,
+      ekstra: !lost ? <FristKnapp fristId={f.id} handling="fullfort" /> : undefined,
     }));
+
+  // Lukkede frister blir stående i historikken, med mulighet til å angre.
+  const lukketFristItems: Item[] = frister
+    .filter((f) => f.fullfort)
+    .map((f) => {
+      const erstattet = fristStatus(f) === "erstattet";
+      const tidspunkt = erstattet ? f.erstattet_at : f.fullfort_at;
+      return {
+        key: `frist-lukket-${f.id}`,
+        datoISO: tidspunkt?.slice(0, 10) ?? f.forfallsdato,
+        tittel: erstattet ? `${f.tittel}: erstattet av nytt brev` : `${f.tittel}: fullført`,
+        tekst: `Fristen var ${formaterKortDato(f.forfallsdato)}.`,
+        fremhevet: false,
+        ekstra: !lost ? <FristKnapp fristId={f.id} handling="aktiv" /> : undefined,
+      };
+    });
 
   const utkastItems: Item[] = utkast.map((u) =>
     u.sendt_at
@@ -362,6 +395,7 @@ export default async function KravDetaljPage({
     ...brevItems,
     ...funnItems,
     ...løseFristItems,
+    ...lukketFristItems,
     ...utkastItems,
   ].sort((a, b) => (a.datoISO < b.datoISO ? 1 : -1));
   if (items[0]) items[0].fremhevet = items[0].variant ? false : true;
@@ -392,22 +426,8 @@ export default async function KravDetaljPage({
         sisteHendelse={items.length === 0}
       >
         {(() => {
-          const s =
-            utfall === "medhold" || utfall === "delvis_medhold"
-              ? { tittel: "Medhold — kravet er frafalt", under: null, farge: "text-gull" }
-              : utfall === "nedbetalingsavtale"
-                ? {
-                    tittel: "Avtale på plass.",
-                    under: "Du har en plan — og saken har en slutt.",
-                    farge: "text-trygg",
-                  }
-                : utfall === "oppgjort"
-                  ? {
-                      tittel: "Saken er ute av verden.",
-                      under: "Betalt og avsluttet. Godt jobbet.",
-                      farge: "text-blekk",
-                    }
-                  : { tittel: "Sak løst", under: null, farge: "text-blekk" };
+          // Én tekstkilde per utfall (lib/utfall.ts): bare medhold sier frafalt.
+          const s = utfallVisning(utfall, true);
           return (
             <>
               <p className={`text-[16px] font-bold ${s.farge}`}>
@@ -488,7 +508,12 @@ export default async function KravDetaljPage({
         >
           <ChevronLeft className="size-6" strokeWidth={2} aria-hidden />
         </Link>
-        <KravMeny kravId={sak.id} lost={lost} />
+        <KravMeny
+          kravId={sak.id}
+          lost={lost}
+          utfall={utfall}
+          sistEndret={sak.sist_endret as string}
+        />
       </Toppstripe>
 
       <Sekvens>
@@ -522,14 +547,19 @@ export default async function KravDetaljPage({
             {STATUS_ETIKETT.venter_pa_svar}
           </span>
         )}
-        {utfall && (
+        {utfallNa && (
           <span
-            className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
+            className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${UTFALL_STIL[utfallNa]}`}
           >
-            {UTFALL_ETIKETT[utfall]}
+            {UTFALL_ETIKETT[utfallNa]}
           </span>
         )}
       </div>
+      {utfall && !lost && utfallVisning(utfall, false).under && (
+        <p className="mt-2 text-hjelp leading-relaxed text-dempet">
+          {utfallVisning(utfall, false).under}
+        </p>
+      )}
       </SekvensDel>
 
       {/* Registrert stadium/status og relevant frist: situasjonen før valgene. */}
@@ -573,6 +603,7 @@ export default async function KravDetaljPage({
               Fristen står oppgitt i brevet.
             </p>
           ) : null}
+          <FristKnapp fristId={nesteFrist.id} handling="fullfort" />
         </SekvensDel>
       )}
 
@@ -590,7 +621,10 @@ export default async function KravDetaljPage({
               )}
             </p>
             <div className="-mx-[18px] -mb-[18px] mt-3 border-t-[0.5px] border-strek">
-              <VenterPaSvarUtvidelse kravId={sak.id} />
+              <VenterPaSvarUtvidelse
+                kravId={sak.id}
+                sistEndret={sak.sist_endret as string}
+              />
             </div>
           </Kort>
         </SekvensDel>
