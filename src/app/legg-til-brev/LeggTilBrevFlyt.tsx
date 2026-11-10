@@ -231,6 +231,7 @@ export function LeggTilBrevFlyt({
   // bekreftet, var tallene slik de sto da.
   function rettet<T>(sett: (v: T) => void) {
     return (v: T) => {
+      if (lagreLas.current || lagringUkjent) return;
       sett(v);
       setBekreftet(false);
       setStemmerLikevel(false);
@@ -443,14 +444,14 @@ export function LeggTilBrevFlyt({
       setLagringUkjent(true);
       // Svaret kom aldri fram. Nøkkelen beholdes, så et nytt forsøk ikke lagrer
       // brevet to ganger hvis det første faktisk gikk gjennom.
-      setFeil("Vi fikk ikke bekreftet om brevet ble lagret. Sjekk nettet og prøv igjen her; samme lagringsnøkkel brukes. Hvis du lukker siden, se etter brevet under Saker før du legger det inn på nytt.");
+      setFeil("Vi fikk ikke bekreftet om brevet ble lagret. Sjekk nettet og prøv igjen her; samme lagringsnøkkel brukes. Opplysningene er låst mens resultatet er ukjent. Hvis du lukker siden, se etter brevet under Saker før du legger det inn på nytt.");
       setLagrer(false);
       lagreLas.current = false;
       return;
     }
     if (!r.ok) {
       setFeil(r.feil);
-      if (r.kontroll) { setAlvorlig(r.kontroll.alvorlig); setBekreftet(false); }
+      if (r.kontroll) { setAlvorlig(r.kontroll.alvorlig); setBekreftet(false); setLagringUkjent(false); }
       lagreLas.current = false;
       setLagrer(false);
       return;
@@ -682,6 +683,7 @@ export function LeggTilBrevFlyt({
         >
           {lagretBrev ? <LagretBrev {...lagretBrev} /> : <BrevGjennomgang
             bekreftet={kanLagre}
+            opplysningerLast={lagringUkjent}
             lagrer={lagrer}
             feil={feil}
             opplysninger={<>
@@ -794,6 +796,7 @@ export function LeggTilBrevFlyt({
 
             </>}
             handling={<>
+              <fieldset disabled={lagrer || lagringUkjent} className="min-w-0" aria-label="Valg som skal lagres med brevet">
               <SakOgFrister sakNavn={kravModus === "ny" ? "Ny sak" : valgtKravObj?.navn || "Velg sak"} frister={valgteFrister} fristfunn={fristSammenligning} alvorlig={alvorlig} harMatch={!!kravForslag} kreverBekreftelse={kreverAvslutning || valgtKravAvsluttet || datoMerknad !== null}>
           <div className="mt-5">
             <p className="text-hjelp font-medium text-blekk">Hører til</p>
@@ -1094,6 +1097,7 @@ export function LeggTilBrevFlyt({
             </p>
           )}
 
+              </fieldset>
           {kanLagre && (
           <div className="mt-6">
             <Veivalg

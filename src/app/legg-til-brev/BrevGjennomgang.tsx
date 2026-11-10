@@ -13,9 +13,9 @@ const DELER = [
 ];
 
 /** Kun presentasjon. Alle redigerte verdier og lagringsregler eies av brevflyten. */
-export function BrevGjennomgang({ bekreftet, opplysninger, kontroll, handling, feil, lagrer }: {
+export function BrevGjennomgang({ bekreftet, opplysninger, kontroll, handling, feil, lagrer, opplysningerLast = false }: {
   bekreftet: boolean; opplysninger: ReactNode; kontroll: ReactNode;
-  handling: ReactNode; feil: string | null; lagrer: boolean;
+  handling: ReactNode; feil: string | null; lagrer: boolean; opplysningerLast?: boolean;
 }) {
   const [valgt, setValgt] = useState(0);
   const reduserBevegelse = useReducedMotion();
@@ -71,7 +71,7 @@ export function BrevGjennomgang({ bekreftet, opplysninger, kontroll, handling, f
         <m.div key={side} initial={reduserBevegelse ? false : { opacity: 0, x: retning * GLID_DYBDE }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: reduserBevegelse ? 0 : VARIGHET.normal, ease: EASING }}>
-          <fieldset disabled={lagrer} className="min-w-0" aria-label="Brevopplysninger og handlingsvalg">
+          <fieldset disabled={lagrer || (opplysningerLast && side === 0)} className="min-w-0" aria-label="Brevopplysninger og handlingsvalg">
             {side === 0 ? opplysninger : side === 1 ? kontroll : handling}
           </fieldset>
         </m.div>
