@@ -413,6 +413,7 @@ export function UtkastFlyt({
         }
         const r = await markerUtkastSendt(utkastId, versjon);
         if (!r.ok) {
+          setSendtUkjent(!!r.ukjent);
           setFeil(r.feil);
           return;
         }
@@ -626,7 +627,7 @@ export function UtkastFlyt({
                     setLagringUkjent(false);
                   }
                   const r = await lagreRedigertUtkast(utkastId, sakId, versjon, tekst);
-                  if (!r.ok) { setFeil(r.feil); return; }
+                  if (!r.ok) { setLagringUkjent(!!r.ukjent); setFeil(r.feil); return; }
                   setTekst(r.tekst); setKontrollTekst(r.tekst); setLagretTekst(r.tekst); setVersjon(r.versjon);
                 } catch { setLagringUkjent(true); setFeil("Kunne ikke bekrefte lagringen. Teksten er beholdt i denne fanen. Neste forsøk kontrollerer serverversjonen før noe lagres."); }
                 finally { setLagrer(false); skriveLas.current = false; }

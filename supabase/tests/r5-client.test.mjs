@@ -109,3 +109,14 @@ test('R5: navigasjonsvern bruker native advarsel uten å blokkere originalnedlas
   cleanup(); assert.deepEqual(events, {}); assert.deepEqual(doc, {});
   delete globalThis.window; delete globalThis.document; delete globalThis.Element;
 });
+for (const mode of ['transport', 'conflict', 'success']) test(`R5: utkastlagring skiller ${mode} fra bekreftet svar`, async () => {
+  const query = { update() { return this; }, eq() { return this; }, is() { return this; }, select() { return this; }, async maybeSingle() { return { error: mode === 'transport' ? { message: 'network' } : null, data: mode === 'success' ? { innhold: 'Min tekst', versjon: 2 } : null }; } };
+  const out = load('src/app/(app)/krav/[id]/utkast/actions.ts', { 'server-only': {}, '@/lib/supabase/server': { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: uid } } }) }, from: () => query }) }, './byggUtkastPrompt': {}, 'next/navigation': {}, 'next/cache': {} });
+  const r = await out.lagreRedigertUtkast(uid, sid, 1, 'Min tekst');
+  assert.equal(r.ok, mode === 'success'); assert.equal(r.ukjent === true, mode === 'transport'); if (mode === 'conflict') assert.ok(r.feil.startsWith('Ikke lagret.'));
+});
+test('R5: eksplisitt ukjent sendtrespons fører også til lesing før eventuell retry', async () => {
+  let writes = 0, reads = 0;
+  const h = draft({ markerUtkastSendt: async () => { writes++; return { ok: false, ukjent: true, feil: 'Ukjent respons' }; }, hentUtkastStatus: async () => { reads++; return { ok: true, tekst: 'Snapshot.', versjon: 2, sendt: true }; } });
+  await h.send(); await h.status(); assert.equal(writes, 1); assert.equal(reads, 1); assert.ok(text(h.render()).includes('Registrert sendt'));
+});

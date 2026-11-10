@@ -47,6 +47,12 @@ test("formaterBelop: norsk tusenskille, ingen desimaler", () => {
   assert.equal(formaterBelop(undefined), null);
 });
 
+test("formaterBelop: registrert øre beholdes også for store beløp", () => {
+  assert.equal(formaterBelop(1234567.89), "1 234 567,89");
+  assert.equal(formaterBelop(1288.5), "1 288,5");
+  assert.equal(formaterBelop(0.01), "0,01");
+});
+
 test("tolkKr: internasjonalt format med punktum som desimaltegn (regresjonstest)", () => {
   // Dette er nøyaktig scenariet som feilet: «3201.80» ble tolket som 320180.
   assert.equal(tolkKr("3201.80"), 3201.8);
