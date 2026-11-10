@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { m } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { DELT_OVERGANG_NOKKEL, VARIGHET } from "@/lib/bevegelse";
 import { FANE_NAV_NOKKEL } from "@/components/ui/BunnNav";
 
@@ -14,6 +14,7 @@ import { FANE_NAV_NOKKEL } from "@/components/ui/BunnNav";
  * - Fane-bytte via BunnNav: rask fade. Dybde-navigasjon: litt roligere fade.
  */
 export default function Template({ children }: { children: ReactNode }) {
+  const redusert = useReducedMotion();
   const [modus] = useState<"fane" | "delt" | "dybde">(() => {
     if (typeof window === "undefined") return "dybde";
     try {
@@ -31,9 +32,10 @@ export default function Template({ children }: { children: ReactNode }) {
 
   return (
     <m.div
-      initial={{ opacity: 0 }}
+      className="skjerm-inntreden"
+      initial={redusert ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: modus === "fane" ? VARIGHET.hurtig : VARIGHET.normal }}
+      transition={{ duration: redusert ? 0 : modus === "fane" ? VARIGHET.hurtig : VARIGHET.normal }}
     >
       {children}
     </m.div>

@@ -57,6 +57,22 @@ test("R4: faktisk lagreBrev lagrer serverfunn, manipulasjon krever ny bekreftels
  const r=await lagreBrev({...input,...over});assert.equal(r.ok,false);assert.ok(r.kontroll);}
  assert.equal(payloads.length,1,"ingen lagring ved manipulert vurdering");
 });
+test("R3: lagreBrev beholder eksplisitt fristkilde også når lovdatoen er lik", async () => {
+  const { kontrollerBrevfunn } = last("src/lib/brevkontroll.ts");
+  const payloads = [];
+  const db = { auth: { getUser: async () => ({ data: { user: { id: "a" } } }) }, rpc: async (_name, { p }) => { payloads.push(p); return { data: { sak_id: "ny-sak", brev_id: "ny-brev" } }; } };
+  const { lagreBrev } = last("src/app/legg-til-brev/actions.ts", { "@/lib/supabase/server": { createClient: async () => db }, "next/cache": { revalidatePath() {} }, "next/navigation": { redirect() { throw Error("AUTH"); } } });
+  for (const eksplisitt of [true, false]) {
+    const data = { brevtype: "inkassovarsel", brevdato: "2026-11-08", original_tekst: "Syntetisk fristtest", fristIBrevet: eksplisitt ? { tittel: "Betalingsfrist", forfallsdato: "2026-11-22" } : null };
+    const kontroll = kontrollerBrevfunn(data);
+    const input = { ...data, krav: { modus: "ny", kreditor: "Test" }, avsender: "Test", avsender_epost: "", belop: 1288, hovedstol: 1250, saksnummer: "TEST", forklaring: "", foreslatte_steg: [], valgteFrister: [{ tittel: "Betalingsfrist", forfallsdato: "2026-11-22", kilde: "beregnet" }], utfall: null, kostnadslinjer: [{ type: "purregebyr", belop: 38 }], fristfunn: kontroll.fristfunn, alvorlig: kontroll.alvorlig, bekreftet: true, sumStemmerLikevel: false, erstatterFrister: [], avslutningBekreftet: false, gjenapne: false, forventetSistEndret: null, oppdaterSak: false, lagringsnokkel: "11111111-1111-4111-8111-111111111111" };
+    assert.equal((await lagreBrev(input)).ok, true);
+    const payload = payloads.at(-1);
+    assert.equal(payload.frister[0].kilde, eksplisitt ? "brev_eksplisitt" : "beregnet");
+    assert.equal(payload.brev.foreslatte_frister[0].kilde, payload.frister[0].kilde);
+  }
+});
+
 test("R3: autoritativ plan beholder øre og avviser manipulerte forslag før kvote/AI",async()=>{
  const {kontrollerAvdragsforslag:k}=last("src/lib/avdrag-server.ts");
  const gyldig={manedsbelop:600,antallMandeder:17,sisteAvdrag:519.5};

@@ -43,3 +43,12 @@ jobs:
 
       - name: Databasetester (PGlite)
         run: npm run test:db
+
+      - name: Produksjonsbygg
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.invalid
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-public-placeholder
+
+      - name: Produksjonsavhengigheter
+        run: npm audit --omit=dev --audit-level=high

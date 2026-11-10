@@ -1,6 +1,7 @@
 // Opt-in: kun det eksplisitt godkjente testprosjektet. Ingen produksjonsfallback.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { randomUUID, randomBytes } from 'node:crypto';
+import { randomUUID, randomBytes, createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
@@ -8,7 +9,12 @@ import { createServerClient } from '@supabase/ssr';
 const EXPECTED = 'https://evvzxblhaxaraaurbhsu.supabase.co';
 if (!process.argv.includes('--run-test-project')) throw Error('Krever --run-test-project');
 const env = {};
-for (const line of readFileSync('.env.test.local','utf8').replace(/^\uFEFF/,'').split(/\r?\n/)) {
+const ciNames=['TEST_SUPABASE_URL','TEST_SUPABASE_PUBLISHABLE_KEY','TEST_SUPABASE_SECRET_KEY'];
+const ciMode=process.env.CI==='true'||ciNames.some(name=>process.env[name]!==undefined);
+if(ciMode){
+  assert.ok(ciNames.every(name=>process.env[name]?.trim()),'Alle tre TEST_SUPABASE-verdier kreves; ingen lokal/produksjonsfallback');
+  Object.assign(env,{NEXT_PUBLIC_SUPABASE_URL:process.env.TEST_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY:process.env.TEST_SUPABASE_PUBLISHABLE_KEY,SUPABASE_SERVICE_ROLE_KEY:process.env.TEST_SUPABASE_SECRET_KEY});
+} else for (const line of readFileSync('.env.test.local','utf8').replace(/^\uFEFF/,'').split(/\r?\n/)) {
   const m = line.match(/^\s*([A-Za-z_0-9]+)\s*=\s*(.*?)\s*$/);
   if (m) { try { env[m[1]] = JSON.parse(m[2]); } catch { env[m[1]] = m[2]; } }
 }
@@ -166,7 +172,7 @@ finally {
     const r=await admin.auth.admin.deleteUser(id);if(r.error)cleanup=false;
   }
   mkdirSync('docs/testing',{recursive:true});
-  const report={prosjekt:'evvzxblhaxaraaurbhsu',tidspunkt:new Date().toISOString(),run,brukerJWT:true,serviceRoleKunOppsettOgAdministrasjon:true,cleanup,results};
+  const report={prosjekt:'evvzxblhaxaraaurbhsu',tidspunkt:new Date().toISOString(),revision:process.env.GITHUB_SHA??execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),testkildeSha256:createHash('sha256').update(readFileSync(new URL(import.meta.url))).digest('hex'),run,brukerJWT:true,serviceRoleKunOppsettOgAdministrasjon:true,cleanup,results};
   writeFileSync('docs/testing/r2-supabase-resultat.json',JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify(report,null,2));
   if(!cleanup||results.some(x=>x.status==='feilet'))process.exitCode=1;

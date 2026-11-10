@@ -24,13 +24,17 @@ export function FristKnapp({
   function utfor() {
     startTransition(async () => {
       setFeil(null);
-      const r = await endreFrist(fristId, handling);
-      if (!r.ok) {
-        setFeil(r.feil);
-        return;
+      try {
+        const r = await endreFrist(fristId, handling);
+        if (!r.ok) {
+          setFeil(r.feil);
+          return;
+        }
+        haptikk(handling === "fullfort" ? "suksess" : "lett");
+        router.refresh();
+      } catch {
+        setFeil("Kunne ikke bekrefte fristendringen. Prøv igjen, eller åpne saken på nytt for å kontrollere status.");
       }
-      haptikk(handling === "fullfort" ? "suksess" : "lett");
-      router.refresh();
     });
   }
 
@@ -52,7 +56,7 @@ export function FristKnapp({
             ? "Marker fristen som fullført"
             : "Angre"}
       </button>
-      {feil && <p className="mt-1 text-xs text-dom-rod">{feil}</p>}
+      {feil && <p role="alert" className="mt-1 text-xs text-dom-rod">{feil}</p>}
     </div>
   );
 }

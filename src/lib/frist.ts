@@ -5,6 +5,8 @@
 // bekvemmelighet) — Kravkort/Nedtelling importerer den direkte fra
 // `@/lib/dato` i stedet (unngikk en unødvendig cross-lib-import her).
 
+import type { FristKilde } from "./types.ts";
+
 /** ≤10 dager igjen (eller passert/i dag) → hastende, ellers nøytral. */
 export function erHastende(dagerIgjen: number): boolean {
   return dagerIgjen <= 10;
@@ -66,6 +68,13 @@ export type FristSammenligning = {
   beregnetDato: string | null;
   differanseDager: number | null; // eksplisitt minus beregnet (negativ = kortere)
 };
+
+/** En dato som står i brevet er eksplisitt også når lovberegningen er lik.
+ * Brukes ved bekreftelse, serverlagring og visning av eldre feilmerkede rader.
+ * Manuell kilde og frister fra andre datoer endres ikke. */
+export function fristKildeForDato(kilde: FristKilde, dato: string, funn: FristSammenligning | null): FristKilde {
+  return kilde === "beregnet" && funn?.eksplisittDato === dato ? "brev_eksplisitt" : kilde;
+}
 
 /** Hele dager mellom to rene datoer (YYYY-MM-DD), tolket som UTC-midnatt. */
 export function dagerMellom(fra: string, til: string): number {

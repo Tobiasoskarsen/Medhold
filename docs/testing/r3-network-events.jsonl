@@ -1,0 +1,11 @@
+{"tidspunkt":"2026-11-08T19:15:31.823Z","method":"POST","path":"/krav/01697b76-12ad-4570-b59d-68e38077907b/utkast","phase":"before","serverAction":true}
+{"tidspunkt":"2026-11-08T19:16:01.979Z","method":"POST","path":"/krav/01697b76-12ad-4570-b59d-68e38077907b/utkast","phase":"after","serverAction":true}
+{"tidspunkt":"2026-11-08T19:17:19.876Z","method":"POST","path":"/krav/01697b76-12ad-4570-b59d-68e38077907b/utkast","phase":"before","serverAction":true}
+{"tidspunkt":"2026-11-08T19:18:33.890Z","method":"POST","path":"/krav/01697b76-12ad-4570-b59d-68e38077907b/utkast","phase":"before","serverAction":true}
+{"tidspunkt":"2026-11-08T19:18:45.749Z","method":"POST","path":"/krav/01697b76-12ad-4570-b59d-68e38077907b/utkast","phase":"after","serverAction":true}
+{"tidspunkt":"2026-11-08T19:19:36.824Z","method":"POST","path":"/api/utkast-generer","phase":"before","serverAction":false}
+{"tidspunkt":"2026-11-08T19:19:57.636Z","method":"POST","path":"/legg-til-brev","phase":"before","serverAction":true}
+{"tidspunkt":"2026-11-08T19:22:42.605Z","method":"POST","path":"/legg-til-brev","phase":"before","serverAction":true}
+{"tidspunkt":"2026-11-08T19:22:51.853Z","method":"POST","path":"/legg-til-brev","phase":"after","serverAction":true}
+{"tidspunkt":"2026-11-08T19:23:45.326Z","method":"POST","path":"/krav/2b6cd5df-726d-41c4-b7a1-f2362b7c6c30","phase":"before","serverAction":true}
+{"tidspunkt":"2026-11-08T19:24:19.278Z","method":"POST","path":"/krav/2b6cd5df-726d-41c4-b7a1-f2362b7c6c30","phase":"before","serverAction":true}

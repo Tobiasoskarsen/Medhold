@@ -16,12 +16,11 @@ import {
   type BrevType,
 } from "@/lib/gjeld";
 import { formaterKortDato, formaterDato, idagOslo } from "@/lib/dato";
-import type { FristSammenligning } from "@/lib/frist";
+import { fristKildeForDato, type FristSammenligning } from "@/lib/frist";
 import {
   UTFALL_VALGBARE,
   UTFALL_ETIKETT,
   type FristForslag,
-  type FristKilde,
   type SakStatus,
   type SakUtfall,
 } from "@/lib/types";
@@ -303,14 +302,6 @@ export function LeggTilBrevFlyt({
     gaTil(3);
   }
 
-  // samstemmer/kun_beregnet → dato er (også) lovens; avvik_kortere/
-  // avvik_lengre/kun_eksplisitt → dato er hentet fra selve brevet.
-  function fristSammenligningKilde(status: FristSammenligning["status"]): FristKilde {
-    return status === "samstemmer" || status === "kun_beregnet"
-      ? "beregnet"
-      : "brev_eksplisitt";
-  }
-
   // Kaster selve server action-kallet (krasj på serveren, tidsavbrudd,
   // nettverksfeil), får brukeren en feilmelding og kommer tilbake til steg 1
   // — i stedet for å bli stående i lesingen for alltid.
@@ -375,7 +366,7 @@ export function LeggTilBrevFlyt({
           {
             tittel: fristSammenligning.visTittel,
             forfallsdato: fristSammenligning.visForfallsdato,
-            kilde: fristSammenligningKilde(fristSammenligning.status),
+            kilde: fristKildeForDato("beregnet", fristSammenligning.visForfallsdato, fristSammenligning),
           },
         ]
       : [];

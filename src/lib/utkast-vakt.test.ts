@@ -12,6 +12,19 @@ import { REFERANSEBREV, REFERANSEBREV_TILLEGG } from "./utkast-stemme.ts";
 import { etterkontroll, genererUtkast } from "./utkast-prompt.ts";
 import type Anthropic from "@anthropic-ai/sdk";
 
+test("R3: kort saksreferanse blir ikke et oppdiktet kronebeløp", () => {
+  const originalTekst = "Saksnummer TEST-IPHONE-01. Å betale 1 288 kr. Hovedstol 1 250 kr. Purregebyr 38 kr.";
+  const fakta = byggVaktFakta(grunnlag({ originalTekst, belopTotalt: 1288 }));
+  const utkast = "Saksnummer TEST-IPHONE-01. Kravet er på 1 288 kr, hovedstol 1 250 kr og purregebyr 38 kr.";
+  assert.deepEqual(trekkUt(utkast).tokens, ["TEST-IPHONE-01"]);
+  assert.deepEqual(trekkUt(utkast).belop.map(b => b.belop), [1288, 1250, 38]);
+  assert.ok(!fakta.tillatteBelop.includes(1));
+  assert.deepEqual(kontrollerUtkast(utkast, fakta), []);
+  assert.equal(verdierMedKilde(utkast, fakta).some(v => v.verdi === "1 kr"), false);
+  assert.ok(kontrollerUtkast(utkast.replace("-01", "-02"), fakta).some(f => f.type === "token"));
+  assert.ok(kontrollerUtkast("Betal 1 kr.", fakta).some(f => f.type === "belop"));
+});
+
 function grunnlag(over: Partial<VaktGrunnlag>): VaktGrunnlag {
   return {
     originalTekst: "",

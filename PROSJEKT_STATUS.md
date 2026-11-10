@@ -5,6 +5,118 @@ etter hver fase.
 
 ## Faseoversikt
 
+### R3 – fysisk to-fane-konflikt bekreftet 10. november
+
+Brukeren bekreftet den beskrevne Safari-prøven på iPhone: A lagret, B fikk
+konflikt og beholdt egen tekst, og ny fane viste As lagrede tekst. Denne
+fysiske porten er brukerbekreftet bestått. Stor systemtekst er fortsatt ikke
+bekreftet; tidligere 200 % sidezoom er et separat resultat. Ingen kode,
+migrasjon, merge eller produksjonsendring i denne dokumentoppdateringen.
+
+### R3 – VoiceOver-prøve bekreftet
+
+Brukeren presiserte at VoiceOver fungerte fint på iPhone. Den avgrensede
+prøven er brukerbekreftet bestått; ingen full audit av alle flyter hevdes.
+Stor systemtekst og fysisk flerfane-konflikt gjenstår.
+
+### R3 – direkte kameraopptak bekreftet
+
+Brukeren tok et nytt bilde av et testbrev via kamera i Safari på iPhone og
+bekreftet hele flyten gjennom lesing, bekreftelse og lagring. Kameraport er
+dermed brukerbekreftet bestått. VoiceOver og stor systemtekst gjenstår.
+Ingen instrumentert måling av bildeformat/størrelse eller produksjonsendring.
+
+### R3 – fysisk bilde- og PDF-opplasting bekreftet
+
+Brukeren testet ett bilde og én PDF hver for seg i oppdatert preview på
+iPhone og bekreftet «Begge fungerer» gjennom lesing, bekreftelse og lagring.
+Dette er brukerutført fysisk bevis, ikke agentinstrumentert testing. Direkte
+kameraopptak, filstørrelser og formater er ikke særskilt oppgitt. Testlogg og
+åpne porter er oppdatert i R3_IPHONE15_MANUELL.md og R3_SLUTTKONTROLL.md.
+
+### R3 – to feil rettet og integrasjonen kjørt på nytt
+
+Gjeldende samlet oversikt: docs/testing/R3_SLUTTKONTROLL.md. «1 kr» kom fra
+den korte referansen TEST-IPHONE-01; tokens gjenkjennes nå uten at ukjente
+referanser eller faktiske feilbeløp godtas. Fristkilden beholdes som eksplisitt
+også når lovdatoen er lik, både i bekreftelsen og på serveren. Saksvisningen
+bruker eksisterende dokumentbevis for eldre feilmerkede rader, uten DB-skriving.
+Begge feil var røde før rettelsen. Juridiske beregninger er uendret.
+
+Ny ekte test-Supabase/HTTP-runde: 26/26, cleanup=true. Fire faktiske gamle
+servermodul-prøver mot oppgradert testprosjekt er bestått. Dette er ikke en
+full gammel browserapp mot produksjonsklone: gammel klient mangler CAS og
+må ikke brukes parallelt under utrulling. Ingen påstand om risikofri rollback.
+Desktop-nettleser bekreftet korrekt verdioversikt/fristkilde og to-fane-konflikt:
+B beholdt tekst, ny tredje fane viste As lagrede tekst. Syntetisk konto ryddet.
+391 unit, full DB-/modulsuite og opt-in-regresjon, lint/type/build og prod-audit
+er grønne. Nye bilder og r3-legacy-resultat.json ligger i docs/testing/.
+
+GitHub-workflowen er fortsatt 404 på main; ikke omgått med merge eller svekket
+miljøvern. Fysiske resttester, full historisk browserklone, endelig main-smoke
+og separat godkjent produksjonsplan gjenstår. Ingen merge, migrasjon eller
+produksjonsdeploy i denne runden. Brukerens egen testkonto og filer er urørt.
+
+### R3 – glimt ved fanebytte med redusert bevegelse
+
+Brukeren presiserte at et kort svart glimt bare oppstår inne i Medhold.
+Template, Sekvens og Skjermramme startet fortsatt med skjult innhold ved
+redusert bevegelse; de viser nå innholdet straks. CSS-sikring gjelder også
+SSR før hydrering, avgrenset til innholdsrammene. Vanlige animasjoner beholdes.
+Fem regresjonstester og lokal Chrome-prøve av ekte serverrendret HTML/CSS
+dekker rettelsen. Brukeren retestet oppdatert preview (f760eef) på iPhone 15
+i Safari og bekreftet «Ja, glimtet er borte» ved Hjem/Saker/Meg med redusert
+bevegelse på. Dette konkrete avviket er dermed fysisk retestet og rettet.
+Safari-sidezoom 200 % er nå brukerbekreftet, stor systemtekst/VoiceOver gjenstår.
+Ingen migrasjon, merge eller produksjonsdeploy. Se R3_IPHONE15_MANUELL.md.
+
+### R3 – fysisk testreise på iPhone 15
+
+Brukeren har bekreftet Safari, e-postlogin, tekstanalyse/beløpsretting,
+utkastgenerering/redigering, eksplisitt serverlagring/gjenåpning i ny fane,
+hele teksten kopiert til Notater, emne/body i ekstern e-postklient, manuell
+sendt-status og skrivebeskyttet tekst, frist-fullføring/refresh og mørk modus.
+Det første bildet med lokal gjenopprettingsbuffer ble ikke godkjent som
+serverlagring. Google i test er deaktivert og eksplisitt utsatt av brukeren.
+To bildeobservasjoner må undersøkes: «1 kr» i verdioversikten og beregnet-
+merking på en eksplisitt frist. Ingen releasegodkjenning. Detaljer og
+avgrensninger i docs/testing/R3_IPHONE15_MANUELL.md. iOS-versjon er ukjent.
+
+### R3 – nettverksfeil og beskyttet GitHub-miljø
+
+Produksjons-preflight er nå utført skrivefritt mot Medhold/leernzbmuldegiggnjib:
+0024/0026-relevante objekter finnes, mens 0027–0031s nye objekter mangler.
+Kun systemkataloger er lest/eksportert; ingen appdata eller skrivende SQL.
+Ny app må ikke deployes mot dette før separat godkjente migrasjoner.
+Etterkontrollen har 389 unit / 90 DB-/modultester, grønn lint/type/build.
+
+`test` i GitHub er opprettet med reviewer Tobiasoskarsen, admin-bypass av,
+og bare main/R3-grenen tillatt. Etter brukerens eksplisitte samtykke er kun
+test-Supabase sine tre verdier lagt i krypterte environment secrets. Ingen
+produksjonsnøkler. Dispatch stopper med 404 fordi workflowen ikke finnes på
+default-grenen; ikke omgått med merge eller endring av main.
+Faktisk klient/nettverksprøve mot localhost-proxy/test-Supabase: analyse,
+brevlagring, generering, utkastlagring, sendt og frist. To ubehandlede
+avvisninger i useTransition ga full feilside; sendt-/frist-handler fanger
+nå feil lokalt, beholder skjerm og gir retry. Tapte svar omtales som ukjent
+bekreftelse, ikke sikkert mislykket lagring. Fire handlerregresjoner lagt til.
+Brukeren har iPhone 15; iOS, fysisk kjede, Android og OS/Mail er ikke bevist.
+Detaljert bevis og begrensninger: docs/testing/R3_NETTVERK_OG_TESTMILJO.md.
+
+### R3 – release gate (pågår, ingen produksjonsendring)
+
+Egen gren fra 10638d5, alle ti PR-heads kontrollert som ancestors. Normal CI
+får bygg og produksjonsaudit; manuell testworkflow krever et eksisterende
+testmiljø med reviewer og bruker egne TEST_SUPABASE-secrets uten filfallback.
+Miljøoppslag ga 404, derfor ikke påstått konfigurert/kjørt i GitHub.
+Ekte cron-modul/adapter er kjørt mot Resend og en avgrenset syntetisk konto:
+dryRun, parallelle kall, én unik melding, én kvittering, retry uten ny melding.
+Brukeren bekreftet nøyaktig én mottatt melding. Testdata er ryddet bort.
+Fysisk iPhone er tilgjengelig, men testresultater er ikke rapportert; Android,
+frontend-nettverksbrudd og eksternt Mail/OS-clipboard er fortsatt åpne.
+Ingen loginmetode er fjernet og ingen ny migrasjon laget i R3.
+Se `docs/testing/R3_RELEASE_GATE.md` for matrise, avvik og release/rollback-plan.
+
 ### R2 etterkontroll – 8. november 2026
 
 Oppfølging av PR #61: tidsbudsjett på 45 sekunder for modellstrømming og

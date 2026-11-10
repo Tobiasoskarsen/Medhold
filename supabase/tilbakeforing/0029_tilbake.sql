@@ -1,4 +1,7 @@
 -- Tilbakeføring av migrasjon 0029. Kjøres BARE hvis 0029 må fjernes.
+-- IKKE anbefalt release-rollback: denne fila sletter additive kvote- og
+-- idempotensdata. R3s releaseplan beholder dem ved app-rollback. Denne
+-- destruktive schema-tilbakeføringen krever en egen begrunnet godkjenning.
 --
 -- Rekkefølge: rull tilbake koden (Vercel) FØRST. Ny kode kaller
 -- reserver_kvote og stopper AI-funksjonene hvis den mangler.

@@ -1,7 +1,9 @@
 {
   "prosjekt": "evvzxblhaxaraaurbhsu",
-  "tidspunkt": "2026-11-08T18:40:54.854Z",
-  "run": "4698c43b-a751-40f5-95d9-36d830325ce7",
+  "tidspunkt": "2026-11-08T21:55:53.736Z",
+  "revision": "0ef2ec160a2b71a382b4de229170a8da154d34cc",
+  "testkildeSha256": "6773878800bded7ee52e1a75854441176ed09ab8bf31fbb02cabcae518e37cd8",
+  "run": "803aa4a9-f554-40de-bd00-7304c00bf29f",
   "brukerJWT": true,
   "serviceRoleKunOppsettOgAdministrasjon": true,
   "cleanup": true,

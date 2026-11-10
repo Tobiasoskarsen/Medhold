@@ -408,14 +408,19 @@ export function UtkastFlyt({
   function jegHarSendtDet() {
     if (!utkastId || ulagret || lagrer) { setFeil("Lagre utkastet før du registrerer det som sendt."); return; }
     startSending(async () => {
-      const r = await markerUtkastSendt(utkastId, versjon);
-      if (!r.ok) {
-        setFeil(r.feil);
-        return;
+      setFeil(null);
+      try {
+        const r = await markerUtkastSendt(utkastId, versjon);
+        if (!r.ok) {
+          setFeil(r.feil);
+          return;
+        }
+        haptikk("suksess");
+        router.push(`/krav/${r.sakId}`);
+        router.refresh();
+      } catch {
+        setFeil("Kunne ikke bekrefte registreringen. Teksten er beholdt. Prøv igjen, eller åpne utkastet på nytt for å kontrollere status.");
       }
-      haptikk("suksess");
-      router.push(`/krav/${r.sakId}`);
-      router.refresh();
     });
   }
 
@@ -609,7 +614,7 @@ export function UtkastFlyt({
                   if (!r.ok) { setFeil(r.feil); return; }
                   setTekst(r.tekst); setKontrollTekst(r.tekst); setLagretTekst(r.tekst); setVersjon(r.versjon);
                   if (backupNokkel) { try { sessionStorage.removeItem(backupNokkel); } catch { /* lagret på server */ } }
-                } catch { setFeil("Ikke lagret. Prøv igjen og behold teksten til lagringen er bekreftet."); }
+                } catch { setFeil("Kunne ikke bekrefte lagringen. Teksten er beholdt. Prøv igjen, eller åpne utkastet på nytt for å kontrollere status."); }
                 finally { setLagrer(false); }
               }}>{lagrer ? "Lagrer …" : "Lagre endringer"}</button>}
               {feil && <p role="alert" className="text-dom-rod">{feil}</p>}

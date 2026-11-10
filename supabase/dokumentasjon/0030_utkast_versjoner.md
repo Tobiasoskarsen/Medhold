@@ -1,6 +1,7 @@
 # S1-C: utkastlagring (0030)
 
-Ikke kjørt i Supabase. Krever separat godkjenning og testmiljø før produksjon.
+Oppdatert 10. november 2026: kjørt og verifisert i det separate prosjektet
+«medhold test», ikke i produksjon. Produksjon krever separat godkjenning.
 
 Legger til versjon, vaktfakta og en uforanderlig sendt-tekst på eksisterende
 utkast. Ingen gamle tekster endres. Gamle sendt-utkast får ingen oppdiktet
@@ -31,4 +32,5 @@ og versjon; klienten erstatter strømvisningen før kopiering blir tilgjengelig.
 
 Lokale tester dekker versjonskonflikt, annen bruker, snapshot, gjentatt migrasjon
 og atomisk statusoppdatering. Ekte parallelle forbindelser og live PostgREST
-gjenstår. PGlite er ikke bevis på produksjonsoppsett.
+er også testet i testprosjektet; se docs/testing/r2-supabase-resultat.json og
+R3_SLUTTKONTROLL.md. Ingen av disse er bevis på produksjonsoppsett.
