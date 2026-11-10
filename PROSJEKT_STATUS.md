@@ -5,6 +5,17 @@ etter hver fase.
 
 ## Faseoversikt
 
+### S1-C – utkastlagring (under verifikasjon)
+
+Egen pakke: eksplisitt lagring, synlig lagringsstatus/feil, versjonsbetinget
+oppdatering, gjenåpning via historikk, maskert autoritativ slutttekst og
+uforanderlig sendt-snapshot. SessionStorage-buffer er bruker-/utkastbundet
+og erstatter ikke serverlagring. Ingen AI-kall ved redigering/lagring.
+Migrasjon 0030 er skrevet og testet i PGlite, aldri kjørt i Supabase.
+386 enhetstester, 73 PGlite-tester, lint og typekontroll består.
+Se `supabase/dokumentasjon/0030_utkast_versjoner.md` for utrulling og grenser.
+Praktisk nettlesertest og ekte parallelle transaksjoner gjenstår; pakken er draft.
+
 ### S1-B – manuelle beløp
 
 - Egen gren/PR etter S1-A. Felles `validerKravbelop` i format.ts gjenbruker

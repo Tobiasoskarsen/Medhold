@@ -380,12 +380,14 @@ export default async function KravDetaljPage({
           key: `utkast-${u.id}`,
           datoISO: u.sendt_at.slice(0, 10),
           tittel: `${UTKAST_ETIKETT[u.type]} sendt`,
+          href: `/krav/${id}/utkast?utkast=${u.id}`,
           fremhevet: false,
         }
       : {
           key: `utkast-${u.id}`,
           datoISO: u.opprettet.slice(0, 10),
           tittel: `Utkast: ${UTKAST_ETIKETT[u.type]}`,
+          href: `/krav/${id}/utkast?utkast=${u.id}`,
           fremhevet: false,
           ekstra: !lost ? <MarkerSendtKnapp utkastId={u.id} /> : undefined,
         },

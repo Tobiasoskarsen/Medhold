@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Copy, Check, Mail, Loader2 } from "lucide-react";
@@ -22,7 +22,8 @@ import {
   type UtkastType,
 } from "@/lib/types";
 import type { AvdragsForslag } from "@/lib/avdrag";
-import { markerUtkastSendt } from "./actions";
+import { lagreRedigertUtkast, markerUtkastSendt } from "./actions";
+import { maskerFodselsnummer } from "@/lib/maskering";
 
 // Lengste markør avgjør hvor mange tegn i halen av bufferet som må holdes
 // tilbake (kan være et påbegynt, men ennå ikke fullstendig mottatt markørtegn).
@@ -85,6 +86,8 @@ export function UtkastFlyt({
   ubestridt,
   avdrag,
   navnStart,
+  lagret,
+  eierId,
 }: {
   sakId: string;
   brevId: string | null;
@@ -102,6 +105,8 @@ export function UtkastFlyt({
   ubestridt: number | null;
   avdrag?: AvdragsForslag | null;
   navnStart: string;
+  lagret?: { id: string; innhold: string; versjon: number; sendt_at: string | null; sendt_innhold: string | null; vakt_fakta: VaktFakta | null };
+  eierId?: string;
 }) {
   const router = useRouter();
   const [type, setType] = useState<UtkastType>(starttype);
@@ -118,8 +123,9 @@ export function UtkastFlyt({
 
   // «Sjekk før du sender» (§D.4): vaktfaktaene kommer fra serveren sammen med
   // utkastet; vakten kjøres på nytt her når brukeren har redigert (ved blur).
-  const [vaktFakta, setVaktFakta] = useState<VaktFakta | null>(null);
-  const [kontrollTekst, setKontrollTekst] = useState("");
+  const startTekst = lagret?.sendt_innhold ?? lagret?.innhold ?? "";
+  const [vaktFakta, setVaktFakta] = useState<VaktFakta | null>(lagret?.vakt_fakta ?? null);
+  const [kontrollTekst, setKontrollTekst] = useState(startTekst);
   const sjekk = useMemo(() => {
     if (!vaktFakta) return null;
     return {
@@ -131,12 +137,48 @@ export function UtkastFlyt({
   // "skjema": skjemaet vises, «Lag utkast»-knappen kan trykkes.
   // "strømmer": brevet skrives frem live, feltet er skrivebeskyttet.
   // "ferdig": strømmen er ferdig og kontrollert — feltet er redigerbart.
-  const [fase, setFase] = useState<"skjema" | "strømmer" | "ferdig">("skjema");
+  const [fase, setFase] = useState<"skjema" | "strømmer" | "ferdig">(lagret ? "ferdig" : "skjema");
   const [genererer, setGenererer] = useState(false);
-  const [tekst, setTekst] = useState("");
+  const [tekst, setTekst] = useState(startTekst);
+  const [lagretTekst, setLagretTekst] = useState(startTekst);
+  const [versjon, setVersjon] = useState(lagret?.versjon ?? 1);
+  const [lagrer, setLagrer] = useState(false);
+  const erSendt = !!lagret?.sendt_at;
+  const ulagret = tekst !== lagretTekst;
+  useEffect(() => {
+    if (!ulagret || fase !== "ferdig") return;
+    const varsel = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    const lenke = (e: MouseEvent) => {
+      if (e.target instanceof Element && e.target.closest("a[href]") &&
+        !window.confirm("Du har ulagrede endringer. Vil du forlate siden uten å lagre?")) {
+        e.preventDefault(); e.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", varsel);
+    document.addEventListener("click", lenke, true);
+    return () => { window.removeEventListener("beforeunload", varsel); document.removeEventListener("click", lenke, true); };
+  }, [ulagret, fase]);
   const [justerer, setJusterer] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
-  const [utkastId, setUtkastId] = useState<string | null>(null);
+  const [utkastId, setUtkastId] = useState<string | null>(lagret?.id ?? null);
+  const backupNokkel = eierId && utkastId ? `medhold-utkast-${eierId}-${utkastId}` : null;
+  useEffect(() => {
+    if (!backupNokkel || erSendt) return;
+    let aktiv = true;
+    // Etter hydrering; sessionStorage er kun en gjenopprettingsbuffer i denne
+    // fanen, aldri en serverbekreftet lagring eller en sendt tekstversjon.
+    queueMicrotask(() => {
+      if (!aktiv) return;
+      try {
+        const b = JSON.parse(sessionStorage.getItem(backupNokkel) ?? "null");
+        if (b && typeof b.tekst === "string" && b.tekst.length <= 50000 && Number.isInteger(b.versjon)) {
+          setTekst(b.tekst); setKontrollTekst(b.tekst); setVersjon(b.versjon);
+          setFeil("Ulagret tekst er gjenopprettet fra denne fanen. Kontroller og lagre den. Hvis en annen fane har endret utkastet, vil serveren avvise overskriving.");
+        }
+      } catch { /* Bufferen er valgfri; serverlagring er autoritativ. */ }
+    });
+    return () => { aktiv = false; };
+  }, [backupNokkel, erSendt]);
   const [kopiert, setKopiert] = useState(false);
   const [sender, startSending] = useTransition();
   const redusert = useReducedMotion();
@@ -163,17 +205,14 @@ export function UtkastFlyt({
     let ventendeErstatning = false;
     // Speiler `tekst` lokalt, så sluttkontrollen får hele teksten uten å
     // vente på en re-render.
-    let samlet = "";
     function leggTilTekst(biter: string) {
       if (!biter) return;
       tilStrømmevisning();
       if (ventendeErstatning) {
         ventendeErstatning = false;
         setJusterer(false);
-        samlet = biter;
         setTekst(biter);
       } else {
-        samlet += biter;
         setTekst((t) => t + biter);
       }
     }
@@ -286,11 +325,12 @@ export function UtkastFlyt({
 
       // Sluttmarkøren bærer { id, advarsler, fakta } som JSON (route.ts).
       // Mangler den, eller er den avkuttet, er utkastet ikke bekreftet lagret.
-      let slutt: { id: string; fakta: VaktFakta | null } | null = null;
+      let slutt: { id: string; fakta: VaktFakta | null; tekst: string; versjon: number } | null = null;
       if (!feilet && ferdigId) {
         try {
-          const p = JSON.parse(ferdigId) as { id?: unknown; fakta?: VaktFakta };
-          if (typeof p.id === "string" && p.id) slutt = { id: p.id, fakta: p.fakta ?? null };
+          const p = JSON.parse(ferdigId) as { id?: unknown; fakta?: VaktFakta; tekst?: unknown; versjon?: number };
+          if (typeof p.id === "string" && p.id && typeof p.tekst === "string" && Number.isInteger(p.versjon))
+            slutt = { id: p.id, fakta: p.fakta ?? null, tekst: p.tekst, versjon: p.versjon! };
         } catch {
           slutt = null;
         }
@@ -305,7 +345,10 @@ export function UtkastFlyt({
       setUtkastId(slutt.id);
       setVaktFakta(slutt.fakta);
       // Siste tekst fra strømmen — samme tekst serveren kontrollerte.
-      setKontrollTekst(samlet);
+      setTekst(slutt.tekst);
+      setLagretTekst(slutt.tekst);
+      setVersjon(slutt.versjon);
+      setKontrollTekst(slutt.tekst);
       setOmfangBrukt(type === "innsigelse" ? omfang : null);
       setFase("ferdig");
       haptikk("suksess");
@@ -317,13 +360,13 @@ export function UtkastFlyt({
   }
 
   async function kopier() {
-    if (!tekst) return;
+    if (!tekst || ulagret || lagrer) return;
     try {
       await navigator.clipboard.writeText(tekst);
       setKopiert(true);
       setTimeout(() => setKopiert(false), 2000);
     } catch {
-      /* ignorer — brukeren kan markere og kopiere manuelt */
+      setFeil("Kunne ikke kopiere. Marker teksten og kopier den manuelt.");
     }
   }
 
@@ -348,22 +391,24 @@ export function UtkastFlyt({
     : fullMailto;
 
   async function apneEpost() {
+    if (ulagret || lagrer) { setFeil("Lagre utkastet før du åpner e-post."); return; }
     if (forLangtForMailto && tekst) {
       try {
         await navigator.clipboard.writeText(tekst);
         setKopiert(true);
         setTimeout(() => setKopiert(false), 2000);
       } catch {
-        /* ignorer — brukeren kan bruke Kopier-knappen manuelt */
+        setFeil("Kunne ikke kopiere hele brevet. Kopier manuelt før du åpner e-post.");
+        return;
       }
     }
     window.location.href = mailtoHref;
   }
 
   function jegHarSendtDet() {
-    if (!utkastId) return;
+    if (!utkastId || ulagret || lagrer) { setFeil("Lagre utkastet før du registrerer det som sendt."); return; }
     startSending(async () => {
-      const r = await markerUtkastSendt(utkastId);
+      const r = await markerUtkastSendt(utkastId, versjon);
       if (!r.ok) {
         setFeil(r.feil);
         return;
@@ -472,6 +517,7 @@ export function UtkastFlyt({
               <span className="font-normal text-dempet"> (valgfritt)</span>
             )}
             <textarea
+              readOnly={erSendt || lagrer}
               value={detaljer}
               onChange={(e) => setDetaljer(e.target.value)}
               rows={5}
@@ -515,7 +561,14 @@ export function UtkastFlyt({
           {fase === "ferdig" ? (
             <textarea
               value={tekst}
-              onChange={(e) => setTekst(e.target.value)}
+              onChange={(e) => {
+                const ny = e.target.value;
+                setTekst(ny);
+                if (backupNokkel) {
+                  try { sessionStorage.setItem(backupNokkel, JSON.stringify({ tekst: maskerFodselsnummer(ny), versjon })); }
+                  catch { setFeil("Lokal sikkerhetskopi er utilgjengelig. Lagre før du forlater siden."); }
+                }
+              }}
               onBlur={() => setKontrollTekst(tekst)}
               rows={16}
               className={`${DOKUMENT} resize-none outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30`}
@@ -545,6 +598,19 @@ export function UtkastFlyt({
 
           {fase === "ferdig" && (
             <>
+              <p role="status" className="mt-3 text-hjelp text-dempet">{erSendt ? (lagret?.sendt_innhold ? "Registrert sendt – bevart tekstversjon." : "Eldre sendt utkast: eksakt sendt tekst er ikke dokumentert.") : ulagret ? "Ulagrede endringer" : "Utkast lagret"}</p>
+              {!erSendt && <button type="button" disabled={!ulagret || lagrer} className="trykk min-h-11 underline" onClick={async () => {
+                if (!utkastId) return;
+                setLagrer(true); setFeil(null);
+                try {
+                  const r = await lagreRedigertUtkast(utkastId, sakId, versjon, tekst);
+                  if (!r.ok) { setFeil(r.feil); return; }
+                  setTekst(r.tekst); setKontrollTekst(r.tekst); setLagretTekst(r.tekst); setVersjon(r.versjon);
+                  if (backupNokkel) { try { sessionStorage.removeItem(backupNokkel); } catch { /* lagret på server */ } }
+                } catch { setFeil("Ikke lagret. Prøv igjen og behold teksten til lagringen er bekreftet."); }
+                finally { setLagrer(false); }
+              }}>{lagrer ? "Lagrer …" : "Lagre endringer"}</button>}
+              {feil && <p role="alert" className="text-dom-rod">{feil}</p>}
               <p className="mt-3 text-hjelp leading-relaxed text-dempet">
                 Les gjennom og endre det som trengs — så sender du det selv
                 {avsender ? ` til ${avsender}` : ""}.
@@ -608,14 +674,14 @@ export function UtkastFlyt({
               <h2 className="seksjonstittel mt-seksjon text-blekk">Send brevet selv</h2>
               <div className="mt-gruppe">
                 {forLangtForMailto ? (
-                  <Primærknapp onClick={apneEpost}>
+                  <Primærknapp onClick={apneEpost} disabled={ulagret || lagrer}>
                     <span className="inline-flex items-center gap-2">
                       <Mail className="size-4" aria-hidden />
                       Kopier og åpne i e-post
                     </span>
                   </Primærknapp>
                 ) : (
-                  <Primærknapp href={mailtoHref}>
+                  <Primærknapp onClick={apneEpost} disabled={ulagret || lagrer}>
                     <span className="inline-flex items-center gap-2">
                       <Mail className="size-4" aria-hidden />
                       Åpne i e-post
@@ -634,6 +700,7 @@ export function UtkastFlyt({
                 <button
                   type="button"
                   onClick={kopier}
+                  disabled={ulagret || lagrer}
                   className="trykk inline-flex min-h-11 shrink-0 items-center gap-2 rounded-kontroll border border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
                 >
                   {/* Ikonet morfer: kopi-ikonet roterer ut, haken fjærer inn. */}
@@ -672,7 +739,7 @@ export function UtkastFlyt({
                   <Primærknapp
                     variant="rolig"
                     onClick={jegHarSendtDet}
-                    disabled={sender}
+                    disabled={sender || ulagret || lagrer || erSendt}
                   >
                     <span className="inline-flex items-center gap-2">
                       <Check className="size-4" aria-hidden />

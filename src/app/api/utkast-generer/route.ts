@@ -224,6 +224,7 @@ export async function POST(req: NextRequest) {
             .catch(() => {});
         }
 
+        tekst = maskerFodselsnummer(tekst);
         const { data: lagret, error: lagreFeil } = await supabase
           .from("utkast")
           .insert({
@@ -232,8 +233,9 @@ export async function POST(req: NextRequest) {
             brev_id: brevId,
             type,
             innhold: maskerFodselsnummer(tekst),
+            vakt_fakta: vaktFakta,
           })
-          .select("id")
+          .select("id, versjon")
           .single();
         if (lagreFeil || !lagret) {
           logg("error", "utkast-generer", "innsetting_feilet", {
@@ -246,8 +248,10 @@ export async function POST(req: NextRequest) {
 
         // Sluttmarkøren bærer id, advarsler og vaktfaktaene klienten bruker
         // til å kontrollere utkastet på nytt når brukeren redigerer (§D.4).
-        const slutt: { id: string; advarsler: VaktFunn[]; fakta: typeof vaktFakta } = {
+        const slutt = {
           id: lagret.id,
+          tekst,
+          versjon: lagret.versjon,
           advarsler,
           fakta: vaktFakta,
         };
