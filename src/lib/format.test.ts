@@ -2,6 +2,23 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { formaterBelop, tolkKr, tellOrd, kuttTilMaks } from "./format.ts";
+import { validerKravbelop } from "./format.ts";
+
+test("S1-B: norske beløp valideres uten tap av øre", () => {
+  for (const s of ["3243,20", "3 243,20", "3 243,20", "3 243,20"]) {
+    assert.deepEqual(validerKravbelop(s), { status: "gyldig", ore: 324320, kroner: 3243.2 });
+  }
+  assert.deepEqual(validerKravbelop(""), { status: "ukjent" });
+  assert.deepEqual(validerKravbelop("0,50"), { status: "gyldig", ore: 50, kroner: 0.5 });
+  assert.deepEqual(validerKravbelop("0"), { status: "gyldig", ore: 0, kroner: 0 });
+  assert.deepEqual(validerKravbelop("3243"), { status: "gyldig", ore: 324300, kroner: 3243 });
+});
+
+test("S1-B: ugyldig beløp blir aldri ukjent eller positivt", () => {
+  for (const s of ["-100", "abc", "NaN", "Infinity", "1,234.56", "12 34", "1,234", "999999999999999999999", "abc100", "1.23.4"]) {
+    assert.equal(validerKravbelop(s).status, "ugyldig", s);
+  }
+});
 
 test("formaterBelop: norsk tusenskille, ingen desimaler", () => {
   // Intl.NumberFormat("nb-NO") bruker hardt mellomrom (U+00A0), ikke vanlig.

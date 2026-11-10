@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { SakUtfall } from "@/lib/types";
 import { STADIER } from "@/lib/gjeld";
+import { validerKravbelop } from "@/lib/format";
 import { gjenapneSak, settFristStatus, settSakUtfall } from "@/lib/saksstatus";
 
 /** Oppretter et krav manuelt (uten brev). Brukeren kan legge til brev senere. */
@@ -22,9 +23,8 @@ export async function opprettKrav(input: {
 
   const kreditor = input.kreditor.trim();
   const saksnummer = input.saksnummer.trim();
-  const belopTall = input.belop.trim()
-    ? Number(input.belop.replace(/\s/g, ""))
-    : null;
+  const belop = validerKravbelop(input.belop);
+  if (belop.status === "ugyldig") return { ok: false, feil: belop.feil };
   const stadium = (STADIER as readonly string[]).includes(input.stadium)
     ? input.stadium
     : null;
@@ -36,7 +36,7 @@ export async function opprettKrav(input: {
       tittel: kreditor || "Nytt krav",
       kreditor: kreditor || null,
       saksnummer: saksnummer || null,
-      belop_totalt: belopTall != null && !Number.isNaN(belopTall) ? belopTall : null,
+      belop_totalt: belop.status === "gyldig" ? belop.kroner : null,
       stadium,
       status: "aktiv",
       kategori: "okonomi",

@@ -6,6 +6,7 @@ import { Primærknapp } from "@/components/ui";
 import { STADIER, STADIUM_ETIKETT } from "@/lib/gjeld";
 import { haptikk } from "@/lib/haptikk";
 import { opprettKrav } from "../actions";
+import { validerKravbelop } from "@/lib/format";
 
 const feltKlasse =
   "mt-1.5 w-full rounded-kontroll border border-strek bg-flate px-3.5 py-2.5 text-sm text-blekk outline-none focus:border-aksent focus-visible:ring-2 focus-visible:ring-aksent/30";
@@ -25,6 +26,11 @@ export function NyttKravSkjema() {
 
   async function lagre() {
     if (lagrer || !kreditor.trim()) return;
+    const kontroll = validerKravbelop(belop);
+    if (kontroll.status === "ugyldig") {
+      setFeil(kontroll.feil);
+      return;
+    }
     setLagrer(true);
     setFeil(null);
     const r = await opprettKrav({ kreditor, belop, saksnummer, stadium });
@@ -54,7 +60,7 @@ export function NyttKravSkjema() {
         Beløp (kr)
         <input
           type="text"
-          inputMode="numeric"
+          inputMode="decimal"
           value={belop}
           onChange={(e) => setBelop(e.target.value)}
           placeholder="Valgfritt"

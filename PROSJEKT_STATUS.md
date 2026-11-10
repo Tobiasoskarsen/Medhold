@@ -5,6 +5,29 @@ etter hver fase.
 
 ## Faseoversikt
 
+### S1-B – manuelle beløp
+
+- Egen gren/PR etter S1-A. Felles `validerKravbelop` i format.ts gjenbruker
+  `tolkKr` etter streng formatvalidering. Juridiske beregninger er urørt.
+- Norsk komma og korrekt grupperte tusenskiller (vanlig/hardt/smalt hardt
+  mellomrom eller punktum) godtas. Tvetydig/blandet format avvises. Tomt
+  beløp er eksplisitt ukjent, ugyldig beløp blir aldri null i stillhet.
+- Negative beløp avvises; null godtas som registrert null. Produktgrense
+  9 999 999 999,99 kr, maks to desimaler. Øre beregnes som safe heltall.
+- Samme kontroll før klientinnsending og serverinnsetting. Mobiltastatur
+  bruker decimal. Eksisterende ukjente beløp og parserens øvrige kall er urørt.
+- Tester lagt til før implementeringen og observert feile. 386 enhetstester
+  består. Supplerende test kjører faktisk `opprettKrav` med lokal PGlite:
+  seks gyldige/ukjente verdier leses tilbake fra databasen, ni ugyldige
+  avvises før INSERT og uinnlogget opprettelse avvises. Auth/transport er
+  testadaptere, ikke live Supabase. Nettlesertest av faktisk NyttKravSkjema
+  viser norske feil for -100/NaN; gyldig 3 243,20 passerer klientkontrollen
+  og treffer auth-sperren på lokal testserver uten produksjonstilkobling.
+  Midlertidig testside fjernet. Ingen full live Supabase-endetilendetest.
+- Sluttkontroll etter supplering: 386 enhetstester, 72 PGlite-tester,
+  lint og produksjonsbygg med typekontroll består.
+- Ingen migrasjon, merge eller manuell deploy. Ingen reelle brukerdata endret.
+
 ### S1-A – negasjon i utkastvakten
 
 - Egen gren fra PR #53 (`1d9398f`); #52 og #53 er fortsatt åpne. Ingen
