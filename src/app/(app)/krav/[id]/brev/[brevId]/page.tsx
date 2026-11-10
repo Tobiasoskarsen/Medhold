@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Kort, Sekvens, SekvensDel } from "@/components/ui";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
+import { KontrollOmfang } from "@/components/KontrollOmfang";
 import { DomMiniFrist, FunnListe } from "@/components/Dom";
 import { AnnotertBrev } from "@/components/AnnotertBrev";
 import { formaterKortDato, idagOslo } from "@/lib/dato";
@@ -152,6 +153,7 @@ export default async function BrevPage({
         utkastHref={utkastHref}
         className="mt-3"
       />
+      <KontrollOmfang brevtype={brev.brevtype} />
       {harFristfunn && fristfunn?.beregnetDato && (
         <FunnListe className="mt-3">
           <DomMiniFrist

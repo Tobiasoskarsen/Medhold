@@ -20,7 +20,7 @@ const PILL: Record<
   Vurdering,
   { tekst: string; variant: "noytral" | "varsel" | "suksess" | "feil" }
 > = {
-  innenfor: { tekst: "Innenfor sats", variant: "suksess" },
+  innenfor: { tekst: "Innenfor beløpsgrensen", variant: "suksess" },
   mulig_over: { tekst: "Sjekk denne", variant: "varsel" },
   over: { tekst: "Over maksimalsats", variant: "feil" },
   ukjent: { tekst: "Ikke kontrollert", variant: "noytral" },
@@ -153,8 +153,8 @@ export function Gebyrsjekk({
         </p>
       )}
       <p className="mt-3 px-1 text-[11px] leading-relaxed text-dempet">
-        Automatisk kontroll — ikke juridisk rådgivning. Satsene følger
-        inkassoforskriften.
+        Automatisk beløpskontroll — ikke juridisk rådgivning. Vi har ikke
+        kontrollert om disse kostnadene kan kreves samlet.
       </p>
     </div>
   );

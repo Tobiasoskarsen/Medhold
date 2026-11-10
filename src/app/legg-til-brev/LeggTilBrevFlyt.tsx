@@ -36,6 +36,7 @@ import { tolkKr } from "@/lib/format";
 import { datovurderingTekst, vurderBrevdato } from "@/lib/brevdato";
 import { FORKLARING_DISCLAIMER } from "@/lib/brand";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
+import { KontrollOmfang } from "@/components/KontrollOmfang";
 import { Veivalg } from "@/components/Veivalg";
 import { LeserBrev } from "./LeserBrev";
 import { Bekreftelse } from "./Bekreftelse";
@@ -768,6 +769,7 @@ export function LeggTilBrevFlyt({
                 hovedstol={hovedstolGrunnlag}
                 className="mt-5"
               />
+              <KontrollOmfang brevtype={brevtype} />
             </m.div>
           ) : (
             <p className="mt-5 text-hjelp text-dempet">

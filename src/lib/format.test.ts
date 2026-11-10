@@ -4,6 +4,13 @@ import assert from "node:assert/strict";
 import { formaterBelop, tolkKr, tellOrd, kuttTilMaks } from "./format.ts";
 import { validerKravbelop } from "./format.ts";
 import { brevforklaring } from "./brevforklaring.ts";
+import { fristKontrollStottes } from "./kontrollomfang.ts";
+
+test("S1-E: friststøtte følger eksisterende regelmotor, ikke en ny 14-dagersregel", () => {
+  assert.equal(fristKontrollStottes("inkassovarsel"), true);
+  assert.equal(fristKontrollStottes("betalingsoppfordring"), true);
+  for (const t of ["namsmann", "forliksrad", "annet", "ukjent", null]) assert.equal(fristKontrollStottes(t), false);
+});
 
 test("S1-D: oppsummering følger rettede felt uten oppdiktet historikk", () => {
   const f = { avsender: "Strømmeriket AS", brevtype: "inkassovarsel", brevdato: "2026-07-20", belop: 1100, saksnummer: "TEST-1" };
