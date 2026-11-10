@@ -39,15 +39,17 @@ function Rad({
   verdi,
   felt,
   etter,
+  fremhevet = false,
 }: {
   etikett: ReactNode;
   verdi: string;
   felt: (ferdig: () => void) => ReactNode;
   etter?: ReactNode;
+  fremhevet?: boolean;
 }) {
   const [redigerer, setRedigerer] = useState(false);
   return (
-    <li className="border-t-[0.5px] border-strek py-2.5 first:border-t-0">
+    <li className="border-t-[0.5px] border-strek py-1 first:border-t-0">
       {/* Verdi ↔ felt glir kort over i hverandre, så rettingen føles som
           samme rad som åpner seg, ikke et hopp. */}
       <AnimatePresence mode="wait" initial={false}>
@@ -72,17 +74,17 @@ function Rad({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: VARIGHET.hurtig, ease: EASING }}
-            className="trykk group flex w-full items-center justify-between gap-3 text-left"
+            className="trykk group flex min-h-11 w-full items-center justify-between gap-3 rounded-liten text-left focus-visible:outline-2 focus-visible:outline-aksent"
           >
             <span className="text-hjelp text-dempet">{etikett}</span>
-            <span className="flex items-center gap-2">
+            <span className="flex min-w-0 items-center gap-2 text-right">
               {/* Ny verdi (etter retting) fader inn — et lite «oppdatert». */}
               <m.span
                 key={verdi}
                 initial={{ opacity: 0.3 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: VARIGHET.rolig, ease: EASING }}
-                className="text-sm font-bold tabular-nums text-blekk"
+                className={`${fremhevet ? "tall-s" : "text-sm font-semibold"} tabular-nums text-blekk`}
               >
                 {verdi}
               </m.span>
@@ -197,13 +199,8 @@ export function Bekreftelse({
   onStemmerLikevel: (v: boolean) => void;
 }) {
   return (
-    <Kort className="mt-5">
-      <h2 className="seksjonstittel text-blekk">Stemmer dette med brevet?</h2>
-      <p className="mt-1 text-hjelp text-dempet">
-        Sammenlign med brevet. Retter du noe her, regner vi alt på nytt.
-      </p>
-
-      <ul className="mt-3">
+    <Kort>
+      <ul aria-label="Tall og datoer fra brevet">
         <Rad
           etikett="Brevdato"
           verdi={brevdato ? formaterDato(brevdato) : "Mangler"}
@@ -221,6 +218,7 @@ export function Bekreftelse({
         />
         <Rad
           etikett="Å betale"
+          fremhevet
           verdi={krTekst(belop)}
           felt={(ferdig) => (
             <input
