@@ -122,6 +122,15 @@ med nøyaktig testprosjekt; ingen produksjonsfallback. Ikke legg nøkler i rappo
 
 ## Kontrollert videre rekkefølge
 
+10. november, etter separat eksplisitt godkjenning: kun PR #63 er squash-
+merget som 97e035fd44484a23cb80855bb158c125e485ba93. Main har nå
+git.deploymentEnabled.main=false; eksisterende cron er bevart. Skrivefri
+etterkontroll viste uendret produksjons-ID dpl_Eu9RXYU4oUVgkyuQBGSYTQnvRtt3
+og ingen deploy fra merge-SHA ved oppslaget. Dette er ikke en sperre mot
+manuell deploy eller en garanti mot senere konfigurasjonsendringer.
+Ingen av PR #52–#62 er merget som del av denne godkjenningen. Ingen migrasjon
+eller produksjonsdeploy er utført. Workflowen er fortsatt ikke på main.
+
 Etterkontroll 10. november: r3-pr-preflight-2026-11-10.json viser alle 11
 PR-heads som ancestors til 25f721f. Alle nåværende base/head-par er MERGEABLE.
 #53–#62 har SUCCESS på CI; #52 har bare Vercel-kontroller. Dette beviser ikke
