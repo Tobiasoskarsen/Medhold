@@ -6,7 +6,7 @@ param(
   [string]$DatabaseHost
 )
 $ErrorActionPreference = 'Stop'
-if (-not $IsWindows) { throw 'Dette oppsettet krever Windows og NTFS-rettigheter.' }
+if ($env:OS -ne 'Windows_NT') { throw 'Dette oppsettet krever Windows og NTFS-rettigheter.' }
 $projectRef = 'leernzbmuldegiggnjib'
 $pgBin = Join-Path $PSScriptRoot '../.env.pg-tools/bin'
 foreach ($tool in @('pg_dump.exe','pg_restore.exe','psql.exe')) {

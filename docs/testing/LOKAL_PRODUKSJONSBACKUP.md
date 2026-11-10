@@ -10,7 +10,7 @@ Kun pg_dump, pg_restore, psql og DLL-er er pakket ut i .env.pg-tools/bin.
 Verktøyversjoner er kontrollert; ingen databaseserver/tjeneste er installert.
 Mappen er Git-ignorert. Ingen avhengigheter i appen er endret.
 
-Kjør i PowerShell 7 fra repoet:
+Kjør i Windows PowerShell eller PowerShell 7 fra repoet:
 
     ./scripts/backup-production.ps1 -DatabaseHost aws-1-eu-central-1.pooler.supabase.com
 
