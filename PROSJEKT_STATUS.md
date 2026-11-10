@@ -3,6 +3,14 @@
 Løpende status for implementeringen av `MEDHOLD_ARBEIDSORDRE.md`. Oppdateres
 etter hver fase.
 
+## Oppdelt brevkontroll – 10. november 2026
+
+Egen UI-gren: `codex/brevkontroll-steg`. Den lange gjennomgangen etter lesing er delt i Opplysninger, Kontroll og Neste steg. Fremdrift og tilbakeknapp følger visningen. Tall, datoer og sumkontroll er synlige i første del; avsenderfelter, oppsummering og huskeliste kan foldes ut. Bekreftelse og eventuell sumavviksbekreftelse kreves fortsatt før kontroll og handlingsvalg. Endret brevtype trekker også bekreftelsen tilbake. Alle verdier og lagring eies fortsatt av den eksisterende brevflyten. Ingen server-, database- eller juridiske endringer.
+
+Kontroller: 395/395 tester (fire nye navigasjons-/sikkerhetstester), typekontroll og produksjonsbygg bestått. Lint bestått med én eksisterende advarsel fra den ignorerte release-worktreen. Lokal nettleser med syntetisk modelladapter og separat Supabase-testkonto: bekreftelse, tre deler, retur med beholdte verdier, korrigering 1288→289 med avvik og sperre, deretter retting tilbake. Ingen horisontal overflyt ved 320 og 430 px. Syntetisk konto ryddet. Se `docs/design/brevkontroll/` for bilder. Ingen produksjonsdeploy.
+
+Begrensning: ny visning er ikke testet fysisk på iPhone eller i mørkt tema i denne runden; tidligere fullflyt-/databasebevis er ikke en ny integrasjonstest av denne visningen. Lange kostnadslister krever fortsatt noe scrolling innenfor del 1, men blandes ikke lenger med forklaring og handlingsvalg.
+
 ## Faseoversikt
 
 ### R3 – fysisk to-fane-konflikt bekreftet 10. november

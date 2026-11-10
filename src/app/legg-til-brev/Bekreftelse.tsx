@@ -197,13 +197,8 @@ export function Bekreftelse({
   onStemmerLikevel: (v: boolean) => void;
 }) {
   return (
-    <Kort className="mt-5">
-      <h2 className="seksjonstittel text-blekk">Stemmer dette med brevet?</h2>
-      <p className="mt-1 text-hjelp text-dempet">
-        Sammenlign med brevet. Retter du noe her, regner vi alt på nytt.
-      </p>
-
-      <ul className="mt-3">
+    <Kort>
+      <ul aria-label="Tall og datoer fra brevet">
         <Rad
           etikett="Brevdato"
           verdi={brevdato ? formaterDato(brevdato) : "Mangler"}

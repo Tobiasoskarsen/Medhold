@@ -38,6 +38,7 @@ import { KontrollOmfang } from "@/components/KontrollOmfang";
 import { Veivalg } from "@/components/Veivalg";
 import { LeserBrev } from "./LeserBrev";
 import { Bekreftelse } from "./Bekreftelse";
+import { BrevGjennomgang } from "./BrevGjennomgang";
 import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
 import { kontrollerSum } from "@/lib/sumkontroll";
 import { brevforklaring } from "@/lib/brevforklaring";
@@ -483,7 +484,7 @@ export function LeggTilBrevFlyt({
         >
           <X className="size-5" aria-hidden />
         </button>
-        <StegIndikator steg={steg} />
+        {steg !== 3 && <StegIndikator steg={steg} />}
       </div>
 
       {/* Skjulte filvelgere. */}
@@ -663,10 +664,11 @@ export function LeggTilBrevFlyt({
           transition={{ duration: VARIGHET.rolig, ease: EASING }}
           className="flex flex-1 flex-col pb-8"
         >
-          <h1 className="tittel-s text-blekk">
-            Slik forstår vi brevet
-          </h1>
-
+          <BrevGjennomgang
+            bekreftet={kanLagre}
+            lagrer={lagrer}
+            feil={feil}
+            opplysninger={<>
           <Bekreftelse
             brevdato={brevdato}
             onBrevdato={rettet(setBrevdato)}
@@ -689,16 +691,9 @@ export function LeggTilBrevFlyt({
             onStemmerLikevel={setStemmerLikevel}
           />
 
-          <div className="mt-4 rounded-kort border-[0.5px] border-strek bg-flate p-4">
-            <p className="whitespace-pre-line text-sm leading-relaxed text-blekk">
-              {brevforklaring({ avsender, brevtype, brevdato, belop: tolkKr(belop), saksnummer })}
-            </p>
-          </div>
-          <p className="mt-1.5 text-meta text-dempet">
-            {FORKLARING_DISCLAIMER}
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <details className="mt-4 rounded-kort border border-strek bg-flate p-4">
+            <summary className="min-h-11 cursor-pointer text-hjelp font-semibold text-blekk">Avsender og brevtype · {avsender || "Mangler avsender"}</summary>
+          <div className="mt-3 grid grid-cols-2 gap-3">
             <label className="col-span-2 block text-hjelp font-medium text-blekk">
               Avsender
               <input
@@ -724,7 +719,7 @@ export function LeggTilBrevFlyt({
               Brevtype
               <select
                 value={brevtype}
-                onChange={(e) => setBrevtype(e.target.value as BrevType | "")}
+                onChange={(e) => rettet(setBrevtype)(e.target.value as BrevType | "")}
                 className={feltKlasse}
               >
                 <option value="">Velg …</option>
@@ -747,6 +742,21 @@ export function LeggTilBrevFlyt({
             </label>
           </div>
 
+          </details>
+            </>}
+            kontroll={<>
+              <details className="rounded-kort border border-strek bg-flate p-4">
+                <summary className="min-h-11 cursor-pointer text-hjelp font-semibold text-blekk">Oppsummering av brevet</summary>
+          <div className="mt-4 rounded-kort border-[0.5px] border-strek bg-flate p-4">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-blekk">
+              {brevforklaring({ avsender, brevtype, brevdato, belop: tolkKr(belop), saksnummer })}
+            </p>
+          </div>
+          <p className="mt-1.5 text-meta text-dempet">
+            {FORKLARING_DISCLAIMER}
+          </p>
+
+              </details>
           {kanLagre ? (
             // Funnene kommer rolig inn idet tallene er bekreftet.
             <m.div
@@ -767,6 +777,8 @@ export function LeggTilBrevFlyt({
             </p>
           )}
 
+            </>}
+            handling={<>
           <div className="mt-5">
             <p className="text-hjelp font-medium text-blekk">Hører til</p>
             {kravForslag && kravModus === "ny" && (
@@ -1042,7 +1054,8 @@ export function LeggTilBrevFlyt({
           )}
 
           {analyse.foreslatte_steg.length > 0 && (
-            <div className="mt-5">
+            <details className="mt-5 rounded-kort border border-strek bg-flate p-4">
+              <summary className="min-h-11 cursor-pointer text-hjelp font-semibold text-blekk">Huskeliste · {analyse.foreslatte_steg.length} foreslåtte steg</summary>
               <p className="text-hjelp font-medium text-blekk">
                 Foreslåtte steg
               </p>
@@ -1061,10 +1074,8 @@ export function LeggTilBrevFlyt({
                   </label>
                 ))}
               </div>
-            </div>
+            </details>
           )}
-
-          {feil && <p className="mt-4 text-hjelp text-dom-rod">{feil}</p>}
 
           {kanLagre && (
           <div className="mt-6">
@@ -1094,6 +1105,8 @@ export function LeggTilBrevFlyt({
             />
           </div>
           )}
+            </>}
+          />
         </m.div>
       )}
       </AnimatePresence>
