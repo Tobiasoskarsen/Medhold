@@ -39,6 +39,8 @@ import { Veivalg } from "@/components/Veivalg";
 import { LeserBrev } from "./LeserBrev";
 import { Bekreftelse } from "./Bekreftelse";
 import { BrevGjennomgang } from "./BrevGjennomgang";
+import { KontrollOversikt } from "./KontrollOversikt";
+import { BrevReferanse } from "./BrevReferanse";
 import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
 import { kontrollerSum } from "@/lib/sumkontroll";
 import { brevforklaring } from "@/lib/brevforklaring";
@@ -669,6 +671,7 @@ export function LeggTilBrevFlyt({
             lagrer={lagrer}
             feil={feil}
             opplysninger={<>
+              <BrevReferanse filer={bilder} tekst={originalTekst} />
           <Bekreftelse
             brevdato={brevdato}
             onBrevdato={rettet(setBrevdato)}
@@ -760,11 +763,13 @@ export function LeggTilBrevFlyt({
           {kanLagre ? (
             // BrevGjennomgang eier inntredenen, slik at funnene ikke dobbeltanimeres.
             <div>
+              <KontrollOversikt resultat={gebyrsjekk}>
               <Gebyrsjekk
                 resultat={gebyrsjekk}
                 hovedstol={hovedstolGrunnlag}
                 className="mt-5"
               />
+              </KontrollOversikt>
               <KontrollOmfang brevtype={brevtype} />
             </div>
           ) : (
@@ -775,6 +780,13 @@ export function LeggTilBrevFlyt({
 
             </>}
             handling={<>
+              <details className="rounded-kort border border-strek bg-flate p-4" open={!!kravForslag || fristSammenligning?.status === "avvik_kortere"}>
+                <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk focus-visible:outline-2 focus-visible:outline-aksent">
+                  Sak, frister og huskeliste
+                  <span className="mt-1 block text-meta font-normal text-dempet">{kravModus === "ny" ? "Ny sak" : valgtKravObj?.navn || "Velg sak"} · {valgteFrister.length} {valgteFrister.length === 1 ? "valgt frist" : "valgte frister"}</span>
+                  {valgteFrister[0]?.forfallsdato && <span className="mt-1 block text-meta font-normal text-dempet">Neste valgte frist: {formaterKortDato(valgteFrister.map(f => f.forfallsdato).filter((d): d is string => !!d).sort()[0])}</span>}
+                </summary>
+                <p className="mt-2 text-meta text-dempet">Valgte frister og steg lagres sammen med brevet.</p>
           <div className="mt-5">
             <p className="text-hjelp font-medium text-blekk">Hører til</p>
             {kravForslag && kravModus === "ny" && (
@@ -838,6 +850,101 @@ export function LeggTilBrevFlyt({
             </div>
           </div>
 
+          {((kanLagre && fristSammenligning) || fristForslag.length > 0) && (
+            <div className="mt-5">
+              <p className="text-hjelp font-medium text-blekk">
+                Foreslåtte frister
+              </p>
+              <div className="mt-2 flex flex-col gap-2">
+                {kanLagre && fristSammenligning &&
+                  (fristSammenligning.status === "avvik_kortere" ? (
+                    <label className="flex items-start justify-between gap-3 rounded-kontroll border-[0.5px] border-dom-rod bg-dom-rod-bg px-3.5 py-2.5">
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-dom-rod">
+                          {formaterKortDato(fristSammenligning.visForfallsdato)}
+                        </span>
+                        <span className="mt-1 block text-[12.5px] leading-snug text-blekk">
+                          Brevet oppgir{" "}
+                          {formaterDato(fristSammenligning.eksplisittDato as string)}
+                          , men loven krever minst {LOVBESTEMT_FRIST_DAGER} dager —
+                          fristen kan være for kort. Vi bruker likevel brevets
+                          dato, siden det er den du faktisk må forholde deg til.
+                        </span>
+                      </span>
+                      <Avkrysning
+                        checked={fristSammenligningAv}
+                        onChange={setFristSammenligningAv}
+                        className="mt-0.5"
+                      />
+                    </label>
+                  ) : (
+                    <label className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5">
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm text-blekk">
+                          {fristSammenligning.visTittel}
+                        </span>
+                        <span className="text-xs text-dempet">
+                          {formaterKortDato(fristSammenligning.visForfallsdato)}
+                        </span>
+                      </span>
+                      <Avkrysning
+                        checked={fristSammenligningAv}
+                        onChange={setFristSammenligningAv}
+                      />
+                    </label>
+                  ))}
+                {fristForslag.map((f, i) => (
+                  <label
+                    key={i}
+                    className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-blekk">
+                        {f.tittel}
+                      </span>
+                      <span className="text-xs text-dempet">
+                        {f.forfallsdato
+                          ? formaterKortDato(f.forfallsdato)
+                          : "ingen dato i brevet"}
+                        {f.kilde === "beregnet" ? " · beregnet — sjekk brevet" : ""}
+                      </span>
+                    </span>
+                    <Avkrysning
+                      checked={!!fristAv[i] && !!f.forfallsdato}
+                      disabled={!f.forfallsdato}
+                      onChange={(v) => setFristAv((s) => ({ ...s, [i]: v }))}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {analyse.foreslatte_steg.length > 0 && (
+            <details className="mt-5 rounded-kort border border-strek bg-flate p-4">
+              <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk outline-offset-4 focus-visible:outline-2 focus-visible:outline-aksent">Huskeliste · {analyse.foreslatte_steg.length} foreslåtte steg</summary>
+              <p className="text-hjelp font-medium text-blekk">
+                Foreslåtte steg
+              </p>
+              <div className="mt-2 flex flex-col gap-2">
+                {analyse.foreslatte_steg.map((s, i) => (
+                  <label
+                    key={i}
+                    className="flex items-start justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
+                  >
+                    <span className="text-sm text-blekk">{s}</span>
+                    <Avkrysning
+                      checked={stegAv[i] !== false}
+                      onChange={(v) => setStegAv((st) => ({ ...st, [i]: v }))}
+                      className="mt-0.5"
+                    />
+                  </label>
+                ))}
+              </div>
+            </details>
+          )}
+
+              </details>
           {valgtKravVenter && (
             <div className="mt-5">
               <p className="text-hjelp font-medium text-blekk">
@@ -937,76 +1044,6 @@ export function LeggTilBrevFlyt({
             </div>
           )}
 
-          {((kanLagre && fristSammenligning) || fristForslag.length > 0) && (
-            <div className="mt-5">
-              <p className="text-hjelp font-medium text-blekk">
-                Foreslåtte frister
-              </p>
-              <div className="mt-2 flex flex-col gap-2">
-                {kanLagre && fristSammenligning &&
-                  (fristSammenligning.status === "avvik_kortere" ? (
-                    <label className="flex items-start justify-between gap-3 rounded-kontroll border-[0.5px] border-dom-rod bg-dom-rod-bg px-3.5 py-2.5">
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium text-dom-rod">
-                          {formaterKortDato(fristSammenligning.visForfallsdato)}
-                        </span>
-                        <span className="mt-1 block text-[12.5px] leading-snug text-blekk">
-                          Brevet oppgir{" "}
-                          {formaterDato(fristSammenligning.eksplisittDato as string)}
-                          , men loven krever minst {LOVBESTEMT_FRIST_DAGER} dager —
-                          fristen kan være for kort. Vi bruker likevel brevets
-                          dato, siden det er den du faktisk må forholde deg til.
-                        </span>
-                      </span>
-                      <Avkrysning
-                        checked={fristSammenligningAv}
-                        onChange={setFristSammenligningAv}
-                        className="mt-0.5"
-                      />
-                    </label>
-                  ) : (
-                    <label className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5">
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm text-blekk">
-                          {fristSammenligning.visTittel}
-                        </span>
-                        <span className="text-xs text-dempet">
-                          {formaterKortDato(fristSammenligning.visForfallsdato)}
-                        </span>
-                      </span>
-                      <Avkrysning
-                        checked={fristSammenligningAv}
-                        onChange={setFristSammenligningAv}
-                      />
-                    </label>
-                  ))}
-                {fristForslag.map((f, i) => (
-                  <label
-                    key={i}
-                    className="flex items-center justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm text-blekk">
-                        {f.tittel}
-                      </span>
-                      <span className="text-xs text-dempet">
-                        {f.forfallsdato
-                          ? formaterKortDato(f.forfallsdato)
-                          : "ingen dato i brevet"}
-                        {f.kilde === "beregnet" ? " · beregnet — sjekk brevet" : ""}
-                      </span>
-                    </span>
-                    <Avkrysning
-                      checked={!!fristAv[i] && !!f.forfallsdato}
-                      disabled={!f.forfallsdato}
-                      onChange={(v) => setFristAv((s) => ({ ...s, [i]: v }))}
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
           {valgtKravAvsluttet && (
             <div className="mt-5">
               <p className="text-hjelp font-medium text-blekk">Saken er avsluttet</p>
@@ -1047,30 +1084,6 @@ export function LeggTilBrevFlyt({
             <p className="mt-5 rounded-kontroll bg-flate-2 px-3.5 py-3 text-hjelp text-blekk">
               Saken flyttes til «Trenger handling», fordi brevet har en ny frist.
             </p>
-          )}
-
-          {analyse.foreslatte_steg.length > 0 && (
-            <details className="mt-5 rounded-kort border border-strek bg-flate p-4">
-              <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk outline-offset-4 focus-visible:outline-2 focus-visible:outline-aksent">Huskeliste · {analyse.foreslatte_steg.length} foreslåtte steg</summary>
-              <p className="text-hjelp font-medium text-blekk">
-                Foreslåtte steg
-              </p>
-              <div className="mt-2 flex flex-col gap-2">
-                {analyse.foreslatte_steg.map((s, i) => (
-                  <label
-                    key={i}
-                    className="flex items-start justify-between gap-3 rounded-kontroll border-[0.5px] border-strek bg-flate px-3.5 py-2.5"
-                  >
-                    <span className="text-sm text-blekk">{s}</span>
-                    <Avkrysning
-                      checked={stegAv[i] !== false}
-                      onChange={(v) => setStegAv((st) => ({ ...st, [i]: v }))}
-                      className="mt-0.5"
-                    />
-                  </label>
-                ))}
-              </div>
-            </details>
           )}
 
           {kanLagre && (

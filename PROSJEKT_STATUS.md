@@ -3,6 +3,16 @@
 Løpende status for implementeringen av `MEDHOLD_ARBEIDSORDRE.md`. Oppdateres
 etter hver fase.
 
+## Kompakt kontroll og lagringsvalg – 10. november 2026
+
+PR #65 er videreført med en kort kontrolloversikt. Antall kontrollerte linjer og alle merknader vises før detaljene. Beløp/differanse, usikkerhet, ukontrollerte linjer, antatt dato og forbehold beholdes synlige. Full Gebyrsjekk med utregninger ligger under «Se gebyrdetaljer og kilder». Manglende kostnadslinjer gir ingen friskmelding.
+
+Sakstilknytning, nye frister og huskeliste er samlet i ett utvidbart felt. Oppsummeringen viser valgt sak, antall valgte frister og nærmeste valgte dato. Ved saksmatchforslag eller kortere frist åpnes feltet fra start. Utfallsbekreftelse, erstattede frister, gjenåpning og historisk overskriving ligger utenfor dette lukkede feltet. Data og lagringsregler er uendret.
+
+«Se originalbrevet» viser innlimt tekst eller tilgjengelige opplastede bilder i nettleseren. PDF tilbys som nedlasting av den lokale originalen; ingen tredjepartsviser eller ny opplasting. Filinnhold er ikke lagret på nytt.
+
+Kontroll: 403/403 tester inkludert seks nye presentasjons-/referansetester. Typekontroll bestått. Lokal nettleser på 390 px: originaltekst åpnet, gebyrdetaljer åpnet/lukket, tre deler og tilbake, frist valgt bort/bevart etter kollaps og valgt igjen. Bildene i docs/design/brevkontroll er oppdatert. Syntetisk konto ryddet. Ikke ny fysisk iPhone-, bilde- eller PDF-nedlastingstest i denne runden. Ingen merge, migrasjon eller produksjonsdeploy.
+
 ## Visuell finpuss av brevkontrollen – 10. november 2026
 
 Videreført på PR #65: lettere nummererte steg, fjærbasert fremdriftslinje og kort retningsbestemt inntreden (200 ms). Ingen exit-venting. Redusert bevegelse gir initialt synlig innhold og null varighet. Fjernet den ekstra inntredenen på gebyrpanelet for å unngå dobbeltanimasjon. Beløpet «Å betale» er tydeligere, redigeringsrader har minst 44 px trykkflate, og detaljfelter har synlig tastaturfokus. På skjermer under 380 px står nummer over etikett. Ingen nye avhengigheter eller endringer i beregninger/serverkontrakter.
