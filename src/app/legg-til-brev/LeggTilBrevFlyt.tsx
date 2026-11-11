@@ -46,7 +46,7 @@ import { SakOgFrister } from "./SakOgFrister";
 import { LagretBrev } from "./LagretBrev";
 import { useUlagretVern } from "@/components/useUlagretVern";
 import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
-import { kontrollerSum } from "@/lib/sumkontroll";
+import { kontrollerSum, sumavvikFra } from "@/lib/sumkontroll";
 import { brevforklaring } from "@/lib/brevforklaring";
 import { kontrollerBrevfunn } from "@/lib/brevkontroll";
 import {
@@ -1120,6 +1120,7 @@ export function LeggTilBrevFlyt({
             <Veivalg
               harGebyrfunn={(gebyrsjekk?.antallOver ?? 0) > 0}
               gebyrDifferanse={gebyrDifferanse}
+              sumavvikDifferanse={sumavvikFra({ sumkontroll })?.differanse ?? null}
               svarMål={{
                 type: "klikk",
                 onKlikk: () => lagre("innsigelse"),

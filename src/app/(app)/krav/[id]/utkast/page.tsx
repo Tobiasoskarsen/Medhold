@@ -13,6 +13,7 @@ import { gebyrDifferanse, ubestridtDel } from "@/lib/utkast-prompt";
 import { UtkastFlyt } from "./UtkastFlyt";
 import type { VaktFakta } from "@/lib/utkast-vakt";
 import { velgUtkastbrev } from "@/lib/utkastgrunnlag";
+import { sumavvikFra } from "@/lib/sumkontroll";
 
 function erUtkastType(v: string | undefined): v is UtkastType {
   return !!v && (UTKAST_TYPER as readonly string[]).includes(v);
@@ -72,6 +73,8 @@ export default async function UtkastPage({
   // Til «Hva er du uenig i?» og betalingsmerknaden (§D.1) — samme rene
   // utregning som prompten bruker.
   const gebyrDiff = gebyrDifferanse(gs);
+  // Sumavvik (Del B.4): brevet krever mer enn hovedstol og kostnader blir.
+  const sumDiff = sumavvikFra(gs)?.differanse ?? 0;
   const ubestridt = ubestridtDel(valgtUtkast ? brev?.belop ?? null : sak.belop_totalt ?? brev?.belop ?? null, gs);
 
   const starttype = erUtkastType(valgtUtkast?.type) ? valgtUtkast.type : erUtkastType(type) ? type : "innsigelse";
@@ -129,6 +132,7 @@ export default async function UtkastPage({
           typeValgt={!!valgtUtkast || erUtkastType(type)}
           harOverGebyr={harOverGebyr}
           gebyrDiff={gebyrDiff}
+          sumDiff={sumDiff}
           ubestridt={ubestridt}
           avdrag={avdrag}
           navnStart={navnStart}

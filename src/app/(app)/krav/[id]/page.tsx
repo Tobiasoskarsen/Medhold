@@ -673,6 +673,7 @@ export default async function KravDetaljPage({
               className="mt-1 [&>h2]:sr-only"
               harGebyrfunn={harOverGebyr}
               gebyrDifferanse={overDiff}
+              sumavvikDifferanse={sumavvik?.differanse ?? null}
               svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
               betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
             />

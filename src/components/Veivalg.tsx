@@ -149,6 +149,7 @@ function Spørsmålsrad<T extends string>({
 export function Veivalg({
   harGebyrfunn,
   gebyrDifferanse = null,
+  sumavvikDifferanse = null,
   svarMål,
   betaleMål,
   ekstra,
@@ -163,6 +164,8 @@ export function Veivalg({
   harGebyrfunn: boolean;
   /** Sum kr over lovlig sats, kun brukt i «betale»-resultatteksten. */
   gebyrDifferanse?: number | null;
+  /** Kr i brevet som ikke går opp (sumavvik). Null = ikke noe sumavvik. */
+  sumavvikDifferanse?: number | null;
   svarMål: VeivalgMål;
   betaleMål: VeivalgMål;
   /** Ekstra innhold rendret nederst (steg 3s «Bestem senere»-lenke). */
@@ -208,11 +211,16 @@ export function Veivalg({
           ikonBg="text-aksent"
           tittel="Svar på kravet"
           undertekst={lagreForst ? "Lag et svar du kan lese gjennom, endre og sende selv." : "Lag et utkast du kan redigere og sende selv."}
-          anbefalt={harGebyrfunn}
+          anbefalt={harGebyrfunn || !!sumavvikDifferanse}
           begrunnelse={
-            gebyrDifferanse
-              ? `gebyrsjekken fant ${kr(gebyrDifferanse)} kr over maksimalsats.`
-              : "gebyrsjekken fant et beløp over maksimalsats."
+            // Gebyrfunnet har forrang i begrunnelsen (Del B.4).
+            harGebyrfunn
+              ? gebyrDifferanse
+                ? `gebyrsjekken fant ${kr(gebyrDifferanse)} kr over maksimalsats.`
+                : "gebyrsjekken fant et beløp over maksimalsats."
+              : sumavvikDifferanse
+                ? `${kr(sumavvikDifferanse)} kr i brevet går ikke opp.`
+                : undefined
           }
           mål={svarMål}
         />
