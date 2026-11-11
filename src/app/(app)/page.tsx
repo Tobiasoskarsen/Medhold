@@ -19,6 +19,8 @@ import { formaterBelop } from "@/lib/format";
 import { STADIUM_ETIKETT, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus, SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import { ProfilKnapp } from "@/components/ProfilKnapp";
+import { initialerFra } from "@/lib/tint";
 import { sumavvikFra, type Sumavvik } from "@/lib/sumkontroll";
 import { hjemIngress } from "@/lib/oversikt";
 import { kanViseSeier, rangerSaker, relevantFrist } from "@/lib/prioritet";
@@ -102,6 +104,12 @@ export default async function HjemPage() {
     )
       ?.trim()
       .split(/\s+/)[0] || null;
+
+  const initialer = initialerFra(
+    (user?.user_metadata?.brevnavn as string | undefined) ??
+      (user?.user_metadata?.fornavn as string | undefined),
+    user?.email,
+  );
 
   const [{ data: sakData }, { data: fristData }, { data: brevData }] =
     await Promise.all([
@@ -270,7 +278,8 @@ export default async function HjemPage() {
       <div className={toKolonner ? "lg:grid lg:grid-cols-2 lg:gap-x-8" : ""}>
       <Sekvens>
       <SekvensDel className="lg:col-span-2">
-        {/* Kompakt velkomst: dato, navn og situasjon. Profilen ligger i menyen. */}
+        <ProfilKnapp initialer={initialer} className="-ml-1 mb-2" />
+        {/* Kompakt velkomst: dato, navn og situasjon. */}
         <p className="text-hjelp font-medium text-dempet">{idagEyebrow()}</p>
         <h1 className="tittel mt-0.5 text-blekk">
           {fornavn ? `Hei, ${fornavn}` : "Hei"}

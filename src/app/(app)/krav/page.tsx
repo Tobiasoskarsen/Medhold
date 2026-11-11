@@ -14,6 +14,8 @@ import { rangerSaker } from "@/lib/prioritet";
 import { erHastende, fristChipTekst } from "@/lib/frist";
 import { STATUS_ETIKETT, type SakStatus, type SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import { ProfilKnapp } from "@/components/ProfilKnapp";
+import { initialerFra } from "@/lib/tint";
 import { sumavvikFra } from "@/lib/sumkontroll";
 import type { HovedstolAvvik } from "@/lib/hovedstol-konsistens";
 
@@ -47,6 +49,14 @@ function oversiktsstripe(saker: SakRad[]): string {
 
 export default async function KravListePage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const initialer = initialerFra(
+    (user?.user_metadata?.brevnavn as string | undefined) ??
+      (user?.user_metadata?.fornavn as string | undefined),
+    user?.email,
+  );
 
   const [{ data: sakData }, { data: fristData }, { data: brevData }] =
     await Promise.all([
@@ -217,7 +227,10 @@ export default async function KravListePage() {
     <Skjermramme className="pt-6" animerInn={false}>
       <Sekvens>
       <SekvensDel>
-      <h1 className="tittel text-blekk">Saker</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="tittel text-blekk">Saker</h1>
+        <ProfilKnapp initialer={initialer} className="-mr-1" />
+      </div>
       </SekvensDel>
       {stripe && (
         <SekvensDel>
