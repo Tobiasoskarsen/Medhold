@@ -14,7 +14,7 @@ etter hver fase.
 - **E:** Kontrollsteget har funnkortet øverst, én setning og alle linjer med pill. Samme piller brukes på brevvisningen. «Merknad» er borte fra UI-et.
 - **F:** Ett `FORBEHOLD` per skjerm. «Hva er kontrollert?» er i vanlig språk. Forklaringen er to setninger, og gamle skjemaforklaringer bygges på nytt ved visning.
 
-**Migrasjon 0032: skrevet og testet i PGlite, ikke kjørt i testprosjektet eller produksjon.** Den skal kjøres i «medhold test» med `supabase/kontroll/for_0032.sql` før og etter. Produksjon følger release-porten. Se `supabase/dokumentasjon/0032_statusregel_brevdato.md`.
+**Migrasjon 0032: kjørt i test, ikke i produksjon.** Kjørt i «medhold test» 11. november. `supabase/kontroll/for_0032.sql` viste versjon 0029 før og 0032 etter, med uendrede rettigheter (anon false, authenticated true) og uendret antall ventende saker (1). Produksjon følger release-porten. Se `supabase/dokumentasjon/0032_statusregel_brevdato.md`.
 
 **Kontroller:** 432 enhetstester og 153 DB-/modultester er grønne. Typekontroll, lint uten feil og produksjonsbygg er bestått. `grep -rn "maximumFractionDigits: 2 })" src` treffer bare `format.ts`; annotering linje 40 er flerlinjet og uendret. Paritetstesten kjører hele `lagre_brev` for 54 kombinasjoner pluss Nordkapp-tilfellene, inkludert sendt 23.30 UTC som er neste dag i norsk tid.
 
