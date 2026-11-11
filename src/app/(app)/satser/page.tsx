@@ -3,10 +3,11 @@ import { ChevronLeft } from "lucide-react";
 import { Kort, Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
 import { satserForDato } from "@/lib/gebyr";
 import { formaterDato, idagOslo } from "@/lib/dato";
+import { formaterKr } from "@/lib/format";
 
-/** Norsk beløp med tusenskille, uten øre. */
+/** Norsk beløp med tusenskille, øre med to sifre når det finnes. */
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
+  return formaterKr(n);
 }
 
 /**

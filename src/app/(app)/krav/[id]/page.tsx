@@ -76,6 +76,7 @@ import { FristKnapp } from "./FristKnapp";
 import { relevantFrist } from "@/lib/prioritet";
 import { gjeldendeUtfall, utfallVisning } from "@/lib/utfall";
 import { fristStatus } from "@/lib/saksstatus";
+import { formaterKr } from "@/lib/format";
 
 type BrevRad = {
   id: string;
@@ -147,7 +148,7 @@ function oppfolgingTekst(
 }
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+  return formaterKr(n);
 }
 
 export default async function KravDetaljPage({

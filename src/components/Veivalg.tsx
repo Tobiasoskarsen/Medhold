@@ -13,13 +13,14 @@ import { NavLenke as Link } from "@/components/NavLenke";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
 import { anbefalVei, type VeivalgSvar, type Anbefaling } from "@/lib/veivalg";
+import { formaterKr } from "@/lib/format";
 
 export type VeivalgMål =
   | { type: "href"; href: string }
   | { type: "klikk"; onKlikk: () => void; deaktivert?: boolean };
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+  return formaterKr(n);
 }
 
 /** Lenke eller knapp, avhengig av målet — kravdetaljen navigerer direkte,

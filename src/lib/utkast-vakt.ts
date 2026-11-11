@@ -5,7 +5,7 @@
 // lagt påstander i personens munn, og at et delvis bestridt krav ikke blir
 // omtalt som helt bestridt. Vakten BLOKKERER ALDRI (guardrail 5): funnene gir
 // én regenerering og deretter en advarsel — brukeren bestemmer alltid.
-import { tolkKr } from "./format.ts";
+import { formaterKr, tolkKr } from "./format.ts";
 import { finnFraser } from "./tekstsok.ts";
 
 export type VaktFakta = {
@@ -293,8 +293,7 @@ function sjekkFaktapastander(utkast: string, fakta: VaktFakta): VaktFunn[] {
 // --- Kontroll --------------------------------------------------------------
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 })
-    .format(n)
+  return formaterKr(n)
     .replace(/ /g, " ");
 }
 

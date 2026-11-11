@@ -15,6 +15,7 @@ import { Pill } from "@/components/ui/Pill";
 import { Dom } from "@/components/Dom";
 import { Utregning } from "@/components/Utregning";
 import { formaterDato } from "@/lib/dato";
+import { formaterKr } from "@/lib/format";
 
 const PILL: Record<
   Vurdering,
@@ -27,7 +28,7 @@ const PILL: Record<
 };
 
 function kr(belop: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(belop);
+  return formaterKr(belop);
 }
 
 export function Gebyrsjekk({

@@ -21,14 +21,35 @@ export function validerKravbelop(input: unknown): Kravbelop {
   return { status: "gyldig", ore, kroner: tolkKr(s)! };
 }
 
+const HELE_KRONER = new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 });
+const MED_ORE = new Intl.NumberFormat("nb-NO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/**
+ * «2 340» for hele kroner, «3 108,90» når beløpet har øre. Uten «kr».
+ * Øre vises alltid med to sifre: «3 108,9» leses som en feil, og havnet
+ * tidligere også i utkast til kreditor. Tusenskillet er det Intl bruker (NBSP).
+ */
+export function formaterKr(kroner: number): string {
+  return Math.abs(kroner - Math.round(kroner)) < 0.005
+    ? HELE_KRONER.format(Math.round(kroner))
+    : MED_ORE.format(kroner);
+}
+
 /** Beløp med norsk tusenskille og registrert øre, uten «kr». Null → null. */
 export function formaterBelop(
   kroner: number | null | undefined,
 ): string | null {
   if (kroner == null) return null;
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(
-    kroner,
-  );
+  return formaterKr(kroner);
+}
+
+/**
+ * Retter «3 108,9 kr» til «3 108,90 kr» i ferdig utkasttekst: et tall med
+ * nøyaktig én desimal rett før «kr». Andre tall og datoer røres ikke. Brukes
+ * bare på tekst modellen har skrevet, aldri på tekst brukeren har redigert.
+ */
+export function normaliserBelopITekst(tekst: string): string {
+  return tekst.replace(/(\d),(\d)(?=\s*kr\b)/g, "$1,$20");
 }
 
 /**

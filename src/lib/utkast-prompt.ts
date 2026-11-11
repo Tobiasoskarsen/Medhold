@@ -20,11 +20,12 @@ import {
 import { kontrollerUtkast, type VaktFakta, type VaktFunn } from "./utkast-vakt.ts";
 import { vurderStopp } from "./ai-svar.ts";
 import { BRUKER_REGEL, DOKUMENT_REGEL, avgrens } from "./dokumentdata.ts";
+import { formaterKr, normaliserBelopITekst } from "./format.ts";
 
 export type Omfang = "delvis" | "helt";
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+  return formaterKr(n);
 }
 
 /**
@@ -333,7 +334,8 @@ async function genererTekst(
   if (vurderStopp(svar.stop_reason)) return null;
   const blokk = svar.content.find((b) => b.type === "text");
   if (!blokk || blokk.type !== "text" || !blokk.text.trim()) return null;
-  return fjernStjerner(blokk.text);
+  // «3 108,9 kr» rettes før vaktene ser teksten (Del A.3).
+  return normaliserBelopITekst(fjernStjerner(blokk.text));
 }
 
 /**

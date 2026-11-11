@@ -4,6 +4,7 @@
 // («use client»-komponenten Dom.tsx importerer DomFullskjerm, og
 // DomFullskjerm trenger samme utledning).
 import type { GebyrsjekkResultat, Kostnadstype, LinjeResultat } from "@/lib/gebyr";
+import { formaterKr } from "./format.ts";
 
 const TYPE_ORD: Record<Kostnadstype, string> = {
   purregebyr: "purregebyr",
@@ -16,7 +17,7 @@ const TYPE_ORD: Record<Kostnadstype, string> = {
 };
 
 export function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+  return formaterKr(n);
 }
 
 export function overLinjer(resultat: GebyrsjekkResultat): LinjeResultat[] {

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { formaterBelop, tolkKr, tellOrd, kuttTilMaks } from "./format.ts";
+import { formaterBelop, formaterKr, normaliserBelopITekst, tolkKr, tellOrd, kuttTilMaks } from "./format.ts";
 import { validerKravbelop } from "./format.ts";
 import { brevforklaring } from "./brevforklaring.ts";
 import { fristKontrollStottes } from "./kontrollomfang.ts";
@@ -49,7 +49,7 @@ test("formaterBelop: norsk tusenskille, ingen desimaler", () => {
 
 test("formaterBelop: registrert øre beholdes også for store beløp", () => {
   assert.equal(formaterBelop(1234567.89), "1 234 567,89");
-  assert.equal(formaterBelop(1288.5), "1 288,5");
+  assert.equal(formaterBelop(1288.5), "1 288,50");
   assert.equal(formaterBelop(0.01), "0,01");
 });
 
@@ -130,4 +130,28 @@ test("kuttTilMaks: liste nøyaktig lik maks er urørt", () => {
 
 test("kuttTilMaks: tom liste forblir tom", () => {
   assert.deepEqual(kuttTilMaks([], 3), []);
+});
+
+test("formaterKr: hele kroner uten desimaler, ellers nøyaktig to", () => {
+  assert.equal(formaterKr(3108.9), "3 108,90");
+  assert.equal(formaterKr(2340), "2 340");
+  assert.equal(formaterKr(0.5), "0,50");
+  assert.equal(formaterKr(1288), "1 288");
+  assert.equal(formaterKr(4912.3), "4 912,30");
+  assert.equal(formaterKr(187.5), "187,50");
+  // Flyttallsstøy rundt hele kroner gir ikke «,00».
+  assert.equal(formaterKr(0.1 + 0.2 + 99.7), "100");
+  // Tusenskillet er det samme tegnet som Intl brukte før (NBSP).
+  assert.equal(formaterKr(2340), new Intl.NumberFormat("nb-NO").format(2340));
+});
+
+test("normaliserBelopITekst: bare tall med én desimal før «kr» endres", () => {
+  const inn = "Jeg betaler derfor 3 108,9 kr. Gebyret er 18,90 kr, salæret 750 kr. Datert 29.10.2026.";
+  assert.equal(
+    normaliserBelopITekst(inn),
+    "Jeg betaler derfor 3 108,90 kr. Gebyret er 18,90 kr, salæret 750 kr. Datert 29.10.2026.",
+  );
+  assert.equal(normaliserBelopITekst("3 108,9 kr"), "3 108,90 kr");
+  assert.equal(normaliserBelopITekst("54,3 kr og 0,5kr"), "54,30 kr og 0,50kr");
+  assert.equal(normaliserBelopITekst("3,5 kroner"), "3,5 kroner");
 });
