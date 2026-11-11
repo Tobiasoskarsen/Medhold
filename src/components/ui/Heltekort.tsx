@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { NavLenke as Link } from "@/components/NavLenke";
 
 /**
- * Heltekort — det ene tydelige kortet per skjerm (Retning B §4.4). Fjordgrønt
+ * Heltekort — det ene tydelige kortet per skjerm (Retning B §4.4). Lyst
  * i lys modus, lagdelt nær-svart i mørk. `gull` brukes KUN ved medhold.
  * Aldri rødt (fargeregel) — funn vises som en `HeltChip variant="funn"` inni.
  *

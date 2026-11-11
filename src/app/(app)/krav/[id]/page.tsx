@@ -4,7 +4,7 @@ import { NavLenke as Link } from "@/components/NavLenke";
 import { KontrollOmfang } from "@/components/KontrollOmfang";
 import { fristKildeForDato } from "@/lib/frist";
 import { notFound } from "next/navigation";
-import { ChevronLeft, ChevronRight, FileText, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, FilePenLine, Check, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   Skjermramme,
@@ -387,14 +387,16 @@ export default async function KravDetaljPage({
           // chip her — unngår at de to sier ulike/utdaterte ting.
           key: `utkast-${u.id}`,
           datoISO: u.sendt_at.slice(0, 10),
-          tittel: `${UTKAST_ETIKETT[u.type]} sendt`,
+          tittel: UTKAST_ETIKETT[u.type],
+          tekst: "Registrert sendt",
           href: `/krav/${id}/utkast?utkast=${u.id}`,
           fremhevet: false,
         }
       : {
           key: `utkast-${u.id}`,
           datoISO: u.opprettet.slice(0, 10),
-          tittel: `Utkast: ${UTKAST_ETIKETT[u.type]}`,
+          tittel: UTKAST_ETIKETT[u.type],
+          tekst: "Utkast – ikke registrert sendt",
           href: `/krav/${id}/utkast?utkast=${u.id}`,
           fremhevet: false,
           ekstra: !lost ? <MarkerSendtKnapp utkastId={u.id} /> : undefined,
@@ -419,6 +421,7 @@ export default async function KravDetaljPage({
         variant="venter"
         sisteHendelse={items.length === 0}
       >
+        <p className="mb-1 text-meta font-medium text-dempet">{oppfolgingTilstandVerdi.type === "kommer" ? "Kommende oppfølging" : "Oppfølging"}</p>
         <p className="text-[14.5px] font-semibold text-blekk">
           {oppfolgingTekst(
             oppfolgingTilstandVerdi,
@@ -576,15 +579,6 @@ export default async function KravDetaljPage({
       </Sekvens>
       <Saksvisning antallDokumenter={brevListe.length + utkast.length}
         oversikt={<>
-      {sak.status === "venter_pa_svar" && (
-        <section className="mb-4 rounded-kort border border-kant bg-flate p-4" aria-label="Venter på svar">
-          <p className="eyebrow">Status</p>
-          <h2 className="mt-1 text-[20px] font-bold tracking-tight text-blekk">Du venter på svar</h2>
-          {oppfolgingTilstandVerdi && <p className="mt-2 text-hjelp leading-relaxed text-dempet">{oppfolgingTekst(oppfolgingTilstandVerdi, null, varslerPa)}</p>}
-          <Link href={`/legg-til-brev?krav=${sak.id}`} className="trykk mt-4 inline-flex min-h-11 items-center gap-2 rounded-kontroll bg-knapp px-4 py-2.5 text-hjelp font-semibold text-knapp-tekst">Legg til svarbrev <Plus className="size-4" aria-hidden /></Link>
-          <div className="-mx-4 -mb-4 mt-4 border-t border-strek"><VenterPaSvarUtvidelse kravId={sak.id} sistEndret={sak.sist_endret as string} /></div>
-        </section>
-      )}
       {/* Registrert stadium/status og relevant frist: situasjonen før valgene. */}
       {nesteFrist && (
         <SekvensDel>
@@ -595,7 +589,7 @@ export default async function KravDetaljPage({
             className="mt-3"
           />
           <p className="mt-2 px-1 text-meta text-dempet">{nesteFrist.kilde === "beregnet" ? "Beregnet fra brevet – kontroller datoen." : "Fristen står oppgitt i brevet."}</p>
-          <details className="mt-1 px-1"><summary className="min-h-11 cursor-pointer rounded-liten text-hjelp text-dempet focus-visible:outline-2 focus-visible:outline-aksent">Om fristen og fullføring</summary>
+          <details className="detaljrad mt-1 px-1"><summary className="min-h-11 cursor-pointer rounded-liten text-hjelp text-dempet focus-visible:outline-2 focus-visible:outline-aksent">Om fristen og fullføring</summary>
           {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
             <Utregning
               className="mt-2"
@@ -633,6 +627,17 @@ export default async function KravDetaljPage({
         </SekvensDel>
       )}
 
+      {sak.status === "venter_pa_svar" && (
+        <section className="mb-4 rounded-kort border border-strek bg-flate p-5" aria-label="Venter på svar">
+          <p className="eyebrow">Status</p>
+          <h2 className="mt-1 text-[20px] font-bold tracking-tight text-blekk">Du venter på svar</h2>
+          {oppfolgingTilstandVerdi && <p className="mt-2 text-hjelp leading-relaxed text-dempet">{oppfolgingTekst(oppfolgingTilstandVerdi, null, varslerPa)}</p>}
+          <p className="mt-2 text-meta leading-relaxed text-dempet">Oppfølgingen er separat og endrer ikke fristen i brevet.</p>
+          <Link href={`/legg-til-brev?krav=${sak.id}`} className="trykk mt-4 inline-flex min-h-11 items-center gap-2 rounded-kontroll bg-knapp px-4 py-2.5 text-hjelp font-semibold text-knapp-tekst">Legg til svarbrev <Plus className="size-4" aria-hidden /></Link>
+          <div className="-mx-5 -mb-5 mt-4 border-t border-strek"><VenterPaSvarUtvidelse kravId={sak.id} sistEndret={sak.sist_endret as string} /></div>
+        </section>
+      )}
+
       {/* Viktigste varsel eller handlingsvalg. Alvorsvarsel overstyrer
           vanlige handlingsvalg (uendret betingelse). */}
       {sak.status === "aktiv" && sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
@@ -657,7 +662,7 @@ export default async function KravDetaljPage({
         stotterUtkast(stadium) &&
         !lost && (
           <SekvensDel>
-            <details className="mt-4" open={sak.status !== "venter_pa_svar"}>
+            <details className="detaljrad mt-2" open={sak.status !== "venter_pa_svar"}>
               <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk focus-visible:outline-2 focus-visible:outline-aksent">{sak.status === "venter_pa_svar" ? "Andre muligheter" : "Velg neste steg"}</summary>
             <Veivalg
               className="mt-1 [&>h2]:sr-only"
@@ -702,13 +707,13 @@ export default async function KravDetaljPage({
       )}
 
 
-          <div className="mt-4"><KontrollOmfang brevtype={stadium ?? null} /></div>
+          <div className="mt-2"><KontrollOmfang brevtype={stadium ?? null} /></div>
       {/* Siste brev: egen inngang før historikken. */}
       {sisteBrev && (
         <SekvensDel>
           <Link
             href={`/krav/${sak.id}/brev/${sisteBrev.id}`}
-            className="trykk mt-5 flex min-h-[60px] items-center gap-3 border-t border-strek py-4 focus-visible:outline-2 focus-visible:outline-aksent"
+            className="trykk mt-4 flex min-h-[72px] items-center gap-3 rounded-kort border border-strek bg-flate px-4 py-4 focus-visible:outline-2 focus-visible:outline-aksent"
           >
             <span
               aria-hidden
@@ -745,11 +750,11 @@ export default async function KravDetaljPage({
           <p className="mb-4 text-hjelp text-dempet">Åpne et brev eller fortsett på et lagret utkast.</p>
           <div className="overflow-hidden rounded-kort border border-kant bg-flate divide-y divide-strek">
             {brevListe.map(b => <Link key={b.id} href={`/krav/${sak.id}/brev/${b.id}`} className="trykk flex min-h-[72px] items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-aksent">
-              <FileText className="size-5 shrink-0 text-dempet" aria-hidden />
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-liten bg-flate-2 text-dempet"><FileText className="size-5" aria-hidden /></span>
               <span className="min-w-0 flex-1"><span className="block text-hjelp font-semibold text-blekk">{brevtypeEtikett(b.brevtype)}</span><span className="mt-0.5 block break-words text-meta text-dempet">{[b.avsender, formaterKortDato(b.brevdato ?? b.opprettet)].filter(Boolean).join(" · ")}</span></span><ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
             </Link>)}
             {utkast.map(u => <Link key={u.id} href={`/krav/${sak.id}/utkast?utkast=${u.id}`} className="trykk flex min-h-[72px] items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-aksent">
-              <FileText className="size-5 shrink-0 text-dempet" aria-hidden />
+              <span className={`flex size-10 shrink-0 items-center justify-center rounded-liten ${u.sendt_at ? "bg-mint text-mint-tekst" : "bg-flate-2 text-dempet"}`}>{u.sendt_at ? <Check className="size-5" aria-hidden /> : <FilePenLine className="size-5" aria-hidden />}</span>
               <span className="min-w-0 flex-1"><span className="block text-hjelp font-semibold text-blekk">{UTKAST_ETIKETT[u.type]}</span><span className="mt-0.5 block text-meta text-dempet">{u.sendt_at ? "Registrert sendt" : "Utkast – ikke registrert sendt"} · {formaterKortDato(u.sendt_at ?? u.opprettet)}</span></span><ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
             </Link>)}
           </div>
@@ -783,7 +788,7 @@ export default async function KravDetaljPage({
         </>}
       />
 
-      <div className="my-seksjon">
+      <div className="my-4">
         <Primærknapp href={`/legg-til-brev?krav=${sak.id}`} variant="rolig">
           <Plus className="-mt-0.5 mr-1.5 inline size-4" aria-hidden />
           Legg til brev i saken

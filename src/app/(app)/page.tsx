@@ -20,7 +20,7 @@ import { STADIUM_ETIKETT, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus, SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { hjemIngress } from "@/lib/oversikt";
-import { kanViseSeier, rangerSaker } from "@/lib/prioritet";
+import { kanViseSeier, rangerSaker, relevantFrist } from "@/lib/prioritet";
 import { kr, overLinjer, totalOver } from "@/lib/gebyrfunn-visning";
 import {
   dagerTilOppfolging,
@@ -164,6 +164,12 @@ export default async function HjemPage() {
   const topSak: SakKobling | null = topp?.sak ?? null;
   const venter = !!topSak && topSak.status === "venter_pa_svar" && !topFrist;
   const topSakAlvorlig = topp?.alvorlig ?? false;
+
+  // Kun visning i ventekortet, uten å endre rangering eller varslingsgrunnlag.
+  const venterFrist = venter && topSak ? relevantFrist(
+    ((fristData ?? []) as unknown as AapenFrist[]).filter(f => f.sak_id === topSak.id),
+    (brevData ?? []).filter(b => b.sak_id === topSak.id), idag,
+  )?.frist : null;
 
   // Ingressens grunnlag (§5.1).
   const sakerDenneUka = new Set(
@@ -333,20 +339,20 @@ export default async function HjemPage() {
               etikett="Venter på svar"
               href={`/krav/${topSak.id}`}
               knapp={
-                <Primærknapp href="/legg-til-brev" variant="lys">
-                  Fått svar? Legg til brevet
+                <Primærknapp href={`/legg-til-brev?krav=${topSak.id}`} variant="lys">
+                  Legg til svarbrev
                 </Primærknapp>
               }
             >
               {kreditorLinje(topSak)}
               {belopLinje(topSak)}
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                <HeltChip variant="noytral">
-                  {oppfolgingTilstandVerdi
-                    ? oppfolgingTekstKort(oppfolgingTilstandVerdi, varslerPa)
-                    : "Ta vare på kvitteringen"}
-                </HeltChip>
-              </div>
+              {venterFrist && <div className="mt-3 rounded-kontroll border border-strek bg-flate-2/40 px-3 py-3">
+                <p className="text-hjelp font-semibold text-helt-tekst">{venterFrist.tittel}</p>
+                <p className="mt-1 text-brod font-bold tabular-nums text-helt-tekst">{formaterDagManed(venterFrist.forfallsdato)}</p>
+                <p className="mt-1 text-meta text-helt-dempet">Se fristgrunnlaget i saken.</p>
+              </div>}
+              <p className="mt-3 text-hjelp text-helt-dempet">{oppfolgingTilstandVerdi ? oppfolgingTekstKort(oppfolgingTilstandVerdi, varslerPa) : "Ta vare på kvitteringen"}</p>
+              <p className="mt-1 text-meta leading-relaxed text-helt-dempet">Oppfølgingen er separat og endrer ikke fristen i brevet.</p>
             </Heltekort>
           ) : (
             <Heltekort

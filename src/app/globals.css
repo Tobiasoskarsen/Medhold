@@ -23,7 +23,7 @@
   --aksent-tekst: #ffffff;
   --aksent-lys: #17a085;
   --aksent-dyp: #103c38;
-  --knapp: #121614;
+  --knapp: #103c38;
   --knapp-tekst: #ffffff;
   --trygg: #14708a;
   --dom-rod: #b8400f;
@@ -33,22 +33,22 @@
   --gull: #86601a;
   --gull-bg: #f5ecd8;
   --gull-tekst: #ffffff;
-  --helt-bg: #103c38;
-  --helt-kant: transparent;
-  --helt-tekst: #eef3ef;
-  --helt-dempet: #eef3efa6;
-  --helt-etikett: #eef3efb3;
-  --helt-knapp: #eef3ef;
-  --helt-knapp-tekst: #103c38;
-  --helt-chip: #ffffff1f;
+  --helt-bg: #ffffff;
+  --helt-kant: #e6e1d6;
+  --helt-tekst: #121614;
+  --helt-dempet: #64675f;
+  --helt-etikett: #103c38;
+  --helt-knapp: #103c38;
+  --helt-knapp-tekst: #ffffff;
+  --helt-chip: #e6f0e9;
   --helt-funn-bg: #ffd9c6;
   --helt-funn-tekst: #7a2a08;
   --mint: #c9ead9;
   --mint-tekst: #103c38;
-  --nav-bg: #121614;
-  --nav-kant: transparent;
-  --nav-tekst: #ffffff80;
-  --nav-aktiv: #ffffff;
+  --nav-bg: #fffefc;
+  --nav-kant: #e6e1d6;
+  --nav-tekst: #64675f;
+  --nav-aktiv: #103c38;
 
   --kort-skygge: none;
   --skjelett-lys: #ffffff99;
@@ -100,10 +100,10 @@
   --helt-funn-tekst: #ff9a78;
   --mint: #8fe3bf;
   --mint-tekst: #06231a;
-  --nav-bg: #1a1f1ecc;
+  --nav-bg: #131716;
   --nav-kant: #ffffff12;
-  --nav-tekst: #ffffff8c;
-  --nav-aktiv: #f1f4f2;
+  --nav-tekst: #a4ada8;
+  --nav-aktiv: #8fe3bf;
 
   --kort-skygge: inset 0 1px 0 #ffffff0a;
   --skjelett-lys: #ffffff0f;
@@ -368,3 +368,11 @@ body {
     animation: none !important;
   }
 }
+
+/* R6: samme rolige detaljrad i kontroll og saksoversikt. Native details bevarer tastaturstøtte. */
+.detaljrad { border-bottom: 1px solid var(--strek); }
+.detaljrad > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 12px 0; cursor: pointer; list-style: none; }
+.detaljrad > summary::-webkit-details-marker { display: none; }
+.detaljrad > summary::after { content: ''; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); margin: 0 4px 4px; flex-shrink: 0; }
+.detaljrad[open] > summary::after { transform: rotate(225deg); margin-bottom: 0; }
+.detaljrad[open] { padding-bottom: 12px; }

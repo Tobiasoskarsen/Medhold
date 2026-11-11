@@ -14,8 +14,8 @@ export function Saksvisning({ oversikt, dokumenter, historikk, antallDokumenter 
     { navn: "Historikk", innhold: historikk },
   ];
   return (
-    <div className="mt-5">
-      <nav aria-label="Visning av saken" className="sticky top-[65px] z-10 -mx-1 mb-5 border-b border-strek bg-bakgrunn px-1">
+    <div className="mt-4">
+      <nav aria-label="Visning av saken" className="sticky top-[65px] z-10 -mx-1 mb-4 border-b border-strek bg-bakgrunn px-1">
         <div className="grid grid-cols-3 gap-1">
           {sider.map((side, i) => <button key={side.navn} type="button"
             aria-pressed={valgt === i} aria-controls={`${id}-${i}`} onClick={() => setValgt(i)}

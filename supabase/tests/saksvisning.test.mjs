@@ -10,7 +10,7 @@ function load(file,mocks,cache=new Map()){
  const js=ts.transpileModule(readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
  new Function('require','exports',js)(name=>{if(Object.hasOwn(mocks,name))return mocks[name];let p=name.startsWith('@/')?resolve('src',name.slice(2)):name.startsWith('.')?resolve(dirname(file),name):null;if(!p)return require(name);if(!existsSync(p))p+=existsSync(p+'.ts')?'.ts':'.tsx';return load(p,mocks,cache);},out);return out;
 }
-function nodes(n){if(!n)return[];if(Array.isArray(n))return n.flatMap(nodes);if(!n.props)return[];return[n,...['children','oversikt','dokumenter','historikk'].flatMap(k=>nodes(n.props[k]))];}
+function nodes(n){if(!n)return[];if(Array.isArray(n))return n.flatMap(nodes);if(!n.props)return[];return[n,...['children','oversikt','dokumenter','historikk','forhand'].flatMap(k=>nodes(n.props[k]))];}
 function text(n){if(typeof n==='string'||typeof n==='number')return String(n);if(Array.isArray(n))return n.map(text).join('');return text(n?.props?.children??'');}
 function panelHarness(){let i=0;const state=[];const props={oversikt:{id:'overview'},dokumenter:{id:'documents'},historikk:{id:'history'},antallDokumenter:3};
  const {Saksvisning}=load('src/app/(app)/krav/[id]/Saksvisning.tsx',{react:{useId:()=> 'case',useState:init=>{const n=i++;if(!(n in state))state[n]=init;return[state[n],v=>state[n]=v];}}});
@@ -30,3 +30,25 @@ test('ventende sak prioriterer ventestatus og skjuler generelle veivalg bak Andr
 test('aktiv sak beholder tilgjengelige valg, og dokumentene peker til eksakte eksisterende ID-er',async()=>{const tree=await page('aktiv');const detail=nodes(tree).find(n=>n.type==='details'&&text(n).includes('Velg neste steg'));assert.equal(detail.props.open,true);const hrefs=nodes(tree).map(n=>n.props.href).filter(Boolean);assert.ok(hrefs.includes('/krav/case/brev/letter'));assert.ok(hrefs.includes('/krav/case/utkast?utkast=draft'));});
 test('avsluttet sak får ingen generelle veivalg',async()=>{assert.equal(nodes(await page('fullfort')).filter(n=>n.type==='Veivalg').length,0);});
 test('alvorlig sak beholder alvorsvarsel som overstyrer veivalg',async()=>{const ns=nodes(await page('aktiv',true));assert.ok(ns.some(n=>n.type==='Alvor'));assert.equal(ns.filter(n=>n.type==='Veivalg').length,0);});
+
+test('historikken bruker dokumentnavn og egen status for utkast og registrert sendt', async()=>{
+ for(const [status,label]of [['aktiv','Utkast – ikke registrert sendt'],['venter_pa_svar','Registrert sendt']]){
+  const ns=nodes(await page(status));const entry=ns.find(n=>n.type==='TidslinjeHendelse'&&nodes(n).some(c=>c.props.href==='/krav/case/utkast?utkast=draft'));
+  assert.ok(entry);assert.ok(text(entry).includes('Innsigelse'));assert.ok(text(entry).includes(label));assert.ok(!text(entry).includes('Utkast: Innsigelse'));
+ }
+});
+
+test('sendt-ikonets semantiske farger har minst 3:1 kontrast i begge temaer',()=>{
+ const css=readFileSync('src/app/globals.css','utf8');const light=css.slice(css.indexOf(':root {'),css.indexOf('.mork {'));const dark=css.slice(css.indexOf('.mork {'),css.indexOf('@theme inline'));
+ const lum=hex=>{const c=hex.match(/[a-f0-9]{2}/gi).map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return c[0]*.2126+c[1]*.7152+c[2]*.0722};
+ for(const block of [light,dark]){const bg=block.match(/--mint:\s*(#[a-f0-9]{6});/i)[1];const fg=block.match(/--mint-tekst:\s*(#[a-f0-9]{6});/i)[1];const a=lum(bg),b=lum(fg);assert.ok((Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=3);}
+});
+
+test('Hjem viser ventende saks frist før separat oppfølging uten å endre sakstilstand',async()=>{
+ const sak={id:'case',kreditor:'Syntetisk',tittel:'Test',belop_totalt:1288,stadium:'inkassovarsel',status:'venter_pa_svar',sist_endret:'2026-11-11T12:00:00Z'};
+ const rows={saker:[sak],frister:[{id:'deadline',sak_id:'case',brev_id:'letter',tittel:'Svarfrist',forfallsdato:'2026-11-22',saker:sak}],brev:[{id:'letter',sak_id:'case',brevdato:'2026-11-08',opprettet:'2026-11-11T12:00:00Z',alvorlig:false}],utkast:[]};
+ const db={auth:{getUser:async()=>({data:{user:{id:'owner',user_metadata:{}}}})},from:table=>{const q={select(){return this},eq(){return this},order(){return this},not(){return this},limit(){return this},maybeSingle:async()=>({data:null}),then(fn){return Promise.resolve({data:rows[table]??[]}).then(fn)}};return q}};
+ const ui=Object.fromEntries(['Skjermramme','Kort','Primærknapp','Belop','Sekvens','SekvensDel','Heltekort','HeltChip','Snarvei'].map(n=>[n,n]));
+ const tree=await load('src/app/(app)/page.tsx',{'@/lib/supabase/server':{createClient:async()=>db},'@/components/ui':ui,'./HjelpKnapp':{HjelpKnapp:'HjelpKnapp'}}).default();
+ const card=nodes(tree).find(n=>n.type==='Heltekort'&&n.props.etikett==='Venter på svar');assert.ok(card);const t=text(card);assert.ok(t.includes('Svarfrist'));assert.ok(t.includes('22. november'));assert.ok(t.indexOf('Svarfrist')<t.indexOf('Oppfølgingen er separat'));assert.ok(t.includes('endrer ikke fristen i brevet'));assert.equal(card.props.knapp.props.href,'/legg-til-brev?krav=case');assert.equal(sak.status,'venter_pa_svar');
+});

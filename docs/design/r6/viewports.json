@@ -1,0 +1,212 @@
+[
+  {
+    "navLinks": [
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Hjem",
+        "width": 52
+      },
+      {
+        "current": "page",
+        "height": 44.5,
+        "name": "Saker",
+        "width": 52
+      },
+      {
+        "current": null,
+        "height": 44,
+        "name": "Legg til brev",
+        "width": 44
+      },
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Meg",
+        "width": 52
+      }
+    ],
+    "scrollWidth": 320,
+    "width": 320
+  },
+  {
+    "navLinks": [
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Hjem",
+        "width": 52
+      },
+      {
+        "current": "page",
+        "height": 44.5,
+        "name": "Saker",
+        "width": 52
+      },
+      {
+        "current": null,
+        "height": 44,
+        "name": "Legg til brev",
+        "width": 44
+      },
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Meg",
+        "width": 52
+      }
+    ],
+    "scrollWidth": 375,
+    "width": 375
+  },
+  {
+    "navLinks": [
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Hjem",
+        "width": 52
+      },
+      {
+        "current": "page",
+        "height": 44.5,
+        "name": "Saker",
+        "width": 52
+      },
+      {
+        "current": null,
+        "height": 44,
+        "name": "Legg til brev",
+        "width": 44
+      },
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Meg",
+        "width": 52
+      }
+    ],
+    "scrollWidth": 390,
+    "width": 390
+  },
+  {
+    "navLinks": [
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Hjem",
+        "width": 52
+      },
+      {
+        "current": "page",
+        "height": 44.5,
+        "name": "Saker",
+        "width": 52
+      },
+      {
+        "current": null,
+        "height": 44,
+        "name": "Legg til brev",
+        "width": 44
+      },
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Meg",
+        "width": 52
+      }
+    ],
+    "scrollWidth": 430,
+    "width": 430
+  },
+  {
+    "navLinks": [
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Hjem",
+        "width": 52
+      },
+      {
+        "current": "page",
+        "height": 44.5,
+        "name": "Saker",
+        "width": 52
+      },
+      {
+        "current": null,
+        "height": 44,
+        "name": "Legg til brev",
+        "width": 44
+      },
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Meg",
+        "width": 52
+      }
+    ],
+    "scrollWidth": 768,
+    "width": 768
+  },
+  {
+    "navLinks": [
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Hjem",
+        "width": 52
+      },
+      {
+        "current": "page",
+        "height": 44.5,
+        "name": "Saker",
+        "width": 52
+      },
+      {
+        "current": null,
+        "height": 44,
+        "name": "Legg til brev",
+        "width": 44
+      },
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Meg",
+        "width": 52
+      }
+    ],
+    "scrollWidth": 1024,
+    "width": 1024
+  },
+  {
+    "navLinks": [
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Hjem",
+        "width": 52
+      },
+      {
+        "current": "page",
+        "height": 44.5,
+        "name": "Saker",
+        "width": 52
+      },
+      {
+        "current": null,
+        "height": 44,
+        "name": "Legg til brev",
+        "width": 44
+      },
+      {
+        "current": null,
+        "height": 44.5,
+        "name": "Meg",
+        "width": 52
+      }
+    ],
+    "scrollWidth": 1280,
+    "width": 1280
+  }
+]
