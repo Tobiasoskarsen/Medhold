@@ -33,8 +33,8 @@ etter hver fase.
 12. **Endrede testforventninger:** «1 288,5» er blitt «1 288,50» i `format.test.ts` og `ux-r4-client.test.mjs`. S1-D-testen forventer «Vi fant ikke totalbeløpet» i stedet for «ukjent». Ingen forventninger for gebyr, frist, fasit eller vakt er endret.
 
 **Ikke gjort / begrensninger:**
-- **Skjermbilder i `docs/design/r7/` mangler.** Den lokale `.env.local` peker ikke på testprosjektet, og forhåndsvisningsverktøyet bygget fra en annen worktree. Den runden ble stoppet etter ti sekunder, uten at data ble lest. Bildene må tas i Vercel Preview mot «medhold test» etter at 0032 er kjørt der.
-- Ingen nettlesertest av flytene i denne runden.
+- **Skjermbilder** i `docs/design/r7/` er tatt i Preview mot «medhold test» (390 px, lys og mørk): Hjem, saken (38), brevvisningen (38) og kontrollsteget (37 og 38). Se [README](docs/design/r7/README.md). Hjem-linjen om beløpskontroll vises ikke i bildene, fordi saken for testbrev 38 venter på svar og ikke er viktigste sak.
+- Utkastet med sumavvik og duplikatadvarselen er dekket av tester, men ikke fotografert.
 - I kontrollsteget står gebyrfunnet både øverst (`DomMini`) og i den lukkede «Se gebyrdetaljer og kilder» (full `Dom` med utregning).
 
 ## Design R6 – 11. november 2026
