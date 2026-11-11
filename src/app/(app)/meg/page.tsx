@@ -1,13 +1,17 @@
-import { Bell, Mail, FileText, ShieldCheck, LogOut, Scale } from "lucide-react";
+import { Bell, Mail, FileText, ShieldCheck, Scale, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Skjermramme, Sekvens, SekvensDel, Ordmerke } from "@/components/ui";
+import { Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
 import SlettKonto from "@/components/SlettKonto";
 import VarselInnstilling from "@/components/VarselInnstilling";
+import { TilbakeKnapp } from "@/components/TilbakeKnapp";
 import { APP_NAME, APP_VERSJON, SUPPORT_EPOST } from "@/lib/brand";
+import { initialerFra } from "@/lib/tint";
 import { Gruppe } from "./Gruppe";
 import { Rad } from "./Rad";
-import { ProfilKort } from "./ProfilKort";
 import { TemaRad } from "./TemaRad";
+import { Utvidbar } from "./Utvidbar";
+import { Brevnavn } from "./Brevnavn";
+import { Telefon } from "./Telefon";
 
 export const metadata = {
   title: `Meg — ${APP_NAME}`,
@@ -35,6 +39,8 @@ export default async function MegPage() {
     "";
   const telefon = (user?.user_metadata?.telefon as string | undefined) ?? "";
   const varslerPa = user?.user_metadata?.varsler_paa !== false;
+  // Kun første ord vises i hodet; resten av navnet er der for brevsignaturen.
+  const fornavn = navn.trim().split(/\s+/)[0] ?? "";
 
   const innlogging =
     (user?.identities ?? [])
@@ -46,33 +52,48 @@ export default async function MegPage() {
       .join(", ") || "E-postkode";
 
   return (
-    <Skjermramme className="pt-6" animerInn={false}>
+    <Skjermramme className="pt-3" animerInn={false}>
       <h1 className="sr-only">Meg</h1>
 
       <Sekvens>
       <SekvensDel>
-      <ProfilKort
-        navn={navn}
-        epost={user?.email ?? ""}
-        telefon={telefon}
-        innlogging={innlogging}
-      />
+        <TilbakeKnapp />
       </SekvensDel>
 
       <SekvensDel>
-      <Gruppe tittel="Innstillinger">
-        <TemaRad />
+        <div className="flex flex-col items-center pb-6 pt-2 text-center">
+          <div
+            aria-hidden
+            className="flex size-[72px] items-center justify-center rounded-full bg-knapp text-[28px] font-bold text-knapp-tekst"
+          >
+            {initialerFra(navn, user?.email)}
+          </div>
+          {fornavn && <p className="mt-3 text-[22px] font-bold leading-tight text-blekk">{fornavn}</p>}
+          <p className="mt-0.5 max-w-full break-all text-[15px] text-dempet">{user?.email ?? ""}</p>
+        </div>
+      </SekvensDel>
+
+      <SekvensDel>
+      <Gruppe>
+        <Utvidbar ikon={UserRound} etikett="Brevnavn og telefon">
+          <div className="flex flex-col gap-4">
+            <Brevnavn start={navn} />
+            <Telefon start={telefon} />
+            <p className="text-hjelp text-dempet">Innlogging: {innlogging}</p>
+          </div>
+        </Utvidbar>
         <Rad
           ikon={Bell}
           etikett="E-postpåminnelser"
           høyre={<VarselInnstilling pa={varslerPa} />}
           chevron={false}
         />
+        <TemaRad />
       </Gruppe>
       </SekvensDel>
 
       <SekvensDel>
-      <Gruppe tittel="Hjelp">
+      <Gruppe>
         <Rad ikon={Scale} etikett="Satsene vi bruker" href="/satser" />
         <Rad ikon={FileText} etikett="Alle brev" href="/brev" />
         <Rad
@@ -91,11 +112,8 @@ export default async function MegPage() {
         <form action="/auth/signout" method="post">
           <button
             type="submit"
-            className="trykk flex min-h-[52px] w-full items-center gap-2.5 px-[14px] py-2.5 text-left text-brod text-blekk"
+            className="trykk flex min-h-[52px] w-full items-center justify-center px-[14px] py-2.5 text-brod font-semibold text-dom-rod focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-dom-rod"
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-liten bg-flate-2">
-              <LogOut className="size-[17px] text-dempet" aria-hidden />
-            </span>
             Logg ut
           </button>
         </form>
@@ -103,12 +121,11 @@ export default async function MegPage() {
       </SekvensDel>
 
       <SekvensDel>
-      <div className="mt-[18px] flex flex-col items-center gap-1.5 text-center">
-        <Ordmerke className="h-4 w-auto text-dempet" />
-        <p className="text-[11px] text-dempet">
-          {APP_VERSJON} · Ikke profesjonell rådgivning
-        </p>
+      <div className="mt-2 flex flex-col items-center gap-3 text-center">
         <SlettKonto />
+        <p className="text-[13px] text-dempet">
+          {APP_NAME} {APP_VERSJON} · Ikke profesjonell rådgivning
+        </p>
       </div>
       </SekvensDel>
       </Sekvens>

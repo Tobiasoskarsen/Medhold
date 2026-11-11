@@ -16,9 +16,9 @@ function bruk(t: Tema) {
 }
 
 const VALG: { verdi: Tema; etikett: string; Ikon: LucideIcon }[] = [
-  { verdi: "lys", etikett: "Lys", Ikon: Sun },
-  { verdi: "mork", etikett: "Mørk", Ikon: Moon },
-  { verdi: "system", etikett: "System", Ikon: Monitor },
+  { verdi: "lys", etikett: "Lyst", Ikon: Sun },
+  { verdi: "mork", etikett: "Mørkt", Ikon: Moon },
+  { verdi: "system", etikett: "Følg telefonen", Ikon: Monitor },
 ];
 
 export function TemaVelger({
@@ -60,7 +60,7 @@ export function TemaVelger({
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Tema">
+    <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Utseende">
       {VALG.map(({ verdi, etikett, Ikon }) => {
         const aktiv = tema === verdi;
         return (
@@ -70,7 +70,7 @@ export function TemaVelger({
             role="radio"
             aria-checked={aktiv}
             onClick={() => velg(verdi)}
-            className={`trykk flex flex-col items-center gap-1.5 rounded-kontroll border-[0.5px] px-2 py-3 text-hjelp font-medium ${
+            className={`trykk flex flex-col items-center gap-1.5 rounded-kontroll border-[0.5px] px-2 py-3 text-center text-hjelp font-medium ${
               aktiv
                 ? "border-aksent bg-aksent/5 text-blekk"
                 : "border-strek text-dempet"

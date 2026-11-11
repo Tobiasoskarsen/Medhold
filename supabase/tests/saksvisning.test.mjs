@@ -87,3 +87,19 @@ test('R8 sak: ventende sak med funn har ingen primærknapper i kortet, og valgen
 test('R8 sak: uten funn vises Veivalg som før og ingen funnkort',async()=>{
  const all=nodes(await page('aktiv'));assert.ok(!all.some(n=>n.type==='FunnKort'));assert.ok(all.some(n=>n.type==='Veivalg'));
 });
+
+test('R8 Meg: tilbakeknapp, profil, to rad-grupper, Logg ut som eget kort og bunnlinje',async()=>{
+ const db={auth:{getUser:async()=>({data:{user:{id:'u',email:'tobias@example.com',identities:[{provider:'email'}],user_metadata:{brevnavn:'Tobias Oskarsen',telefon:'',varsler_paa:true}}}})}};
+ const ui=Object.fromEntries(['Skjermramme','Sekvens','SekvensDel'].map(n=>[n,n]));
+ const mocks={'@/lib/supabase/server':{createClient:async()=>db},'@/components/ui':ui,'@/components/SlettKonto':{default:'SlettKonto'},'@/components/VarselInnstilling':{default:'Varsel'},'@/components/TilbakeKnapp':{TilbakeKnapp:'Tilbake'},'./TemaRad':{TemaRad:'TemaRad'},'./Utvidbar':{Utvidbar:'Utvidbar'},'./Brevnavn':{Brevnavn:'Brevnavn'},'./Telefon':{Telefon:'Telefon'}};
+ const tree=await load('src/app/(app)/meg/page.tsx',mocks).default();
+ const all=nodes(tree);const t=text(tree);
+ assert.ok(all.some(n=>n.type==='Tilbake'));
+ assert.ok(t.includes('TO'),'initialene');assert.ok(t.includes('Tobias')&&!t.includes('Oskarsen'),'bare fornavn i hodet');
+ const etiketter=all.map(n=>n.props.etikett).filter(Boolean);
+ assert.deepEqual(etiketter,['Brevnavn og telefon','E-postpåminnelser','Satsene vi bruker','Alle brev','Kontakt support','Personvern og data']);
+ assert.ok(all.some(n=>n.type==='TemaRad'));
+ assert.ok(!/Innstillinger|Hjelp med|Rediger profil/.test(t));
+ const logg=all.find(n=>n.type==='button'&&text(n)==='Logg ut');assert.ok(logg);assert.match(logg.props.className,/text-dom-rod/);
+ assert.ok(t.includes('Ikke profesjonell rådgivning'));
+});
