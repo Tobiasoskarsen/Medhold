@@ -425,7 +425,6 @@ export default async function KravDetaljPage({
         variant="venter"
         sisteHendelse={items.length === 0}
       >
-        <p className="mb-1 text-meta font-medium text-dempet">{oppfolgingTilstandVerdi.type === "kommer" ? "Kommende oppfølging" : "Oppfølging"}</p>
         <p className="text-[14.5px] font-semibold text-blekk">
           {oppfolgingTekst(
             oppfolgingTilstandVerdi,
@@ -593,7 +592,9 @@ export default async function KravDetaljPage({
             gammeltBrev={fristBrevGammelt}
             className="mt-3"
           />
-          <p className="mt-2 px-1 text-meta text-dempet">{nesteFrist.kilde === "beregnet" ? "Beregnet fra brevet – kontroller datoen." : "Fristen står oppgitt i brevet."}</p>
+          {nesteFrist.kilde === "beregnet" && (
+            <p className="mt-2 px-1 text-meta text-dempet">Beregnet fra brevet – kontroller datoen.</p>
+          )}
           <details className="detaljrad mt-1 px-1"><summary className="min-h-11 cursor-pointer rounded-liten text-hjelp text-dempet focus-visible:outline-2 focus-visible:outline-aksent">Om fristen og fullføring</summary>
           {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
             <Utregning
@@ -622,10 +623,6 @@ export default async function KravDetaljPage({
                 ) : undefined
               }
             />
-          ) : nesteFrist.kilde !== "beregnet" ? (
-            <p className="mt-2 text-meta text-dempet">
-              Fristen står oppgitt i brevet.
-            </p>
           ) : null}
           <FristKnapp fristId={nesteFrist.id} handling="fullfort" />
           </details>
@@ -637,7 +634,6 @@ export default async function KravDetaljPage({
           <p className="eyebrow">Status</p>
           <h2 className="mt-1 text-[20px] font-bold tracking-tight text-blekk">Du venter på svar</h2>
           {oppfolgingTilstandVerdi && <p className="mt-2 text-hjelp leading-relaxed text-dempet">{oppfolgingTekst(oppfolgingTilstandVerdi, null, varslerPa)}</p>}
-          <p className="mt-2 text-meta leading-relaxed text-dempet">Oppfølgingen er separat og endrer ikke fristen i brevet.</p>
           <Link href={`/legg-til-brev?krav=${sak.id}`} className="trykk mt-4 inline-flex min-h-11 items-center gap-2 rounded-kontroll bg-knapp px-4 py-2.5 text-hjelp font-semibold text-knapp-tekst">Legg til svarbrev <Plus className="size-4" aria-hidden /></Link>
           <div className="-mx-5 -mb-5 mt-4 border-t border-strek"><VenterPaSvarUtvidelse kravId={sak.id} sistEndret={sak.sist_endret as string} /></div>
         </section>
@@ -756,7 +752,6 @@ export default async function KravDetaljPage({
         dokumenter={<>
 
           <h2 className="seksjonstittel mb-3 text-blekk">Brev og svar</h2>
-          <p className="mb-4 text-hjelp text-dempet">Åpne et brev eller fortsett på et lagret utkast.</p>
           <div className="overflow-hidden rounded-kort border border-kant bg-flate divide-y divide-strek">
             {brevListe.map(b => <Link key={b.id} href={`/krav/${sak.id}/brev/${b.id}`} className="trykk flex min-h-[72px] items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-aksent">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-liten bg-flate-2 text-dempet"><FileText className="size-5" aria-hidden /></span>

@@ -50,17 +50,6 @@ type AapenFrist = {
 
 const ANDRE_SAKER_MAKS = 3;
 
-/** Dagens dato: «Tirsdag 3. november» (norsk tid — se dato.ts). */
-function idagEyebrow(): string {
-  const s = new Date().toLocaleDateString("nb-NO", {
-    timeZone: "Europe/Oslo",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 function stor(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -271,8 +260,7 @@ export default async function HjemPage() {
       <Sekvens>
       <SekvensDel className="lg:col-span-2">
         {/* Kompakt velkomst: dato, navn og situasjon. Profilen ligger i menyen. */}
-        <p className="text-hjelp font-medium text-dempet">{idagEyebrow()}</p>
-        <h1 className="tittel mt-0.5 text-blekk">
+        <h1 className="tittel text-blekk">
           {fornavn ? `Hei, ${fornavn}` : "Hei"}
         </h1>
         <p className="mt-1 text-[14px] text-dempet">{ingress}</p>
@@ -353,10 +341,8 @@ export default async function HjemPage() {
               {venterFrist && <div className="mt-3 rounded-kontroll border border-strek bg-flate-2/40 px-3 py-3">
                 <p className="text-hjelp font-semibold text-helt-tekst">{venterFrist.tittel}</p>
                 <p className="mt-1 text-brod font-bold tabular-nums text-helt-tekst">{formaterDagManed(venterFrist.forfallsdato)}</p>
-                <p className="mt-1 text-meta text-helt-dempet">Se fristgrunnlaget i saken.</p>
               </div>}
               <p className="mt-3 text-hjelp text-helt-dempet">{oppfolgingTilstandVerdi ? oppfolgingTekstKort(oppfolgingTilstandVerdi, varslerPa) : "Ta vare på kvitteringen"}</p>
-              <p className="mt-1 text-meta leading-relaxed text-helt-dempet">Oppfølgingen er separat og endrer ikke fristen i brevet.</p>
             </Heltekort>
           ) : (
             <Heltekort
@@ -510,16 +496,6 @@ export default async function HjemPage() {
         </SekvensDel>
       )}
 
-      {/* Kort forklaring ved få saker — samme flyt som finnes, ingen nye løfter. */}
-      {!forstegang && aktiveSaker.length <= 1 && (
-        <SekvensDel className="lg:col-start-1">
-          <p className="mt-5 px-1 text-hjelp leading-relaxed text-dempet">
-            Legg til brevet og sjekk tallene mot det. Vi kontrollerer støttede
-            gebyrer og frister, og lager et utkast du kan redigere. Du sender
-            brevet selv.
-          </p>
-        </SekvensDel>
-      )}
       </Sekvens>
       </div>
     </Skjermramme>
