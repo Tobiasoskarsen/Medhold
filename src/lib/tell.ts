@@ -10,13 +10,15 @@ import { FJAER } from "./bevegelse";
 export function tellOpp(
   el: HTMLElement,
   til: number,
-  formater: (avrundet: number) => string,
+  formater: (verdi: number) => string,
 ): () => void {
   const kontroll = animate(0, til, {
     ...FJAER,
     onUpdate: (v) => {
       el.textContent = formater(Math.round(v));
     },
+    // Mellomverdier kan rundes, men det autoritative sluttbeløpet har øre.
+    onComplete: () => { el.textContent = formater(til); },
   });
   return () => kontroll.stop();
 }

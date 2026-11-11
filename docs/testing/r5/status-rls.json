@@ -1,0 +1,29 @@
+{
+  "project": "evvzxblhaxaraaurbhsu",
+  "time": "2026-11-10T23:09:56.451Z",
+  "method": "Actual server module; Next createClient adapter replaced by real authenticated Supabase client. Real PostgREST/RLS, not standalone HTTP action serialization.",
+  "serviceRole": "Setup and cleanup only",
+  "cleanup": true,
+  "results": [
+    {
+      "name": "Own authoritative status returns preserved snapshot",
+      "status": "bestått"
+    },
+    {
+      "name": "Wrong case is rejected",
+      "status": "bestått"
+    },
+    {
+      "name": "Other user JWT cannot recover owner draft",
+      "status": "bestått"
+    },
+    {
+      "name": "Anonymous recovery is rejected",
+      "status": "bestått"
+    },
+    {
+      "name": "Invalid IDs rejected before query",
+      "status": "bestått"
+    }
+  ]
+}

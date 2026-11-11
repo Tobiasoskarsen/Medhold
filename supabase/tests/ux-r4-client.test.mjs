@@ -49,6 +49,7 @@ function harness({ save = async () => ({
     brevId: "brev-r4"
 }), navigate = () => { }, existing = false, caseStatus = "aktiv" } = {}) { let i = 0; const values = [], calls = [], urls = []; const mocks = {
     react: {
+        useEffect() {},
         useState: init => { const n = i++; if (!(n in values))
             values[n] = typeof init === "function" ? init() : init; return [values[n], v => values[n] = typeof v === "function" ? v(values[n]) : v]; },
         useRef: init => { const n = i++; return values[n] ?? (values[n] = {

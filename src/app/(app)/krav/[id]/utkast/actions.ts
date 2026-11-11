@@ -124,7 +124,7 @@ export async function lagUtkast(
 export async function markerUtkastSendt(
   utkastId: string,
   forventetVersjon?: number,
-): Promise<{ ok: true; sakId: string } | { ok: false; feil: string }> {
+): Promise<{ ok: true; sakId: string } | { ok: false; feil: string; ukjent?: boolean }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -142,7 +142,7 @@ export async function markerUtkastSendt(
   const { error } = await supabase.rpc("registrer_utkast_sendt", {
     p_id: utkastId, p_versjon: forventetVersjon ?? utkast.versjon,
   });
-  if (error) return { ok: false, feil: "Kunne ikke registrere sendt. Utkastet kan være endret; åpne det på nytt." };
+  if (error) return { ok: false, ukjent: true, feil: "Kunne ikke bekrefte sendtregistreringen. Kontroller serverstatus før du prøver igjen." };
 
   revalidatePath("/");
   revalidatePath("/krav");
@@ -152,7 +152,7 @@ export async function markerUtkastSendt(
 
 /** Ingen AI-kall. Versjonsbetinget UPDATE stopper stille overskriving fra to faner. */
 export async function lagreRedigertUtkast(id: string, sakId: string, versjon: number, tekst: string): Promise<
-  { ok: true; tekst: string; versjon: number } | { ok: false; feil: string }
+  { ok: true; tekst: string; versjon: number } | { ok: false; feil: string; ukjent?: boolean }
 > {
   if (typeof tekst !== "string" || !tekst.trim() || tekst.length > 50000 || !Number.isInteger(versjon))
     return { ok: false, feil: "Utkastet må inneholde tekst og være under 50 000 tegn." };
@@ -163,6 +163,24 @@ export async function lagreRedigertUtkast(id: string, sakId: string, versjon: nu
   const { data, error } = await supabase.from("utkast").update({ innhold: tryggTekst })
     .eq("id", id).eq("sak_id", sakId).eq("bruker_id", user.id)
     .eq("versjon", versjon).is("sendt_at", null).select("innhold, versjon").maybeSingle();
-  if (error || !data) return { ok: false, feil: "Ikke lagret. Utkastet er endret eller sendt i en annen fane. Ta vare på teksten og åpne det på nytt." };
+  if (error) return { ok: false, ukjent: true, feil: "Kunne ikke bekrefte lagringen. Teksten er beholdt i fanen; neste forsøk kontrollerer serverversjonen først." };
+  if (!data) return { ok: false, feil: "Ikke lagret. Utkastet er endret eller sendt i en annen fane. Ta vare på teksten og åpne det på nytt." };
   return { ok: true, tekst: data.innhold, versjon: data.versjon };
+}
+
+/** Kun lesing. Avklar et tapt lagrings-/sendtsvar før et nytt skriveforsøk. */
+export async function hentUtkastStatus(id: string, sakId: string): Promise<
+  { ok: true; tekst: string; versjon: number; sendt: boolean } | { ok: false; feil: string }
+> {
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (typeof id !== "string" || typeof sakId !== "string" || !uuid.test(id) || !uuid.test(sakId))
+    return { ok: false, feil: "Fant ikke utkastet i saken." };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, feil: "Logg inn igjen for å kontrollere status." };
+  const { data, error } = await supabase.from("utkast")
+    .select("innhold, versjon, sendt_at, sendt_innhold")
+    .eq("id", id).eq("sak_id", sakId).eq("bruker_id", user.id).maybeSingle();
+  if (error || !data) return { ok: false, feil: "Kunne ikke hente utkaststatus. Ingen ny registrering er utført." };
+  return { ok: true, tekst: data.sendt_innhold ?? data.innhold, versjon: data.versjon, sendt: !!data.sendt_at };
 }

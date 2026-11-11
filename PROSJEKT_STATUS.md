@@ -3,6 +3,14 @@
 Løpende status for implementeringen av `MEDHOLD_ARBEIDSORDRE.md`. Oppdateres
 etter hver fase.
 
+## R5 – trygg avbruddshåndtering og mobilkvalitet – 11. november 2026
+
+Egen gren/PR stablet på åpen R4 (#66), ikke merget eller produksjonsdeployet. Navigasjonsvern for aktivt ulagret arbeid, lenke til Saker ved ukjent brevlagring og kvittering med eksisterende autentiserte sak-/fristdata. Automatisk sessionStorage-buffer for utkasttekst er fjernet; bare eksplisitt serverlagring er varig. Ved ukjent utkastlagring/sendtregistrering leses serverstatus før nytt skriv; synkron lås stopper dobbelttrykk. Revalidert sendtstatus overstyrer gammel ukjent-beskjed. Navngitte, større redigeringsfelt og ørepresisjon etter animasjon er rettet uten endrede beregninger.
+
+Ferskt: 404/404 enhetstester, 138/138 lokale DB-/modultester (filparallellitet 2), 26/26 ekte Supabase/HTTP-tester med opprydding, 5/5 nye faktiske statusmodul/PostgREST/RLS-prøver. Lint: 0 feil, én eksisterende lokal worktree-advarsel. Typekontroll/bygg bestått, produksjonsaudit 0 sårbarheter. Faktisk klient: brudd før/etter brevlagring, retry uten duplikat, tapt utkast-/sendtsvar og gjenfinning; testkonto ryddet. Ingen fysisk iPhone/VoiceOver/200 %-zoom eller ekstern brukertest påstås. Native bekreftelsesdialog kunne ikke ferdigverifiseres i IAB, og async hardnavigasjonsfeil er en oppgitt begrensning.
+
+Se [R5 sluttrapport A–H](docs/testing/r5/SLUTTRAPPORT.md), [tilstandskart](docs/testing/r5/TILSTANDSKART.md), [fysisk/anonym testprotokoll](docs/testing/r5/MANUELL_TESTPROTOKOLL.md) og [separat vurdering av varig kladd](docs/testing/r5/VARIG_KLADD_VURDERING.md). Ingen ny lokal dokumentpersistens, migrasjon, RLS- eller produksjonsendring.
+
 ## UX R4 – tydelige valg og trygg lagring – 10. november 2026
 
 Tre likeverdige valg etter kontroll: svar, betalingsmuligheter og bestem senere. Felles lagringsforklaring, serverbekreftet kvittering og eksplisitt brev-ID til neste flyt. Valgte frister oppsummeres; kritiske varsler og særbekreftelser ligger utenfor detaljfeltet. Dobbeltklikk sperres synkront. Ukjent lagringsresultat låser opplysningene til retry med samme nøkkel er avklart. Betalingsoversikten beholder øre.

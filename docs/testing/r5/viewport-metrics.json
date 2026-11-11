@@ -1,0 +1,30 @@
+[
+  {
+    "dark": true,
+    "focus": "SUMMARY",
+    "scrollWidth": 305,
+    "warningVisible": true,
+    "width": 320
+  },
+  {
+    "dark": true,
+    "focus": "SUMMARY",
+    "scrollWidth": 375,
+    "warningVisible": true,
+    "width": 390
+  },
+  {
+    "dark": true,
+    "focus": "SUMMARY",
+    "scrollWidth": 415,
+    "warningVisible": true,
+    "width": 430
+  },
+  {
+    "dark": true,
+    "focus": "SUMMARY",
+    "scrollWidth": 1265,
+    "warningVisible": true,
+    "width": 1280
+  }
+]

@@ -21,12 +21,12 @@ export function validerKravbelop(input: unknown): Kravbelop {
   return { status: "gyldig", ore, kroner: tolkKr(s)! };
 }
 
-/** Beløp med norsk tusenskille, uten øre og uten «kr». Null → null. */
+/** Beløp med norsk tusenskille og registrert øre, uten «kr». Null → null. */
 export function formaterBelop(
   kroner: number | null | undefined,
 ): string | null {
   if (kroner == null) return null;
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(
+  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(
     kroner,
   );
 }
