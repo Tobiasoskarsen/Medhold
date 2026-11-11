@@ -14,7 +14,9 @@ etter hver fase.
 - **E:** Kontrollsteget har funnkortet øverst, én setning og alle linjer med pill. Samme piller brukes på brevvisningen. «Merknad» er borte fra UI-et.
 - **F:** Ett `FORBEHOLD` per skjerm. «Hva er kontrollert?» er i vanlig språk. Forklaringen er to setninger, og gamle skjemaforklaringer bygges på nytt ved visning.
 
-**Migrasjon 0032: kjørt i test, ikke i produksjon.** Kjørt i «medhold test» 11. november. `supabase/kontroll/for_0032.sql` viste versjon 0029 før og 0032 etter, med uendrede rettigheter (anon false, authenticated true) og uendret antall ventende saker (1). Produksjon følger release-porten. Se `supabase/dokumentasjon/0032_statusregel_brevdato.md`.
+**Migrasjon 0032: kjørt i test og i produksjon.** Kjørt i «medhold test» og deretter i produksjon (Medhold, `leernzbmuldegiggnjib`) 11. november, etter godkjenning. I begge viste `supabase/kontroll/for_0032.sql` versjon 0029 før og 0032 etter, med uendrede rettigheter (anon false, authenticated true) og uendret antall ventende saker (1).
+
+**Produksjonsrelease 11. november:** PR #70 squash-merget som `d545605`. Bygget med `vercel deploy --prod --skip-domain` fra en ren `git archive`-eksport uten `.env`-filer, og deretter promotert: `dpl_HXD8nyFwxBf48h3BFbLtq8vYeNm8`. Forrige produksjon var `dpl_2yGhuKuX9hyACrTrAsXmxr3q4zAU` (`app2-fq2mbucpw`). Bygget peker på `leernzbmuldegiggnjib`, og det offentlige domenet serverer det nye bygget. Smoke: `/logg-inn` 200, `/manifest.webmanifest` 200, cron uten nøkkel 401. Ingen innlogget ende-til-ende-test i produksjon. Rollback: `vercel promote app2-fq2mbucpw-tobiasoskarsens-projects.vercel.app`, og ved behov `supabase/tilbakeforing/0032_tilbake.sql`, som ikke endrer data. Se `supabase/dokumentasjon/0032_statusregel_brevdato.md`.
 
 **Kontroller:** 432 enhetstester og 153 DB-/modultester er grønne. Typekontroll, lint uten feil og produksjonsbygg er bestått. `grep -rn "maximumFractionDigits: 2 })" src` treffer bare `format.ts`; annotering linje 40 er flerlinjet og uendret. Paritetstesten kjører hele `lagre_brev` for 54 kombinasjoner pluss Nordkapp-tilfellene, inkludert sendt 23.30 UTC som er neste dag i norsk tid.
 
