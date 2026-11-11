@@ -419,6 +419,7 @@ export default async function KravDetaljPage({
         variant="venter"
         sisteHendelse={items.length === 0}
       >
+        <p className="mb-1 text-meta font-medium text-dempet">{oppfolgingTilstandVerdi.type === "kommer" ? "Kommende oppfølging" : "Oppfølging"}</p>
         <p className="text-[14.5px] font-semibold text-blekk">
           {oppfolgingTekst(
             oppfolgingTilstandVerdi,
@@ -749,7 +750,7 @@ export default async function KravDetaljPage({
               <span className="min-w-0 flex-1"><span className="block text-hjelp font-semibold text-blekk">{brevtypeEtikett(b.brevtype)}</span><span className="mt-0.5 block break-words text-meta text-dempet">{[b.avsender, formaterKortDato(b.brevdato ?? b.opprettet)].filter(Boolean).join(" · ")}</span></span><ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
             </Link>)}
             {utkast.map(u => <Link key={u.id} href={`/krav/${sak.id}/utkast?utkast=${u.id}`} className="trykk flex min-h-[72px] items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-aksent">
-              <FileText className="size-5 shrink-0 text-dempet" aria-hidden />
+              <span className={`flex size-10 shrink-0 items-center justify-center rounded-liten ${u.sendt_at ? "bg-mint/60 text-aksent" : "bg-flate-2 text-dempet"}`}>{u.sendt_at ? <Check className="size-5" aria-hidden /> : <FilePenLine className="size-5" aria-hidden />}</span>
               <span className="min-w-0 flex-1"><span className="block text-hjelp font-semibold text-blekk">{UTKAST_ETIKETT[u.type]}</span><span className="mt-0.5 block text-meta text-dempet">{u.sendt_at ? "Registrert sendt" : "Utkast – ikke registrert sendt"} · {formaterKortDato(u.sendt_at ?? u.opprettet)}</span></span><ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
             </Link>)}
           </div>
