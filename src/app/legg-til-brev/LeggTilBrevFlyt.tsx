@@ -121,9 +121,12 @@ function StegIndikator({ steg }: { steg: 1 | 2 | 3 }) {
 export function LeggTilBrevFlyt({
   krav,
   forvalgtKrav,
+  startInntak = null,
 }: {
   krav: KravValg[];
   forvalgtKrav: string | null;
+  /** Hurtigraden på Hjem: «tekst» åpner tekstfeltet; kamera og fil fremhever kortet. */
+  startInntak?: "kamera" | "fil" | "tekst" | null;
 }) {
   const router = useRouter();
   const [steg, setSteg] = useState<1 | 2 | 3>(1);
@@ -137,7 +140,7 @@ export function LeggTilBrevFlyt({
     stegRef.current = neste;
     setSteg(neste);
   }
-  const [inntak, setInntak] = useState<Inntak>("valg");
+  const [inntak, setInntak] = useState<Inntak>(startInntak === "tekst" ? "tekst" : "valg");
   const [tekst, setTekst] = useState("");
   const [bilder, setBilder] = useState<KlarFil[]>([]);
   const [klargjor, setKlargjor] = useState(false);
@@ -598,12 +601,14 @@ export function LeggTilBrevFlyt({
                   ikon={<Camera className="size-5" aria-hidden />}
                   tittel="Ta bilde"
                   tekst="Fotografer brevet med kameraet"
+                  fremhevet={startInntak === "kamera"}
                   onClick={() => kameraInput.current?.click()}
                 />
                 <InntakKort
                   ikon={<Upload className="size-5" aria-hidden />}
                   tittel="Last opp fil"
                   tekst={`Bilde eller PDF (PDF: maks ${MAKS_PDF_TEKST} og ${MAKS_PDF_SIDER} sider)`}
+                  fremhevet={startInntak === "fil"}
                   onClick={() => filInput.current?.click()}
                 />
                 <InntakKort
@@ -1202,18 +1207,21 @@ function InntakKort({
   ikon,
   tittel,
   tekst,
+  fremhevet = false,
   onClick,
 }: {
   ikon: React.ReactNode;
   tittel: string;
   tekst: string;
+  /** Valgt i hurtigraden på Hjem. Nettleseren tillater ikke å åpne filvelgeren uten et trykk. */
+  fremhevet?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3.5 rounded-kontroll border border-strek bg-flate px-4 py-4 text-left transition hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+      className={`flex items-center gap-3.5 rounded-kontroll border bg-flate px-4 py-4 text-left transition hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent ${fremhevet ? "border-aksent ring-2 ring-aksent/30" : "border-strek"}`}
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-aksent/10 text-aksent">
         {ikon}

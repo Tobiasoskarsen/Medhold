@@ -4,6 +4,8 @@
 
 import type { SakStatus, SakUtfall } from "./types";
 import type { GebyrsjekkResultat } from "./gebyr";
+import { stotterUtkast, type Stadium } from "./gjeld.ts";
+import { overLinjer, totalOver } from "./gebyrfunn-visning.ts";
 
 export type HjemIngressInput = {
   /** Totalt antall saker (aktive + avsluttede). */
@@ -140,4 +142,73 @@ export function beregnOversikt(saker: SakOppsummering[]): Oversikt {
     antallAvtale,
     antallOppgjort,
   };
+}
+
+// --- Hjem (R8): totalen og «Mulig avvik» ------------------------------------
+
+const rundOre = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Utestående krav: summen av beløpet på saker som er aktive eller venter på
+ * svar. Avsluttede saker er ikke med, og saker uten beløp hoppes over.
+ */
+export function utestaaendeTotal(
+  saker: { status: SakStatus; belop_totalt: number | null }[],
+): number {
+  return rundOre(
+    saker.reduce(
+      (sum, s) =>
+        (s.status === "aktiv" || s.status === "venter_pa_svar") && s.belop_totalt != null
+          ? sum + s.belop_totalt
+          : sum,
+      0,
+    ),
+  );
+}
+
+/**
+ * Nyeste brev per sak, med samme regel som saken: brevdato synkende (brev uten
+ * dato sist), deretter opprettet synkende. Tar første treff per sak.
+ */
+export function nyesteBrevPerSak<
+  T extends { sak_id: string; brevdato: string | null; opprettet: string },
+>(brev: T[]): Map<string, T> {
+  const sortert = [...brev].sort((a, b) => {
+    if (a.brevdato !== b.brevdato) {
+      if (a.brevdato === null) return 1;
+      if (b.brevdato === null) return -1;
+      return a.brevdato < b.brevdato ? 1 : -1;
+    }
+    return a.opprettet < b.opprettet ? 1 : a.opprettet > b.opprettet ? -1 : 0;
+  });
+  const per = new Map<string, T>();
+  for (const b of sortert) if (!per.has(b.sak_id)) per.set(b.sak_id, b);
+  return per;
+}
+
+/**
+ * «Mulig avvik» på Hjem: summen av beløpet over lovlig sats i nyeste brev per
+ * åpen sak, bare for saker der utkast støttes. Saken med størst avvik oppgis,
+ * så chipen kan lenke dit. Leser bare det lagrede gebyrsjekk-resultatet.
+ */
+export function muligAvvikTotal(
+  saker: { id: string; stadium: Stadium | null; status: SakStatus }[],
+  nyeste: Map<string, { gebyrsjekk: unknown }>,
+): { sum: number; stortSakId: string | null } {
+  let sum = 0;
+  let stort = 0;
+  let stortSakId: string | null = null;
+  for (const s of saker) {
+    if (s.status === "fullfort" || !stotterUtkast(s.stadium)) continue;
+    const gs = nyeste.get(s.id)?.gebyrsjekk as GebyrsjekkResultat | null | undefined;
+    if (!gs || !Array.isArray(gs.linjer)) continue;
+    const diff = totalOver(overLinjer(gs));
+    if (diff <= 0) continue;
+    sum += diff;
+    if (diff > stort) {
+      stort = diff;
+      stortSakId = s.id;
+    }
+  }
+  return { sum: rundOre(sum), stortSakId };
 }

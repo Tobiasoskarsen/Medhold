@@ -7,9 +7,9 @@ import { osloDato } from "@/lib/dato";
 export default async function LeggTilBrevPage({
   searchParams,
 }: {
-  searchParams: Promise<{ krav?: string }>;
+  searchParams: Promise<{ krav?: string; inntak?: string }>;
 }) {
-  const { krav: forvalgtKrav } = await searchParams;
+  const { krav: forvalgtKrav, inntak } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -61,6 +61,10 @@ export default async function LeggTilBrevPage({
   }));
 
   return (
-    <LeggTilBrevFlyt krav={krav} forvalgtKrav={forvalgtKrav ?? null} />
+    <LeggTilBrevFlyt
+      krav={krav}
+      forvalgtKrav={forvalgtKrav ?? null}
+      startInntak={inntak === "kamera" || inntak === "fil" || inntak === "tekst" ? inntak : null}
+    />
   );
 }

@@ -8,23 +8,22 @@ import {
   Sekvens,
   SekvensDel,
   Heltekort,
-  HeltChip,
-  Snarvei,
 } from "@/components/ui";
-import { ChevronRight, FilePlus2 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { HjelpKnapp } from "./HjelpKnapp";
+import { Hurtigrad } from "./Hurtigrad";
+import { KreditorAvatar } from "@/components/KreditorAvatar";
 import { dagerTil, formaterDagManed, formaterTallDato, idagOslo } from "@/lib/dato";
 import { erHastende, erGammeltBrev, fristChipTekst } from "@/lib/frist";
 import { formaterBelop } from "@/lib/format";
 import { STADIUM_ETIKETT, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus, SakUtfall } from "@/lib/types";
-import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { ProfilKnapp } from "@/components/ProfilKnapp";
 import { initialerFra } from "@/lib/tint";
-import { sumavvikFra, type Sumavvik } from "@/lib/sumkontroll";
-import { hjemIngress } from "@/lib/oversikt";
+import { sumavvikFra } from "@/lib/sumkontroll";
+import { muligAvvikTotal, nyesteBrevPerSak, utestaaendeTotal } from "@/lib/oversikt";
 import { kanViseSeier, rangerSaker, relevantFrist } from "@/lib/prioritet";
-import { kr, overLinjer, sumavvikLinje, totalOver } from "@/lib/gebyrfunn-visning";
+import { kr, sumavvikLinje } from "@/lib/gebyrfunn-visning";
 import {
   dagerTilOppfolging,
   oppfolgingTilstand,
@@ -52,17 +51,6 @@ type AapenFrist = {
 
 const ANDRE_SAKER_MAKS = 3;
 
-/** Dagens dato: «Tirsdag 3. november» (norsk tid — se dato.ts). */
-function idagEyebrow(): string {
-  const s = new Date().toLocaleDateString("nb-NO", {
-    timeZone: "Europe/Oslo",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 function stor(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -89,22 +77,47 @@ function oppfolgingTekstKort(
   }
 }
 
+const navnPa = (x: SakKobling) => x.kreditor ?? x.tittel;
+
+/** Navn, én statuslinje og beløp: raden i heltekortet (R8). */
+function SakRad({
+  sak: x,
+  status,
+  hastende = false,
+  gull = false,
+}: {
+  sak: SakKobling;
+  status: string;
+  hastende?: boolean;
+  gull?: boolean;
+}) {
+  const belop = formaterBelop(x.belop_totalt);
+  return (
+    <div className="flex items-center gap-3">
+      <KreditorAvatar navn={navnPa(x)} className="size-12 text-[18px]" />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[17px] font-semibold text-helt-tekst">{navnPa(x)}</span>
+        <span
+          className={`block text-[14px] ${
+            gull ? "font-semibold text-gull" : hastende ? "font-semibold text-dom-rod" : "text-helt-dempet"
+          }`}
+        >
+          {status}
+        </span>
+      </span>
+      {belop && (
+        <span className="shrink-0 text-[17px] font-bold tabular-nums text-helt-tekst">{belop} kr</span>
+      )}
+    </div>
+  );
+}
+
 export default async function HjemPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const varslerPa = user?.user_metadata?.varsler_paa !== false;
-  // Samme navnegrunnlag som Meg: brevnavn med fallback til det gamle
-  // fornavn-feltet. Kun første ord vises her.
-  const fornavn =
-    (
-      (user?.user_metadata?.brevnavn as string | undefined) ??
-      (user?.user_metadata?.fornavn as string | undefined)
-    )
-      ?.trim()
-      .split(/\s+/)[0] || null;
-
   const initialer = initialerFra(
     (user?.user_metadata?.brevnavn as string | undefined) ??
       (user?.user_metadata?.fornavn as string | undefined),
@@ -163,7 +176,6 @@ export default async function HjemPage() {
   }
   const fraGammeltBrev = (f: AapenFrist) =>
     !!f.brev_id && (gammeltPerBrev.get(f.brev_id) ?? false);
-  const utlopte = frister.filter((f) => dagerTil(f.forfallsdato) < 0);
 
   // Viktigste sak og rekkefølgen på resten: én felles, testet regel
   // (lib/prioritet.ts). Alvorlighet og kommende frister går foran gamle frister.
@@ -179,24 +191,6 @@ export default async function HjemPage() {
     ((fristData ?? []) as unknown as AapenFrist[]).filter(f => f.sak_id === topSak.id),
     (brevData ?? []).filter(b => b.sak_id === topSak.id), idag,
   )?.frist : null;
-
-  // Ingressens grunnlag (§5.1).
-  const sakerDenneUka = new Set(
-    frister
-      .filter((f) => {
-        const d = dagerTil(f.forfallsdato);
-        return d >= 0 && d <= 7;
-      })
-      .map((f) => f.sak_id),
-  );
-  const ingress = hjemIngress({
-    antallSaker: saker.length,
-    antallAktive: aktiveSaker.length,
-    antallUtlopteFrister: utlopte.length,
-    antallUtlopteFraGamleBrev: utlopte.filter(fraGammeltBrev).length,
-    sakerMedFristDenneUka: sakerDenneUka.size,
-    toppVenter: topSak?.status === "venter_pa_svar",
-  });
 
   // Ventetid som synlig aktivitet (§5). Samme definisjon av «siste
   // aktivitet» som krav-detalj/cron-en: nyeste av (utkast.sendt_at,
@@ -234,61 +228,88 @@ export default async function HjemPage() {
   // skal aldri ta plassen til en sak som krever oppmerksomhet.
   const seierSak = kanViseSeier(saker) ? saker[0] : null;
 
-  // Gebyrsjekk på heltekortet: samme nyeste brev som før, nå også totalen
-  // til «{n} kr for mye»-chipen (ingen ny spørring).
-  let gebyrOver = 0;
-  // Beløpskontroll (Del B.2) vises uansett stadium; gebyrfunnet som før.
-  let hjemSumavvik: Sumavvik | null = null;
-  if (topSak) {
-    const { data: nyesteBrev } = await supabase
-      .from("brev")
-      .select("gebyrsjekk")
-      .eq("sak_id", topSak.id)
-      .order("brevdato", { ascending: false, nullsFirst: false })
-      .order("opprettet", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const gs = nyesteBrev?.gebyrsjekk as GebyrsjekkResultat | null;
-    if (stotterUtkast(topSak.stadium ?? null) && (gs?.antallOver ?? 0) > 0 && gs) gebyrOver = totalOver(overLinjer(gs));
-    hjemSumavvik = sumavvikFra(gs);
-  }
-  const hjemHarOverGebyr = gebyrOver > 0;
+  // Nyeste brev med gebyrsjekk for alle åpne saker i ÉN spørring (ingen N+1).
+  // Sorteringen (brevdato synkende, så opprettet) gjøres i nyesteBrevPerSak.
+  const aapneIder = aktiveSaker.map((x) => x.id);
+  const { data: sjekkData } = aapneIder.length
+    ? await supabase
+        .from("brev")
+        .select("sak_id, brevdato, opprettet, gebyrsjekk")
+        .in("sak_id", aapneIder)
+    : { data: [] };
+  const nyesteBrev = nyesteBrevPerSak(
+    (sjekkData ?? []) as {
+      sak_id: string;
+      brevdato: string | null;
+      opprettet: string;
+      gebyrsjekk: unknown;
+    }[],
+  );
+
+  // Totalen og «Mulig avvik» øverst (R8). Begge leser bare lagrede tall.
+  const utestaaende = utestaaendeTotal(saker);
+  const avvik = muligAvvikTotal(saker, nyesteBrev);
+
+  // Toppsaken: gebyrfunn og beløpskontroll fra samme nyeste brev.
+  const toppSjekk = topSak ? nyesteBrev.get(topSak.id)?.gebyrsjekk ?? null : null;
+  const hjemSumavvik = sumavvikFra(toppSjekk);
 
   // «Andre saker» (§5.3): samme rangering som toppsaken, uten den.
   const andreSaker = rangert.slice(1, 1 + ANDRE_SAKER_MAKS);
 
-  const navnPa = (s: SakKobling) => s.kreditor ?? s.tittel;
-  const kreditorLinje = (s: SakKobling) => (
-    <p className="mt-2 text-brod font-semibold text-helt-tekst">{navnPa(s)}</p>
-  );
-  const belopLinje = (s: SakKobling) =>
-    s.belop_totalt != null ? (
-      <p className="mt-0.5">
-        <Belop verdi={s.belop_totalt} className="tall-l" />
-      </p>
-    ) : null;
-
-  // Med flere saker på brede skjermer: viktigste sak til venstre, øvrige til
-  // høyre. Samme rekkefølge i DOM og på mobil.
-  const toKolonner = andreSaker.length > 0;
   const forstegang = !harKrav;
 
+  // Statuslinjen for toppsaken i standardgrenen: frist, ellers stadiet.
+  let toppStatus = topSak?.stadium ? stor(STADIUM_ETIKETT[topSak.stadium]) : "";
+  let toppHastende = false;
+  if (topFrist) {
+    const d = dagerTil(topFrist.forfallsdato);
+    if (d < 0 && topFrist.brev_id && fraGammeltBrev(topFrist)) {
+      // En gammel utløpt frist er historikk, ikke en akutt fare.
+      toppStatus = `Brev fra ${formaterTallDato(brevDatoPerId.get(topFrist.brev_id) ?? "")}`;
+    } else if (d < 0) {
+      toppStatus = `Frist utløpt · ${formaterDagManed(topFrist.forfallsdato)}`;
+      toppHastende = true;
+    } else {
+      // Samme hastegrense (≤ 10 dager) som Saker og saken.
+      toppStatus = `${fristChipTekst(d)} · ${formaterDagManed(topFrist.forfallsdato)}`;
+      toppHastende = erHastende(d);
+    }
+  }
+
   return (
-    <Skjermramme className="pt-5" animerInn={false} bred={toKolonner}>
-      <div className={toKolonner ? "lg:grid lg:grid-cols-2 lg:gap-x-8" : ""}>
+    <Skjermramme className="pt-3" animerInn={false}>
       <Sekvens>
-      <SekvensDel className="lg:col-span-2">
-        <ProfilKnapp initialer={initialer} className="-ml-1 mb-2" />
-        {/* Kompakt velkomst: dato, navn og situasjon. */}
-        <p className="text-hjelp font-medium text-dempet">{idagEyebrow()}</p>
-        <h1 className="tittel mt-0.5 text-blekk">
-          {fornavn ? `Hei, ${fornavn}` : "Hei"}
-        </h1>
-        <p className="mt-1 text-[14px] text-dempet">{ingress}</p>
+      <SekvensDel>
+        <ProfilKnapp initialer={initialer} className="-ml-1" />
       </SekvensDel>
 
-      <SekvensDel className="lg:col-start-1">
-        <div className="mt-4">
+      {harKrav && (
+        <SekvensDel>
+          <div className="mt-2 flex flex-col items-center text-center">
+            <p className="text-[15px] text-dempet">Utestående krav</p>
+            <p className="mt-1.5">
+              <Belop
+                verdi={utestaaende}
+                className="text-[44px] font-bold leading-none tracking-[-0.02em] tabular-nums text-blekk"
+              />
+            </p>
+            {avvik.sum > 0 && avvik.stortSakId && (
+              <Link
+                href={`/krav/${avvik.stortSakId}`}
+                className="trykk mt-3 inline-flex min-h-11 items-center gap-1 rounded-full bg-dom-rod-bg px-3.5 text-[13px] font-semibold text-dom-rod focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dom-rod"
+              >
+                Mulig avvik: {kr(avvik.sum)} kr
+                <ChevronRight className="size-4" aria-hidden />
+              </Link>
+            )}
+          </div>
+          <Hurtigrad />
+        </SekvensDel>
+      )}
+
+      <SekvensDel>
+        <div className="mt-6">
           {forstegang ? (
             <Heltekort
               etikett="Kom i gang"
@@ -299,9 +320,6 @@ export default async function HjemPage() {
               }
             >
               <p className="tittel-s mt-2">Forstå brevet ditt</p>
-              <p className="mt-1 text-[14px] text-helt-dempet">
-                Ta bilde av brevet, last opp en fil eller lim inn teksten.
-              </p>
             </Heltekort>
           ) : seierSak ? (
             <Heltekort
@@ -314,11 +332,9 @@ export default async function HjemPage() {
                 </Primærknapp>
               }
             >
-              <p className="mt-2 text-brod font-semibold">{navnPa(seierSak)}</p>
-              <p className="tall-m mt-1 text-gull">Medhold.</p>
-              <p className="mt-2 text-hjelp">
-                Kravet ble frafalt etter innsigelsen din.
-              </p>
+              <div className="mt-3">
+                <SakRad sak={seierSak} status="Medhold – kravet er frafalt" gull />
+              </div>
             </Heltekort>
           ) : !topSak ? (
             <Kort>
@@ -341,10 +357,8 @@ export default async function HjemPage() {
                 </Primærknapp>
               }
             >
-              {kreditorLinje(topSak)}
-              {belopLinje(topSak)}
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                <HeltChip variant="funn">Alvorlig varsel</HeltChip>
+              <div className="mt-3">
+                <SakRad sak={topSak} status="Alvorlig varsel" hastende />
               </div>
             </Heltekort>
           ) : venter ? (
@@ -357,24 +371,27 @@ export default async function HjemPage() {
                 </Primærknapp>
               }
             >
-              {kreditorLinje(topSak)}
-              {belopLinje(topSak)}
-              {venterFrist && <div className="mt-3 rounded-kontroll border border-strek bg-flate-2/40 px-3 py-3">
-                <p className="text-hjelp font-semibold text-helt-tekst">{venterFrist.tittel}</p>
-                <p className="mt-1 text-brod font-bold tabular-nums text-helt-tekst">{formaterDagManed(venterFrist.forfallsdato)}</p>
-                <p className="mt-1 text-meta text-helt-dempet">Se fristgrunnlaget i saken.</p>
-              </div>}
-              <p className="mt-3 text-hjelp text-helt-dempet">{oppfolgingTilstandVerdi ? oppfolgingTekstKort(oppfolgingTilstandVerdi, varslerPa) : "Ta vare på kvitteringen"}</p>
-              <p className="mt-1 text-meta leading-relaxed text-helt-dempet">Oppfølgingen er separat og endrer ikke fristen i brevet.</p>
+              <div className="mt-3">
+                <SakRad sak={topSak} status="Venter på svar" />
+              </div>
+              {venterFrist && (
+                <p className="mt-3 text-[14px] text-helt-tekst">
+                  {venterFrist.tittel} · <span className="font-semibold tabular-nums">{formaterDagManed(venterFrist.forfallsdato)}</span>
+                </p>
+              )}
+              <p className="mt-1 text-[13px] text-helt-dempet">
+                {oppfolgingTilstandVerdi ? oppfolgingTekstKort(oppfolgingTilstandVerdi, varslerPa) : "Ta vare på kvitteringen"}
+                {" · "}Oppfølgingen er separat og endrer ikke fristen i brevet.
+              </p>
             </Heltekort>
           ) : (
             <Heltekort
-              etikett="Viktigste sak"
+              etikett="Trenger oppfølging"
               href={`/krav/${topSak.id}`}
               knapp={
                 // «Lag svar» bare når det finnes et funn å svare med; ellers
                 // inn i saken først, der valgene forklares.
-                hjemHarOverGebyr && stotterUtkast(topSak.stadium ?? null) ? (
+                (avvik.stortSakId === topSak.id) && stotterUtkast(topSak.stadium ?? null) ? (
                   <Primærknapp
                     href={`/krav/${topSak.id}/utkast?type=innsigelse`}
                     variant="lys"
@@ -383,43 +400,17 @@ export default async function HjemPage() {
                   </Primærknapp>
                 ) : (
                   <Primærknapp href={`/krav/${topSak.id}`} variant="lys">
-                    Se saken
+                    Se hva du kan gjøre
                   </Primærknapp>
                 )
               }
             >
-              {kreditorLinje(topSak)}
-              {belopLinje(topSak)}
-              {topFrist && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {dagerTil(topFrist.forfallsdato) < 0 &&
-                  topFrist.brev_id &&
-                  fraGammeltBrev(topFrist) ? (
-                    <HeltChip variant="noytral">
-                      Brev fra{" "}
-                      {formaterTallDato(brevDatoPerId.get(topFrist.brev_id) ?? "")}
-                    </HeltChip>
-                  ) : dagerTil(topFrist.forfallsdato) < 0 ? (
-                    <HeltChip variant="funn">
-                      Frist utløpt · {formaterDagManed(topFrist.forfallsdato)}
-                    </HeltChip>
-                  ) : (
-                    // Samme hastegrense (≤ 10 dager) som Saker og saken (Del D).
-                    <HeltChip variant={erHastende(dagerTil(topFrist.forfallsdato)) ? "funn" : "noytral"}>
-                      {fristChipTekst(dagerTil(topFrist.forfallsdato))} ·{" "}
-                      {formaterDagManed(topFrist.forfallsdato)}
-                    </HeltChip>
-                  )}
-                </div>
-              )}
-              {/* Funnet er noe annet enn det registrerte kravbeløpet. */}
-              {hjemHarOverGebyr && (
-                <p className="mt-3 border-t border-helt-chip pt-2.5 text-hjelp font-semibold text-helt-tekst">
-                  Gebyrsjekk: {kr(gebyrOver)} kr over maksimalsats
-                </p>
-              )}
+              <div className="mt-3">
+                <SakRad sak={topSak} status={toppStatus} hastende={toppHastende} />
+              </div>
+              {/* Beløpskontrollen er et funn og skal aldri skjules. */}
               {hjemSumavvik && (
-                <p className={`${hjemHarOverGebyr ? "mt-1" : "mt-3 border-t border-helt-chip pt-2.5"} text-hjelp font-semibold text-helt-tekst`}>
+                <p className="mt-3 border-t border-helt-chip pt-2.5 text-[13px] font-semibold text-dom-rod">
                   {sumavvikLinje(hjemSumavvik)}
                 </p>
               )}
@@ -428,67 +419,58 @@ export default async function HjemPage() {
         </div>
       </SekvensDel>
 
-      {/* Andre saker kommer rett etter hovedkortet (før generelle snarveier). */}
+      {/* Andre saker rett etter hovedkortet. */}
       {andreSaker.length > 0 && (
-        <SekvensDel className="lg:col-start-2 lg:row-span-3 lg:row-start-2">
-          <div className="mb-gruppe mt-seksjon flex items-baseline justify-between lg:mt-4">
-            <h2 className="seksjonstittel text-blekk">Andre saker</h2>
-            <Link
-              href="/krav"
-              className="-my-3 py-3 text-hjelp font-semibold text-dempet transition hover:text-blekk"
-            >
-              Se alle
-            </Link>
-          </div>
-          <ul className="rounded-kort border border-kant bg-flate px-4">
+        <SekvensDel>
+          <ul className="mt-4 rounded-helt border border-kant bg-flate px-4 py-1">
             {andreSaker.map((rad, i) => {
-              const s = rad.sak;
+              const x = rad.sak;
               // En gammel utløpt frist er historikk: vis stadiet i stedet.
               const frist =
                 rad.klasse !== "historikk" ? rad.frist?.forfallsdato : undefined;
               const dager = frist ? dagerTil(frist) : null;
-              const [undertekst, hastende] =
-                s.status === "venter_pa_svar"
+              const [status, hastende] =
+                x.status === "venter_pa_svar"
                   ? ["Venter på svar", false]
                   : dager != null
                     ? [fristChipTekst(dager), erHastende(dager)]
-                    : [s.stadium ? stor(STADIUM_ETIKETT[s.stadium]) : "", false];
-              const belop = formaterBelop(s.belop_totalt);
+                    : [x.stadium ? stor(STADIUM_ETIKETT[x.stadium]) : "", false];
+              const belop = formaterBelop(x.belop_totalt);
               return (
-                <li key={s.id} className={i > 0 ? "border-t border-strek" : ""}>
+                <li key={x.id} className={i > 0 ? "border-t border-strek" : ""}>
                   <Link
-                    href={`/krav/${s.id}`}
-                    className="trykk flex min-h-[60px] items-center gap-3 py-3"
+                    href={`/krav/${x.id}`}
+                    className="trykk flex min-h-[64px] items-center gap-3 py-3"
                   >
+                    <KreditorAvatar navn={navnPa(x)} className="size-11 text-[17px]" />
                     <span className="min-w-0 flex-1">
-                      <span className="radtittel line-clamp-2 text-blekk">
-                        {navnPa(s)}
-                      </span>
-                      {undertekst && (
-                        <span
-                          className={`radtekst block ${
-                            hastende ? "font-semibold !text-dom-rod" : ""
-                          }`}
-                        >
-                          {undertekst}
+                      <span className="block truncate text-[17px] font-semibold text-blekk">{navnPa(x)}</span>
+                      {status && (
+                        <span className={`block text-[14px] ${hastende ? "font-semibold text-dom-rod" : "text-dempet"}`}>
+                          {status}
                         </span>
                       )}
                     </span>
                     {belop && (
-                      <span className="shrink-0 text-brod font-bold tabular-nums text-blekk">
-                        {belop} kr
-                      </span>
+                      <span className="shrink-0 text-[17px] font-bold tabular-nums text-blekk">{belop} kr</span>
                     )}
-                    <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
                   </Link>
                 </li>
               );
             })}
           </ul>
+          <div className="mt-1 flex justify-center">
+            <Link
+              href="/krav"
+              className="trykk inline-flex min-h-11 items-center px-3 text-hjelp font-semibold text-dempet transition hover:text-blekk"
+            >
+              Se alle
+            </Link>
+          </div>
         </SekvensDel>
       )}
 
-      {forstegang ? (
+      {forstegang && (
         <SekvensDel>
           {/* Førstegangstilstand: hva som skjer, ingen tom saksoversikt. */}
           <h2 className="seksjonstittel mt-seksjon text-blekk">Slik fungerer det</h2>
@@ -510,27 +492,8 @@ export default async function HjemPage() {
             <HjelpKnapp variant="lenke" />
           </div>
         </SekvensDel>
-      ) : (
-        <SekvensDel className="lg:col-start-1">
-          <div className="mt-seksjon grid grid-cols-2 gap-2 lg:mt-4">
-            <Snarvei ikon={FilePlus2} tittel="Legg til brev" href="/legg-til-brev" />
-            <HjelpKnapp />
-          </div>
-        </SekvensDel>
-      )}
-
-      {/* Kort forklaring ved få saker — samme flyt som finnes, ingen nye løfter. */}
-      {!forstegang && aktiveSaker.length <= 1 && (
-        <SekvensDel className="lg:col-start-1">
-          <p className="mt-5 px-1 text-hjelp leading-relaxed text-dempet">
-            Legg til brevet og sjekk tallene mot det. Vi kontrollerer støttede
-            gebyrer og frister, og lager et utkast du kan redigere. Du sender
-            brevet selv.
-          </p>
-        </SekvensDel>
       )}
       </Sekvens>
-      </div>
     </Skjermramme>
   );
 }
