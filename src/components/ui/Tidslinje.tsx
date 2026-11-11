@@ -79,14 +79,14 @@ export function TidslinjeHendelse({
         )}
         {!sisteHendelse && (
           <m.span
-            className="w-0.5 flex-1 bg-aksent opacity-35"
+            className="w-0.5 flex-1 bg-strek"
             style={{ transformOrigin: "top" }}
             variants={linjeVariant}
           />
         )}
       </div>
-      <div className="flex-1 pb-4">
-        <p className="eyebrow mb-1">{dato}</p>
+      <div className="min-w-0 flex-1 pb-4">
+        <p className="mb-1 text-meta font-semibold tabular-nums text-dempet">{dato}</p>
         {children}
       </div>
     </m.div>

@@ -29,7 +29,7 @@ export function SakensGangSeksjon({
   const [åpen, setÅpen] = useState(false);
 
   return (
-    <div className="mt-seksjon">
+    <div className="mt-1">
       <h2 className="seksjonstittel mb-gruppe text-blekk">Sakens gang</h2>
       {forhand}
 
@@ -53,7 +53,7 @@ export function SakensGangSeksjon({
           type="button"
           onClick={() => setÅpen((o) => !o)}
           aria-expanded={åpen}
-          className="trykk flex min-h-11 items-center gap-1 text-hjelp font-medium text-dempet transition hover:text-blekk"
+          className="trykk mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-kontroll border border-strek text-hjelp font-semibold text-aksent transition hover:bg-flate"
         >
           {åpen ? "Vis færre" : `Vis alle ${antall}`}
           <ChevronDown
