@@ -5,8 +5,9 @@
 // lagt påstander i personens munn, og at et delvis bestridt krav ikke blir
 // omtalt som helt bestridt. Vakten BLOKKERER ALDRI (guardrail 5): funnene gir
 // én regenerering og deretter en advarsel — brukeren bestemmer alltid.
-import { tolkKr } from "./format.ts";
+import { formaterKr, tolkKr } from "./format.ts";
 import { finnFraser } from "./tekstsok.ts";
+import { sumavvikFra } from "./sumkontroll.ts";
 
 export type VaktFakta = {
   tillatteBelop: number[]; // kroner
@@ -293,8 +294,7 @@ function sjekkFaktapastander(utkast: string, fakta: VaktFakta): VaktFunn[] {
 // --- Kontroll --------------------------------------------------------------
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 })
-    .format(n)
+  return formaterKr(n)
     .replace(/ /g, " ");
 }
 
@@ -438,6 +438,12 @@ export function byggVaktFakta(g: VaktGrunnlag): VaktFakta {
   const totalDiff = g.gebyrsjekk
     ? g.gebyrsjekk.linjer.reduce((s, l) => s + (l.differanse ?? 0), 0)
     : 0;
+  // Sumavvik (Del B.4): summen av linjene, differansen og det samlede
+  // bestridte beløpet er tall utkastet kan bruke.
+  const sumavvik = sumavvikFra(g.gebyrsjekk);
+  const sumTall = sumavvik
+    ? tall(sumavvik.sum, sumavvik.differanse, Math.round((totalDiff + sumavvik.differanse) * 100) / 100)
+    : [];
 
   const kilder: KildeOppslag = {
     brevet: {
@@ -452,7 +458,7 @@ export function byggVaktFakta(g: VaktGrunnlag): VaktFakta {
       ],
     },
     gebyrsjekken: {
-      belop: [...gebyrTall, ...(totalDiff > 0 ? [totalDiff] : []), ...tall(g.ubestridt)],
+      belop: [...gebyrTall, ...(totalDiff > 0 ? [totalDiff] : []), ...sumTall, ...tall(g.ubestridt)],
       datoer: [],
     },
     deg: { belop: deg.belop.map((b) => b.belop), datoer: datoer(deg) },

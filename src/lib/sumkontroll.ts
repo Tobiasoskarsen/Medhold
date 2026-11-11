@@ -35,3 +35,26 @@ export function kontrollerSum(
   }
   return { status: "avvik", sum, total, differanse };
 }
+
+/** Et lagret sumavvik som er et funn: brevet krever mer enn linjene blir. */
+export type Sumavvik = { sum: number; total: number; differanse: number };
+
+/**
+ * Leser `gebyrsjekk.sumkontroll` fra et lagret brev (lagres av lagreBrev når
+ * brukeren har bekreftet «Det stemmer likevel»). Bare når brevet krever MER
+ * enn hovedstol og kostnader blir (total − sum > 1 kr), er det et funn.
+ * Blir linjene mer enn totalen, er det ikke et funn mot brukeren. Gamle rader
+ * uten sumkontroll og data med feil form gir null, aldri en gjetning.
+ */
+export function sumavvikFra(gebyrsjekk: unknown): Sumavvik | null {
+  if (!gebyrsjekk || typeof gebyrsjekk !== "object") return null;
+  const s = (gebyrsjekk as { sumkontroll?: unknown }).sumkontroll;
+  if (!s || typeof s !== "object") return null;
+  const { status, sum, total } = s as Record<string, unknown>;
+  if (status !== "avvik") return null;
+  if (typeof sum !== "number" || typeof total !== "number") return null;
+  if (!Number.isFinite(sum) || !Number.isFinite(total)) return null;
+  const differanse = rund(total - sum);
+  if (differanse <= SLINGRING) return null;
+  return { sum, total, differanse };
+}

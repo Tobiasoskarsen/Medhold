@@ -13,13 +13,14 @@ import { NavLenke as Link } from "@/components/NavLenke";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
 import { anbefalVei, type VeivalgSvar, type Anbefaling } from "@/lib/veivalg";
+import { formaterKr } from "@/lib/format";
 
 export type VeivalgMål =
   | { type: "href"; href: string }
   | { type: "klikk"; onKlikk: () => void; deaktivert?: boolean };
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+  return formaterKr(n);
 }
 
 /** Lenke eller knapp, avhengig av målet — kravdetaljen navigerer direkte,
@@ -148,6 +149,7 @@ function Spørsmålsrad<T extends string>({
 export function Veivalg({
   harGebyrfunn,
   gebyrDifferanse = null,
+  sumavvikDifferanse = null,
   svarMål,
   betaleMål,
   ekstra,
@@ -162,6 +164,8 @@ export function Veivalg({
   harGebyrfunn: boolean;
   /** Sum kr over lovlig sats, kun brukt i «betale»-resultatteksten. */
   gebyrDifferanse?: number | null;
+  /** Kr i brevet som ikke går opp (sumavvik). Null = ikke noe sumavvik. */
+  sumavvikDifferanse?: number | null;
   svarMål: VeivalgMål;
   betaleMål: VeivalgMål;
   /** Ekstra innhold rendret nederst (steg 3s «Bestem senere»-lenke). */
@@ -207,11 +211,16 @@ export function Veivalg({
           ikonBg="text-aksent"
           tittel="Svar på kravet"
           undertekst={lagreForst ? "Lag et svar du kan lese gjennom, endre og sende selv." : "Lag et utkast du kan redigere og sende selv."}
-          anbefalt={harGebyrfunn}
+          anbefalt={harGebyrfunn || !!sumavvikDifferanse}
           begrunnelse={
-            gebyrDifferanse
-              ? `gebyrsjekken fant ${kr(gebyrDifferanse)} kr over maksimalsats.`
-              : "gebyrsjekken fant et beløp over maksimalsats."
+            // Gebyrfunnet har forrang i begrunnelsen (Del B.4).
+            harGebyrfunn
+              ? gebyrDifferanse
+                ? `gebyrsjekken fant ${kr(gebyrDifferanse)} kr over maksimalsats.`
+                : "gebyrsjekken fant et beløp over maksimalsats."
+              : sumavvikDifferanse
+                ? `${kr(sumavvikDifferanse)} kr i brevet går ikke opp.`
+                : undefined
           }
           mål={svarMål}
         />

@@ -4,6 +4,7 @@
 // ikke strengen slik den faktisk står i brevteksten, hopper vi over den.
 
 import type { Kostnadslinje, GebyrsjekkResultat, Kostnadstype } from "./gebyr";
+import { formaterKr } from "./format.ts";
 
 export type Annotering = {
   start: number; // indeks i brevteksten
@@ -23,7 +24,7 @@ const KOSTNADSNAVN: Record<Kostnadstype, string> = {
 };
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+  return formaterKr(n);
 }
 
 /**

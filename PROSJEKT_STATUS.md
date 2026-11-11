@@ -3,6 +3,40 @@
 Løpende status for implementeringen av `MEDHOLD_ARBEIDSORDRE.md`. Oppdateres
 etter hver fase.
 
+## Funn og tone (R7) – 11. november 2026
+
+`MEDHOLD_FUNN_OG_TONE_ARBEIDSORDRE.md`, del A–F, på grenen `claude/funn-og-tone` fra `774bc07`. Én commit per del. Ingen merge eller deploy.
+
+- **A:** `formaterKr` gir «2 340» og «3 108,90». Alle lokale `kr()` bruker den, også prompten og vakten, og satsene viser 187,50. `normaliserBelopITekst` retter «3 108,9 kr» i ferdig modelltekst før vakter og lagring.
+- **B:** `sumavvikFra` leser lagret `sumkontroll`. `DomMiniSum` vises på saken, brevvisningen og i kontrollsteget. Hjem får en egen linje, og Saker-listen får §. Blir linjene mer enn totalen, vises bare en nøytral setning. Innsigelsen kan bestride bare differansen og ber om spesifikasjon.
+- **C:** Migrasjon `0032_statusregel_brevdato.sql` og speilet regel i `statusVedNyttBrev`. Samme brev lagt inn på nytt, eller et eldre brev, lar en ventende sak vente. Duplikatadvarselen står i «Stemmer opplysningene?».
+- **D:** Fristchipen på Hjem er rød innen ti dager, som i Saker.
+- **E:** Kontrollsteget har funnkortet øverst, én setning og alle linjer med pill. Samme piller brukes på brevvisningen. «Merknad» er borte fra UI-et.
+- **F:** Ett `FORBEHOLD` per skjerm. «Hva er kontrollert?» er i vanlig språk. Forklaringen er to setninger, og gamle skjemaforklaringer bygges på nytt ved visning.
+
+**Migrasjon 0032: kjørt i test, ikke i produksjon.** Kjørt i «medhold test» 11. november. `supabase/kontroll/for_0032.sql` viste versjon 0029 før og 0032 etter, med uendrede rettigheter (anon false, authenticated true) og uendret antall ventende saker (1). Produksjon følger release-porten. Se `supabase/dokumentasjon/0032_statusregel_brevdato.md`.
+
+**Kontroller:** 432 enhetstester og 153 DB-/modultester er grønne. Typekontroll, lint uten feil og produksjonsbygg er bestått. `grep -rn "maximumFractionDigits: 2 })" src` treffer bare `format.ts`; annotering linje 40 er flerlinjet og uendret. Paritetstesten kjører hele `lagre_brev` for 54 kombinasjoner pluss Nordkapp-tilfellene, inkludert sendt 23.30 UTC som er neste dag i norsk tid.
+
+**Valg tatt underveis:**
+1. **A.3:** Normaliseringen ligger i samme rensesteg som `fjernStjerner`, både i `genererTekst` og i strømmeruten. Den dekker begge veier og fasitskriptet, og rører aldri tekst brukeren redigerer.
+2. **E.1, forklaringer:** Forklaringen under en linje vises bare for «Kan være for høyt». Et «over»-funn forklares i funnkortet, og det som ikke sjekkes, nevnes i setningen. Uten kostnadslinjer står setningen «Ingen kostnadslinjer å kontrollere …» som før, så det aldri blir en friskmelding.
+3. **E.1, navn:** Ukjente linjer av andre typer enn rente, rettsgebyr og annet får kostnadstypens etikett. Flere navn får stor forbokstav bare på det første, for eksempel «Renter og rettsgebyr …».
+4. **B.2, Hjem:** Linjen om beløpskontroll vises uansett stadium. Gebyrlinjen vises som før bare når stadiet støtter utkast.
+5. **B.4, kilde:** Sumavviket leses fra den lagrede `gebyrsjekk.sumkontroll`, så prompten, omfanget, vakten og fasitskriptet bruker samme kilde uten nye felt. Uten sumavvik er prompten byte-identisk. Few-shot-eksemplet for delvis innsigelse er fortsatt gebyreksemplet.
+6. **C.3:** De nye inputene til `statusVedNyttBrev` er valgfrie. Utelatt betyr «nyest» og intet sendt svar, altså som før.
+7. **C.4, saksnummer og dato:** Brevet har ikke eget saksnummer, så sakens saksnummer brukes for det lagrede brevet. «Lagt inn {dato}» er brevets `opprettet` i norsk tid.
+8. **C.4, avkrysningen:** Avkrysningen er koblet til samme bekreftelse som stegene. Velges en sak med et likt brev først i del 3, går flyten tilbake til del 1 og viser advarselen. Lenken åpnes i ny fane, så arbeidet ikke forkastes.
+9. **F.1:** Forbeholdet ligger i `KontrollOmfang`, rett over «Hva er kontrollert?». Det står derfor én gang på brevvisningen, i kontrollsteget og på saken. Veier ut beholder «Bekreft viktige ting med rett instans.» etter forbeholdet. Bunnteksten på Meg og personvernsiden er ikke vurderingsskjermer og er urørt.
+10. **F.3:** For brevtyper uten fristkontroll står `FRIST_IKKE_KONTROLLERT` fortsatt over forbeholdet.
+11. **F.4:** Gamle forklaringer bygges på nytt bare ved visning på brevvisningen, med sakens saksnummer. Ingen data endres.
+12. **Endrede testforventninger:** «1 288,5» er blitt «1 288,50» i `format.test.ts` og `ux-r4-client.test.mjs`. S1-D-testen forventer «Vi fant ikke totalbeløpet» i stedet for «ukjent». Ingen forventninger for gebyr, frist, fasit eller vakt er endret.
+
+**Ikke gjort / begrensninger:**
+- **Skjermbilder** i `docs/design/r7/` er tatt i Preview mot «medhold test» (390 px, lys og mørk): Hjem, saken (38), brevvisningen (38) og kontrollsteget (37 og 38). Se [README](docs/design/r7/README.md). Hjem-linjen om beløpskontroll vises ikke i bildene, fordi saken for testbrev 38 venter på svar og ikke er viktigste sak.
+- Utkastet med sumavvik og duplikatadvarselen er dekket av tester, men ikke fotografert.
+- I kontrollsteget står gebyrfunnet både øverst (`DomMini`) og i den lukkede «Se gebyrdetaljer og kilder» (full `Dom` med utregning).
+
 ## Design R6 – 11. november 2026
 
 Siste justering til PR #69: registrert frist foran separat oppfølging, synlig «Legg til», sendt-ikon med 9,42:1 / 11,01:1 kontrast og egen historikkstatus. 404 enhetstester, 147 lokale DB-/modultester, bygg/TypeScript og lint uten nye advarsler. Fysisk mobil, stor tekst/200 % zoom og VoiceOver gjenstår eksplisitt. [Oppdaterte bilder og kontrollrapport](docs/design/r6/JUSTERINGER.md). Ingen produksjonsdeploy; Vercel-preview kan oppdateres ved push.
@@ -2771,10 +2805,45 @@ Samlet liste over påstander/tekster som bør sees av advokat før bred lanserin
   kortundertekstene («Vi skriver brevet — du godkjenner før noe sendes» /
   «Bruk gebyrfunnet — vi skriver brevet») og veier-ut sin nye ingress («Tre
   helt vanlige måter å håndtere et krav på …»).
-- **`FORKLARING_DISCLAIMER`** (`src/lib/brand.ts`): «Automatisk forklaring —
-  ikke profesjonell rådgivning.» — ny, fast linje som nå er ENESTE
-  disclaimer under brevforklaringen (AI-en har ikke lenger lov til å
-  formulere sin egen, se analyse-kort-seksjonen under).
+- **`FORBEHOLD`** (`src/lib/brand.ts`, funn og tone F.1): «Medhold sjekker
+  gebyrer og frister mot loven, men er ikke en advokat. Du bestemmer og sender
+  selv.» Erstatter de tidligere forbeholdene («Automatisk forklaring/utkast/
+  kontroll — ikke profesjonell rådgivning», «Automatisk beløpskontroll — ikke
+  juridisk rådgivning …», «Generell veiledning — ikke profesjonell
+  rådgivning»). Vises én gang per skjerm som gir en vurdering: brevvisningen,
+  kontrollsteget, saken, utkastsiden, Veier ut (der fortsatt med «Bekreft
+  viktige ting med rett instans.») og satsene. E-postene har sin egen tekst.
+- **«Hva er kontrollert?»** (`src/lib/kontrollomfang.ts`, F.3): «Vi sjekker
+  hvert gebyr mot maksimalsatsen i inkassoforskriften. Vi sjekker ikke om
+  kreditor har lov til å kreve alle gebyrene samtidig, og vi sjekker ikke
+  renter ennå.» / «Vi sjekker fristen i purringer, inkassovarsler og
+  betalingsoppfordringer når brevet har dato. Fristen sier ikke om kravet er
+  riktig.» / «Vi varsler om noen alvorlige tegn, som forliksråd og namsmann.
+  Får du ikke varsel, betyr ikke det at alt er i orden.»
+- **Forklaringsmalen** (`src/lib/brevforklaring.ts`, F.4): «Dette er {type}
+  fra {avsender}, datert {dato}.» / «De krever {beløp} kr. Saksnummeret er
+  {nr}.» / «Vi fant ikke totalbeløpet i brevet.» Brevtypene med artikkel, for
+  eksempel «et brev om tvangsinndrivelse» for namsmann.
+- **Spørsmål til advokaten:** Er ett forbehold per skjerm, pluss «Hva er
+  kontrollert?», nok?
+- **Beløpskontroll** (funn og tone B.2–B.4): funnkortet «Beløpskontroll» /
+  «{diff} kr uten forklaring» / «Brevet krever {total} kr, men hovedstol og
+  kostnader blir {sum} kr. Be kreditor forklare differansen før du betaler
+  den.», Hjem-linjen «Beløpskontroll: {diff} kr uten forklaring», den nøytrale
+  setningen «Hovedstol og kostnader blir {sum} kr, mer enn de {total} kr
+  brevet krever. Betal aldri mer enn brevet krever.», valgene «Bare beløpet som
+  ikke går opp ({diff} kr)» og «Gebyret og beløpet som ikke går opp ({kr}
+  kr)», Veivalg-begrunnelsen «Anbefalt: {diff} kr i brevet går ikke opp.», og
+  promptregelen «Be om en spesifikasjon av differansen på {diff} kr. Skriv at
+  denne delen er omtvistet til den er forklart. Skriv ALDRI at kreditor har
+  regnet feil med vilje.» med faktalinjen «Brevet krever {total} kr, men
+  hovedstol og kostnader blir {sum} kr. Differansen er {diff} kr.»
+- **Gebyrsjekken i kontrollsteget** (E.1): setningene «Ett gebyr er høyere enn
+  loven tillater.», «Ingen gebyrer er over grensen for alle saker, men ett kan
+  være for høyt.», «Gebyrene vi kunne sjekke, er innenfor det loven tillater.»,
+  «Vi kunne ikke sjekke noen av kostnadene i dette brevet.», «{Navn} sjekker vi
+  ikke ennå.» og pillene «Innenfor», «{diff} kr for mye», «Kan være for høyt»
+  og «Ikke sjekket».
 - **Oversiktspanelets etiketter** (Hjem, `src/app/(app)/page.tsx`): «aktive
   saker» / «samlet krav» / «over lovlig sats» + historikklinjen «Så langt: N
   medhold · N avtaler · N oppgjort» — første tallbaserte oppsummering av

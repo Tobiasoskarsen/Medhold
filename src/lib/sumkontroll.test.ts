@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { kontrollerSum } from "./sumkontroll.ts";
+import { kontrollerSum, sumavvikFra } from "./sumkontroll.ts";
 
 test("testbrev 13 med riktige tall (1250 + 38 = 1288) → stemmer", () => {
   assert.deepEqual(kontrollerSum(1288, 1250, [{ belop: 38 }]), {
@@ -53,4 +53,33 @@ test("differanse på 1,01 kr → avvik", () => {
 
 test("ingen kostnadslinjer: total = hovedstol → stemmer", () => {
   assert.equal(kontrollerSum(500, 500, []).status, "stemmer");
+});
+
+// --- sumavvikFra (Del B.1) -----------------------------------------------
+
+const lagret = (sumkontroll: unknown) => ({ satsGyldigFra: "2026-01-01", linjer: [], antallOver: 0, antallMuligOver: 0, sumkontroll });
+
+test("testbrev 38: brevet krever 100 kr mer enn linjene blir", () => {
+  const sk = kontrollerSum(4912.3, 4512.3, [{ belop: 300 }]);
+  assert.deepEqual(sumavvikFra(lagret({ ...sk, bekreftetLikevel: true })), { sum: 4812.3, total: 4912.3, differanse: 100 });
+});
+
+test("stemmer, ukjent og innenfor slingringen gir null", () => {
+  assert.equal(sumavvikFra(lagret({ status: "stemmer", sum: 100, total: 100 })), null);
+  assert.equal(sumavvikFra(lagret({ status: "ukjent" })), null);
+  assert.equal(sumavvikFra(lagret({ status: "avvik", sum: 100, total: 101, differanse: 1 })), null);
+});
+
+test("linjene blir mer enn totalen: ikke et funn", () => {
+  assert.equal(sumavvikFra(lagret({ status: "avvik", sum: 1288, total: 289, differanse: -999 })), null);
+});
+
+test("gammel rad uten sumkontroll og ugyldig form gir null", () => {
+  assert.equal(sumavvikFra(lagret(undefined)), null);
+  assert.equal(sumavvikFra({ satsGyldigFra: "2026-01-01", linjer: [] }), null);
+  assert.equal(sumavvikFra(null), null);
+  assert.equal(sumavvikFra("avvik"), null);
+  assert.equal(sumavvikFra(lagret({ status: "avvik", sum: "4812,30", total: 4912.3 })), null);
+  assert.equal(sumavvikFra(lagret({ status: "avvik", sum: Number.NaN, total: 4912.3 })), null);
+  assert.equal(sumavvikFra(lagret("avvik")), null);
 });

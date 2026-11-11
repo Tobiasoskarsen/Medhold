@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
 import { kr } from "@/lib/gebyrfunn-visning";
 import { VeierUtFlyt } from "./VeierUtFlyt";
+import { FORBEHOLD } from "@/lib/brand";
 
 export default async function VeierUtPage({
   params,
@@ -74,8 +75,7 @@ export default async function VeierUtPage({
           sistEndret={sak.sist_endret as string}
         />
         <p className="mt-4 text-meta text-dempet">
-          Generell veiledning — ikke profesjonell rådgivning. Bekreft viktige
-          ting med rett instans.
+          {FORBEHOLD} Bekreft viktige ting med rett instans.
         </p>
       </SekvensDel>
       </Sekvens>

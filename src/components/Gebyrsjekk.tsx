@@ -7,27 +7,17 @@ import {
   SATSVERSJONER,
   utregningRaderForLinje,
   type GebyrsjekkResultat,
-  type Vurdering,
 } from "@/lib/gebyr";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { Kort } from "@/components/ui/Kort";
-import { Pill } from "@/components/ui/Pill";
 import { Dom } from "@/components/Dom";
 import { Utregning } from "@/components/Utregning";
 import { formaterDato } from "@/lib/dato";
-
-const PILL: Record<
-  Vurdering,
-  { tekst: string; variant: "noytral" | "varsel" | "suksess" | "feil" }
-> = {
-  innenfor: { tekst: "Innenfor beløpsgrensen", variant: "suksess" },
-  mulig_over: { tekst: "Sjekk denne", variant: "varsel" },
-  over: { tekst: "Over maksimalsats", variant: "feil" },
-  ukjent: { tekst: "Ikke kontrollert", variant: "noytral" },
-};
+import { formaterKr } from "@/lib/format";
+import { VURDERING_PILL } from "@/lib/gebyrfunn-visning";
 
 function kr(belop: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(belop);
+  return formaterKr(belop);
 }
 
 export function Gebyrsjekk({
@@ -116,7 +106,7 @@ export function Gebyrsjekk({
 
           <ul className={harOver ? "space-y-3" : "mt-3 space-y-3"}>
             {rest.map((l, i) => {
-              const pill = PILL[l.vurdering];
+              const pill = VURDERING_PILL[l.vurdering];
               return (
                 <li
                   key={i}
@@ -127,7 +117,9 @@ export function Gebyrsjekk({
                       {KOSTNADSTYPE_ETIKETT[l.linje.type]}
                       <span className="text-dempet"> · {kr(l.linje.belop)} kr</span>
                     </span>
-                    <Pill variant={pill.variant}>{pill.tekst}</Pill>
+                    <span className={`inline-block shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${pill.klasse}`}>
+                      {pill.tekst(l)}
+                    </span>
                   </div>
                   {l.vurdering !== "innenfor" && (
                     <p className="mt-1.5 text-hjelp text-dempet">{l.forklaring}</p>
@@ -152,10 +144,6 @@ export function Gebyrsjekk({
           Brevet har ingen dato. Vi har brukt satsene som gjelder i dag.
         </p>
       )}
-      <p className="mt-3 px-1 text-[11px] leading-relaxed text-dempet">
-        Automatisk beløpskontroll — ikke juridisk rådgivning. Vi har ikke
-        kontrollert om disse kostnadene kan kreves samlet.
-      </p>
     </div>
   );
 }

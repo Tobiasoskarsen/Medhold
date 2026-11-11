@@ -3,10 +3,12 @@ import { ChevronLeft } from "lucide-react";
 import { Kort, Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
 import { satserForDato } from "@/lib/gebyr";
 import { formaterDato, idagOslo } from "@/lib/dato";
+import { formaterKr } from "@/lib/format";
+import { FORBEHOLD } from "@/lib/brand";
 
-/** Norsk beløp med tusenskille, uten øre. */
+/** Norsk beløp med tusenskille, øre med to sifre når det finnes. */
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 }).format(n);
+  return formaterKr(n);
 }
 
 /**
@@ -178,9 +180,7 @@ export default function SatserPage() {
             </a>
             .
           </p>
-          <p className="mt-1 text-[11px] text-dempet">
-            Automatisk kontroll — ikke profesjonell rådgivning.
-          </p>
+          <p className="mt-1 text-meta text-dempet">{FORBEHOLD}</p>
         </SekvensDel>
       </Sekvens>
     </Skjermramme>

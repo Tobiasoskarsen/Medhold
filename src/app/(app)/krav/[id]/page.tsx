@@ -17,7 +17,8 @@ import {
   SekvensDel,
 } from "@/components/ui";
 import { VenterPaSvarUtvidelse } from "./VenterPaSvarUtvidelse";
-import { DomMini, DomMiniFrist, FunnListe } from "@/components/Dom";
+import { DomMini, DomMiniFrist, DomMiniSum, FunnListe } from "@/components/Dom";
+import { sumavvikFra } from "@/lib/sumkontroll";
 import { Veivalg } from "@/components/Veivalg";
 import { Alvorsvarsel } from "@/components/Alvorsvarsel";
 import { Utregning } from "@/components/Utregning";
@@ -76,6 +77,7 @@ import { FristKnapp } from "./FristKnapp";
 import { relevantFrist } from "@/lib/prioritet";
 import { gjeldendeUtfall, utfallVisning } from "@/lib/utfall";
 import { fristStatus } from "@/lib/saksstatus";
+import { formaterKr } from "@/lib/format";
 
 type BrevRad = {
   id: string;
@@ -147,7 +149,7 @@ function oppfolgingTekst(
 }
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+  return formaterKr(n);
 }
 
 export default async function KravDetaljPage({
@@ -274,6 +276,8 @@ export default async function KravDetaljPage({
   const sisteBrev = brevListe[0];
   const overDiff = overTotal(sisteBrev?.gebyrsjekk ?? null);
   const harOverGebyr = overDiff > 0;
+  // Beløpskontroll (Del B): brevet krever mer enn hovedstol og kostnader blir.
+  const sumavvik = sumavvikFra(sisteBrev?.gebyrsjekk ?? null);
 
   // Alvorsgrense (§B.4): MED FORRANG over Veivalg, uansett stadium. Signalordet
   // som faktisk trigget den lagrede `alvorlig`-verdien slås opp på nytt fra
@@ -509,6 +513,7 @@ export default async function KravDetaljPage({
   const harFunnListe =
     (harOverGebyr && !!sisteBrev?.gebyrsjekk) ||
     (harFristfunn && !!sisteBrev?.fristfunn) ||
+    !!sumavvik ||
     hovedstolAvvik.length > 0;
 
   return (
@@ -668,6 +673,7 @@ export default async function KravDetaljPage({
               className="mt-1 [&>h2]:sr-only"
               harGebyrfunn={harOverGebyr}
               gebyrDifferanse={overDiff}
+              sumavvikDifferanse={sumavvik?.differanse ?? null}
               svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
               betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
             />
@@ -692,6 +698,9 @@ export default async function KravDetaljPage({
                 historisk={sisteBrevGammelt}
                 brevdato={sisteBrevDato}
               />
+            )}
+            {sumavvik && (
+              <DomMiniSum avvik={sumavvik} historisk={sisteBrevGammelt} brevdato={sisteBrevDato} />
             )}
             {harFristfunn && sisteBrev?.fristfunn && (
               <DomMiniFrist

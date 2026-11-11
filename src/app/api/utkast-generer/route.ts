@@ -14,6 +14,7 @@ import {
 import { kontrollerUtkast, type VaktFunn } from "@/lib/utkast-vakt";
 import { klassifiserAiFeil, vurderStopp, type AiFeil } from "@/lib/ai-svar";
 import { logg } from "@/lib/logg";
+import { normaliserBelopITekst } from "@/lib/format";
 import { forsokId, skalBelastes } from "@/lib/kvote";
 import { startKvote } from "@/lib/kvote-server";
 import { maskerFodselsnummer } from "@/lib/maskering";
@@ -154,7 +155,9 @@ export async function POST(req: NextRequest) {
           logg("error", "utkast-generer", "strom_feilet", { feil: type });
           return { feil: type };
         }
-        const tekst = fjernStjerner(fullt);
+        // «3 108,9 kr» rettes før vaktene og lagringen (Del A.3). Brukerens
+        // egne redigeringer lagres via en annen vei og røres ikke.
+        const tekst = normaliserBelopITekst(fjernStjerner(fullt));
         return tekst ? { tekst } : { feil: "ugyldig_struktur" };
       }
 

@@ -20,11 +20,13 @@ import {
 import { kontrollerUtkast, type VaktFakta, type VaktFunn } from "./utkast-vakt.ts";
 import { vurderStopp } from "./ai-svar.ts";
 import { BRUKER_REGEL, DOKUMENT_REGEL, avgrens } from "./dokumentdata.ts";
+import { formaterKr, normaliserBelopITekst } from "./format.ts";
+import { sumavvikFra } from "./sumkontroll.ts";
 
 export type Omfang = "delvis" | "helt";
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+  return formaterKr(n);
 }
 
 /**
@@ -129,9 +131,19 @@ export function gebyrDifferanse(gs: GebyrsjekkResultat | null): number {
 }
 
 /**
+ * Det personen bestrider ved delvis innsigelse: beløpet over sats pluss et
+ * sumavvik som ikke er forklart (Del B.4). Begge leses fra lagret gebyrsjekk.
+ */
+export function bestridtBelop(gs: GebyrsjekkResultat | null): number {
+  const sum = sumavvikFra(gs)?.differanse ?? 0;
+  return Math.round((gebyrDifferanse(gs) + sum) * 100) / 100;
+}
+
+/**
  * Omfanget som faktisk gjelder (kode beslutter): «delvis» er bare mulig for
- * en innsigelse når gebyrsjekken fant noe over sats. Uten gebyrfunn er en
- * innsigelse alltid «helt»; andre utkasttyper bestrider ikke kravet (null).
+ * en innsigelse når gebyrsjekken fant noe over sats eller beløpet ikke går
+ * opp. Ellers er en innsigelse alltid «helt»; andre utkasttyper bestrider
+ * ikke kravet (null).
  */
 export function gjeldendeOmfang(
   type: UtkastType,
@@ -139,16 +151,19 @@ export function gjeldendeOmfang(
   valgt: Omfang | null | undefined,
 ): Omfang | null {
   if (type !== "innsigelse") return null;
-  if ((gs?.antallOver ?? 0) === 0) return "helt";
+  if ((gs?.antallOver ?? 0) === 0 && !sumavvikFra(gs)) return "helt";
   return valgt === "helt" ? "helt" : "delvis";
 }
 
-/** Den ubestridte delen ved delvis innsigelse: total minus beløpet over sats. */
+/**
+ * Den ubestridte delen ved delvis innsigelse: total minus beløpet over sats
+ * og minus et uforklart sumavvik.
+ */
 export function ubestridtDel(
   total: number | null,
   gs: GebyrsjekkResultat | null,
 ): number | null {
-  const diff = gebyrDifferanse(gs);
+  const diff = bestridtBelop(gs);
   if (total === null || diff <= 0) return null;
   const rest = Math.round((total - diff) * 100) / 100;
   return rest > 0 ? rest : null;
@@ -188,7 +203,9 @@ export function byggPrompt(g: UtkastGrunnlag): {
   const detalj = g.detaljer.trim();
   const navnTrimmet = g.navn.trim();
   const delvis = g.type === "innsigelse" && g.omfang === "delvis";
-  const diff = gebyrDifferanse(g.gebyrsjekk);
+  const gebyrdiff = gebyrDifferanse(g.gebyrsjekk);
+  const sumavvik = sumavvikFra(g.gebyrsjekk);
+  const diff = bestridtBelop(g.gebyrsjekk);
   const ubestridt = ubestridtDel(g.belopTotalt, g.gebyrsjekk);
 
   const gebyrRegel = gebyrFakta
@@ -204,13 +221,29 @@ export function byggPrompt(g: UtkastGrunnlag): {
       ? `Personen bestrider kun ${kr(diff)} kr. Den ubestridte delen er ${kr(ubestridt)} kr.`
       : `Personen bestrider kun ${kr(diff)} kr.`
     : "";
+  // Hva som bestrides. Uten sumavvik er teksten den samme som før.
+  const bestridtHva = sumavvik
+    ? gebyrdiff > 0
+      ? "beløpet over maksimalsatsen og beløpet i kravet som ikke går opp"
+      : "beløpet i kravet som ikke går opp"
+    : "beløpet over maksimalsatsen";
+  // Sumavvik (Del B.4): be om en spesifikasjon, aldri anklage kreditor.
+  const sumFakta =
+    delvis && sumavvik
+      ? `Brevet krever ${kr(sumavvik.total)} kr, men hovedstol og kostnader blir ${kr(sumavvik.sum)} kr. Differansen er ${kr(sumavvik.differanse)} kr.`
+      : "";
+  const sumRegel =
+    delvis && sumavvik
+      ? `
+- Be om en spesifikasjon av differansen på ${kr(sumavvik.differanse)} kr. Skriv at denne delen er omtvistet til den er forklart. Skriv ALDRI at kreditor har regnet feil med vilje.`
+      : "";
   const omfangRegel = delvis
     ? `
-- Brevet bestrider KUN ${kr(diff)} kr, beløpet over maksimalsatsen. ${
+- Brevet bestrider KUN ${kr(diff)} kr, ${bestridtHva}. ${
         ubestridt !== null
           ? `Skriv at personen betaler den ubestridte delen på ${kr(ubestridt)} kr`
           : "Skriv at personen betaler den ubestridte delen"
-      }, og be om et korrigert krav. Skriv ALDRI at personen ikke betaler kravet.`
+      }, og be om et korrigert krav. Skriv ALDRI at personen ikke betaler kravet.${sumRegel}`
     : "";
 
   // Avdragsforslag fra koden (Veier ut → avdragshjelperen). Kun for
@@ -262,6 +295,7 @@ ${BRUKER_REGEL}
     g.originalTekst ? `Brevet det svares på:\n\n${avgrens(g.originalTekst)}` : null,
     gebyrFakta ? `Fakta fra Medhold: ${gebyrFakta}` : null,
     omfangFakta ? `Fakta fra Medhold: ${omfangFakta}` : null,
+    sumFakta ? `Fakta fra Medhold: ${sumFakta}` : null,
     avdragFakta ? `Fakta fra Medhold: ${avdragFakta}` : null,
     detalj
       ? `Det personen selv oppgir:\n${avgrens(detalj, "brukerens_opplysninger")}`
@@ -333,7 +367,8 @@ async function genererTekst(
   if (vurderStopp(svar.stop_reason)) return null;
   const blokk = svar.content.find((b) => b.type === "text");
   if (!blokk || blokk.type !== "text" || !blokk.text.trim()) return null;
-  return fjernStjerner(blokk.text);
+  // «3 108,9 kr» rettes før vaktene ser teksten (Del A.3).
+  return normaliserBelopITekst(fjernStjerner(blokk.text));
 }
 
 /**

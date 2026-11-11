@@ -25,6 +25,7 @@ import type { AvdragsForslag } from "@/lib/avdrag";
 import { hentUtkastStatus, lagreRedigertUtkast, markerUtkastSendt } from "./actions";
 import { maskerFodselsnummer } from "@/lib/maskering";
 import { useUlagretVern } from "@/components/useUlagretVern";
+import { FORBEHOLD } from "@/lib/brand";
 
 // Lengste markør avgjør hvor mange tegn i halen av bufferet som må holdes
 // tilbake (kan være et påbegynt, men ennå ikke fullstendig mottatt markørtegn).
@@ -84,6 +85,7 @@ export function UtkastFlyt({
   typeValgt,
   harOverGebyr,
   gebyrDiff,
+  sumDiff = 0,
   ubestridt,
   avdrag,
   navnStart,
@@ -102,7 +104,9 @@ export function UtkastFlyt({
   harOverGebyr: boolean;
   /** Sum kr over lovlig sats i brevet (0 = ingen gebyrfunn). */
   gebyrDiff: number;
-  /** Totalen minus gebyrDiff; null når totalen er ukjent eller ingen funn. */
+  /** Kr brevet krever utover hovedstol og kostnader (0 = ikke noe sumavvik). */
+  sumDiff?: number;
+  /** Totalen minus det som bestrides; null når totalen er ukjent eller ingen funn. */
   ubestridt: number | null;
   avdrag?: AvdragsForslag | null;
   navnStart: string;
@@ -114,10 +118,17 @@ export function UtkastFlyt({
   const [visTyper, setVisTyper] = useState(!typeValgt);
   const [detaljer, setDetaljer] = useState("");
   const [navn, setNavn] = useState(navnStart);
-  // «Hva er du uenig i?» (§D.1): kun for innsigelse med gebyrfunn, og da er
-  // «bare gebyret» forhåndsvalgt. Uten gebyrfunn er omfanget alltid «helt».
+  // «Hva er du uenig i?» (§D.1, Del B.4): kun for innsigelse med gebyrfunn
+  // eller sumavvik, og da er den delvise varianten forhåndsvalgt. Ellers er
+  // omfanget alltid «helt».
   const [omfangValg, setOmfangValg] = useState<Omfang>("delvis");
-  const visOmfang = type === "innsigelse" && gebyrDiff > 0;
+  const visOmfang = type === "innsigelse" && (gebyrDiff > 0 || sumDiff > 0);
+  const delvisEtikett =
+    sumDiff > 0
+      ? gebyrDiff > 0
+        ? `Gebyret og beløpet som ikke går opp (${kr(Math.round((gebyrDiff + sumDiff) * 100) / 100)} kr)`
+        : `Bare beløpet som ikke går opp (${kr(sumDiff)} kr)`
+      : `Bare gebyret som er for høyt (${kr(gebyrDiff)} kr)`;
   const omfang: Omfang = visOmfang ? omfangValg : "helt";
   // Omfanget utkastet faktisk ble laget med (til betalingsmerknaden).
   const [omfangBrukt, setOmfangBrukt] = useState<Omfang | null>(lagret?.vakt_fakta?.omfang ?? null);
@@ -497,7 +508,7 @@ export function UtkastFlyt({
               <div className="mt-1.5 flex flex-col gap-2">
                 {(
                   [
-                    ["delvis", `Bare gebyret som er for høyt (${kr(gebyrDiff)} kr)`],
+                    ["delvis", delvisEtikett],
                     ["helt", "Hele kravet"],
                   ] as const
                 ).map(([verdi, etikett]) => (
@@ -638,9 +649,7 @@ export function UtkastFlyt({
                   ? "Dette er teksten du registrerte som sendt. Den kan ikke endres."
                   : `Lagre endringene før du lukker siden. Ulagret tekst finnes bare i denne fanen. Du sender brevet selv${avsender ? ` til ${avsender}` : ""}.`}
               </p>
-              <p className="mt-1.5 text-meta text-dempet">
-                Automatisk utkast — ikke profesjonell rådgivning.
-              </p>
+              <p className="mt-1.5 text-meta text-dempet">{FORBEHOLD}</p>
 
               {omfangBrukt === "delvis" && ubestridt !== null && (
                 <Kort className="mt-4">

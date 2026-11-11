@@ -9,8 +9,9 @@ export const APP_VERSJON = "1.0";
 // E-post for support/hjelp. Byttes til en dedikert supportadresse senere.
 export const SUPPORT_EPOST = "tobsenfire@gmail.com";
 
-// Fast, kodebestemt linje under AI-forklaringen av et brev (analyse-kort-
-// ordren §1.2) — disclaimeren er IKKE lenger en del av AI-teksten selv, slik
-// at den er identisk og garantert til stede overalt forklaringen vises.
-export const FORKLARING_DISCLAIMER =
-  "Automatisk forklaring — ikke profesjonell rådgivning.";
+// Det ene forbeholdet (Del F.1). Vises én gang per skjerm som gir en
+// vurdering, rett over «Hva er kontrollert?» der den finnes. Erstatter de
+// tidligere forbeholdene i forklaringen, gebyrsjekken, utkastet, Veier ut og
+// satsene. E-postene har sin egen tekst.
+export const FORBEHOLD =
+  "Medhold sjekker gebyrer og frister mot loven, men er ikke en advokat. Du bestemmer og sender selv.";

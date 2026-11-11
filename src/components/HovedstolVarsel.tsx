@@ -13,9 +13,10 @@ import { ChevronDown, TriangleAlert } from "lucide-react";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { formaterKortDato } from "@/lib/dato";
 import type { HovedstolAvvik } from "@/lib/hovedstol-konsistens";
+import { formaterKr } from "@/lib/format";
 
 function kr(n: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(n);
+  return formaterKr(n);
 }
 
 export function HovedstolVarsel({

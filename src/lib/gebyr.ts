@@ -12,6 +12,7 @@
 // Satsversjon med kilde-URL (se §9). Eksisterende versjoner redigeres ikke.
 
 import { idagOslo } from "./dato.ts";
+import { formaterKr } from "./format.ts";
 
 /** Én versjon av satstabellen, gyldig i et avgrenset tidsrom. */
 export type Satsversjon = {
@@ -137,7 +138,7 @@ const SLINGRING = 1;
 
 /** Norsk beløp med tusenskille, opptil to desimaler (for tekst). */
 function kr(belop: number): string {
-  return new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 2 }).format(belop);
+  return formaterKr(belop);
 }
 
 /** ISO-dato → kort norsk «1.1.2026». */

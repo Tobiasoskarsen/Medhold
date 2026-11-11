@@ -6,7 +6,7 @@ import { ViewOvergangProvider } from "@/components/ViewOvergang";
 
 /**
  * Delt ramme for de innloggede skjermene: auth-vakt og bunn-navigasjon.
- * Forbeholdet «ikke profesjonell rådgivning» står der appen gir vurderinger
+ * Forbeholdet (FORBEHOLD i lib/brand.ts) står én gang der appen gir vurderinger
  * (brevforklaring, gebyrsjekk, utkast, Veiene ut), ikke fast på alle skjermer.
  */
 export default async function AppLayout({

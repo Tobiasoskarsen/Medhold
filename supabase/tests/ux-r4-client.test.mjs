@@ -276,7 +276,7 @@ for (const [brevParam, expected] of [["eldre-brev", "eldre-brev"], [undefined, "
     }; if (expected === "NOT_FOUND") {
         await assert.rejects(Page(args), /NOT_FOUND/);
         return;
-    } const tree = await Page(args); const pay = nodes(tree).find(n => n.type === "pay"); assert.equal(pay.props.brevId, expected); assert.equal(pay.props.total, 1288.5); const eyebrow = nodes(tree).find(n => n.type === "p" && n.props.className === "eyebrow mb-1").props.children; assert.match(eyebrow, /1\D288,5 kr/); assert.ok(filtre.some(f => f[0] === "brev" && f[1] === "sak_id" && f[2] === "sak")); assert.ok(filtre.some(f => f[0] === "brev" && f[1] === "bruker_id" && f[2] === "bruker")); });
+    } const tree = await Page(args); const pay = nodes(tree).find(n => n.type === "pay"); assert.equal(pay.props.brevId, expected); assert.equal(pay.props.total, 1288.5); const eyebrow = nodes(tree).find(n => n.type === "p" && n.props.className === "eyebrow mb-1").props.children; assert.match(eyebrow, /1\D288,50 kr/); assert.ok(filtre.some(f => f[0] === "brev" && f[1] === "sak_id" && f[2] === "sak")); assert.ok(filtre.some(f => f[0] === "brev" && f[1] === "bruker_id" && f[2] === "bruker")); });
 test("R4: ukjent lagringsresultat omtales aldri som sikkert ulagret", () => {
     const { Veivalg } = load("src/components/Veivalg.tsx", uiMocks);
     const maal = {
