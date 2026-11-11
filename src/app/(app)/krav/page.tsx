@@ -31,20 +31,6 @@ type SakRad = {
   hovedstol_avvik: HovedstolAvvik[] | null;
 };
 
-/** «{N} trenger handling · {M} venter på svar · {K} avsluttet» — ledd med 0 utelates. */
-function oversiktsstripe(saker: SakRad[]): string {
-  const aktiv = saker.filter((s) => s.status === "aktiv").length;
-  const venter = saker.filter((s) => s.status === "venter_pa_svar").length;
-  const avsluttet = saker.filter((s) => s.status === "fullfort").length;
-  return [
-    aktiv > 0 ? `${aktiv} trenger handling` : null,
-    venter > 0 ? `${venter} venter på svar` : null,
-    avsluttet > 0 ? `${avsluttet} avsluttet` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-}
-
 export default async function KravListePage() {
   const supabase = await createClient();
 
@@ -211,7 +197,6 @@ export default async function KravListePage() {
   }
   const antallKreditorer = grupper.length + enkeltstaendeSaker.length;
 
-  const stripe = oversiktsstripe(saker);
 
   return (
     <Skjermramme className="pt-6" animerInn={false}>
@@ -219,11 +204,6 @@ export default async function KravListePage() {
       <SekvensDel>
       <h1 className="tittel text-blekk">Saker</h1>
       </SekvensDel>
-      {stripe && (
-        <SekvensDel>
-          <p className="mt-1.5 text-[14px] text-dempet">{stripe}</p>
-        </SekvensDel>
-      )}
 
       {saker.length === 0 && (
         <SekvensDel>

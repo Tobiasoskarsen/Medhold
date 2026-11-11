@@ -590,14 +590,10 @@ export function LeggTilBrevFlyt({
 
           {inntak === "valg" && (
             <>
-              <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
-                Velg hvordan du vil legge inn brevet.
-              </p>
               <div className="mt-5 flex flex-col gap-2.5">
                 <InntakKort
                   ikon={<Camera className="size-5" aria-hidden />}
                   tittel="Ta bilde"
-                  tekst="Fotografer brevet med kameraet"
                   onClick={() => kameraInput.current?.click()}
                 />
                 <InntakKort
@@ -609,7 +605,6 @@ export function LeggTilBrevFlyt({
                 <InntakKort
                   ikon={<Type className="size-5" aria-hidden />}
                   tittel="Lim inn tekst"
-                  tekst="Skriv eller lim inn teksten selv"
                   onClick={() => setInntak("tekst")}
                 />
               </div>
@@ -1206,7 +1201,7 @@ function InntakKort({
 }: {
   ikon: React.ReactNode;
   tittel: string;
-  tekst: string;
+  tekst?: string;
   onClick: () => void;
 }) {
   return (
@@ -1220,7 +1215,7 @@ function InntakKort({
       </span>
       <span>
         <span className="block text-sm font-medium text-blekk">{tittel}</span>
-        <span className="block text-hjelp text-dempet">{tekst}</span>
+        {tekst && <span className="block text-hjelp text-dempet">{tekst}</span>}
       </span>
     </button>
   );

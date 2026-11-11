@@ -199,9 +199,11 @@ export function Veivalg({
       <h2 className={lagreForst ? "sr-only" : "seksjonstittel text-blekk"}>
         Neste steg
       </h2>
-      <p className="mt-1 text-hjelp leading-relaxed text-dempet">
-        {lagreForst ? lagringstekst : "Du sender brevet selv."}
-      </p>
+      {lagreForst && (
+        <p className="mt-1 text-hjelp leading-relaxed text-dempet">
+          {lagringstekst}
+        </p>
+      )}
 
       <div className="mt-3 overflow-hidden rounded-kort border border-kant bg-flate [&>*+*]:border-t [&>*+*]:border-strek" aria-busy={lagrer}>
         <VeivalgKort
@@ -210,7 +212,7 @@ export function Veivalg({
           }
           ikonBg="text-aksent"
           tittel="Svar på kravet"
-          undertekst={lagreForst ? "Lag et svar du kan lese gjennom, endre og sende selv." : "Lag et utkast du kan redigere og sende selv."}
+          undertekst={lagreForst ? "Lag et svar du kan lese gjennom, endre og sende selv." : "Lag et utkast du kan redigere."}
           anbefalt={harGebyrfunn || !!sumavvikDifferanse}
           begrunnelse={
             // Gebyrfunnet har forrang i begrunnelsen (Del B.4).
@@ -228,7 +230,7 @@ export function Veivalg({
           ikon={<Wallet className="size-[19px] text-aksent" aria-hidden />}
           ikonBg="text-aksent"
           tittel="Finn en betalingsløsning"
-          undertekst={lagreForst ? "Se muligheter for avdrag eller å be om mer tid." : "Se alternativer for betaling, utsettelse og avdrag."}
+          undertekst={lagreForst ? "Se muligheter for avdrag eller å be om mer tid." : "Betaling, utsettelse eller avdrag."}
           anbefalt={false}
           mål={betaleMål}
         />
