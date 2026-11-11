@@ -9,7 +9,7 @@ import { EASING, FJAER, GLID_DYBDE, VARIGHET } from "@/lib/bevegelse";
 const DELER = [
   { navn: "Opplysninger", tittel: "Stemmer opplysningene?", tekst: "Sammenlign med brevet. Retter du noe her, regner vi alt på nytt." },
   { navn: "Kontroll", tittel: "Dette har vi kontrollert", tekst: "Se gjennom beløpskontrollen og hva vurderingen omfatter." },
-  { navn: "Neste steg", tittel: "Hva vil du gjøre videre?", tekst: "Velg hva du vil gjøre med brevet." },
+  { navn: "Neste steg", tittel: "Velg veien videre", tekst: "Du velger selv hva som passer nå." },
 ];
 
 /** Kun presentasjon. Alle redigerte verdier og lagringsregler eies av brevflyten. */

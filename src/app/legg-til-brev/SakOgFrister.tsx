@@ -16,7 +16,7 @@ export function SakOgFrister({ sakNavn, frister, fristfunn, alvorlig, harMatch, 
         Brevet oppgir {fristfunn.eksplisittDato ? formaterDato(fristfunn.eksplisittDato) : "ingen bekreftet dato"}. Kontroller fristvalget nedenfor. Advarselen gjelder også om du ikke registrerer fristen.
       </p>}
       {alvorlig && <p role="alert" className="mb-3 rounded-kontroll bg-dom-rod-bg p-3 text-hjelp text-blekk">Brevet er markert med et alvorlig varsel. Lagre brevet i saken for å finne varselet og hjelpetilbudene.</p>}
-      <details className="rounded-kort border border-strek bg-flate p-4" open={harMatch || kort}>
+      <details className="rounded-kort border border-strek bg-flate px-4 py-3" open={harMatch || kort}>
         <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk focus-visible:outline-2 focus-visible:outline-aksent">
           Sak, frister og huskeliste
           <span className="mt-1 block text-meta font-normal text-dempet">{sakNavn} · {datoer.length ? `${datoer.length} ${datoer.length === 1 ? "valgt frist" : "valgte frister"}` : "Ingen frister valgt for lagring"}</span>

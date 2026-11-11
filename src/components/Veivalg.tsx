@@ -8,7 +8,7 @@
 // sendes ALDRI til utkast-prompten — ren UI-tilstand.
 import { useId, useState, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { ChevronDown, ChevronRight, Check, Clock3 } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageSquare, Wallet, Clock3 } from "lucide-react";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
@@ -76,11 +76,10 @@ function VeivalgKort({
   return (
     <MålKnapp
       mål={mål}
-      className="trykk flex min-h-[68px] w-full items-center gap-3 rounded-kort border border-kant bg-flate px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent focus-visible:ring-offset-2 focus-visible:ring-offset-bakgrunn"
-      style={{ boxShadow: anbefalt ? "var(--anbefalt-glod)" : "var(--kort-skygge)" }}
+      className="trykk flex min-h-[72px] w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-flate-2/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-aksent"
     >
       <span
-        aria-hidden="true" className={`flex size-9 shrink-0 items-center justify-center rounded-liten ${ikonBg}`}
+        aria-hidden="true" className={`flex size-8 shrink-0 items-center justify-center ${ikonBg}`}
       >
         {ikon}
       </span>
@@ -194,20 +193,18 @@ export function Veivalg({
   return (
     <div className={className}>
       <h2 className={lagreForst ? "sr-only" : "seksjonstittel text-blekk"}>
-        Hva vil du gjøre?
+        Neste steg
       </h2>
       <p className="mt-1 text-hjelp leading-relaxed text-dempet">
-        {lagreForst ? lagringstekst : "Du kan ombestemme deg når som helst. Du sender brevet selv."}
+        {lagreForst ? lagringstekst : "Du sender brevet selv."}
       </p>
 
-      <div className="mt-gruppe flex flex-col gap-2" aria-busy={lagrer}>
+      <div className="mt-3 overflow-hidden rounded-kort border border-kant bg-flate [&>*+*]:border-t [&>*+*]:border-strek" aria-busy={lagrer}>
         <VeivalgKort
           ikon={
-            <span className="text-[17px] font-bold text-dom-rod">
-              §
-            </span>
+            <MessageSquare className="size-[19px] text-aksent" aria-hidden />
           }
-          ikonBg="bg-dom-rod-bg"
+          ikonBg="text-aksent"
           tittel="Svar på kravet"
           undertekst={lagreForst ? "Lag et svar du kan lese gjennom, endre og sende selv." : "Lag et utkast du kan redigere og sende selv."}
           anbefalt={harGebyrfunn}
@@ -219,14 +216,14 @@ export function Veivalg({
           mål={svarMål}
         />
         <VeivalgKort
-          ikon={<Check className="size-[18px] text-trygg" aria-hidden />}
-          ikonBg="bg-trygg/10"
+          ikon={<Wallet className="size-[19px] text-aksent" aria-hidden />}
+          ikonBg="text-aksent"
           tittel="Finn en betalingsløsning"
           undertekst={lagreForst ? "Se muligheter for avdrag eller å be om mer tid." : "Se alternativer for betaling, utsettelse og avdrag."}
           anbefalt={false}
           mål={betaleMål}
         />
-        {senereMål && <VeivalgKort ikon={<Clock3 className="size-[18px] text-dempet" aria-hidden />} ikonBg="bg-flate-2" tittel="Bestem senere" undertekst="Lagre brevet og kom tilbake når du vil." anbefalt={false} mål={senereMål} />}
+        {senereMål && <VeivalgKort ikon={<Clock3 className="size-[19px] text-dempet" aria-hidden />} ikonBg="text-dempet" tittel="Bestem senere" undertekst="Lagre brevet og kom tilbake når du vil." anbefalt={false} mål={senereMål} />}
       </div>
 
       <button
