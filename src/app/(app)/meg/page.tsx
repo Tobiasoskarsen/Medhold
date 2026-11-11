@@ -1,4 +1,4 @@
-import { Bell, Mail, FileText, ShieldCheck, Scale, UserRound } from "lucide-react";
+import { Bell, Mail, FileText, ShieldCheck, Scale } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
 import SlettKonto from "@/components/SlettKonto";
@@ -9,9 +9,7 @@ import { initialerFra } from "@/lib/tint";
 import { Gruppe } from "./Gruppe";
 import { Rad } from "./Rad";
 import { TemaRad } from "./TemaRad";
-import { Utvidbar } from "./Utvidbar";
-import { Brevnavn } from "./Brevnavn";
-import { Telefon } from "./Telefon";
+import { BrevnavnRad } from "./BrevnavnRad";
 
 export const metadata = {
   title: `Meg — ${APP_NAME}`,
@@ -75,13 +73,7 @@ export default async function MegPage() {
 
       <SekvensDel>
       <Gruppe>
-        <Utvidbar ikon={UserRound} etikett="Brevnavn og telefon">
-          <div className="flex flex-col gap-4">
-            <Brevnavn start={navn} />
-            <Telefon start={telefon} />
-            <p className="text-hjelp text-dempet">Innlogging: {innlogging}</p>
-          </div>
-        </Utvidbar>
+        <BrevnavnRad navn={navn} telefon={telefon} innlogging={innlogging} />
         <Rad
           ikon={Bell}
           etikett="E-postpåminnelser"
