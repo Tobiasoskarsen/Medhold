@@ -395,7 +395,8 @@ export default async function HjemPage() {
                       Frist utløpt · {formaterDagManed(topFrist.forfallsdato)}
                     </HeltChip>
                   ) : (
-                    <HeltChip variant="noytral">
+                    // Samme hastegrense (≤ 10 dager) som Saker og saken (Del D).
+                    <HeltChip variant={erHastende(dagerTil(topFrist.forfallsdato)) ? "funn" : "noytral"}>
                       {fristChipTekst(dagerTil(topFrist.forfallsdato))} ·{" "}
                       {formaterDagManed(topFrist.forfallsdato)}
                     </HeltChip>
