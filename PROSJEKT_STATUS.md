@@ -3,6 +3,11 @@
 Løpende status for implementeringen av `MEDHOLD_ARBEIDSORDRE.md`. Oppdateres
 etter hver fase.
 
+## Design R6 – 11. november 2026
+
+Egen gren fra `a946356` (#68): lys bunnnavigasjon med ekte mørk variant, fjordgrønne primærknapper, lyst heltekort og sammenhengende detaljrader. Dokumenter får distinkte ikoner for brev, utkast og registrert sendt. Historikken får roligere dato/linje, tydelig utvidelse og label for kommende oppfølging. Brevkontrollens flyt, alle beregninger, lagring og backend er bevart.
+
+404 enhetstester, 144 lokale DB-/modultester, TypeScript og produksjonsbygg bestått. Målrettet testkjøring etter siste visuelle rettelse: 6/6. Nettleser mot separat testprosjekt, disponibel syntetisk konto, lys/mørk og sju bredder; ingen overflow i dokumentvisningen, alle globale lenker minst 44 px. Begge testkontoer ryddet. Ingen ny fysisk tilgjengelighetstest eller full PostgREST-sikkerhetsmatrise. Ingen merge/deploy. Se [R6-rapport med inventar, filer, målinger, bilder og begrensninger](docs/design/r6/RAPPORT.md).
 ## Ny saksoversikt – 11. november 2026
 
 Oversikt, Dokumenter og Historikk erstatter den sammenhengende lange saksvisningen. Ventende sak prioriterer ventestatus og nytt svarbrev; generelle valg ligger under «Andre muligheter». Etter skanning brukes samme kompakte, grupperte handlingsliste. Eksisterende regler, sikkerhetsvarsler og lagringsvalg beholdes.
