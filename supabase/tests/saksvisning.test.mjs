@@ -18,12 +18,12 @@ function panelHarness(){let i=0;const state=[];const props={oversikt:{id:'overvi
 }
 test('saksvisning viser oversikten først og beholder andre paneler montert, men skjult',()=>{const h=panelHarness();const sections=nodes(h.render()).filter(n=>n.type==='section');assert.equal(sections.length,3);assert.deepEqual(sections.map(n=>n.props.hidden),[false,true,true]);assert.equal(sections[1].props.children,h.props.dokumenter);});
 test('dokumenter og historikk kan velges uten ny rute eller tapt panelinnhold',()=>{const h=panelHarness();for(const [i,name]of [[1,'Dokumenter'],[2,'Historikk'],[0,'Oversikt']]){const button=nodes(h.render()).find(n=>n.type==='button'&&text(n).startsWith(name));assert.equal(button.props.type,'button');button.props.onClick();const tree=h.render();const sections=nodes(tree).filter(n=>n.type==='section');assert.equal(sections[i].props.hidden,false);assert.equal(sections[1].props.children,h.props.dokumenter);assert.equal(nodes(tree).find(n=>n.type==='button'&&n.props['aria-pressed']).props['aria-controls'],sections[i].props.id);}});
-async function page(status,serious=false){
+async function page(status,serious=false,gs=null){
  const sak={id:'case',kreditor:'Syntetisk',tittel:'Test',opprinnelig_kreditor:null,saksnummer:'TEST',belop_totalt:4912.3,stadium:'betalingsoppfordring',status,utfall:null,sist_endret:'2026-11-11T10:00:00Z',hovedstol_avvik:null};
- const rows={brev:[{id:'letter',brevdato:'2026-11-11',brevtype:'betalingsoppfordring',avsender:'Syntetisk',opprettet:'2026-11-11T10:00:00Z',original_tekst:serious?'varsel om tvangsfullbyrdelse':'Syntetisk brev',alvorlig:serious,gebyrsjekk:null,fristfunn:null}],frister:[],utkast:[{id:'draft',type:'innsigelse',opprettet:'2026-11-11T10:00:00Z',sendt_at:status==='venter_pa_svar'?'2026-11-11T10:00:00Z':null}]};
+ const rows={brev:[{id:'letter',brevdato:'2026-11-11',brevtype:'betalingsoppfordring',avsender:'Syntetisk',opprettet:'2026-11-11T10:00:00Z',original_tekst:serious?'varsel om tvangsfullbyrdelse':'Syntetisk brev',alvorlig:serious,gebyrsjekk:gs,fristfunn:null}],frister:[],utkast:[{id:'draft',type:'innsigelse',opprettet:'2026-11-11T10:00:00Z',sendt_at:status==='venter_pa_svar'?'2026-11-11T10:00:00Z':null}]};
  const db={auth:{getUser:async()=>({data:{user:{id:'owner',user_metadata:{varsler_paa:false}}}})},from:table=>{const q={select(){return this;},eq(){return this;},order(){return this;},maybeSingle:async()=>({data:table==='saker'?sak:null}),then(fn){return Promise.resolve({data:rows[table]??[]}).then(fn);}};return q;}};
  const mocks={'server-only':{},'@/lib/supabase/server':{createClient:async()=>db},'next/navigation':{notFound(){throw Error('Not found');}},'@/components/ui':Object.fromEntries(['Skjermramme','Primærknapp','StadiumLinje','FristRad','Tidslinje','TidslinjeHendelse','Sekvens','SekvensDel'].map(k=>[k,k])),'@/components/Veivalg':{Veivalg:'Veivalg'},'@/components/Alvorsvarsel':{Alvorsvarsel:'Alvor'},'./VenterPaSvarUtvidelse':{VenterPaSvarUtvidelse:'waiting-controls'}};
- for(const [module,names]of Object.entries({'./LostNode':['LostNode'],'./KravMeny':['KravMeny'],'./MarkerSendtKnapp':['MarkerSendtKnapp'],'./FristKnapp':['FristKnapp'],'./SakensGangSeksjon':['SakensGangSeksjon'],'./KravHeader':['KravNavn','KravBelop'],'@/components/Dom':['DomMini','DomMiniFrist','FunnListe'],'@/components/ui/Toppstripe':['Toppstripe']}))mocks[module]=Object.fromEntries(names.map(n=>[n,n]));
+ for(const [module,names]of Object.entries({'./LostNode':['LostNode'],'./KravMeny':['KravMeny'],'./MarkerSendtKnapp':['MarkerSendtKnapp'],'./FristKnapp':['FristKnapp'],'./SakensGangSeksjon':['SakensGangSeksjon'],'./KravHeader':['KravNavn','KravBelop'],'@/components/Dom':['DomMiniFrist','DomMiniSum'],'./FunnKort':['FunnKort'],'@/components/ui/Toppstripe':['Toppstripe']}))mocks[module]=Object.fromEntries(names.map(n=>[n,n]));
  return load('src/app/(app)/krav/[id]/page.tsx',mocks).default({params:Promise.resolve({id:'case'}),searchParams:Promise.resolve({})});
 }
 test('ventende sak prioriterer ventestatus og skjuler generelle veivalg bak Andre muligheter',async()=>{const tree=await page('venter_pa_svar');const detail=nodes(tree).find(n=>n.type==='details'&&text(n).includes('Andre muligheter'));assert.ok(detail);assert.equal(detail.props.open,false);assert.ok(text(nodes(tree).find(n=>n.type==='section'&&n.props['aria-label']==='Venter på svar')).includes('Du venter på svar'));assert.ok(nodes(tree).some(n=>n.type==='Veivalg'));});
@@ -68,4 +68,22 @@ test('R8 Hjem: totalen er aktive og ventende, «Mulig avvik» lenker til saken, 
  const card=all.find(n=>n.type==='Heltekort');assert.equal(card.props.etikett,'Trenger oppfølging');assert.equal(card.props.knapp.props.href,'/krav/s1/utkast?type=innsigelse');assert.ok(text(card).includes('Beløpskontroll: 100 kr uten forklaring'));
  assert.ok(all.some(n=>n.type==='Hurtigrad'));
  assert.ok(!/Hei,|Få hjelp/.test(text(tree)),'ingen hilsen eller ingress');
+});
+
+const FUNN={satsGyldigFra:'2026-01-01',linjer:[{linje:{type:'salaer',belop:900,tekst:''},vurdering:'over',maksLav:null,maksHoy:750,differanse:150,forklaring:'900 kr overstiger høyeste lovlige salærsats (750 kr) med 150 kr.'}],antallOver:1,antallMuligOver:0,sumkontroll:{status:'avvik',sum:4812.3,total:4912.3,differanse:100}};
+test('R8 sak: funnkortet samler gebyrfunn og beløpskontroll, og valgene er knapper i kortet',async()=>{
+ const tree=await page('aktiv',false,FUNN);const all=nodes(tree);
+ const kort=all.find(n=>n.type==='FunnKort');assert.ok(kort,'funnkortet vises');
+ assert.equal(kort.props.visKnapper,true);assert.equal(kort.props.utkastHref,'/krav/case/utkast?type=innsigelse');assert.equal(kort.props.betalHref,'/krav/case/veier-ut');
+ assert.equal(kort.props.gebyrsjekk.antallOver,1);
+ const barn=nodes(kort.props.children);assert.ok(barn.some(n=>n.type==='DomMiniSum'&&n.props.avvik.differanse===100),'beløpskontrollen skjules aldri');
+ assert.ok(!all.some(n=>n.type==='Veivalg'),'Veivalg erstattes av knappene i funnkortet');
+});
+test('R8 sak: ventende sak med funn har ingen primærknapper i kortet, og valgene ligger bak Andre muligheter',async()=>{
+ const tree=await page('venter_pa_svar',false,FUNN);const all=nodes(tree);
+ assert.equal(all.find(n=>n.type==='FunnKort').props.visKnapper,false);
+ assert.ok(all.some(n=>n.type==='Veivalg'));
+});
+test('R8 sak: uten funn vises Veivalg som før og ingen funnkort',async()=>{
+ const all=nodes(await page('aktiv'));assert.ok(!all.some(n=>n.type==='FunnKort'));assert.ok(all.some(n=>n.type==='Veivalg'));
 });

@@ -109,3 +109,11 @@ test("erGammeltBrev: brev fra i dag eller fremtiden er ikke gammelt", () => {
 test("brevAlderDager teller hele dager", () => {
   assert.equal(brevAlderDager("2026-07-20", "2026-07-20T00:00:00Z", "2026-11-04"), 107);
 });
+
+test("fristPilleTekst: utløpt, i dag, i morgen og om N dager", async () => {
+  const { fristPilleTekst } = await import("./frist.ts");
+  assert.equal(fristPilleTekst(-3), "Frist utløpt");
+  assert.equal(fristPilleTekst(0), "Frist i dag");
+  assert.equal(fristPilleTekst(1), "Frist i morgen");
+  assert.equal(fristPilleTekst(8), "Frist om 8 dager");
+});
