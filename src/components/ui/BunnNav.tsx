@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { m } from "motion/react";
 import { Plus } from "lucide-react";
 import { haptikk } from "@/lib/haptikk";
-import { FJAER, IKON_TRYKK_SKALA, INDIKATOR_FJAER } from "@/lib/bevegelse";
+import { INDIKATOR_FJAER } from "@/lib/bevegelse";
 
 /** Flagg som forteller ruteovergangen (template.tsx) at byttet er en fane-
  *  navigasjon → ren fade, ikke dybde-glid (faner er søsken). */
@@ -107,16 +107,16 @@ function NavPunktKnapp({
         {aktiv && (
           <m.span
             layoutId="bunnnav-indikator"
-            className="absolute inset-0 rounded-liten bg-white/8"
+            className="absolute inset-0 rounded-full bg-mint/60 mork:bg-aksent/15"
             transition={INDIKATOR_FJAER}
           />
         )}
         {aktiv ? (
           <m.span
             className="relative flex"
-            initial={{ scale: IKON_TRYKK_SKALA }}
+            initial={false}
             animate={{ scale: 1 }}
-            transition={FJAER}
+            transition={INDIKATOR_FJAER}
           >
             <Ikon className="size-5" />
           </m.span>
@@ -129,22 +129,8 @@ function NavPunktKnapp({
   );
 }
 
-/**
- * BunnNav — flytende, mørk pille (Retning B §4.5) med tre punkter (Hjem,
- * Saker, Meg) og en flat mint +-knapp til «Legg til brev» i midten.
- *
- * Aktivt punkt får en glidende pille-bakgrunn bak ikonet (delt `layoutId`,
- * morfer automatisk til ny posisjon ved navigasjon — samme Motion3 §3-
- * mekanisme som forrige strek-indikator, kun byttet visuelt uttrykk).
- * Ikonet som AKTIVERES gjør i tillegg ett dupp (skala ned→1, FJAER) —
- * uendret fra før.
- *
- * Midtknappen er ny funksjonalitet (ikke i forrige bunnnav): en snarvei til
- * det samme generiske `/legg-til-brev`-inntaket som CTA-ene på Hjem/Saker
- * allerede bruker. Den er IKKE en fane (setter ikke FANE_NAV_NOKKEL) —
- * `/legg-til-brev` er en fullskjermsflyt utenfor (app)-layouten, med sin
- * egen glid-opp-fra-bunn-overgang.
- */
+/** Lys navigasjonsflate med semantisk mørk variant. Felles aktiv indikator og
+ * eksisterende ruter, faneflagg, tastatur- og safe-area-håndtering beholdes. */
 export function BunnNav() {
   const pathname = usePathname() ?? "/";
   const [venstre, hoyre] = [PUNKTER.slice(0, 2), PUNKTER.slice(2)];
@@ -169,15 +155,15 @@ export function BunnNav() {
   }, []);
 
   return (
-    <nav
+    <nav aria-label="Hovednavigasjon"
       className={`fixed inset-x-0 bottom-0 z-10 transition-[transform,opacity] duration-200 ${
         skrivFokus ? "pointer-events-none translate-y-full opacity-0" : ""
       }`}
     >
       <div className="mx-auto max-w-[480px] px-[18px] pb-[var(--nav-luft)]">
         <div
-          className="flex h-[var(--nav-hoyde)] items-center justify-around rounded-[22px] border border-nav-kant bg-nav-bg/90 px-2 backdrop-blur-[14px] backdrop-saturate-150"
-          style={{ boxShadow: "var(--skygge-hevet)" }}
+          className="flex h-[var(--nav-hoyde)] items-center justify-around rounded-helt border border-nav-kant bg-nav-bg px-2"
+          style={{ boxShadow: "0 6px 20px -10px rgb(18 22 20 / 0.18)" }}
         >
           {venstre.map((punkt) => (
             <NavPunktKnapp key={punkt.href} punkt={punkt} aktiv={erAktiv(pathname, punkt)} />
@@ -186,7 +172,7 @@ export function BunnNav() {
             href="/legg-til-brev"
             aria-label="Legg til brev"
             onPointerDown={() => haptikk("lett")}
-            className="trykk flex size-11 shrink-0 items-center justify-center rounded-[15px] bg-mint text-mint-tekst"
+            className="trykk flex size-11 shrink-0 items-center justify-center rounded-full bg-mint text-mint-tekst"
           >
             <Plus className="size-6" strokeWidth={2} aria-hidden />
           </Link>
