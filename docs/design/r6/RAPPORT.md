@@ -1,5 +1,7 @@
 # Design R6 – sluttrapport, 11. november 2026
 
+**Siste revisjon:** [frist/påminnelse, menytekst, dokumentstatus og faktisk utført/gjenstående kontroll](JUSTERINGER.md). Vercel oppretter preview ved push; ingen produksjonsdeploy er startet.
+
 ## A. Utgangspunkt og inventar
 
 Base: `a9463562f2691b29e67c89e19dfec962279d09e6` (PR #68), etter R4 #66 og R5 #67. Egen gren `codex/design-r6`. Åpen PR #64 om backup er ikke berørt. Brukerens ucommittede gjennomgang er bevart.
@@ -44,7 +46,7 @@ Nettleseren bekreftet fanebytte, utvidelse av begge detaljseksjoner, åpning av 
 - Seks målrettede tester for faktisk saksidesammensetning og panelvalg kjørt igjen etter siste ikon-/labelendring: **6/6**.
 - Endelig full lint: **0 feil, én eksisterende lokal advarsel**. Før ikonrettelsen viste den to nye ubrukte import-advarsler; årsaken er rettet og målrettet ESLint på siste saksiden bestått. Én gammel advarsel finnes i ignorert lokal `.env.release-guard`-kopi av GoogleKnapp.
 - `npx tsc --noEmit`: bestått.
-- `npm run build`: bestått, inkludert TypeScript. Ingen deploy.
+- `npm run build`: bestått, inkludert TypeScript. Ingen produksjonsdeploy.
 - Faktisk IAB-nettleser, lokal Next-app med syntetiske saker i det verifiserte testprosjektet `evvzxblhaxaraaurbhsu`. Service role bare til disponibelt fixtureoppsett/opprydding; appinnlogging med testbruker.
 - 320, 375, 390, 430, 768, 1024 og 1280 px: dokumentvisningen uten horisontal overflow; hovednavigasjonens lenker minst 44 × 44 CSS px. Se [målte verdier](viewports.json).
 - Lys/mørk, lange avsendernavn, flere brev med samme tittel, utkast og registrert sendt, utvidet historikk samt opplysninger → kontroll → neste steg kontrollert. Ingen faktisk e-post/sending.

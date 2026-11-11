@@ -162,7 +162,7 @@ export function BunnNav() {
     >
       <div className="mx-auto max-w-[480px] px-[18px] pb-[var(--nav-luft)]">
         <div
-          className="flex h-[var(--nav-hoyde)] items-center justify-around rounded-helt border border-nav-kant bg-nav-bg px-2"
+          className="flex min-h-[var(--nav-hoyde)] items-center justify-around rounded-helt border border-nav-kant bg-nav-bg px-2"
           style={{ boxShadow: "0 6px 20px -10px rgb(18 22 20 / 0.18)" }}
         >
           {venstre.map((punkt) => (
@@ -172,9 +172,10 @@ export function BunnNav() {
             href="/legg-til-brev"
             aria-label="Legg til brev"
             onPointerDown={() => haptikk("lett")}
-            className="trykk flex size-11 shrink-0 items-center justify-center rounded-full bg-mint text-mint-tekst"
+            className="trykk flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center gap-0.5 px-1 py-1 text-nav-aktiv"
           >
-            <Plus className="size-6" strokeWidth={2} aria-hidden />
+            <span className="flex size-8 items-center justify-center rounded-full bg-mint text-mint-tekst"><Plus className="size-5" strokeWidth={2} aria-hidden /></span>
+            <span className="text-[11px] font-semibold">Legg til</span>
           </Link>
           {hoyre.map((punkt) => (
             <NavPunktKnapp key={punkt.href} punkt={punkt} aktiv={erAktiv(pathname, punkt)} />

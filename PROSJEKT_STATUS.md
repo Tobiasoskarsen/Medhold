@@ -5,6 +5,8 @@ etter hver fase.
 
 ## Design R6 – 11. november 2026
 
+Siste justering til PR #69: registrert frist foran separat oppfølging, synlig «Legg til», sendt-ikon med 9,42:1 / 11,01:1 kontrast og egen historikkstatus. 404 enhetstester, 147 lokale DB-/modultester, bygg/TypeScript og lint uten nye advarsler. Fysisk mobil, stor tekst/200 % zoom og VoiceOver gjenstår eksplisitt. [Oppdaterte bilder og kontrollrapport](docs/design/r6/JUSTERINGER.md). Ingen produksjonsdeploy; Vercel-preview kan oppdateres ved push.
+
 Egen gren fra `a946356` (#68): lys bunnnavigasjon med ekte mørk variant, fjordgrønne primærknapper, lyst heltekort og sammenhengende detaljrader. Dokumenter får distinkte ikoner for brev, utkast og registrert sendt. Historikken får roligere dato/linje, tydelig utvidelse og label for kommende oppfølging. Brevkontrollens flyt, alle beregninger, lagring og backend er bevart.
 
 404 enhetstester, 144 lokale DB-/modultester, TypeScript og produksjonsbygg bestått. Målrettet testkjøring etter siste visuelle rettelse: 6/6. Nettleser mot separat testprosjekt, disponibel syntetisk konto, lys/mørk og sju bredder; ingen overflow i dokumentvisningen, alle globale lenker minst 44 px. Begge testkontoer ryddet. Ingen ny fysisk tilgjengelighetstest eller full PostgREST-sikkerhetsmatrise. Ingen merge/deploy. Se [R6-rapport med inventar, filer, målinger, bilder og begrensninger](docs/design/r6/RAPPORT.md).

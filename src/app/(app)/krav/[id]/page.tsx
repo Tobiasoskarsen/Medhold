@@ -387,14 +387,16 @@ export default async function KravDetaljPage({
           // chip her — unngår at de to sier ulike/utdaterte ting.
           key: `utkast-${u.id}`,
           datoISO: u.sendt_at.slice(0, 10),
-          tittel: `${UTKAST_ETIKETT[u.type]} sendt`,
+          tittel: UTKAST_ETIKETT[u.type],
+          tekst: "Registrert sendt",
           href: `/krav/${id}/utkast?utkast=${u.id}`,
           fremhevet: false,
         }
       : {
           key: `utkast-${u.id}`,
           datoISO: u.opprettet.slice(0, 10),
-          tittel: `Utkast: ${UTKAST_ETIKETT[u.type]}`,
+          tittel: UTKAST_ETIKETT[u.type],
+          tekst: "Utkast – ikke registrert sendt",
           href: `/krav/${id}/utkast?utkast=${u.id}`,
           fremhevet: false,
           ekstra: !lost ? <MarkerSendtKnapp utkastId={u.id} /> : undefined,
@@ -577,15 +579,6 @@ export default async function KravDetaljPage({
       </Sekvens>
       <Saksvisning antallDokumenter={brevListe.length + utkast.length}
         oversikt={<>
-      {sak.status === "venter_pa_svar" && (
-        <section className="mb-4 rounded-kort border border-strek bg-flate p-5" aria-label="Venter på svar">
-          <p className="eyebrow">Status</p>
-          <h2 className="mt-1 text-[20px] font-bold tracking-tight text-blekk">Du venter på svar</h2>
-          {oppfolgingTilstandVerdi && <p className="mt-2 text-hjelp leading-relaxed text-dempet">{oppfolgingTekst(oppfolgingTilstandVerdi, null, varslerPa)}</p>}
-          <Link href={`/legg-til-brev?krav=${sak.id}`} className="trykk mt-4 inline-flex min-h-11 items-center gap-2 rounded-kontroll bg-knapp px-4 py-2.5 text-hjelp font-semibold text-knapp-tekst">Legg til svarbrev <Plus className="size-4" aria-hidden /></Link>
-          <div className="-mx-5 -mb-5 mt-4 border-t border-strek"><VenterPaSvarUtvidelse kravId={sak.id} sistEndret={sak.sist_endret as string} /></div>
-        </section>
-      )}
       {/* Registrert stadium/status og relevant frist: situasjonen før valgene. */}
       {nesteFrist && (
         <SekvensDel>
@@ -632,6 +625,17 @@ export default async function KravDetaljPage({
           <FristKnapp fristId={nesteFrist.id} handling="fullfort" />
           </details>
         </SekvensDel>
+      )}
+
+      {sak.status === "venter_pa_svar" && (
+        <section className="mb-4 rounded-kort border border-strek bg-flate p-5" aria-label="Venter på svar">
+          <p className="eyebrow">Status</p>
+          <h2 className="mt-1 text-[20px] font-bold tracking-tight text-blekk">Du venter på svar</h2>
+          {oppfolgingTilstandVerdi && <p className="mt-2 text-hjelp leading-relaxed text-dempet">{oppfolgingTekst(oppfolgingTilstandVerdi, null, varslerPa)}</p>}
+          <p className="mt-2 text-meta leading-relaxed text-dempet">Oppfølgingen er separat og endrer ikke fristen i brevet.</p>
+          <Link href={`/legg-til-brev?krav=${sak.id}`} className="trykk mt-4 inline-flex min-h-11 items-center gap-2 rounded-kontroll bg-knapp px-4 py-2.5 text-hjelp font-semibold text-knapp-tekst">Legg til svarbrev <Plus className="size-4" aria-hidden /></Link>
+          <div className="-mx-5 -mb-5 mt-4 border-t border-strek"><VenterPaSvarUtvidelse kravId={sak.id} sistEndret={sak.sist_endret as string} /></div>
+        </section>
       )}
 
       {/* Viktigste varsel eller handlingsvalg. Alvorsvarsel overstyrer
@@ -750,7 +754,7 @@ export default async function KravDetaljPage({
               <span className="min-w-0 flex-1"><span className="block text-hjelp font-semibold text-blekk">{brevtypeEtikett(b.brevtype)}</span><span className="mt-0.5 block break-words text-meta text-dempet">{[b.avsender, formaterKortDato(b.brevdato ?? b.opprettet)].filter(Boolean).join(" · ")}</span></span><ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
             </Link>)}
             {utkast.map(u => <Link key={u.id} href={`/krav/${sak.id}/utkast?utkast=${u.id}`} className="trykk flex min-h-[72px] items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-aksent">
-              <span className={`flex size-10 shrink-0 items-center justify-center rounded-liten ${u.sendt_at ? "bg-mint/60 text-aksent" : "bg-flate-2 text-dempet"}`}>{u.sendt_at ? <Check className="size-5" aria-hidden /> : <FilePenLine className="size-5" aria-hidden />}</span>
+              <span className={`flex size-10 shrink-0 items-center justify-center rounded-liten ${u.sendt_at ? "bg-mint text-mint-tekst" : "bg-flate-2 text-dempet"}`}>{u.sendt_at ? <Check className="size-5" aria-hidden /> : <FilePenLine className="size-5" aria-hidden />}</span>
               <span className="min-w-0 flex-1"><span className="block text-hjelp font-semibold text-blekk">{UTKAST_ETIKETT[u.type]}</span><span className="mt-0.5 block text-meta text-dempet">{u.sendt_at ? "Registrert sendt" : "Utkast – ikke registrert sendt"} · {formaterKortDato(u.sendt_at ?? u.opprettet)}</span></span><ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
             </Link>)}
           </div>
