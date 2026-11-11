@@ -96,11 +96,17 @@ export default function SatserPage() {
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-3">
-                <dt className="text-dempet">Rettsgebyr</dt>
+                <dt className="text-dempet">Rettsgebyr (R)</dt>
                 <dd className="tabular-nums text-blekk">
                   {kr(sats.rettsgebyr)} kr
                 </dd>
               </div>
+              {sats.rettsgebyrSatser.map((r) => (
+                <div key={r.navn} className="flex items-baseline justify-between gap-3">
+                  <dt className="text-dempet">Rettsgebyr: {r.navn}</dt>
+                  <dd className="tabular-nums text-blekk">{kr(r.belop)} kr</dd>
+                </div>
+              ))}
             </dl>
           </div>
         </SekvensDel>

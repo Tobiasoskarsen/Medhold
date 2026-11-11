@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { gebyrsjekkSetning, sumavvikLinje, sumavvikTekst, sumOverTotalTekst, VURDERING_PILL } from "./gebyrfunn-visning.ts";
-import { sjekkKostnader, type Kostnadstype, type LinjeResultat, type Vurdering } from "./gebyr.ts";
+import { gebyrsjekkSetning, sumavvikLinje, sumavvikTekst, sumOverTotalTekst, ukjentPille, VURDERING_PILL } from "./gebyrfunn-visning.ts";
+import { sjekkKostnader, UKJENT_ARSAK, type Kostnadstype, type LinjeResultat, type Vurdering } from "./gebyr.ts";
 
 const N = " ";
 const linje = (vurdering: Vurdering, type: Kostnadstype, differanse: number | null = null): LinjeResultat => ({
@@ -80,4 +80,14 @@ test("testbrev 38: sumkortet og Hjem-linjen, ordrett", () => {
     sumOverTotalTekst(1288, 289),
     `Hovedstol og kostnader blir 1${N}288 kr, mer enn de 289 kr brevet krever. Betal aldri mer enn brevet krever.`,
   );
+});
+
+test("ukjent-pillen viser årsaken når den er kjent, ellers «Ikke sjekket»", () => {
+  assert.equal(ukjentPille(UKJENT_ARSAK.manglerStadium), "Mangler stadium");
+  assert.equal(ukjentPille(UKJENT_ARSAK.stadiumUklart), "Stadium uklart");
+  assert.equal(ukjentPille(UKJENT_ARSAK.ikkeKjentSats), "Samsvarer ikke med kjent sats");
+  assert.equal(ukjentPille("Kontroll av renter kommer senere."), "Ikke sjekket");
+  assert.equal(ukjentPille(""), "Ikke sjekket");
+  const gs = sjekkKostnader([{ type: "rettsgebyr", belop: 2500, tekst: "" }], null, "2026-06-01", "forliksrad");
+  assert.equal(VURDERING_PILL.ukjent.tekst(gs.linjer[0]), "Samsvarer ikke med kjent sats");
 });

@@ -26,7 +26,10 @@ export type Satsversjon = {
   purregebyr: number;
   inkassovarselGebyr: number;
   betalingsoppfordringGebyr: number; // egeninkasso
-  rettsgebyr: number; // kun informativt i v1
+  /** Rettsgebyret R i kroner for året (domstol.no). Grunnlaget for rettsgebyrSatser. */
+  rettsgebyr: number;
+  /** Kjente rettsgebyrer en kreditor kan ha lagt inn, utledet av R (se rettsgebyrSatserFor). */
+  rettsgebyrSatser: Array<{ navn: string; belop: number }>;
   // Salærtrinn: øvre hovedstol-grense (null = «over 250 000») → maks salær.
   // A = kreditor har mva-fradragsrett (lavest), B = ikke fradragsrett (høyest).
   salaerForbruker: Array<{
@@ -41,6 +44,66 @@ export type Satsversjon = {
 const FINANSTILSYNET_URL =
   "https://www.finanstilsynet.no/forbrukerinformasjon/inkassovirksomhet/oversikt-over-utenrettslige-inndrivingskostnader/";
 
+// Rettsgebyr (rettsgebyrloven). Multiplene er bekreftet mot Lovdata 2026-11-11:
+//   forliksklage            1,54 R  (§ 7)   https://lovdata.no/lov/1982-12-17-86
+//   begjæring om utlegg     0,69 R  (§ 14)  https://lovdata.no/nav/lov/1982-12-17-86/kap4/%C2%A714
+//   avrunding               ned til nærmeste krone (§ 6 a)
+// R 2026 = 1 345 kr (https://www.domstol.no/no/rettsgebyr-og-kostnader).
+// Begjæring om tvangsfullbyrdelse står bare som beløp (1 479 kr) hos domstol.no,
+// verifisert 2026-11-11. Multippelen i loven er IKKE bekreftet, så beløpet
+// er knyttet til 2026-versjonen og regnes ikke ut av R.
+const LOVDATA_RETTSGEBYRLOVEN = "https://lovdata.no/lov/1982-12-17-86";
+
+/** Multipler i hundredeler, så avrundingen blir eksakt (ingen flyttallsfeil). */
+const FORLIKSKLAGE_HUNDREDELER = 154;
+const UTLEGG_HUNDREDELER = 69;
+
+/** Beløp = multippel × R, rundet NED til nærmeste krone (rettsgebyrloven § 6 a). */
+function rettsgebyrBelop(hundredeler: number, r: number): number {
+  return Math.floor((hundredeler * r) / 100);
+}
+
+/** De kjente rettsgebyrene for et gitt R. Fast beløp for tvangsfullbyrdelse følger med bare for R = 1 345. */
+export function rettsgebyrSatserFor(
+  r: number,
+  tvangsfullbyrdelse: number | null = null,
+): Array<{ navn: string; belop: number }> {
+  return [
+    { navn: "forliksklage", belop: rettsgebyrBelop(FORLIKSKLAGE_HUNDREDELER, r) },
+    { navn: "begjæring om utlegg", belop: rettsgebyrBelop(UTLEGG_HUNDREDELER, r) },
+    ...(tvangsfullbyrdelse !== null
+      ? [{ navn: "begjæring om tvangsfullbyrdelse", belop: tvangsfullbyrdelse }]
+      : []),
+  ];
+}
+
+/** Kilder for rettsgebyr, vist ved siden av satsene. */
+export const RETTSGEBYR_KILDER = { domstol: "https://www.domstol.no/no/rettsgebyr-og-kostnader", lov: LOVDATA_RETTSGEBYRLOVEN } as const;
+
+/**
+ * Rettsgebyr kan først kreves når saken er brakt inn for forliksrådet eller
+ * namsmannen. Reglen gjelder «mulig_over» (aldri «over») og krever juridisk
+ * bekreftelse før den slås på for brukerne. Sett til false for å vise «ukjent».
+ */
+export const RETTSGEBYR_FOER_RETT_ER_MULIG_OVER = true;
+
+/** Stadier før saken er brakt inn for retten. */
+const STADIER_FOER_RETT = ["faktura", "purring", "inkassovarsel", "betalingsoppfordring"];
+/** Stadier der rettsgebyr kan være aktuelt. */
+const STADIER_RETT = ["forliksrad", "namsmann"];
+
+/**
+ * Årsakene til at en linje er «ukjent», som korte tekster i pillen. Forklaringen
+ * på linjen er den lange teksten; pillen viser kortversjonen.
+ */
+export const UKJENT_ARSAK = {
+  manglerStadium: "Rettsgebyr kan ikke vurderes uten kjent stadium i saken.",
+  stadiumUklart:
+    "Brevtypen sier ikke om saken er brakt inn for retten. Kontroller mot domstol.no.",
+  ikkeKjentSats:
+    "Beløpet samsvarer ikke med en kjent sats; kontroller mot domstol.no.",
+} as const;
+
 export const SATSVERSJONER: Satsversjon[] = [
   {
     gyldigFra: "2026-01-01",
@@ -51,6 +114,7 @@ export const SATSVERSJONER: Satsversjon[] = [
     inkassovarselGebyr: 38,
     betalingsoppfordringGebyr: 113,
     rettsgebyr: 1345,
+    rettsgebyrSatser: rettsgebyrSatserFor(1345, 1479),
     salaerForbruker: [
       { hovedstolTom: 500, enkelA: 187.5, tungA: 375, enkelB: 234.38, tungB: 468.75 },
       { hovedstolTom: 1000, enkelA: 262.5, tungA: 525, enkelB: 328.13, tungB: 656.25 },
@@ -166,6 +230,7 @@ function vurderLinje(
   linje: Kostnadslinje,
   hovedstol: number | null,
   sats: Satsversjon,
+  stadium: string | null = null,
 ): LinjeResultat {
   const ukjent = (forklaring: string): LinjeResultat => ({
     linje,
@@ -248,8 +313,36 @@ function vurderLinje(
 
     case "forsinkelsesrente":
       return ukjent("Kontroll av renter kommer senere.");
-    case "rettsgebyr":
-      return ukjent("Rettsgebyr kontrolleres ikke ennå.");
+    case "rettsgebyr": {
+      // Aldri «over» for rettsgebyr i v1: bare «innenfor», «mulig_over» eller «ukjent».
+      if (!stadium) return ukjent(UKJENT_ARSAK.manglerStadium);
+      if (STADIER_FOER_RETT.includes(stadium)) {
+        if (!RETTSGEBYR_FOER_RETT_ER_MULIG_OVER) return ukjent(UKJENT_ARSAK.stadiumUklart);
+        return {
+          linje,
+          vurdering: "mulig_over",
+          maksLav: null,
+          maksHoy: null,
+          differanse: null,
+          forklaring:
+            "Rettsgebyr kan først kreves når saken er brakt inn for forliksrådet eller namsmannen.",
+        };
+      }
+      if (!STADIER_RETT.includes(stadium)) return ukjent(UKJENT_ARSAK.stadiumUklart);
+      // Nærmeste kjente sats innenfor slingringen.
+      const treff = sats.rettsgebyrSatser
+        .filter((s) => Math.abs(linje.belop - s.belop) <= SLINGRING)
+        .sort((a, b) => Math.abs(linje.belop - a.belop) - Math.abs(linje.belop - b.belop))[0];
+      if (!treff) return ukjent(UKJENT_ARSAK.ikkeKjentSats);
+      return {
+        linje,
+        vurdering: "innenfor",
+        maksLav: treff.belop,
+        maksHoy: treff.belop,
+        differanse: null,
+        forklaring: `Tilsvarer ${treff.navn} (${kr(treff.belop)} kr).`,
+      };
+    }
     case "annet":
       return ukjent("Ukjent kostnadstype.");
   }
@@ -265,6 +358,8 @@ export function sjekkKostnader(
   linjer: Kostnadslinje[],
   hovedstol: number | null,
   brevdato: string | null,
+  /** Brevtypen/stadiet (faktura … namsmann). Null = ukjent stadium. */
+  stadium: string | null = null,
 ): GebyrsjekkResultat {
   const dato = brevdato || idagOslo();
   const brevdatoAntatt = !brevdato;
@@ -295,7 +390,7 @@ export function sjekkKostnader(
   }
 
   const linjeResultater = linjer.map((linje) =>
-    vurderLinje(linje, hovedstol, sats),
+    vurderLinje(linje, hovedstol, sats, stadium),
   );
 
   return {
@@ -371,6 +466,8 @@ export function utregningRaderForLinje(
   hovedstol: number | null,
 ): UtregningRad[] | null {
   if (l.vurdering !== "over" && l.vurdering !== "mulig_over") return null;
+  // Rettsgebyr har ingen utregning å vise: forklaringen på linjen sier alt.
+  if (l.linje.type === "rettsgebyr") return null;
 
   const rader: UtregningRad[] = [];
   if (l.linje.type === "salaer") {

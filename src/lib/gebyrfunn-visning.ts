@@ -4,7 +4,7 @@
 // («use client»-komponenten Dom.tsx importerer DomFullskjerm, og
 // DomFullskjerm trenger samme utledning).
 import type { GebyrsjekkResultat, Kostnadstype, LinjeResultat, Vurdering } from "./gebyr.ts";
-import { KOSTNADSTYPE_ETIKETT } from "./gebyr.ts";
+import { KOSTNADSTYPE_ETIKETT, UKJENT_ARSAK } from "./gebyr.ts";
 import type { Sumavvik } from "./sumkontroll.ts";
 import { formaterKr } from "./format.ts";
 
@@ -39,6 +39,23 @@ export function funnOrd(linjer: LinjeResultat[]): string {
 // Ordet «merknad» brukes ikke: en linje er innenfor, for høy, kan være for høy
 // eller ikke sjekket.
 
+/**
+ * Kort pilletekst for en linje vi ikke kunne vurdere: årsaken når den er kjent
+ * og kort, ellers «Ikke sjekket».
+ */
+export function ukjentPille(forklaring: string): string {
+  switch (forklaring) {
+    case UKJENT_ARSAK.manglerStadium:
+      return "Mangler stadium";
+    case UKJENT_ARSAK.stadiumUklart:
+      return "Stadium uklart";
+    case UKJENT_ARSAK.ikkeKjentSats:
+      return "Samsvarer ikke med kjent sats";
+    default:
+      return "Ikke sjekket";
+  }
+}
+
 /** Pillen for hver vurdering. Klassene er eksisterende tokens (som Pill). */
 export const VURDERING_PILL: Record<Vurdering, { klasse: string; tekst: (l: LinjeResultat) => string }> = {
   innenfor: { klasse: "bg-trygg/10 text-trygg", tekst: () => "Innenfor" },
@@ -47,7 +64,7 @@ export const VURDERING_PILL: Record<Vurdering, { klasse: string; tekst: (l: Linj
     tekst: (l) => (l.differanse !== null ? `${kr(l.differanse)} kr for mye` : "For høyt"),
   },
   mulig_over: { klasse: "bg-varsel-bg text-varsel-tekst", tekst: () => "Kan være for høyt" },
-  ukjent: { klasse: "bg-flate-2 text-dempet", tekst: () => "Ikke sjekket" },
+  ukjent: { klasse: "bg-flate-2 text-dempet", tekst: (l) => ukjentPille(l.forklaring) },
 };
 
 /** Navnet på det vi ikke sjekker ennå, i setningen under «Gebyrsjekken». */

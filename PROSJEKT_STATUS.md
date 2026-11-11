@@ -624,6 +624,7 @@ Hver desember, før 1. januar:
 2. Legg inn en **ny** `Satsversjon` i `SATSVERSJONER` med `gyldigFra` (1. januar), `gyldigTil` (31. desember) og `kilde`. Eksisterende versjoner redigeres aldri.
 3. Kjør `npm test`. Legg gjerne til en test i `gebyr.test.ts` for det nye året.
 4. Skriv datoen for oppdateringen her: *2026-satsene verifisert 2026-07-15. 2027 er ikke lagt inn.*
+5. **Rettsgebyr:** legg inn rettsgebyret R for det nye året i den nye versjonen (domstol.no). `rettsgebyrSatserFor(R)` regner ut forliksklage (1,54 R) og utlegg (0,69 R), rundet ned. Begjæring om tvangsfullbyrdelse er et fast beløp som må hentes fra domstol.no på nytt. *R 2026 = 1 345 kr verifisert 2026-11-11 mot domstol.no og Lovdata (rettsgebyrloven § 6 a, § 7, § 14).*
 
 Til det er gjort, sier appen «Satsene for {år} er ikke lagt inn ennå» og «ukjent» for nye brev. Det er riktig oppførsel og ingen feil. Testen «satserForDato(null) bruker dagens dato» holder også etter nyttår, siden den sammenligner med `satserForDato(idagOslo())`.
 

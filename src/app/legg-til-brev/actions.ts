@@ -132,7 +132,7 @@ async function etterbehandle(
   const hovedstol = tolkKr(analyse.hovedstol) ?? tolkKr(analyse.belop);
   const gebyrsjekk =
     analyse.kostnadslinjer.length > 0
-      ? sjekkKostnader(analyse.kostnadslinjer, hovedstol, analyse.brevdato || null)
+      ? sjekkKostnader(analyse.kostnadslinjer, hovedstol, analyse.brevdato || null, analyse.brevtype ?? null)
       : null;
 
   // Match mot eksisterende krav er et FORSLAG brukeren bekrefter — aldri en
@@ -383,14 +383,14 @@ export async function lagreBrev(
   // Lagret jsonb er sannheten for visning senere — ikke rekalkuler ved lesing.
   let gebyrsjekk: (GebyrsjekkResultat & { sumkontroll?: unknown }) | null =
     linjer.length > 0
-      ? sjekkKostnader(linjer, input.hovedstol ?? input.belop, input.brevdato || null)
+      ? sjekkKostnader(linjer, input.hovedstol ?? input.belop, input.brevdato || null, input.brevtype ?? null)
       : null;
   // Et bekreftet sumavvik lagres i det eksisterende gebyrsjekk-jsonb-objektet
   // (§A.3, ingen ny kolonne) — kun for senere feilsøking, vises ikke i saken.
   // Uten kostnadslinjer lages et tomt gebyrsjekk-objekt til formålet.
   if (sumkontroll.status === "avvik") {
     gebyrsjekk = {
-      ...(gebyrsjekk ?? sjekkKostnader([], input.hovedstol, input.brevdato || null)),
+      ...(gebyrsjekk ?? sjekkKostnader([], input.hovedstol, input.brevdato || null, input.brevtype ?? null)),
       sumkontroll: { ...sumkontroll, bekreftetLikevel: true },
     };
   }

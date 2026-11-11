@@ -69,7 +69,7 @@ async function main() {
     const b = s.brev;
     const gs =
       b.kostnadslinjer.length > 0
-        ? sjekkKostnader(b.kostnadslinjer, b.hovedstol ?? b.belopTotalt, b.brevdato)
+        ? sjekkKostnader(b.kostnadslinjer, b.hovedstol ?? b.belopTotalt, b.brevdato, s.stadium)
         : null;
     const omfang = gjeldendeOmfang(s.type, gs, s.omfang);
     const avdrag =
