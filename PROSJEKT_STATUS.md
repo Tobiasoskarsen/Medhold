@@ -3,6 +3,11 @@
 Løpende status for implementeringen av `MEDHOLD_ARBEIDSORDRE.md`. Oppdateres
 etter hver fase.
 
+## Ny saksoversikt – 11. november 2026
+
+Oversikt, Dokumenter og Historikk erstatter den sammenhengende lange saksvisningen. Ventende sak prioriterer ventestatus og nytt svarbrev; generelle valg ligger under «Andre muligheter». Etter skanning brukes samme kompakte, grupperte handlingsliste. Eksisterende regler, sikkerhetsvarsler og lagringsvalg beholdes.
+
+Verifisert: 404 enhetstester, 144 lokale DB-/modultester, lint uten feil (én eksisterende lokal advarsel) og produksjonsbygg/TypeScript. Faktisk lokal nettleser med syntetiske testdata: lys/mørk, aktive/ventende saker, dokumenter, historikk og neste steg etter lesing. Testkonto ryddet. Ingen ny fysisk test, merge eller produksjonsdeploy. Se [beskrivelse, begrensninger og skjermbilder](docs/design/sak-oversikt/README.md).
 ## R5 – trygg avbruddshåndtering og mobilkvalitet – 11. november 2026
 
 Egen gren/PR stablet på åpen R4 (#66), ikke merget eller produksjonsdeployet. Navigasjonsvern for aktivt ulagret arbeid, lenke til Saker ved ukjent brevlagring og kvittering med eksisterende autentiserte sak-/fristdata. Automatisk sessionStorage-buffer for utkasttekst er fjernet; bare eksplisitt serverlagring er varig. Ved ukjent utkastlagring/sendtregistrering leses serverstatus før nytt skriv; synkron lås stopper dobbelttrykk. Revalidert sendtstatus overstyrer gammel ukjent-beskjed. Navngitte, større redigeringsfelt og ørepresisjon etter animasjon er rettet uten endrede beregninger.

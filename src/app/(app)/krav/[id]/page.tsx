@@ -1,3 +1,4 @@
+import { Saksvisning } from "./Saksvisning";
 import { LagretBrevMerknad } from "@/components/LagretBrevMerknad";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { KontrollOmfang } from "@/components/KontrollOmfang";
@@ -7,7 +8,6 @@ import { ChevronLeft, ChevronRight, FileText, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   Skjermramme,
-  Kort,
   Primærknapp,
   StadiumLinje,
   FristRad,
@@ -551,7 +551,6 @@ export default async function KravDetaljPage({
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         {stadium && <StadiumLinje stadium={stadium} />}
-        <KontrollOmfang brevtype={stadium ?? null} />
         {sak.status === "venter_pa_svar" && (
           <span
             className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
@@ -574,6 +573,18 @@ export default async function KravDetaljPage({
       )}
       </SekvensDel>
 
+      </Sekvens>
+      <Saksvisning antallDokumenter={brevListe.length + utkast.length}
+        oversikt={<>
+      {sak.status === "venter_pa_svar" && (
+        <section className="mb-4 rounded-kort border border-kant bg-flate p-4" aria-label="Venter på svar">
+          <p className="eyebrow">Status</p>
+          <h2 className="mt-1 text-[20px] font-bold tracking-tight text-blekk">Du venter på svar</h2>
+          {oppfolgingTilstandVerdi && <p className="mt-2 text-hjelp leading-relaxed text-dempet">{oppfolgingTekst(oppfolgingTilstandVerdi, null, varslerPa)}</p>}
+          <Link href={`/legg-til-brev?krav=${sak.id}`} className="trykk mt-4 inline-flex min-h-11 items-center gap-2 rounded-kontroll bg-knapp px-4 py-2.5 text-hjelp font-semibold text-knapp-tekst">Legg til svarbrev <Plus className="size-4" aria-hidden /></Link>
+          <div className="-mx-4 -mb-4 mt-4 border-t border-strek"><VenterPaSvarUtvidelse kravId={sak.id} sistEndret={sak.sist_endret as string} /></div>
+        </section>
+      )}
       {/* Registrert stadium/status og relevant frist: situasjonen før valgene. */}
       {nesteFrist && (
         <SekvensDel>
@@ -583,6 +594,8 @@ export default async function KravDetaljPage({
             gammeltBrev={fristBrevGammelt}
             className="mt-3"
           />
+          <p className="mt-2 px-1 text-meta text-dempet">{nesteFrist.kilde === "beregnet" ? "Beregnet fra brevet – kontroller datoen." : "Fristen står oppgitt i brevet."}</p>
+          <details className="mt-1 px-1"><summary className="min-h-11 cursor-pointer rounded-liten text-hjelp text-dempet focus-visible:outline-2 focus-visible:outline-aksent">Om fristen og fullføring</summary>
           {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
             <Utregning
               className="mt-2"
@@ -616,29 +629,7 @@ export default async function KravDetaljPage({
             </p>
           ) : null}
           <FristKnapp fristId={nesteFrist.id} handling="fullfort" />
-        </SekvensDel>
-      )}
-
-      {sak.status === "venter_pa_svar" && oppfolgingTilstandVerdi && (
-        <SekvensDel>
-          <Kort className="mt-seksjon">
-            <p className="text-[14.5px] font-semibold text-blekk">
-              Venter på svar fra {inkassoselskap ?? sak.kreditor ?? sak.tittel}
-            </p>
-            <p className="mt-0.5 text-hjelp text-dempet">
-              {oppfolgingTekst(
-                oppfolgingTilstandVerdi,
-                inkassoselskap ?? sak.kreditor ?? sak.tittel,
-                varslerPa,
-              )}
-            </p>
-            <div className="-mx-[18px] -mb-[18px] mt-3 border-t-[0.5px] border-strek">
-              <VenterPaSvarUtvidelse
-                kravId={sak.id}
-                sistEndret={sak.sist_endret as string}
-              />
-            </div>
-          </Kort>
+          </details>
         </SekvensDel>
       )}
 
@@ -666,13 +657,16 @@ export default async function KravDetaljPage({
         stotterUtkast(stadium) &&
         !lost && (
           <SekvensDel>
+            <details className="mt-4" open={sak.status !== "venter_pa_svar"}>
+              <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk focus-visible:outline-2 focus-visible:outline-aksent">{sak.status === "venter_pa_svar" ? "Andre muligheter" : "Velg neste steg"}</summary>
             <Veivalg
-              className="mt-seksjon"
+              className="mt-1 [&>h2]:sr-only"
               harGebyrfunn={harOverGebyr}
               gebyrDifferanse={overDiff}
               svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
               betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
             />
+            </details>
           </SekvensDel>
         )
       )}
@@ -708,12 +702,13 @@ export default async function KravDetaljPage({
       )}
 
 
+          <div className="mt-4"><KontrollOmfang brevtype={stadium ?? null} /></div>
       {/* Siste brev: egen inngang før historikken. */}
       {sisteBrev && (
         <SekvensDel>
           <Link
             href={`/krav/${sak.id}/brev/${sisteBrev.id}`}
-            className="trykk mt-seksjon flex min-h-[60px] items-center gap-3 rounded-kort border border-kant bg-flate px-4 py-3"
+            className="trykk mt-5 flex min-h-[60px] items-center gap-3 border-t border-strek py-4 focus-visible:outline-2 focus-visible:outline-aksent"
           >
             <span
               aria-hidden
@@ -734,7 +729,7 @@ export default async function KravDetaljPage({
                   .join(" · ")}
               </span>
             </span>
-            <span className="shrink-0 text-hjelp font-semibold text-aksent-dyp">
+            <span className="hidden shrink-0 text-hjelp font-semibold text-aksent-dyp min-[400px]:block">
               Åpne brevet
             </span>
             <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
@@ -742,6 +737,26 @@ export default async function KravDetaljPage({
         </SekvensDel>
       )}
 
+
+        </>}
+        dokumenter={<>
+
+          <h2 className="seksjonstittel mb-3 text-blekk">Brev og svar</h2>
+          <p className="mb-4 text-hjelp text-dempet">Åpne et brev eller fortsett på et lagret utkast.</p>
+          <div className="overflow-hidden rounded-kort border border-kant bg-flate divide-y divide-strek">
+            {brevListe.map(b => <Link key={b.id} href={`/krav/${sak.id}/brev/${b.id}`} className="trykk flex min-h-[72px] items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-aksent">
+              <FileText className="size-5 shrink-0 text-dempet" aria-hidden />
+              <span className="min-w-0 flex-1"><span className="block text-hjelp font-semibold text-blekk">{brevtypeEtikett(b.brevtype)}</span><span className="mt-0.5 block break-words text-meta text-dempet">{[b.avsender, formaterKortDato(b.brevdato ?? b.opprettet)].filter(Boolean).join(" · ")}</span></span><ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
+            </Link>)}
+            {utkast.map(u => <Link key={u.id} href={`/krav/${sak.id}/utkast?utkast=${u.id}`} className="trykk flex min-h-[72px] items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-aksent">
+              <FileText className="size-5 shrink-0 text-dempet" aria-hidden />
+              <span className="min-w-0 flex-1"><span className="block text-hjelp font-semibold text-blekk">{UTKAST_ETIKETT[u.type]}</span><span className="mt-0.5 block text-meta text-dempet">{u.sendt_at ? "Registrert sendt" : "Utkast – ikke registrert sendt"} · {formaterKortDato(u.sendt_at ?? u.opprettet)}</span></span><ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
+            </Link>)}
+          </div>
+          {!brevListe.length && !utkast.length && <p className="py-4 text-hjelp text-dempet">Ingen dokumenter i saken ennå.</p>}
+
+        </>}
+        historikk={<>
       {/* Historikk. */}
       <SekvensDel>
       {hendelser.length === 0 ? (
@@ -764,7 +779,9 @@ export default async function KravDetaljPage({
         </SakensGangSeksjon>
       )}
       </SekvensDel>
-      </Sekvens>
+
+        </>}
+      />
 
       <div className="my-seksjon">
         <Primærknapp href={`/legg-til-brev?krav=${sak.id}`} variant="rolig">
