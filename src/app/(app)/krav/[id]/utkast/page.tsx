@@ -1,3 +1,4 @@
+import { LagretBrevMerknad } from "@/components/LagretBrevMerknad";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
@@ -22,10 +23,10 @@ export default async function UtkastPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ type?: string; brev?: string; manedsbelop?: string; utkast?: string }>;
+  searchParams: Promise<{ type?: string; brev?: string; manedsbelop?: string; utkast?: string; lagret?: string }>;
 }) {
   const { id } = await params;
-  const { type, brev: brevParam, manedsbelop, utkast: utkastParam } = await searchParams;
+  const { type, brev: brevParam, manedsbelop, utkast: utkastParam, lagret } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -94,6 +95,7 @@ export default async function UtkastPage({
 
   return (
     <Skjermramme className="pt-2.5" animerInn={false}>
+      {brev && lagret === brev.id && <LagretBrevMerknad sakId={id} brevId={brev.id} />}
       <Toppstripe className="mb-1">
         <Link
           href={`/krav/${id}`}

@@ -41,6 +41,8 @@ import { Bekreftelse } from "./Bekreftelse";
 import { BrevGjennomgang } from "./BrevGjennomgang";
 import { KontrollOversikt } from "./KontrollOversikt";
 import { BrevReferanse } from "./BrevReferanse";
+import { SakOgFrister } from "./SakOgFrister";
+import { LagretBrev } from "./LagretBrev";
 import { sjekkKostnader, type Kostnadslinje } from "@/lib/gebyr";
 import { kontrollerSum } from "@/lib/sumkontroll";
 import { brevforklaring } from "@/lib/brevforklaring";
@@ -137,6 +139,9 @@ export function LeggTilBrevFlyt({
   const [klargjor, setKlargjor] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
   const [lagrer, setLagrer] = useState(false);
+  const lagreLas = useRef(false);
+  const [lagringUkjent, setLagringUkjent] = useState(false);
+  const [lagretBrev, setLagretBrev] = useState<{ sakId: string; brevId: string; maal: string; navigasjonsfeil: boolean } | null>(null);
   const kameraInput = useRef<HTMLInputElement | null>(null);
   const filInput = useRef<HTMLInputElement | null>(null);
 
@@ -226,6 +231,7 @@ export function LeggTilBrevFlyt({
   // bekreftet, var tallene slik de sto da.
   function rettet<T>(sett: (v: T) => void) {
     return (v: T) => {
+      if (lagreLas.current || lagringUkjent) return;
       sett(v);
       setBekreftet(false);
       setStemmerLikevel(false);
@@ -393,7 +399,8 @@ export function LeggTilBrevFlyt({
     .map((f) => f.id);
 
   async function lagre(destinasjon: "innsigelse" | "veier-ut" | "krav") {
-    if (!analyse || !kanLagreBrev || !lagringsnokkel) return;
+    if (lagreLas.current || !analyse || !kanLagreBrev || !lagringsnokkel) return;
+    lagreLas.current = true;
     setLagrer(true);
     setFeil(null);
 
@@ -434,15 +441,18 @@ export function LeggTilBrevFlyt({
     try {
       r = await lagreBrev(input);
     } catch {
+      setLagringUkjent(true);
       // Svaret kom aldri fram. Nøkkelen beholdes, så et nytt forsøk ikke lagrer
       // brevet to ganger hvis det første faktisk gikk gjennom.
-      setFeil("Fikk ikke kontakt med Medhold. Sjekk nettet og prøv igjen.");
+      setFeil("Vi fikk ikke bekreftet om brevet ble lagret. Sjekk nettet og prøv igjen her; samme lagringsnøkkel brukes. Opplysningene er låst mens resultatet er ukjent. Hvis du lukker siden, se etter brevet under Saker før du legger det inn på nytt.");
       setLagrer(false);
+      lagreLas.current = false;
       return;
     }
     if (!r.ok) {
       setFeil(r.feil);
-      if (r.kontroll) { setAlvorlig(r.kontroll.alvorlig); setBekreftet(false); }
+      if (r.kontroll) { setAlvorlig(r.kontroll.alvorlig); setBekreftet(false); setLagringUkjent(false); }
+      lagreLas.current = false;
       setLagrer(false);
       return;
     }
@@ -457,12 +467,17 @@ export function LeggTilBrevFlyt({
     }
     const mål =
       destinasjon === "innsigelse"
-        ? `/krav/${r.sakId}/utkast?type=innsigelse`
+        ? `/krav/${r.sakId}/utkast?type=innsigelse&brev=${r.brevId}&lagret=${r.brevId}`
         : destinasjon === "veier-ut"
-          ? `/krav/${r.sakId}/veier-ut`
-          : `/krav/${r.sakId}`;
-    router.push(mål);
-    router.refresh();
+          ? `/krav/${r.sakId}/veier-ut?brev=${r.brevId}&lagret=${r.brevId}`
+          : `/krav/${r.sakId}?lagret=${r.brevId}`;
+    setLagretBrev({ sakId: r.sakId, brevId: r.brevId, maal: mål, navigasjonsfeil: false });
+    setLagrer(false);
+    try {
+      router.push(mål);
+    } catch {
+      setLagretBrev({ sakId: r.sakId, brevId: r.brevId, maal: mål, navigasjonsfeil: true });
+    }
   }
 
   const harPdf = bilder.some((b) => b.media_type === "application/pdf");
@@ -666,8 +681,9 @@ export function LeggTilBrevFlyt({
           transition={{ duration: VARIGHET.rolig, ease: EASING }}
           className="flex flex-1 flex-col pb-8"
         >
-          <BrevGjennomgang
+          {lagretBrev ? <LagretBrev {...lagretBrev} /> : <BrevGjennomgang
             bekreftet={kanLagre}
+            opplysningerLast={lagringUkjent}
             lagrer={lagrer}
             feil={feil}
             opplysninger={<>
@@ -780,13 +796,8 @@ export function LeggTilBrevFlyt({
 
             </>}
             handling={<>
-              <details className="rounded-kort border border-strek bg-flate p-4" open={!!kravForslag || fristSammenligning?.status === "avvik_kortere"}>
-                <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk focus-visible:outline-2 focus-visible:outline-aksent">
-                  Sak, frister og huskeliste
-                  <span className="mt-1 block text-meta font-normal text-dempet">{kravModus === "ny" ? "Ny sak" : valgtKravObj?.navn || "Velg sak"} · {valgteFrister.length} {valgteFrister.length === 1 ? "valgt frist" : "valgte frister"}</span>
-                  {valgteFrister[0]?.forfallsdato && <span className="mt-1 block text-meta font-normal text-dempet">Neste valgte frist: {formaterKortDato(valgteFrister.map(f => f.forfallsdato).filter((d): d is string => !!d).sort()[0])}</span>}
-                </summary>
-                <p className="mt-2 text-meta text-dempet">Valgte frister og steg lagres sammen med brevet.</p>
+              <fieldset disabled={lagrer || lagringUkjent} className="min-w-0" aria-label="Valg som skal lagres med brevet">
+              <SakOgFrister sakNavn={kravModus === "ny" ? "Ny sak" : valgtKravObj?.navn || "Velg sak"} frister={valgteFrister} fristfunn={fristSammenligning} alvorlig={alvorlig} harMatch={!!kravForslag} kreverBekreftelse={kreverAvslutning || valgtKravAvsluttet || datoMerknad !== null}>
           <div className="mt-5">
             <p className="text-hjelp font-medium text-blekk">Hører til</p>
             {kravForslag && kravModus === "ny" && (
@@ -944,7 +955,7 @@ export function LeggTilBrevFlyt({
             </details>
           )}
 
-              </details>
+              </SakOgFrister>
           {valgtKravVenter && (
             <div className="mt-5">
               <p className="text-hjelp font-medium text-blekk">
@@ -1086,6 +1097,7 @@ export function LeggTilBrevFlyt({
             </p>
           )}
 
+              </fieldset>
           {kanLagre && (
           <div className="mt-6">
             <Veivalg
@@ -1101,21 +1113,15 @@ export function LeggTilBrevFlyt({
                 onKlikk: () => lagre("veier-ut"),
                 deaktivert: lagrer || !kanLagreBrev,
               }}
-              ekstra={
-                <button
-                  type="button"
-                  disabled={lagrer || !kanLagreBrev}
-                  onClick={() => lagre("krav")}
-                  className="trykk mt-3 block text-hjelp text-dempet underline decoration-strek underline-offset-4 transition hover:text-blekk disabled:opacity-60"
-                >
-                  {lagrer ? "Lagrer …" : "Bestem senere — lagre i tidslinjen"}
-                </button>
-              }
+              lagreForst
+              lagrer={lagrer}
+              lagringUkjent={lagringUkjent}
+              senereMål={{ type: "klikk", onKlikk: () => lagre("krav"), deaktivert: lagrer || !kanLagreBrev }}
             />
           </div>
           )}
             </>}
-          />
+          />}
         </m.div>
       )}
       </AnimatePresence>

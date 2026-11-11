@@ -15,6 +15,7 @@ export function KontrollOversikt({ resultat, children }: {
 }) {
   const linjer = resultat?.linjer ?? [];
   const innenfor = linjer.filter(l => l.vurdering === "innenfor").length;
+  const kontrollerte = linjer.filter(l => l.vurdering !== "ukjent").length;
   const merknader = linjer.filter(l => l.vurdering !== "innenfor");
   return (
     <section aria-label="Oversikt over beløpskontrollen" className="mt-5 rounded-kort border border-kant bg-flate p-[18px]">
@@ -23,6 +24,7 @@ export function KontrollOversikt({ resultat, children }: {
         {linjer.length === 0 ? "Ingen kostnadslinjer å kontrollere. Det betyr ikke at kravet er vurdert som riktig." :
           `${linjer.length} kostnadslinje${linjer.length === 1 ? "" : "r"} · ${innenfor} innenfor beløpsgrensen · ${merknader.length} med merknad`}
       </p>
+      {linjer.length > 0 && <p className="mt-2 text-meta text-dempet">{kontrollerte === 0 ? "Ingen kostnadslinjer kunne kontrolleres mot støttede beløpsgrenser." : `${kontrollerte} av ${linjer.length} kostnadslinjer kontrollert mot kjente beløpsgrenser.`}{merknader.length === 0 ? " Ingen merknader i den støttede beløpskontrollen." : ""}</p>}
       {merknader.length > 0 && <ul className="mt-3 divide-y divide-strek">
         {merknader.map((linje, i) => (
           <li key={i} className="py-3 first:pt-0">

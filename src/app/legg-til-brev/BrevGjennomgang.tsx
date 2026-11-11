@@ -9,13 +9,13 @@ import { EASING, FJAER, GLID_DYBDE, VARIGHET } from "@/lib/bevegelse";
 const DELER = [
   { navn: "Opplysninger", tittel: "Stemmer opplysningene?", tekst: "Sammenlign med brevet. Retter du noe her, regner vi alt på nytt." },
   { navn: "Kontroll", tittel: "Dette har vi kontrollert", tekst: "Se gjennom beløpskontrollen og hva vurderingen omfatter." },
-  { navn: "Neste steg", tittel: "Hva vil du gjøre videre?", tekst: "Velg sak, frister og neste steg. Brevet lagres først når du velger en handling nederst." },
+  { navn: "Neste steg", tittel: "Hva vil du gjøre videre?", tekst: "Velg hva du vil gjøre med brevet." },
 ];
 
 /** Kun presentasjon. Alle redigerte verdier og lagringsregler eies av brevflyten. */
-export function BrevGjennomgang({ bekreftet, opplysninger, kontroll, handling, feil, lagrer }: {
+export function BrevGjennomgang({ bekreftet, opplysninger, kontroll, handling, feil, lagrer, opplysningerLast = false }: {
   bekreftet: boolean; opplysninger: ReactNode; kontroll: ReactNode;
-  handling: ReactNode; feil: string | null; lagrer: boolean;
+  handling: ReactNode; feil: string | null; lagrer: boolean; opplysningerLast?: boolean;
 }) {
   const [valgt, setValgt] = useState(0);
   const reduserBevegelse = useReducedMotion();
@@ -71,13 +71,15 @@ export function BrevGjennomgang({ bekreftet, opplysninger, kontroll, handling, f
         <m.div key={side} initial={reduserBevegelse ? false : { opacity: 0, x: retning * GLID_DYBDE }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: reduserBevegelse ? 0 : VARIGHET.normal, ease: EASING }}>
-          {side === 0 ? opplysninger : side === 1 ? kontroll : handling}
+          <fieldset disabled={lagrer || (opplysningerLast && side === 0)} className="min-w-0" aria-label="Brevopplysninger og handlingsvalg">
+            {side === 0 ? opplysninger : side === 1 ? kontroll : handling}
+          </fieldset>
         </m.div>
         {feil && <p role="alert" className="mt-4 text-hjelp text-dom-rod">{feil}</p>}
         <footer className="sticky bottom-0 z-10 -mx-5 mt-6 border-t border-strek bg-bakgrunn px-5 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-3">
             {side > 0 && <button type="button" disabled={lagrer} onClick={() => bytt(side - 1)} className="flex min-h-11 items-center gap-1 rounded-kontroll px-3 text-hjelp font-semibold text-blekk focus-visible:outline-2 focus-visible:outline-aksent disabled:opacity-50"><ChevronLeft className="size-4" aria-hidden />Tilbake</button>}
-            {side < 2 ? <Primærknapp type="button" disabled={!bekreftet || lagrer} onClick={() => bytt(side + 1)}>{side === 0 ? "Se kontrollen" : "Velg neste steg"}</Primærknapp> : <p className="text-meta text-dempet">{lagrer ? "Lagrer brevet …" : "Du sender eventuelle svarbrev selv."}</p>}
+            {side < 2 ? <Primærknapp type="button" disabled={!bekreftet || lagrer} onClick={() => bytt(side + 1)}>{side === 0 ? "Se kontrollen" : "Velg neste steg"}</Primærknapp> : lagrer ? <p role="status" className="text-meta text-dempet">Lagrer brevet …</p> : null}
           </div>
           {side === 0 && !bekreftet && <p className="mt-2 text-meta text-dempet">Bekreft opplysningene over for å fortsette.</p>}
         </footer>

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import type { Bilde } from "@/lib/brevanalyse";
 
@@ -14,10 +17,15 @@ export function BrevReferanse({ filer, tekst }: { filer: (Bilde & { navn: string
             <a href={`data:application/pdf;base64,${fil.data}`} download={fil.navn} className="mt-2 inline-flex min-h-11 items-center font-semibold text-aksent underline">Last ned original-PDF</a>
           </div>
         ) : (
-          <Image key={i} src={`data:${fil.media_type};base64,${fil.data}`} alt={`Opplastet brev, side ${i + 1}`} width={1568} height={2080} unoptimized className="h-auto w-full rounded-liten" />
+          <BrevBilde key={i} fil={fil} side={i + 1} />
         ))}
         {!filer.length && <p className="whitespace-pre-wrap break-words text-hjelp leading-relaxed text-blekk">{tekst}</p>}
       </div>
     </details>
   );
+}
+
+function BrevBilde({ fil, side }: { fil: Bilde; side: number }) {
+  const [feil, setFeil] = useState(false);
+  return feil ? <p role="status" className="p-3 text-hjelp text-dempet">Kunne ikke vise side {side}. Opplysningene du har rettet er beholdt. Sammenlign med filen på enheten din.</p> : <Image src={`data:${fil.media_type};base64,${fil.data}`} alt={`Opplastet brev, side ${side}`} width={1568} height={2080} unoptimized className="h-auto w-full rounded-liten" onError={() => setFeil(true)} />;
 }

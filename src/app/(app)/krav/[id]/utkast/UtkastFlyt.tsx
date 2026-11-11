@@ -546,7 +546,7 @@ export function UtkastFlyt({
             </label>
           )}
 
-          {feil && <p className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
+          {feil && <p role="alert" className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
 
           <div className="mt-5">
             <Primærknapp onClick={generer} disabled={genererer}>
@@ -737,7 +737,7 @@ export function UtkastFlyt({
                 </p>
               </div>
 
-              {feil && <p className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
+              {feil && <p role="alert" className="mt-3 text-hjelp text-dom-rod">{feil}</p>}
 
               {/* Egen seksjon: dette er en registrering brukeren gjør etter å
                   ha sendt selv — appen sender aldri noe. */}

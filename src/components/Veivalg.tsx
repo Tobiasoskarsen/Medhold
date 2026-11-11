@@ -8,7 +8,7 @@
 // sendes ALDRI til utkast-prompten — ren UI-tilstand.
 import { useId, useState, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { ChevronDown, ChevronRight, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Clock3 } from "lucide-react";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { VARIGHET, EASING } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
@@ -76,15 +76,15 @@ function VeivalgKort({
   return (
     <MålKnapp
       mål={mål}
-      className="trykk flex min-h-[68px] w-full items-center gap-3 rounded-kort border border-kant bg-flate px-4 py-3 text-left"
+      className="trykk flex min-h-[68px] w-full items-center gap-3 rounded-kort border border-kant bg-flate px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent focus-visible:ring-offset-2 focus-visible:ring-offset-bakgrunn"
       style={{ boxShadow: anbefalt ? "var(--anbefalt-glod)" : "var(--kort-skygge)" }}
     >
       <span
-        className={`flex size-9 shrink-0 items-center justify-center rounded-liten ${ikonBg}`}
+        aria-hidden="true" className={`flex size-9 shrink-0 items-center justify-center rounded-liten ${ikonBg}`}
       >
         {ikon}
       </span>
-      <span className="min-w-0 flex-1">
+      <span className="min-w-0 flex-1 break-words">
         <span className="radtittel block text-blekk">{tittel}</span>
         <span className="radtekst mt-0.5 block">{undertekst}</span>
         {anbefalt && begrunnelse && (
@@ -152,6 +152,10 @@ export function Veivalg({
   svarMål,
   betaleMål,
   ekstra,
+  senereMål,
+  lagreForst = false,
+  lagrer = false,
+  lagringUkjent = false,
   className = "",
 }: {
   /** Sakens nyeste brev har et lagret gebyrsjekk-funn (`over`). Deterministisk
@@ -163,6 +167,10 @@ export function Veivalg({
   betaleMål: VeivalgMål;
   /** Ekstra innhold rendret nederst (steg 3s «Bestem senere»-lenke). */
   ekstra?: ReactNode;
+  senereMål?: VeivalgMål;
+  lagreForst?: boolean;
+  lagrer?: boolean;
+  lagringUkjent?: boolean;
   className?: string;
 }) {
   const [åpen, setÅpen] = useState(false);
@@ -177,16 +185,22 @@ export function Veivalg({
     ? anbefalVei(svar as VeivalgSvar)
     : null;
 
+  const lagringstekst = lagrer
+    ? "Venter på bekreftelse av lagringen. Ingenting sendes automatisk."
+    : lagringUkjent
+      ? "Lagringsresultatet er ukjent. Et nytt forsøk her bruker samme lagringsnøkkel. Ingenting sendes automatisk."
+      : "Brevet er ikke lagret ennå. Alle tre valg lagrer brevet, valgte frister og huskelisten først. Ingenting sendes automatisk.";
+
   return (
     <div className={className}>
-      <h2 className="seksjonstittel text-blekk">
+      <h2 className={lagreForst ? "sr-only" : "seksjonstittel text-blekk"}>
         Hva vil du gjøre?
       </h2>
       <p className="mt-1 text-hjelp leading-relaxed text-dempet">
-        Du kan ombestemme deg når som helst. Du sender brevet selv.
+        {lagreForst ? lagringstekst : "Du kan ombestemme deg når som helst. Du sender brevet selv."}
       </p>
 
-      <div className="mt-gruppe flex flex-col gap-2">
+      <div className="mt-gruppe flex flex-col gap-2" aria-busy={lagrer}>
         <VeivalgKort
           ikon={
             <span className="text-[17px] font-bold text-dom-rod">
@@ -195,7 +209,7 @@ export function Veivalg({
           }
           ikonBg="bg-dom-rod-bg"
           tittel="Svar på kravet"
-          undertekst="Lag et utkast du kan redigere og sende selv."
+          undertekst={lagreForst ? "Lag et svar du kan lese gjennom, endre og sende selv." : "Lag et utkast du kan redigere og sende selv."}
           anbefalt={harGebyrfunn}
           begrunnelse={
             gebyrDifferanse
@@ -208,10 +222,11 @@ export function Veivalg({
           ikon={<Check className="size-[18px] text-trygg" aria-hidden />}
           ikonBg="bg-trygg/10"
           tittel="Finn en betalingsløsning"
-          undertekst="Se alternativer for betaling, utsettelse og avdrag."
+          undertekst={lagreForst ? "Se muligheter for avdrag eller å be om mer tid." : "Se alternativer for betaling, utsettelse og avdrag."}
           anbefalt={false}
           mål={betaleMål}
         />
+        {senereMål && <VeivalgKort ikon={<Clock3 className="size-[18px] text-dempet" aria-hidden />} ikonBg="bg-flate-2" tittel="Bestem senere" undertekst="Lagre brevet og kom tilbake når du vil." anbefalt={false} mål={senereMål} />}
       </div>
 
       <button

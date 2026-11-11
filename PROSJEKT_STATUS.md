@@ -3,6 +3,14 @@
 Løpende status for implementeringen av `MEDHOLD_ARBEIDSORDRE.md`. Oppdateres
 etter hver fase.
 
+## UX R4 – tydelige valg og trygg lagring – 10. november 2026
+
+Tre likeverdige valg etter kontroll: svar, betalingsmuligheter og bestem senere. Felles lagringsforklaring, serverbekreftet kvittering og eksplisitt brev-ID til neste flyt. Valgte frister oppsummeres; kritiske varsler og særbekreftelser ligger utenfor detaljfeltet. Dobbeltklikk sperres synkront. Ukjent lagringsresultat låser opplysningene til retry med samme nøkkel er avklart. Betalingsoversikten beholder øre.
+
+Verifisert: 403/403 enhetstester, 117/117 database-/modultester med test-concurrency=2, 26/26 ekte Supabase/HTTP-integrasjonstester mot medhold test med opprydding. Typekontroll og produksjonsbygg bestått. Lint uten feil, én eksisterende advarsel i lokal release-worktree. Standard parallell DB-kjøring samtidig med bygg traff lokal minnegrense; samme suite besto separat. Reell nettleser: tre handlingsvalg, tapt lagringssvar/retry uten duplikat, lukking/gjenfinning, genereringsfeil og korrekt brevgrunnlag. Ingen ny fysisk iPhone/VoiceOver-test. Ingen migrasjon, merge eller produksjonsdeploy.
+
+Full rapport med begrensninger og skjermbilder: [UX R4 sluttrapport](docs/testing/ux-r4/SLUTTRAPPORT.md).
+
 ## Kompakt kontroll og lagringsvalg – 10. november 2026
 
 PR #65 er videreført med en kort kontrolloversikt. Antall kontrollerte linjer og alle merknader vises før detaljene. Beløp/differanse, usikkerhet, ukontrollerte linjer, antatt dato og forbehold beholdes synlige. Full Gebyrsjekk med utregninger ligger under «Se gebyrdetaljer og kilder». Manglende kostnadslinjer gir ingen friskmelding.

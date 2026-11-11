@@ -1,17 +1,21 @@
+import { LagretBrevMerknad } from "@/components/LagretBrevMerknad";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Skjermramme, Sekvens, SekvensDel } from "@/components/ui";
-import { formaterBelop } from "@/lib/format";
+import { kr } from "@/lib/gebyrfunn-visning";
 import { VeierUtFlyt } from "./VeierUtFlyt";
 
 export default async function VeierUtPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ brev?: string; lagret?: string }>;
 }) {
   const { id } = await params;
+  const { brev: brevParam, lagret } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,23 +29,23 @@ export default async function VeierUtPage({
     .maybeSingle();
   if (!sak) notFound();
 
-  const { data: brevListe } = await supabase
-    .from("brev")
-    .select("id")
-    .eq("sak_id", id)
+  let brevSpørring = supabase.from("brev").select("id").eq("sak_id", id).eq("bruker_id", user.id);
+  if (brevParam) brevSpørring = brevSpørring.eq("id", brevParam);
+  const { data: brevListe, error: brevFeil } = await brevSpørring
     .order("brevdato", { ascending: false, nullsFirst: false })
-    .order("opprettet", { ascending: false })
-    .limit(1);
+    .order("opprettet", { ascending: false }).limit(1);
+  if (brevParam && (brevFeil || !brevListe?.[0])) notFound();
   const brevId = brevListe?.[0]?.id ?? null;
 
   const kreditor = sak.kreditor ?? sak.tittel;
-  const belop = formaterBelop(sak.belop_totalt);
+  const belop = sak.belop_totalt == null ? null : kr(sak.belop_totalt);
   const eyebrow = [kreditor, belop ? `${belop} kr` : null]
     .filter(Boolean)
     .join(" · ");
 
   return (
     <Skjermramme className="pt-5" animerInn={false}>
+      {brevId && lagret === brevId && <LagretBrevMerknad sakId={id} brevId={brevId} />}
       <Link
         href={`/krav/${id}`}
         className="mb-3.5 flex items-center gap-1 text-hjelp text-dempet transition hover:text-blekk"
