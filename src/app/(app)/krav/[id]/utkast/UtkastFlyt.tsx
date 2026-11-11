@@ -77,7 +77,6 @@ function FaseLinje({ aktiv }: { aktiv: 0 | 1 | 2 }) {
 export function UtkastFlyt({
   sakId,
   brevId,
-  avsender,
   avsenderEpost,
   kreditor,
   saksnummer,
@@ -647,9 +646,8 @@ export function UtkastFlyt({
               <p className="mt-3 text-hjelp leading-relaxed text-dempet">
                 {erSendt
                   ? "Dette er teksten du registrerte som sendt. Den kan ikke endres."
-                  : `Lagre endringene før du lukker siden. Ulagret tekst finnes bare i denne fanen. Du sender brevet selv${avsender ? ` til ${avsender}` : ""}.`}
+                  : "Lagre endringene før du lukker siden."}
               </p>
-              <p className="mt-1.5 text-meta text-dempet">{FORBEHOLD}</p>
 
               {omfangBrukt === "delvis" && ubestridt !== null && (
                 <Kort className="mt-4">
@@ -698,7 +696,7 @@ export function UtkastFlyt({
                     </ul>
                   )}
                   <p className="mt-2 text-meta text-dempet">
-                    {erSendt ? "Registreringen betyr at du har sendt brevet selv. Medhold har ikke sendt det." : "Du sender brevet selv, så les det gjennom før du sender."}
+                    {erSendt ? "Registreringen betyr at du har sendt brevet selv. Medhold har ikke sendt det." : FORBEHOLD}
                   </p>
                 </Kort>
               )}
@@ -756,9 +754,6 @@ export function UtkastFlyt({
                   </span>
                   {kopiert ? "Kopiert" : "Kopier"}
                 </button>
-                <p className="text-xs leading-relaxed text-dempet">
-                  Ble ikke hele brevet med? Bruk Kopier og lim inn.
-                </p>
               </div>
 
               {/* Egen seksjon: dette er en registrering brukeren gjør etter å
