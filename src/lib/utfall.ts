@@ -93,6 +93,16 @@ export function statusVedNyttBrev(i: {
   idag: string;
   /** Brukeren har krysset av for å åpne en avsluttet sak igjen. */
   gjenapne?: boolean;
+  /**
+   * Brevdatoen mot sakens andre brev (vurderBrevdato, lib/brevdato.ts). Bare
+   * «nyest» og «mangler» kan gjøre en ventende sak aktiv (0032). Utelatt =
+   * «nyest», som før.
+   */
+  datovurdering?: "nyest" | "lik" | "eldre" | "mangler";
+  /** Brevets dato (ISO), eller null når den er ukjent. */
+  brevdato?: string | null;
+  /** Dagen et utkast i saken sist ble markert som sendt (ISO, norsk tid). */
+  sistSendt?: string | null;
 }): {
   status: SakStatus;
   /** Statusen endres fra venter eller avsluttet til aktiv. */
@@ -119,7 +129,15 @@ export function statusVedNyttBrev(i: {
       ? { status: "aktiv", gjenapnet: true, kommendeFrist }
       : { status: "fullfort", gjenapnet: false, kommendeFrist };
   }
-  if (i.statusNa === "venter_pa_svar" && kommendeFrist) {
+  // 0032: samme brev på nytt, et eldre brev eller et brev datert før svaret
+  // ble sendt, lar saken vente.
+  const vurdering = i.datovurdering ?? "nyest";
+  const brevdato = i.brevdato ?? null;
+  const sistSendt = i.sistSendt ?? null;
+  const nyttSvar =
+    (vurdering === "nyest" || vurdering === "mangler") &&
+    (brevdato === null || sistSendt === null || brevdato > sistSendt);
+  if (i.statusNa === "venter_pa_svar" && kommendeFrist && nyttSvar) {
     return { status: "aktiv", gjenapnet: true, kommendeFrist };
   }
   return { status: i.statusNa, gjenapnet: false, kommendeFrist };

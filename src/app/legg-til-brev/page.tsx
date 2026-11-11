@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LeggTilBrevFlyt } from "./LeggTilBrevFlyt";
 import type { SakStatus } from "@/lib/types";
+import { osloDato } from "@/lib/dato";
 
 export default async function LeggTilBrevPage({
   searchParams,
@@ -15,7 +16,7 @@ export default async function LeggTilBrevPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/velkommen");
 
-  const [{ data }, { data: fristData }, { data: brevData }] = await Promise.all([
+  const [{ data }, { data: fristData }, { data: brevData }, { data: sendtData }] = await Promise.all([
     supabase
       .from("saker")
       .select("id, kreditor, tittel, status, sist_endret")
@@ -28,7 +29,16 @@ export default async function LeggTilBrevPage({
       .order("forfallsdato", { ascending: true }),
     // Brevdatoene per sak, så brukeren ser før lagring om brevet er nyest.
     supabase.from("brev").select("sak_id, brevdato"),
+    // Når et svar sist ble markert som sendt: samme statusregel som lagre_brev.
+    supabase.from("utkast").select("sak_id, sendt_at").not("sendt_at", "is", null),
   ]);
+
+  const sistSendt = new Map<string, string>();
+  for (const u of sendtData ?? []) {
+    const dag = osloDato(u.sendt_at as string);
+    const forrige = sistSendt.get(u.sak_id as string);
+    if (!forrige || dag > forrige) sistSendt.set(u.sak_id as string, dag);
+  }
 
   const krav = (data ?? []).map((s) => ({
     id: s.id as string,
@@ -37,6 +47,7 @@ export default async function LeggTilBrevPage({
     status: s.status as SakStatus,
     // Saken slik den så ut da siden ble lest: lagringen avvises hvis den er endret.
     sistEndret: s.sist_endret as string,
+    sistSendt: sistSendt.get(s.id as string) ?? null,
     brevdatoer: (brevData ?? [])
       .filter((b) => b.sak_id === s.id)
       .map((b) => (b.brevdato as string | null) ?? null),

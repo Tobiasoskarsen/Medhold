@@ -5,6 +5,16 @@
 // så uten eksplisitt tidssone viser serveren «i går» store deler av kvelden.
 // `idagOslo()` er eneste kilde til «i dag» i appen.
 
+/** Datoen et tidspunkt faller på i norsk tid, som YYYY-MM-DD. */
+export function osloDato(tidspunkt: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Oslo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(tidspunkt));
+}
+
 /** Dagens dato i norsk tid (Europe/Oslo) som YYYY-MM-DD (en-CA gir ISO-format). */
 export function idagOslo(): string {
   return new Intl.DateTimeFormat("en-CA", {

@@ -68,6 +68,8 @@ type KravValg = {
   sistEndret: string;
   /** Brevdatoene til brevene saken har (null = udatert). */
   brevdatoer: (string | null)[];
+  /** Dagen et utkast i saken sist ble markert som sendt (norsk tid). */
+  sistSendt: string | null;
   /** Aktive frister på saken, så brukeren kan si om det nye brevet erstatter dem. */
   frister: { id: string; tittel: string; forfallsdato: string }[];
 };
@@ -394,6 +396,9 @@ export function LeggTilBrevFlyt({
         ]
       : [];
   const valgteFrister = [...sammenligningValgt, ...andreValgte];
+  const datovurdering = valgtKravObj
+    ? vurderBrevdato(brevdato || null, valgtKravObj.brevdatoer)
+    : null;
   const statusForslag = valgtKravObj
     ? statusVedNyttBrev({
         statusNa: valgtKravObj.status,
@@ -401,12 +406,12 @@ export function LeggTilBrevFlyt({
         nyeFrister: valgteFrister.map((f) => f.forfallsdato),
         idag: idagOslo(),
         gjenapne,
+        datovurdering: datovurdering ?? undefined,
+        brevdato: brevdato || null,
+        sistSendt: valgtKravObj.sistSendt,
       })
     : null;
   const valgtKravAvsluttet = valgtKravObj?.status === "fullfort";
-  const datovurdering = valgtKravObj
-    ? vurderBrevdato(brevdato || null, valgtKravObj.brevdatoer)
-    : null;
   const datoMerknad = datovurdering ? datovurderingTekst(datovurdering) : null;
   const erstatterIder = (valgtKravObj?.frister ?? [])
     .filter((f) => erstatter[f.id])
