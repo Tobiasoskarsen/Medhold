@@ -3,6 +3,40 @@
 Løpende status for implementeringen av `MEDHOLD_ARBEIDSORDRE.md`. Oppdateres
 etter hver fase.
 
+## Funn og tone (R7) – 11. november 2026
+
+`MEDHOLD_FUNN_OG_TONE_ARBEIDSORDRE.md`, del A–F, på grenen `claude/funn-og-tone` fra `774bc07`. Én commit per del. Ingen merge eller deploy.
+
+- **A:** `formaterKr` gir «2 340» og «3 108,90». Alle lokale `kr()` bruker den, også prompten og vakten, og satsene viser 187,50. `normaliserBelopITekst` retter «3 108,9 kr» i ferdig modelltekst før vakter og lagring.
+- **B:** `sumavvikFra` leser lagret `sumkontroll`. `DomMiniSum` vises på saken, brevvisningen og i kontrollsteget. Hjem får en egen linje, og Saker-listen får §. Blir linjene mer enn totalen, vises bare en nøytral setning. Innsigelsen kan bestride bare differansen og ber om spesifikasjon.
+- **C:** Migrasjon `0032_statusregel_brevdato.sql` og speilet regel i `statusVedNyttBrev`. Samme brev lagt inn på nytt, eller et eldre brev, lar en ventende sak vente. Duplikatadvarselen står i «Stemmer opplysningene?».
+- **D:** Fristchipen på Hjem er rød innen ti dager, som i Saker.
+- **E:** Kontrollsteget har funnkortet øverst, én setning og alle linjer med pill. Samme piller brukes på brevvisningen. «Merknad» er borte fra UI-et.
+- **F:** Ett `FORBEHOLD` per skjerm. «Hva er kontrollert?» er i vanlig språk. Forklaringen er to setninger, og gamle skjemaforklaringer bygges på nytt ved visning.
+
+**Migrasjon 0032: skrevet og testet i PGlite, ikke kjørt i testprosjektet eller produksjon.** Den skal kjøres i «medhold test» med `supabase/kontroll/for_0032.sql` før og etter. Produksjon følger release-porten. Se `supabase/dokumentasjon/0032_statusregel_brevdato.md`.
+
+**Kontroller:** 432 enhetstester og 153 DB-/modultester er grønne. Typekontroll, lint uten feil og produksjonsbygg er bestått. `grep -rn "maximumFractionDigits: 2 })" src` treffer bare `format.ts`; annotering linje 40 er flerlinjet og uendret. Paritetstesten kjører hele `lagre_brev` for 54 kombinasjoner pluss Nordkapp-tilfellene, inkludert sendt 23.30 UTC som er neste dag i norsk tid.
+
+**Valg tatt underveis:**
+1. **A.3:** Normaliseringen ligger i samme rensesteg som `fjernStjerner`, både i `genererTekst` og i strømmeruten. Den dekker begge veier og fasitskriptet, og rører aldri tekst brukeren redigerer.
+2. **E.1, forklaringer:** Forklaringen under en linje vises bare for «Kan være for høyt». Et «over»-funn forklares i funnkortet, og det som ikke sjekkes, nevnes i setningen. Uten kostnadslinjer står setningen «Ingen kostnadslinjer å kontrollere …» som før, så det aldri blir en friskmelding.
+3. **E.1, navn:** Ukjente linjer av andre typer enn rente, rettsgebyr og annet får kostnadstypens etikett. Flere navn får stor forbokstav bare på det første, for eksempel «Renter og rettsgebyr …».
+4. **B.2, Hjem:** Linjen om beløpskontroll vises uansett stadium. Gebyrlinjen vises som før bare når stadiet støtter utkast.
+5. **B.4, kilde:** Sumavviket leses fra den lagrede `gebyrsjekk.sumkontroll`, så prompten, omfanget, vakten og fasitskriptet bruker samme kilde uten nye felt. Uten sumavvik er prompten byte-identisk. Few-shot-eksemplet for delvis innsigelse er fortsatt gebyreksemplet.
+6. **C.3:** De nye inputene til `statusVedNyttBrev` er valgfrie. Utelatt betyr «nyest» og intet sendt svar, altså som før.
+7. **C.4, saksnummer og dato:** Brevet har ikke eget saksnummer, så sakens saksnummer brukes for det lagrede brevet. «Lagt inn {dato}» er brevets `opprettet` i norsk tid.
+8. **C.4, avkrysningen:** Avkrysningen er koblet til samme bekreftelse som stegene. Velges en sak med et likt brev først i del 3, går flyten tilbake til del 1 og viser advarselen. Lenken åpnes i ny fane, så arbeidet ikke forkastes.
+9. **F.1:** Forbeholdet ligger i `KontrollOmfang`, rett over «Hva er kontrollert?». Det står derfor én gang på brevvisningen, i kontrollsteget og på saken. Veier ut beholder «Bekreft viktige ting med rett instans.» etter forbeholdet. Bunnteksten på Meg og personvernsiden er ikke vurderingsskjermer og er urørt.
+10. **F.3:** For brevtyper uten fristkontroll står `FRIST_IKKE_KONTROLLERT` fortsatt over forbeholdet.
+11. **F.4:** Gamle forklaringer bygges på nytt bare ved visning på brevvisningen, med sakens saksnummer. Ingen data endres.
+12. **Endrede testforventninger:** «1 288,5» er blitt «1 288,50» i `format.test.ts` og `ux-r4-client.test.mjs`. S1-D-testen forventer «Vi fant ikke totalbeløpet» i stedet for «ukjent». Ingen forventninger for gebyr, frist, fasit eller vakt er endret.
+
+**Ikke gjort / begrensninger:**
+- **Skjermbilder i `docs/design/r7/` mangler.** Den lokale `.env.local` peker ikke på testprosjektet, og forhåndsvisningsverktøyet bygget fra en annen worktree. Den runden ble stoppet etter ti sekunder, uten at data ble lest. Bildene må tas i Vercel Preview mot «medhold test» etter at 0032 er kjørt der.
+- Ingen nettlesertest av flytene i denne runden.
+- I kontrollsteget står gebyrfunnet både øverst (`DomMini`) og i den lukkede «Se gebyrdetaljer og kilder» (full `Dom` med utregning).
+
 ## Design R6 – 11. november 2026
 
 Siste justering til PR #69: registrert frist foran separat oppfølging, synlig «Legg til», sendt-ikon med 9,42:1 / 11,01:1 kontrast og egen historikkstatus. 404 enhetstester, 147 lokale DB-/modultester, bygg/TypeScript og lint uten nye advarsler. Fysisk mobil, stor tekst/200 % zoom og VoiceOver gjenstår eksplisitt. [Oppdaterte bilder og kontrollrapport](docs/design/r6/JUSTERINGER.md). Ingen produksjonsdeploy; Vercel-preview kan oppdateres ved push.
