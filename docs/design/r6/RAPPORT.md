@@ -42,7 +42,7 @@ Nettleseren bekreftet fanebytte, utvidelse av begge detaljseksjoner, åpning av 
 - `npm test`: **404/404**.
 - `npm run test:db`: **144/144** lokale DB-/modultester. Ingen tester endret eller svekket.
 - Seks målrettede tester for faktisk saksidesammensetning og panelvalg kjørt igjen etter siste ikon-/labelendring: **6/6**.
-- Full lint: 0 feil. Før ikonrettelsen viste den to nye ubrukte import-advarsler; årsaken er rettet og målrettet ESLint på siste saksiden bestått. Én gammel advarsel finnes i ignorert lokal `.env.release-guard`-kopi av GoogleKnapp.
+- Endelig full lint: **0 feil, én eksisterende lokal advarsel**. Før ikonrettelsen viste den to nye ubrukte import-advarsler; årsaken er rettet og målrettet ESLint på siste saksiden bestått. Én gammel advarsel finnes i ignorert lokal `.env.release-guard`-kopi av GoogleKnapp.
 - `npx tsc --noEmit`: bestått.
 - `npm run build`: bestått, inkludert TypeScript. Ingen deploy.
 - Faktisk IAB-nettleser, lokal Next-app med syntetiske saker i det verifiserte testprosjektet `evvzxblhaxaraaurbhsu`. Service role bare til disponibelt fixtureoppsett/opprydding; appinnlogging med testbruker.
