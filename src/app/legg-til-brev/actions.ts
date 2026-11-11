@@ -1,6 +1,7 @@
 "use server";
 import { brevforklaring } from "@/lib/brevforklaring";
 import { kontrollerBrevfunn } from "@/lib/brevkontroll";
+import { erLiktBrev } from "@/lib/brevduplikat";
 
 import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
@@ -513,4 +514,51 @@ export async function lagreBrev(
   revalidatePath("/krav");
   revalidatePath(`/krav/${sakId}`);
   return { ok: true, sakId, brevId: resultat.brev_id };
+}
+
+/**
+ * Ligger et brev med samme dato og beløp i saken fra før (Del C.4)? Bare en
+ * advarsel: feiler oppslaget, eller er noe uklart, svarer den null. Bruker
+ * brukerens egen klient, så RLS avgjør hva som kan leses.
+ */
+export async function finnLiktBrev(input: {
+  sakId: string;
+  brevdato: string;
+  belop: number | null;
+  saksnummer: string;
+}): Promise<{ brevId: string; opprettet: string } | null> {
+  try {
+    if (typeof input?.sakId !== "string" || !input.sakId) return null;
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+    const [{ data: sak }, { data: brev, error }] = await Promise.all([
+      supabase.from("saker").select("saksnummer").eq("id", input.sakId).eq("bruker_id", user.id).maybeSingle(),
+      supabase
+        .from("brev")
+        .select("id, brevdato, belop, opprettet")
+        .eq("sak_id", input.sakId)
+        .eq("bruker_id", user.id)
+        .order("opprettet", { ascending: false }),
+    ]);
+    if (error || !sak) return null;
+    const nytt = {
+      brevdato: input.brevdato || null,
+      belop: typeof input.belop === "number" && Number.isFinite(input.belop) ? input.belop : null,
+      saksnummer: typeof input.saksnummer === "string" ? input.saksnummer : null,
+    };
+    // Brevet har ikke eget saksnummer; det lagrede brevet får sakens.
+    const treff = (brev ?? []).find((b) =>
+      erLiktBrev(nytt, {
+        brevdato: (b.brevdato as string | null) ?? null,
+        belop: (b.belop as number | null) ?? null,
+        saksnummer: (sak.saksnummer as string | null) ?? null,
+      }),
+    );
+    return treff ? { brevId: treff.id as string, opprettet: treff.opprettet as string } : null;
+  } catch {
+    return null;
+  }
 }

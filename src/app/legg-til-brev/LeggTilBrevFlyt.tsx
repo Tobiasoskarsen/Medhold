@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Avkrysning } from "@/components/ui/Avkrysning";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, m } from "motion/react";
 import { X, Camera, Upload, Type, Trash2 } from "lucide-react";
-import { Primærknapp } from "@/components/ui";
+import { Kort, Primærknapp } from "@/components/ui";
 import { Bevegelsesramme } from "@/components/Bevegelsesramme";
 import { VARIGHET, EASING, FJAER, STEG_GLID } from "@/lib/bevegelse";
 import { haptikk } from "@/lib/haptikk";
@@ -16,7 +16,7 @@ import {
   LOVBESTEMT_FRIST_DAGER,
   type BrevType,
 } from "@/lib/gjeld";
-import { formaterKortDato, formaterDato, idagOslo } from "@/lib/dato";
+import { formaterKortDato, formaterDato, idagOslo, osloDato } from "@/lib/dato";
 import { fristKildeForDato, type FristSammenligning } from "@/lib/frist";
 import {
   UTFALL_VALGBARE,
@@ -51,6 +51,7 @@ import { kontrollerBrevfunn } from "@/lib/brevkontroll";
 import {
   analyserBrevTekst,
   analyserBrevBilder,
+  finnLiktBrev,
   lagreBrev,
   type AnalyseResultat,
   type LagreBrevInput,
@@ -413,12 +414,35 @@ export function LeggTilBrevFlyt({
     : null;
   const valgtKravAvsluttet = valgtKravObj?.status === "fullfort";
   const datoMerknad = datovurdering ? datovurderingTekst(datovurdering) : null;
+  // Ligger brevet i saken fra før (Del C.4)? Bare ved en eksisterende sak.
+  // Svaret knyttes til opplysningene det gjelder, så en retting nullstiller
+  // både treffet og avkrysningen. Feiler oppslaget, vises ingenting.
+  const duplikatNokkel =
+    analyse && kravModus === "eksisterende" && valgtKrav
+      ? JSON.stringify([valgtKrav, brevdato, tolkKr(belop), saksnummer.trim()])
+      : null;
+  const [duplikat, setDuplikat] = useState<{ nokkel: string; treff: { brevId: string; opprettet: string } | null } | null>(null);
+  const [duplikatLikevel, setDuplikatLikevel] = useState<string | null>(null);
+  useEffect(() => {
+    if (!duplikatNokkel) return;
+    const [sakId, dato, sum, nr] = JSON.parse(duplikatNokkel) as [string, string, number | null, string];
+    let aktiv = true;
+    const tidtaker = setTimeout(() => {
+      finnLiktBrev({ sakId, brevdato: dato, belop: sum, saksnummer: nr })
+        .then((treff) => { if (aktiv) setDuplikat({ nokkel: duplikatNokkel, treff }); })
+        .catch(() => {});
+    }, 400);
+    return () => { aktiv = false; clearTimeout(tidtaker); };
+  }, [duplikatNokkel]);
+  const liktBrev = duplikat && duplikat.nokkel === duplikatNokkel ? duplikat.treff : null;
+  const duplikatAvklart = !liktBrev || duplikatLikevel === duplikatNokkel;
+
   const erstatterIder = (valgtKravObj?.frister ?? [])
     .filter((f) => erstatter[f.id])
     .map((f) => f.id);
 
   async function lagre(destinasjon: "innsigelse" | "veier-ut" | "krav") {
-    if (lagreLas.current || !analyse || !kanLagreBrev || !lagringsnokkel) return;
+    if (lagreLas.current || !analyse || !kanLagreBrev || !duplikatAvklart || !lagringsnokkel) return;
     lagreLas.current = true;
     setLagrer(true);
     setFeil(null);
@@ -703,12 +727,37 @@ export function LeggTilBrevFlyt({
           {lagretBrev ? <LagretBrev {...lagretBrev} /> : <>
           {lagringUkjent && <p className="mb-3 text-hjelp text-dempet"><Link href="/krav" className="inline-flex min-h-11 items-center rounded-liten font-semibold text-aksent underline focus-visible:outline-2 focus-visible:outline-aksent">Se etter brevet i Saker</Link>. Ikke legg det inn på nytt før du har kontrollert historikken.</p>}
           <BrevGjennomgang
-            bekreftet={kanLagre}
+            bekreftet={kanLagre && duplikatAvklart}
             opplysningerLast={lagringUkjent}
             lagrer={lagrer}
             feil={feil}
             opplysninger={<>
               <BrevReferanse filer={bilder} tekst={originalTekst} />
+          {liktBrev && valgtKravObj && (
+            <Kort className="mb-4">
+              <h2 className="seksjonstittel text-blekk">Dette brevet ligger kanskje i saken fra før</h2>
+              <p className="mt-1 text-hjelp text-dempet">
+                Et brev med samme dato og beløp ble lagt inn {formaterDato(osloDato(liktBrev.opprettet))}.
+              </p>
+              {/* Ny fane, så arbeidet her ikke forkastes. */}
+              <Link
+                href={`/krav/${valgtKrav}/brev/${liktBrev.brevId}`}
+                target="_blank"
+                rel="noopener"
+                className="mt-1 inline-flex min-h-11 items-center rounded-liten text-hjelp font-semibold text-aksent underline focus-visible:outline-2 focus-visible:outline-aksent"
+              >
+                Åpne brevet som ligger der
+              </Link>
+              <label className="mt-2 flex items-start gap-2.5 text-sm text-blekk">
+                <Avkrysning
+                  checked={duplikatLikevel === duplikatNokkel}
+                  onChange={(v) => setDuplikatLikevel(v ? duplikatNokkel : null)}
+                  className="mt-0.5"
+                />
+                Det er et nytt brev. Legg det inn likevel.
+              </label>
+            </Kort>
+          )}
           <Bekreftelse
             brevdato={brevdato}
             onBrevdato={rettet(setBrevdato)}
