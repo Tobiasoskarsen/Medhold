@@ -33,7 +33,6 @@ import {
 } from "@/lib/utfall";
 import { tolkKr } from "@/lib/format";
 import { datovurderingTekst, vurderBrevdato } from "@/lib/brevdato";
-import { FORKLARING_DISCLAIMER } from "@/lib/brand";
 import { Gebyrsjekk } from "@/components/Gebyrsjekk";
 import { KontrollOmfang } from "@/components/KontrollOmfang";
 import { Veivalg } from "@/components/Veivalg";
@@ -788,9 +787,6 @@ export function LeggTilBrevFlyt({
               {brevforklaring({ avsender, brevtype, brevdato, belop: tolkKr(belop), saksnummer })}
             </p>
           </div>
-          <p className="mt-1.5 text-meta text-dempet">
-            {FORKLARING_DISCLAIMER}
-          </p>
 
               </details>
           {kanLagre ? (

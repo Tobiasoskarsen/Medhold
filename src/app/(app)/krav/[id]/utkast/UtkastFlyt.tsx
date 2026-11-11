@@ -25,6 +25,7 @@ import type { AvdragsForslag } from "@/lib/avdrag";
 import { hentUtkastStatus, lagreRedigertUtkast, markerUtkastSendt } from "./actions";
 import { maskerFodselsnummer } from "@/lib/maskering";
 import { useUlagretVern } from "@/components/useUlagretVern";
+import { FORBEHOLD } from "@/lib/brand";
 
 // Lengste markør avgjør hvor mange tegn i halen av bufferet som må holdes
 // tilbake (kan være et påbegynt, men ennå ikke fullstendig mottatt markørtegn).
@@ -648,9 +649,7 @@ export function UtkastFlyt({
                   ? "Dette er teksten du registrerte som sendt. Den kan ikke endres."
                   : `Lagre endringene før du lukker siden. Ulagret tekst finnes bare i denne fanen. Du sender brevet selv${avsender ? ` til ${avsender}` : ""}.`}
               </p>
-              <p className="mt-1.5 text-meta text-dempet">
-                Automatisk utkast — ikke profesjonell rådgivning.
-              </p>
+              <p className="mt-1.5 text-meta text-dempet">{FORBEHOLD}</p>
 
               {omfangBrukt === "delvis" && ubestridt !== null && (
                 <Kort className="mt-4">

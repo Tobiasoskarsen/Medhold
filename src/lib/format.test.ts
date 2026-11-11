@@ -20,7 +20,7 @@ test("S1-D: oppsummering følger rettede felt uten oppdiktet historikk", () => {
   assert.doesNotMatch(t, /arrest|strømabonnement|siste steg|allerede varslet|vil bli sendt/);
   assert.match(brevforklaring({ ...f, belop: 289 }), /289 kr/);
   assert.doesNotMatch(brevforklaring({ ...f, belop: 289 }), /1[ \u00a0]100/);
-  assert.match(brevforklaring({ ...f, belop: null, avsender: "", brevdato: "" }), /ukjent/);
+  assert.match(brevforklaring({ ...f, belop: null, avsender: "", brevdato: "" }), /Vi fant ikke totalbeløpet/);
 });
 
 test("S1-B: norske beløp valideres uten tap av øre", () => {

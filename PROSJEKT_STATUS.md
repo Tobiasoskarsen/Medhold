@@ -2771,10 +2771,45 @@ Samlet liste over påstander/tekster som bør sees av advokat før bred lanserin
   kortundertekstene («Vi skriver brevet — du godkjenner før noe sendes» /
   «Bruk gebyrfunnet — vi skriver brevet») og veier-ut sin nye ingress («Tre
   helt vanlige måter å håndtere et krav på …»).
-- **`FORKLARING_DISCLAIMER`** (`src/lib/brand.ts`): «Automatisk forklaring —
-  ikke profesjonell rådgivning.» — ny, fast linje som nå er ENESTE
-  disclaimer under brevforklaringen (AI-en har ikke lenger lov til å
-  formulere sin egen, se analyse-kort-seksjonen under).
+- **`FORBEHOLD`** (`src/lib/brand.ts`, funn og tone F.1): «Medhold sjekker
+  gebyrer og frister mot loven, men er ikke en advokat. Du bestemmer og sender
+  selv.» Erstatter de tidligere forbeholdene («Automatisk forklaring/utkast/
+  kontroll — ikke profesjonell rådgivning», «Automatisk beløpskontroll — ikke
+  juridisk rådgivning …», «Generell veiledning — ikke profesjonell
+  rådgivning»). Vises én gang per skjerm som gir en vurdering: brevvisningen,
+  kontrollsteget, saken, utkastsiden, Veier ut (der fortsatt med «Bekreft
+  viktige ting med rett instans.») og satsene. E-postene har sin egen tekst.
+- **«Hva er kontrollert?»** (`src/lib/kontrollomfang.ts`, F.3): «Vi sjekker
+  hvert gebyr mot maksimalsatsen i inkassoforskriften. Vi sjekker ikke om
+  kreditor har lov til å kreve alle gebyrene samtidig, og vi sjekker ikke
+  renter ennå.» / «Vi sjekker fristen i purringer, inkassovarsler og
+  betalingsoppfordringer når brevet har dato. Fristen sier ikke om kravet er
+  riktig.» / «Vi varsler om noen alvorlige tegn, som forliksråd og namsmann.
+  Får du ikke varsel, betyr ikke det at alt er i orden.»
+- **Forklaringsmalen** (`src/lib/brevforklaring.ts`, F.4): «Dette er {type}
+  fra {avsender}, datert {dato}.» / «De krever {beløp} kr. Saksnummeret er
+  {nr}.» / «Vi fant ikke totalbeløpet i brevet.» Brevtypene med artikkel, for
+  eksempel «et brev om tvangsinndrivelse» for namsmann.
+- **Spørsmål til advokaten:** Er ett forbehold per skjerm, pluss «Hva er
+  kontrollert?», nok?
+- **Beløpskontroll** (funn og tone B.2–B.4): funnkortet «Beløpskontroll» /
+  «{diff} kr uten forklaring» / «Brevet krever {total} kr, men hovedstol og
+  kostnader blir {sum} kr. Be kreditor forklare differansen før du betaler
+  den.», Hjem-linjen «Beløpskontroll: {diff} kr uten forklaring», den nøytrale
+  setningen «Hovedstol og kostnader blir {sum} kr, mer enn de {total} kr
+  brevet krever. Betal aldri mer enn brevet krever.», valgene «Bare beløpet som
+  ikke går opp ({diff} kr)» og «Gebyret og beløpet som ikke går opp ({kr}
+  kr)», Veivalg-begrunnelsen «Anbefalt: {diff} kr i brevet går ikke opp.», og
+  promptregelen «Be om en spesifikasjon av differansen på {diff} kr. Skriv at
+  denne delen er omtvistet til den er forklart. Skriv ALDRI at kreditor har
+  regnet feil med vilje.» med faktalinjen «Brevet krever {total} kr, men
+  hovedstol og kostnader blir {sum} kr. Differansen er {diff} kr.»
+- **Gebyrsjekken i kontrollsteget** (E.1): setningene «Ett gebyr er høyere enn
+  loven tillater.», «Ingen gebyrer er over grensen for alle saker, men ett kan
+  være for høyt.», «Gebyrene vi kunne sjekke, er innenfor det loven tillater.»,
+  «Vi kunne ikke sjekke noen av kostnadene i dette brevet.», «{Navn} sjekker vi
+  ikke ennå.» og pillene «Innenfor», «{diff} kr for mye», «Kan være for høyt»
+  og «Ikke sjekket».
 - **Oversiktspanelets etiketter** (Hjem, `src/app/(app)/page.tsx`): «aktive
   saker» / «samlet krav» / «over lovlig sats» + historikklinjen «Så langt: N
   medhold · N avtaler · N oppgjort» — første tallbaserte oppsummering av

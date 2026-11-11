@@ -144,10 +144,6 @@ export function Gebyrsjekk({
           Brevet har ingen dato. Vi har brukt satsene som gjelder i dag.
         </p>
       )}
-      <p className="mt-3 px-1 text-[11px] leading-relaxed text-dempet">
-        Automatisk beløpskontroll — ikke juridisk rådgivning. Vi har ikke
-        kontrollert om disse kostnadene kan kreves samlet.
-      </p>
     </div>
   );
 }

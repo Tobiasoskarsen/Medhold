@@ -9,7 +9,7 @@ import { DomMiniFrist, DomMiniSum, FunnListe } from "@/components/Dom";
 import { sumavvikFra } from "@/lib/sumkontroll";
 import { AnnotertBrev } from "@/components/AnnotertBrev";
 import { formaterKortDato, idagOslo } from "@/lib/dato";
-import { FORKLARING_DISCLAIMER } from "@/lib/brand";
+import { visForklaring } from "@/lib/brevforklaring";
 import {
   STADIUM_ETIKETT,
   stotterUtkast,
@@ -61,7 +61,7 @@ export default async function BrevPage({
         .order("opprettet", { ascending: true }),
       supabase
         .from("saker")
-        .select("stadium, status, utfall, kreditor, opprinnelig_kreditor, tittel")
+        .select("stadium, status, utfall, kreditor, opprinnelig_kreditor, tittel, saksnummer")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -144,10 +144,16 @@ export default async function BrevPage({
       <SekvensDel>
       <Kort className="mt-4">
         <p className="whitespace-pre-line text-sm leading-relaxed text-blekk">
-          {brev.forklaring}
+          {visForklaring(brev.forklaring, {
+            avsender: brev.avsender,
+            brevtype: brev.brevtype,
+            brevdato: brev.brevdato,
+            belop: brev.belop,
+            // Saksnummeret lagres på saken, ikke på brevet.
+            saksnummer: (sak?.saksnummer as string | null) ?? null,
+          })}
         </p>
       </Kort>
-      <p className="mt-1.5 text-meta text-dempet">{FORKLARING_DISCLAIMER}</p>
       </SekvensDel>
 
       <SekvensDel>

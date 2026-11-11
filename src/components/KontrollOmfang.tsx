@@ -1,12 +1,16 @@
-import { fristKontrollStottes, FRIST_IKKE_KONTROLLERT, GEBYR_OMFANG } from "@/lib/kontrollomfang";
+import { FORBEHOLD } from "@/lib/brand";
+import { fristKontrollStottes, FRIST_IKKE_KONTROLLERT, FRIST_OMFANG, GEBYR_OMFANG, VARSEL_OMFANG } from "@/lib/kontrollomfang";
+
+/** Forbeholdet og «Hva er kontrollert?». Skjermene som viser denne, har ikke andre forbehold. */
 
 export function KontrollOmfang({ brevtype }: { brevtype: string | null }) {
   return <div className="mt-3 space-y-2 text-hjelp leading-relaxed text-dempet">
     {!fristKontrollStottes(brevtype) && <p>{FRIST_IKKE_KONTROLLERT}</p>}
+    <p className="text-meta text-dempet">{FORBEHOLD}</p>
     <details className="detaljrad"><summary className="trykk font-medium">Hva er kontrollert?</summary>
       <p>{GEBYR_OMFANG}</p>
-      <p className="mt-2">Fristkontrollen gjelder bare støttede brevtyper og registrerte datoer. Den avgjør ikke om kravet er gyldig.</p>
-      <p className="mt-2">Alvorlighetsvarselet dekker utvalgte signaler. Fravær av varsel er ikke en bekreftelse på at saken er uproblematisk.</p>
+      <p className="mt-2">{FRIST_OMFANG}</p>
+      <p className="mt-2">{VARSEL_OMFANG}</p>
     </details>
   </div>;
 }
