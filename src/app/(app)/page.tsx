@@ -19,9 +19,10 @@ import { formaterBelop } from "@/lib/format";
 import { STADIUM_ETIKETT, stotterUtkast, type Stadium } from "@/lib/gjeld";
 import type { SakStatus, SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import { sumavvikFra, type Sumavvik } from "@/lib/sumkontroll";
 import { hjemIngress } from "@/lib/oversikt";
 import { kanViseSeier, rangerSaker, relevantFrist } from "@/lib/prioritet";
-import { kr, overLinjer, totalOver } from "@/lib/gebyrfunn-visning";
+import { kr, overLinjer, sumavvikLinje, totalOver } from "@/lib/gebyrfunn-visning";
 import {
   dagerTilOppfolging,
   oppfolgingTilstand,
@@ -228,7 +229,9 @@ export default async function HjemPage() {
   // Gebyrsjekk på heltekortet: samme nyeste brev som før, nå også totalen
   // til «{n} kr for mye»-chipen (ingen ny spørring).
   let gebyrOver = 0;
-  if (topSak && stotterUtkast(topSak.stadium ?? null)) {
+  // Beløpskontroll (Del B.2) vises uansett stadium; gebyrfunnet som før.
+  let hjemSumavvik: Sumavvik | null = null;
+  if (topSak) {
     const { data: nyesteBrev } = await supabase
       .from("brev")
       .select("gebyrsjekk")
@@ -238,7 +241,8 @@ export default async function HjemPage() {
       .limit(1)
       .maybeSingle();
     const gs = nyesteBrev?.gebyrsjekk as GebyrsjekkResultat | null;
-    if ((gs?.antallOver ?? 0) > 0 && gs) gebyrOver = totalOver(overLinjer(gs));
+    if (stotterUtkast(topSak.stadium ?? null) && (gs?.antallOver ?? 0) > 0 && gs) gebyrOver = totalOver(overLinjer(gs));
+    hjemSumavvik = sumavvikFra(gs);
   }
   const hjemHarOverGebyr = gebyrOver > 0;
 
@@ -402,6 +406,11 @@ export default async function HjemPage() {
               {hjemHarOverGebyr && (
                 <p className="mt-3 border-t border-helt-chip pt-2.5 text-hjelp font-semibold text-helt-tekst">
                   Gebyrsjekk: {kr(gebyrOver)} kr over maksimalsats
+                </p>
+              )}
+              {hjemSumavvik && (
+                <p className={`${hjemHarOverGebyr ? "mt-1" : "mt-3 border-t border-helt-chip pt-2.5"} text-hjelp font-semibold text-helt-tekst`}>
+                  {sumavvikLinje(hjemSumavvik)}
                 </p>
               )}
             </Heltekort>

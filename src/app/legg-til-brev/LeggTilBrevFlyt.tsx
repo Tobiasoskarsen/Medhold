@@ -796,7 +796,7 @@ export function LeggTilBrevFlyt({
           {kanLagre ? (
             // BrevGjennomgang eier inntredenen, slik at funnene ikke dobbeltanimeres.
             <div>
-              <KontrollOversikt resultat={gebyrsjekk}>
+              <KontrollOversikt resultat={gebyrsjekk} sumkontroll={sumkontroll}>
               <Gebyrsjekk
                 resultat={gebyrsjekk}
                 hovedstol={hovedstolGrunnlag}

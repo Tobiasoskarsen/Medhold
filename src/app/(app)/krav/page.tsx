@@ -14,6 +14,7 @@ import { rangerSaker } from "@/lib/prioritet";
 import { erHastende, fristChipTekst } from "@/lib/frist";
 import { STATUS_ETIKETT, type SakStatus, type SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import { sumavvikFra } from "@/lib/sumkontroll";
 import type { HovedstolAvvik } from "@/lib/hovedstol-konsistens";
 
 type SakRad = {
@@ -94,9 +95,10 @@ export default async function KravListePage() {
   for (const b of brevData ?? []) {
     if (harFunnPerSak.has(b.sak_id)) continue;
     const gs = b.gebyrsjekk as GebyrsjekkResultat | null;
+    // §-markøren gjelder både gebyrfunn og sumavvik (Del B.2).
     harFunnPerSak.set(
       b.sak_id,
-      !!gs?.linjer.some((l) => l.vurdering === "over"),
+      !!gs?.linjer.some((l) => l.vurdering === "over") || sumavvikFra(gs) !== null,
     );
   }
 

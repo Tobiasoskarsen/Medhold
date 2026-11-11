@@ -17,7 +17,8 @@ import {
   SekvensDel,
 } from "@/components/ui";
 import { VenterPaSvarUtvidelse } from "./VenterPaSvarUtvidelse";
-import { DomMini, DomMiniFrist, FunnListe } from "@/components/Dom";
+import { DomMini, DomMiniFrist, DomMiniSum, FunnListe } from "@/components/Dom";
+import { sumavvikFra } from "@/lib/sumkontroll";
 import { Veivalg } from "@/components/Veivalg";
 import { Alvorsvarsel } from "@/components/Alvorsvarsel";
 import { Utregning } from "@/components/Utregning";
@@ -275,6 +276,8 @@ export default async function KravDetaljPage({
   const sisteBrev = brevListe[0];
   const overDiff = overTotal(sisteBrev?.gebyrsjekk ?? null);
   const harOverGebyr = overDiff > 0;
+  // Beløpskontroll (Del B): brevet krever mer enn hovedstol og kostnader blir.
+  const sumavvik = sumavvikFra(sisteBrev?.gebyrsjekk ?? null);
 
   // Alvorsgrense (§B.4): MED FORRANG over Veivalg, uansett stadium. Signalordet
   // som faktisk trigget den lagrede `alvorlig`-verdien slås opp på nytt fra
@@ -510,6 +513,7 @@ export default async function KravDetaljPage({
   const harFunnListe =
     (harOverGebyr && !!sisteBrev?.gebyrsjekk) ||
     (harFristfunn && !!sisteBrev?.fristfunn) ||
+    !!sumavvik ||
     hovedstolAvvik.length > 0;
 
   return (
@@ -693,6 +697,9 @@ export default async function KravDetaljPage({
                 historisk={sisteBrevGammelt}
                 brevdato={sisteBrevDato}
               />
+            )}
+            {sumavvik && (
+              <DomMiniSum avvik={sumavvik} historisk={sisteBrevGammelt} brevdato={sisteBrevDato} />
             )}
             {harFristfunn && sisteBrev?.fristfunn && (
               <DomMiniFrist

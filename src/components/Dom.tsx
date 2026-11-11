@@ -4,14 +4,15 @@
 // presentasjon av det lagrede gebyrsjekk-resultatet; ingen vurderingslogikk her.
 import { useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { CalendarClock, ChevronDown, ChevronRight } from "lucide-react";
+import { Calculator, CalendarClock, ChevronDown, ChevronRight } from "lucide-react";
 import { Primærknapp } from "@/components/ui";
 import { DomFullskjerm } from "@/components/DomFullskjerm";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import { formaterDato, formaterTallDato } from "@/lib/dato";
 import { EASING, FJAER, VARIGHET } from "@/lib/bevegelse";
 import { LOVBESTEMT_FRIST_DAGER } from "@/lib/gjeld";
-import { kr, overLinjer, totalOver } from "@/lib/gebyrfunn-visning";
+import { kr, overLinjer, sumavvikTekst, totalOver } from "@/lib/gebyrfunn-visning";
+import type { Sumavvik } from "@/lib/sumkontroll";
 
 /**
  * Dom (full) — hvit flate, dom-rød ramme, stempel-etikett, differansen som
@@ -296,6 +297,40 @@ export function DomMiniFrist({
             aria-hidden
           />
         </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * DomMiniSum — beløpskontrollen som rad (Del B.2). Brevet krever mer enn
+ * hovedstol og kostnader blir, og differansen er ikke forklart. Samme ramme
+ * som DomMiniFrist, ikke klikkbar. Teksten er kodegenerert fra lagrede tall.
+ */
+export function DomMiniSum({
+  avvik,
+  historisk = false,
+  brevdato = null,
+  className = "",
+}: {
+  avvik: Sumavvik;
+  historisk?: boolean;
+  brevdato?: string | null;
+  className?: string;
+}) {
+  const t = sumavvikTekst(avvik);
+  return (
+    <div className={`flex items-start gap-3 p-4 ${className}`}>
+      <FunnIkon historisk={historisk}>
+        <Calculator className="size-[18px]" strokeWidth={2} />
+      </FunnIkon>
+      <div className="min-w-0 flex-1">
+        <FunnHode
+          etikett={t.etikett}
+          tall={t.tall}
+          historiskFra={historisk ? brevdato : undefined}
+        />
+        <p className="mt-1 text-hjelp leading-[1.4] text-blekk">{t.tekst}</p>
       </div>
     </div>
   );
