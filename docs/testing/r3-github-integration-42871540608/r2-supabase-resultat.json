@@ -1,0 +1,147 @@
+{
+  "prosjekt": "evvzxblhaxaraaurbhsu",
+  "tidspunkt": "2026-11-10T18:08:58.093Z",
+  "revision": "9cfbb17e804af9028001a205bb18ddbaaac1c0c4",
+  "testkildeSha256": "6773878800bded7ee52e1a75854441176ed09ab8bf31fbb02cabcae518e37cd8",
+  "run": "e0f40c50-f37f-412b-98d7-d5084305b0ea",
+  "brukerJWT": true,
+  "serviceRoleKunOppsettOgAdministrasjon": true,
+  "cleanup": true,
+  "results": [
+    {
+      "id": "RPC-ANON",
+      "scenario": "Uinnlogget bruker mangler execute etter 0031",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-A-saker",
+      "scenario": "Annen bruker SELECT/UPDATE/DELETE",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-A-brev",
+      "scenario": "Annen bruker SELECT/UPDATE/DELETE",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-A-utkast",
+      "scenario": "Annen bruker SELECT/UPDATE/DELETE",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-A-frister",
+      "scenario": "Annen bruker SELECT/UPDATE/DELETE",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-B-saker",
+      "scenario": "Annen bruker SELECT/UPDATE/DELETE",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-B-brev",
+      "scenario": "Annen bruker SELECT/UPDATE/DELETE",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-B-utkast",
+      "scenario": "Annen bruker SELECT/UPDATE/DELETE",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-B-frister",
+      "scenario": "Annen bruker SELECT/UPDATE/DELETE",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-INSERT",
+      "scenario": "INSERT med annen eier/forelder avvises",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-INSERT-ALL",
+      "scenario": "Begge retninger: INSERT på saker/brev/frister/utkast kan ikke bruke annen eier eller sak",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RLS-MOVE",
+      "scenario": "Eier kan ikke flytte egne barn til en annen brukers sak",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "FK-CASE",
+      "scenario": "To egne saker kan ikke få feil brevtilknytning",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "RPC-OWNER",
+      "scenario": "Annen bruker kan ikke registrere sendt",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "CAS-PARALLEL",
+      "scenario": "To ekte parallelle PATCH med samme versjon",
+      "status": "bestått",
+      "observed": {
+        "oppdateringer": 1,
+        "versjon": 2
+      }
+    },
+    {
+      "id": "SEND-PARALLEL",
+      "scenario": "Samtidig redigering og sendt-RPC",
+      "status": "bestått",
+      "observed": {
+        "versjon": 3,
+        "snapshotStemmer": true
+      }
+    },
+    {
+      "id": "SAVE-IDEMPOTENT",
+      "scenario": "Parallelle lagre_brev med samme nøkkel og retry",
+      "status": "bestått",
+      "observed": {
+        "brev": 1,
+        "frister": 1,
+        "sammeResultat": true
+      }
+    },
+    {
+      "id": "SAVE-ROLLBACK",
+      "scenario": "Sen feil i steginnsetting ruller hele transaksjonen tilbake",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "QUOTA-PRIVILEGES",
+      "scenario": "Bruker kan ikke reservere/frigi kvote via administrative RPC-er",
+      "status": "bestått",
+      "observed": "forventede assertions bestått"
+    },
+    {
+      "id": "QUOTA-PARALLEL",
+      "scenario": "Parallelle administrative reservasjoner på syntetisk bruker",
+      "status": "bestått",
+      "observed": {
+        "grense": 2,
+        "akseptert": 2,
+        "avvist": 3,
+        "frigittRetry": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "productionDeployment": "dpl_8RkYoEUfPfdMeVyaqEQKNXyvoJvu",
+  "productionUrl": "https://app2-chi-five.vercel.app",
+  "loginStatus": 200,
+  "loginTitle": "Medhold",
+  "manifestStatus": 200,
+  "manifestContentType": [
+    "application/manifest+json; charset=utf-8"
+  ],
+  "unauthenticatedDraftStatus": 307,
+  "unauthenticatedDraftLocation": [
+    "/velkommen"
+  ],
+  "unauthenticatedCronStatus": 401,
+  "publicSupabaseProject": "leernzbmuldegiggnjib",
+  "autoAssignCustomDomains": true
+}
