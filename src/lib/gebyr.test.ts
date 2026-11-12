@@ -8,6 +8,8 @@ import {
   trinnEtikett,
   utregningRaderForLinje,
   SATSVERSJONER,
+  rettsgebyrSatserFor,
+  UKJENT_ARSAK,
   type Kostnadslinje,
 } from "./gebyr.ts";
 import { idagOslo } from "./dato.ts";
@@ -185,9 +187,8 @@ test("hovedstol 2400 + salær 800 → over (ikke nedgrader ekte brudd)", () => {
 
 // --- Alltid-ukjent-typer -------------------------------------------------
 
-test("forsinkelsesrente, rettsgebyr, annet → alltid ukjent", () => {
+test("forsinkelsesrente og annet → ukjent (rettsgebyr vurderes etter stadium, se under)", () => {
   assert.equal(vurder({ type: "forsinkelsesrente", belop: 500, tekst: "" }).vurdering, "ukjent");
-  assert.equal(vurder({ type: "rettsgebyr", belop: 1345, tekst: "" }).vurdering, "ukjent");
   assert.equal(vurder({ type: "annet", belop: 99, tekst: "" }).vurdering, "ukjent");
 });
 
@@ -362,4 +363,98 @@ test("utregningRaderForLinje: manglende hovedstol utelater Hovedstol/Salærtrinn
     rader!.map((r) => r.etikett),
     ["Laveste lovlige sats", "Høyeste lovlige sats", "Krevd i brevet"],
   );
+});
+
+// --- Rettsgebyr (Del A) -----------------------------------------------------
+
+const rett = (belop: number, stadium: string | null, brevdato: string | null = "2026-06-01") =>
+  sjekkKostnader([{ type: "rettsgebyr", belop, tekst: "Rettsgebyr" }], null, brevdato, stadium).linjer[0];
+
+test("rettsgebyrsatsene er utledet av R 1 345 og rundet ned (rettsgebyrloven § 6 a)", () => {
+  const s = satserForDato("2026-06-01")!;
+  assert.equal(s.rettsgebyr, 1345);
+  assert.deepEqual(s.rettsgebyrSatser, [
+    { navn: "forliksklage", belop: 2071 }, // 1,54 × 1 345 = 2 071,30
+    { navn: "begjæring om utlegg", belop: 928 }, // 0,69 × 1 345 = 928,05
+    { navn: "begjæring om tvangsfullbyrdelse", belop: 1479 }, // fast beløp, domstol.no
+  ]);
+  // Avrundingen går ned, aldri opp: 0,69 × 1 400 = 966, 1,54 × 1 000 = 1 540.
+  assert.deepEqual(rettsgebyrSatserFor(1400).map((x) => x.belop), [2156, 966]);
+  assert.deepEqual(rettsgebyrSatserFor(1000).map((x) => x.belop), [1540, 690]);
+});
+
+test("rettsgebyr ved forliksråd: kjent sats er innenfor", () => {
+  const r = rett(2071, "forliksrad");
+  assert.equal(r.vurdering, "innenfor");
+  assert.equal(r.forklaring, "Tilsvarer forliksklage (2 071 kr).");
+  assert.equal(rett(928, "namsmann").forklaring, "Tilsvarer begjæring om utlegg (928 kr).");
+  assert.equal(rett(1479, "namsmann").vurdering, "innenfor");
+});
+
+test("rettsgebyr ved forliksråd: ukjent beløp er ukjent, aldri over", () => {
+  const r = rett(2500, "forliksrad");
+  assert.equal(r.vurdering, "ukjent");
+  assert.equal(r.forklaring, UKJENT_ARSAK.ikkeKjentSats);
+  assert.equal(r.differanse, null);
+  // Selv et svært høyt beløp gir aldri «over» for rettsgebyr i v1.
+  assert.equal(rett(99999, "namsmann").vurdering, "ukjent");
+});
+
+test("rettsgebyr før retten er mulig_over, uansett beløp", () => {
+  for (const stadium of ["faktura", "purring", "inkassovarsel", "betalingsoppfordring"]) {
+    const r = rett(1345, stadium);
+    assert.equal(r.vurdering, "mulig_over", stadium);
+    assert.equal(r.forklaring, "Rettsgebyr kan først kreves når saken er brakt inn for forliksrådet eller namsmannen.");
+  }
+  assert.equal(rett(2071, "inkassovarsel").vurdering, "mulig_over");
+});
+
+test("rettsgebyr uten kjent stadium er ukjent", () => {
+  assert.equal(rett(2071, null).vurdering, "ukjent");
+  assert.equal(rett(2071, null).forklaring, UKJENT_ARSAK.manglerStadium);
+  // Brevtyper som ikke sier hvor saken står, gir heller ikke en vurdering.
+  for (const stadium of ["annet", "nedbetaling", "avsluttet", "tull"]) {
+    const r = rett(2071, stadium);
+    assert.equal(r.vurdering, "ukjent", stadium);
+    assert.equal(r.forklaring, UKJENT_ARSAK.stadiumUklart);
+  }
+});
+
+test("rettsgebyr: ±1 kr slingring rundt kjent sats, ikke mer", () => {
+  assert.equal(rett(2070, "forliksrad").vurdering, "innenfor");
+  assert.equal(rett(2072, "forliksrad").vurdering, "innenfor");
+  assert.equal(rett(2073, "forliksrad").vurdering, "ukjent");
+  assert.equal(rett(2069, "forliksrad").vurdering, "ukjent");
+});
+
+test("rettsgebyr: brev uten satsversjon er fortsatt ukjent", () => {
+  const gs = sjekkKostnader([{ type: "rettsgebyr", belop: 2071, tekst: "" }], null, "2027-03-01", "forliksrad");
+  assert.equal(gs.satserMangler, true);
+  assert.equal(gs.linjer[0].vurdering, "ukjent");
+  assert.equal(gs.antallOver, 0);
+});
+
+test("rettsgebyr gir aldri «over» og teller som mulig_over i resultatet", () => {
+  const gs = sjekkKostnader(
+    [
+      { type: "rettsgebyr", belop: 1345, tekst: "" },
+      { type: "rettsgebyr", belop: 99999, tekst: "" },
+    ],
+    null,
+    "2026-06-01",
+    "inkassovarsel",
+  );
+  assert.equal(gs.antallOver, 0);
+  assert.equal(gs.antallMuligOver, 2);
+  assert.equal(gebyrFunnTekst(gs), "", "rettsgebyr nevnes ikke i funntekst uten «over»");
+});
+
+test("rettsgebyr har ingen utregning å vise", () => {
+  const sats = satserForDato("2026-06-01")!;
+  assert.equal(utregningRaderForLinje(rett(1345, "inkassovarsel"), sats, null), null);
+});
+
+test("uten stadium-argument er rettsgebyr ukjent (eldre kall og lagrede resultater)", () => {
+  const gs = sjekkKostnader([{ type: "rettsgebyr", belop: 2071, tekst: "" }], null, "2026-06-01");
+  assert.equal(gs.linjer[0].vurdering, "ukjent");
 });
