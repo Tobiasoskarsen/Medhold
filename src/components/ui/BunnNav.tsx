@@ -41,22 +41,6 @@ function SakerIkon({ className }: IkonProps) {
   );
 }
 
-function MegIkon({ className }: IkonProps) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      aria-hidden
-    >
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" />
-    </svg>
-  );
-}
-
 type NavPunkt = {
   href: string;
   etikett: string;
@@ -68,7 +52,6 @@ type NavPunkt = {
 const PUNKTER: NavPunkt[] = [
   { href: "/", etikett: "Hjem", ikon: HjemIkon },
   { href: "/krav", etikett: "Saker", ikon: SakerIkon },
-  { href: "/meg", etikett: "Meg", ikon: MegIkon },
 ];
 
 function erAktiv(pathname: string, p: NavPunkt): boolean {
@@ -129,11 +112,15 @@ function NavPunktKnapp({
   );
 }
 
-/** Lys navigasjonsflate med semantisk mørk variant. Felles aktiv indikator og
- * eksisterende ruter, faneflagg, tastatur- og safe-area-håndtering beholdes. */
+/**
+ * Flat fanelinje (R8): full bredde, lett blur, hårstrek øverst og safe-area
+ * nederst. Hjem, Legg til (midten) og Saker. Meg er ikke en fane; den nås via
+ * profilknappen, og /meg markerer derfor ingen fane som aktiv. Faneflagg,
+ * tastatur- og safe-area-håndtering er som før.
+ */
 export function BunnNav() {
   const pathname = usePathname() ?? "/";
-  const [venstre, hoyre] = [PUNKTER.slice(0, 2), PUNKTER.slice(2)];
+  const [venstre, hoyre] = [PUNKTER.slice(0, 1), PUNKTER.slice(1)];
 
   // Mens et tekstfelt har fokus er tastaturet oppe: menyen viker, så den aldri
   // ligger over feltet eller handlingene under det.
@@ -156,15 +143,12 @@ export function BunnNav() {
 
   return (
     <nav aria-label="Hovednavigasjon"
-      className={`fixed inset-x-0 bottom-0 z-10 transition-[transform,opacity] duration-200 ${
+      className={`fixed inset-x-0 bottom-0 z-10 border-t border-nav-kant bg-nav-bg/90 pb-[var(--nav-luft)] backdrop-blur-md transition-[transform,opacity] duration-200 ${
         skrivFokus ? "pointer-events-none translate-y-full opacity-0" : ""
       }`}
     >
-      <div className="mx-auto max-w-[480px] px-[18px] pb-[var(--nav-luft)]">
-        <div
-          className="flex min-h-[var(--nav-hoyde)] items-center justify-around rounded-helt border border-nav-kant bg-nav-bg px-2"
-          style={{ boxShadow: "0 6px 20px -10px rgb(18 22 20 / 0.18)" }}
-        >
+      <div className="mx-auto max-w-[480px]">
+        <div className="grid min-h-[var(--nav-hoyde)] grid-cols-3 items-center px-2">
           {venstre.map((punkt) => (
             <NavPunktKnapp key={punkt.href} punkt={punkt} aktiv={erAktiv(pathname, punkt)} />
           ))}
@@ -172,9 +156,9 @@ export function BunnNav() {
             href="/legg-til-brev"
             aria-label="Legg til brev"
             onPointerDown={() => haptikk("lett")}
-            className="trykk flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center gap-0.5 px-1 py-1 text-nav-aktiv"
+            className="trykk flex min-h-11 min-w-11 -translate-y-2 flex-col items-center justify-center gap-0.5 px-1 text-nav-aktiv"
           >
-            <span className="flex size-8 items-center justify-center rounded-full bg-mint text-mint-tekst"><Plus className="size-5" strokeWidth={2} aria-hidden /></span>
+            <span className="flex size-12 items-center justify-center rounded-full bg-knapp text-knapp-tekst"><Plus className="size-6" strokeWidth={2} aria-hidden /></span>
             <span className="text-[11px] font-semibold">Legg til</span>
           </Link>
           {hoyre.map((punkt) => (
