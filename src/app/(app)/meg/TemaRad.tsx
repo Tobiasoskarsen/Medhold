@@ -6,12 +6,12 @@ import { Utvidbar } from "./Utvidbar";
 import { TemaVelger, NOKKEL, type Tema } from "./Tema";
 
 const ETIKETT: Record<Tema, string> = {
-  lys: "Lys",
-  mork: "Mørk",
-  system: "System",
+  lys: "Lyst",
+  mork: "Mørkt",
+  system: "Følg telefonen",
 };
 
-/** «Tema»-rad: viser nåværende valg og ekspanderer til den eksisterende
+/** «Utseende»-rad: viser nåværende valg og ekspanderer til den eksisterende
  *  TemaVelger. SSR-fallback «System» (localStorage finnes ikke ved SSR). */
 export function TemaRad() {
   const [tema, setTema] = useState<Tema>("lys");
@@ -26,7 +26,7 @@ export function TemaRad() {
   }, []);
 
   return (
-    <Utvidbar ikon={SunMoon} etikett="Tema" verdi={ETIKETT[tema]}>
+    <Utvidbar ikon={SunMoon} etikett="Utseende" verdi={ETIKETT[tema]}>
       <TemaVelger onEndring={setTema} />
     </Utvidbar>
   );

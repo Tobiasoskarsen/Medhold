@@ -11,7 +11,7 @@ export function Gruppe({
   return (
     <section className="mb-seksjon">
       {tittel && <h2 className="seksjonstittel mb-gruppe text-blekk">{tittel}</h2>}
-      <div className="flex flex-col divide-y divide-strek overflow-hidden rounded-kort border border-kant bg-flate">
+      <div className="flex flex-col divide-y divide-strek overflow-hidden rounded-helt border border-kant bg-flate">
         {children}
       </div>
     </section>

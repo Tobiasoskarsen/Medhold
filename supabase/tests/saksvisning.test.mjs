@@ -87,3 +87,30 @@ test('R8 sak: ventende sak med funn har ingen primærknapper i kortet, og valgen
 test('R8 sak: uten funn vises Veivalg som før og ingen funnkort',async()=>{
  const all=nodes(await page('aktiv'));assert.ok(!all.some(n=>n.type==='FunnKort'));assert.ok(all.some(n=>n.type==='Veivalg'));
 });
+
+test('R8 Meg: tilbakeknapp, profil, to rad-grupper, Logg ut som eget kort og bunnlinje',async()=>{
+ const db={auth:{getUser:async()=>({data:{user:{id:'u',email:'tobias@example.com',identities:[{provider:'email'}],user_metadata:{brevnavn:'Tobias Oskarsen',telefon:'',varsler_paa:true}}}})}};
+ const ui=Object.fromEntries(['Skjermramme','Sekvens','SekvensDel'].map(n=>[n,n]));
+ const mocks={'@/lib/supabase/server':{createClient:async()=>db},'@/components/ui':ui,'@/components/SlettKonto':{default:'SlettKonto'},'@/components/VarselInnstilling':{default:'Varsel'},'@/components/TilbakeKnapp':{TilbakeKnapp:'Tilbake'},'./TemaRad':{TemaRad:'TemaRad'},'./BrevnavnRad':{BrevnavnRad:'BrevnavnRad'}};
+ const tree=await load('src/app/(app)/meg/page.tsx',mocks).default();
+ const all=nodes(tree);const t=text(tree);
+ assert.ok(all.some(n=>n.type==='Tilbake'));
+ assert.ok(t.includes('TO'),'initialene');assert.ok(t.includes('Tobias')&&!t.includes('Oskarsen'),'bare fornavn i hodet');
+ const etiketter=all.map(n=>n.props.etikett).filter(Boolean);
+ assert.ok(all.some(n=>n.type==='BrevnavnRad'&&n.props.navn==='Tobias Oskarsen'&&n.props.innlogging==='E-postkode'));assert.deepEqual(etiketter,['E-postpåminnelser','Satsene vi bruker','Alle brev','Kontakt support','Personvern og data']);
+ assert.ok(all.some(n=>n.type==='TemaRad'));
+ assert.ok(!/Innstillinger|Hjelp med|Rediger profil/.test(t));
+ const logg=all.find(n=>n.type==='button'&&text(n)==='Logg ut');assert.ok(logg);assert.match(logg.props.className,/text-dom-rod/);
+ assert.ok(t.includes('Ikke profesjonell rådgivning'));
+});
+
+// En serverkomponent kan ikke sende funksjoner (som ikoner) til en klientkomponent.
+// Det ga «Noe gikk galt» på Meg i Preview. Ingen server-side som ikke er markert
+// «use client» skal sende ikon-egenskapen til Utvidbar.
+test('R8: ingen serverkomponent sender ikon-egenskapen til klientkomponenten Utvidbar',()=>{
+ for(const f of ['src/app/(app)/meg/page.tsx','src/app/(app)/krav/[id]/page.tsx','src/app/(app)/page.tsx']){
+  const kode=readFileSync(f,'utf8');
+  assert.ok(!/<Utvidbar[^>]*ikon=/.test(kode),f+' sender ikon til Utvidbar');
+ }
+ const brevnavnRad=readFileSync('src/app/(app)/meg/BrevnavnRad.tsx','utf8');assert.ok(brevnavnRad.startsWith('"use client"'));
+});

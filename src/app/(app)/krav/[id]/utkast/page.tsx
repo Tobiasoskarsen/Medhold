@@ -109,15 +109,7 @@ export default async function UtkastPage({
         </Link>
       </Toppstripe>
 
-      <h1 className="tittel-s text-blekk">
-        Lag et utkast
-      </h1>
-      <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
-        Fyll inn kort, så lager Medhold et utkast du kan redigere. Du sender
-        brevet selv.
-      </p>
-
-      <div className="mt-6">
+      <div className="mt-2">
         <UtkastFlyt
           eierId={user.id}
           key={valgtUtkast?.id ?? "nytt"}

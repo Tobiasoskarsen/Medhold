@@ -23,6 +23,12 @@ export default function VarselInnstilling({ pa }: { pa: boolean }) {
 
   // Kompakt: kun selve bryteren (etiketten bor nå i raden på Meg). Funksjonelt
   // uendret — samme settVarsler, optimistisk oppdatering og rulle-tilbake.
+  // R8: iOS-bryter 52×32 med hvit knott som glir (tokenene for bevegelse;
+  // redusert bevegelse gir ingen glidning).
+  const glid = {
+    transitionDuration: "var(--bevegelse-hurtig)",
+    transitionTimingFunction: "var(--bevegelse-easing)",
+  } as const;
   return (
     <span className="flex flex-col items-end gap-1">
       <button
@@ -32,14 +38,15 @@ export default function VarselInnstilling({ pa }: { pa: boolean }) {
         aria-label="Skru e-postpåminnelser av eller på"
         disabled={venter}
         onClick={veksle}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent focus-visible:ring-offset-2 ${
-          aktiv ? "bg-aksent" : "bg-strek"
+        className={`relative inline-flex h-8 w-[52px] shrink-0 rounded-full transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blekk focus-visible:ring-offset-2 focus-visible:ring-offset-flate ${
+          aktiv ? "bg-knapp" : "bg-strek"
         }`}
+        style={glid}
       >
         <span
-          className={`inline-block h-5 w-5 translate-y-0.5 rounded-full shadow transition ${
-            aktiv ? "translate-x-5 bg-aksent-tekst" : "translate-x-0.5 bg-flate mork:bg-dempet"
-          }`}
+          aria-hidden
+          className="absolute left-0.5 top-0.5 size-7 rounded-full bg-white shadow-md transition-transform"
+          style={{ ...glid, transform: aktiv ? "translateX(20px)" : "translateX(0)" }}
         />
       </button>
       {feil && <span className="text-[11px] text-dom-rod">{feil}</span>}
