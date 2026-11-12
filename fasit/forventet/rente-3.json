@@ -1,0 +1,31 @@
+{
+  "brev": "rente_3.txt",
+  "verifisert": false,
+  "merknad": "Syntetisk brev for måling av rentelesing (Feil sats (18 % mot lovens 12,25 %)). Tallene er regnet for hånd, ikke med appens kode. Sjekk mot brevet og sett verifisert: true.",
+  "brevtype": "betalingsoppfordring",
+  "brevdato": "2026-11-02",
+  "belop": 5264.85,
+  "hovedstol": 5000,
+  "kostnadslinjer": [
+    {
+      "type": "purregebyr",
+      "belop": 38
+    },
+    {
+      "type": "forsinkelsesrente",
+      "belop": 226.85,
+      "renteFra": "2026-08-01",
+      "renteTil": "2026-10-31",
+      "rentesats": 18
+    }
+  ],
+  "fristIBrevet": "2026-11-16",
+  "saksnummer": "RT-0003",
+  "avsender": "Fjordvik Inkasso AS",
+  "forventetGebyrsjekk": [
+    "innenfor",
+    "mulig_over"
+  ],
+  "forventetFristfunn": "samstemmer",
+  "forventetSum": "stemmer"
+}

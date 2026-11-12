@@ -17,6 +17,7 @@ import { startKvote, type Kvotevakt } from "@/lib/kvote-server";
 import { maskerAlleStrenger, maskerFodselsnummer } from "@/lib/maskering";
 import { logg } from "@/lib/logg";
 import { tolkKr, tellOrd, kuttTilMaks } from "@/lib/format";
+import { normaliserRentefelt } from "@/lib/rente";
 import {
   sjekkKostnader,
   type Kostnadslinje,
@@ -132,7 +133,7 @@ async function etterbehandle(
   const hovedstol = tolkKr(analyse.hovedstol) ?? tolkKr(analyse.belop);
   const gebyrsjekk =
     analyse.kostnadslinjer.length > 0
-      ? sjekkKostnader(analyse.kostnadslinjer, hovedstol, analyse.brevdato || null, analyse.brevtype ?? null)
+      ? sjekkKostnader(analyse.kostnadslinjer, hovedstol, analyse.brevdato || null, analyse.brevtype ?? null, tolkKr(analyse.hovedstol) !== null)
       : null;
 
   // Match mot eksisterende krav er et FORSLAG brukeren bekrefter — aldri en
@@ -361,7 +362,8 @@ export async function lagreBrev(
   if (input.utfall && utfallAvslutter(input.utfall) && input.avslutningBekreftet !== true)
     return { ok: false, feil: "Bekreft at saken skal avsluttes." };
 
-  const linjer = input.kostnadslinjer ?? [];
+  // Rentefeltene fra klienten renses på serveren: ugyldig dato eller sats lagres aldri.
+  const linjer = (input.kostnadslinjer ?? []).map(normaliserRentefelt);
   const kontroll = kontrollerBrevfunn(input);
   if (!kontroll.ok) return kontroll;
   if (kontroll.alvorlig !== input.alvorlig || JSON.stringify(kontroll.fristfunn) !== JSON.stringify(input.fristfunn))
@@ -383,7 +385,7 @@ export async function lagreBrev(
   // Lagret jsonb er sannheten for visning senere — ikke rekalkuler ved lesing.
   let gebyrsjekk: (GebyrsjekkResultat & { sumkontroll?: unknown }) | null =
     linjer.length > 0
-      ? sjekkKostnader(linjer, input.hovedstol ?? input.belop, input.brevdato || null, input.brevtype ?? null)
+      ? sjekkKostnader(linjer, input.hovedstol ?? input.belop, input.brevdato || null, input.brevtype ?? null, input.hovedstol != null)
       : null;
   // Et bekreftet sumavvik lagres i det eksisterende gebyrsjekk-jsonb-objektet
   // (§A.3, ingen ny kolonne) — kun for senere feilsøking, vises ikke i saken.

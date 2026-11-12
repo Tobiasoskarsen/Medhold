@@ -1,0 +1,26 @@
+{
+  "brev": "rente_7.txt",
+  "verifisert": false,
+  "merknad": "Syntetisk brev for måling av rentelesing (1 kr over beregnet (innenfor slingringen)). Tallene er regnet for hånd, ikke med appens kode. Sjekk mot brevet og sett verifisert: true.",
+  "brevtype": "betalingsoppfordring",
+  "brevdato": "2026-11-02",
+  "belop": 5101,
+  "hovedstol": 5000,
+  "kostnadslinjer": [
+    {
+      "type": "forsinkelsesrente",
+      "belop": 101,
+      "renteFra": "2026-03-01",
+      "renteTil": "2026-04-30",
+      "rentesats": 12
+    }
+  ],
+  "fristIBrevet": "2026-11-16",
+  "saksnummer": "RT-0007",
+  "avsender": "Fjordvik Inkasso AS",
+  "forventetGebyrsjekk": [
+    "innenfor"
+  ],
+  "forventetFristfunn": "samstemmer",
+  "forventetSum": "stemmer"
+}

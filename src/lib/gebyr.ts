@@ -13,6 +13,13 @@
 
 import { idagOslo } from "./dato.ts";
 import { formaterKr } from "./format.ts";
+import {
+  forventetRente,
+  hoyesteSats,
+  renteSegmenter,
+  type Rentefelt,
+  type Rentesegment,
+} from "./rente.ts";
 
 /** Én versjon av satstabellen, gyldig i et avgrenset tidsrom. */
 export type Satsversjon = {
@@ -81,6 +88,13 @@ export function rettsgebyrSatserFor(
 export const RETTSGEBYR_KILDER = { domstol: "https://www.domstol.no/no/rettsgebyr-og-kostnader", lov: LOVDATA_RETTSGEBYRLOVEN } as const;
 
 /**
+ * Kan en rentelinje gi «over» (rødt)? Til lesingen av renteFra/renteTil/rentesats
+ * er målt mot fasit (fasit/rapport.md) og godkjent, er svaret nei: da blir
+ * «klart over beregnet rente» vist som «mulig_over». Se Del B i ordren.
+ */
+export const RENTE_KAN_VAERE_OVER = true;
+
+/**
  * Rettsgebyr kan først kreves når saken er brakt inn for forliksrådet eller
  * namsmannen. Reglen gjelder «mulig_over» (aldri «over») og krever juridisk
  * bekreftelse før den slås på for brukerne. Sett til false for å vise «ukjent».
@@ -102,6 +116,9 @@ export const UKJENT_ARSAK = {
     "Brevtypen sier ikke om saken er brakt inn for retten. Kontroller mot domstol.no.",
   ikkeKjentSats:
     "Beløpet samsvarer ikke med en kjent sats; kontroller mot domstol.no.",
+  manglerDato: "Mangler dato eller hovedstol for å beregne renten.",
+  renteperiodeMangler: "Forsinkelsesrenten for perioden er ikke lagt inn ennå.",
+  ugyldigPeriode: "Rentens startdato er etter sluttdatoen.",
 } as const;
 
 export const SATSVERSJONER: Satsversjon[] = [
@@ -171,7 +188,7 @@ export type Kostnadslinje = {
   type: Kostnadstype;
   belop: number; // kr, som oppgitt i brevet
   tekst: string; // linjen slik den står i brevet (kort)
-};
+} & Rentefelt; // renteFra, renteTil, rentesats: bare for forsinkelsesrente, og bare når brevet oppgir dem
 
 export type Vurdering = "innenfor" | "mulig_over" | "over" | "ukjent";
 
@@ -182,6 +199,8 @@ export type LinjeResultat = {
   maksHoy: number | null; // høyeste relevante maks (B/tung der aktuelt)
   differanse: number | null; // belop - maksHoy, kun når vurdering === "over"
   forklaring: string; // én kort norsk setning, kodegenerert
+  /** Rentelinjer: grunnlaget utregningen viser (hovedstol og delperioder). */
+  renteGrunnlag?: { hovedstol: number; segmenter: Rentesegment[] };
 };
 
 export type GebyrsjekkResultat = {
@@ -225,12 +244,105 @@ function finnSalaertrinn(
   return sats.salaerForbruker[sats.salaerForbruker.length - 1];
 }
 
+/**
+ * Grensene for en rentelinje mot høyeste beregnede rente: innenfor til og med
+ * 2 kr over, mulig_over til og med 10 % + 5 kr over, ellers over. Brukes også av
+ * fasit-skriptet, så målingen bruker nøyaktig samme grenser som appen.
+ */
+export function renteVurderingForBelop(belop: number, maks: number): Vurdering {
+  if (belop <= maks + 2) return "innenfor";
+  if (belop <= maks * 1.1 + 5) return "mulig_over";
+  return "over";
+}
+
+/** «12,25» i stedet for «12.25». */
+const prosent = (n: number) => String(n).replace(".", ",");
+
+/**
+ * Forsinkelsesrente (Del B). Rød («over») bare når hovedstol, begge datoer og
+ * alle satser i perioden er kjent, og beløpet er klart over beregnet rente.
+ * Renten beregnes bare av hovedstolen, aldri av gebyr eller salær.
+ */
+function vurderRente(
+  linje: Kostnadslinje,
+  hovedstol: number | null,
+  hovedstolKjent: boolean,
+): LinjeResultat {
+  const ukjent = (forklaring: string): LinjeResultat => ({
+    linje,
+    vurdering: "ukjent",
+    maksLav: null,
+    maksHoy: null,
+    differanse: null,
+    forklaring,
+  });
+  const { renteFra, renteTil, rentesats } = linje;
+  if (!hovedstolKjent || hovedstol === null || !renteFra || !renteTil) {
+    return ukjent(UKJENT_ARSAK.manglerDato);
+  }
+  if (renteFra > renteTil) return ukjent(UKJENT_ARSAK.ugyldigPeriode);
+  const segmenter = renteSegmenter(hovedstol, renteFra, renteTil);
+  const maks = forventetRente(hovedstol, renteFra, renteTil);
+  if (!segmenter || maks === null) return ukjent(UKJENT_ARSAK.renteperiodeMangler);
+  const renteGrunnlag = { hovedstol, segmenter };
+
+  // Oppgitt sats over lovens sats: «mulig_over», ikke «over», til en jurist har
+  // bekreftet at avtalt rente over forsinkelsesrenten ikke kan kreves av forbrukere.
+  const hoyest = hoyesteSats(renteFra, renteTil);
+  if (rentesats !== undefined && hoyest !== null && rentesats > hoyest + 0.01) {
+    return {
+      linje,
+      vurdering: "mulig_over",
+      maksLav: maks,
+      maksHoy: maks,
+      differanse: null,
+      forklaring: `Oppgitt rente ${prosent(rentesats)} % er høyere enn forsinkelsesrenten på ${prosent(hoyest)} % i perioden.`,
+      renteGrunnlag,
+    };
+  }
+
+  const grense = renteVurderingForBelop(linje.belop, maks);
+  if (grense === "innenfor") {
+    return {
+      linje,
+      vurdering: "innenfor",
+      maksLav: maks,
+      maksHoy: maks,
+      differanse: null,
+      forklaring: `Rente beregnet fra ${kortDato(renteFra)} til ${kortDato(renteTil)} er innenfor (${kr(maks)} kr).`,
+      renteGrunnlag,
+    };
+  }
+  if (grense === "mulig_over" || !RENTE_KAN_VAERE_OVER) {
+    return {
+      linje,
+      vurdering: "mulig_over",
+      maksLav: maks,
+      maksHoy: maks,
+      differanse: null,
+      forklaring: `Over beregnet rente (${kr(maks)} kr); kan skyldes annen beregningsmåte.`,
+      renteGrunnlag,
+    };
+  }
+  const differanse = Math.round((linje.belop - maks) * 100) / 100;
+  return {
+    linje,
+    vurdering: "over",
+    maksLav: maks,
+    maksHoy: maks,
+    differanse,
+    forklaring: `${kr(linje.belop)} kr overstiger høyeste beregnede rente (${kr(maks)} kr) med ${kr(differanse)} kr. Grunnlag: ${kr(hovedstol)} kr fra ${kortDato(renteFra)} til ${kortDato(renteTil)}.`,
+    renteGrunnlag,
+  };
+}
+
 /** Vurderer én kostnadslinje mot satsversjonen. */
 function vurderLinje(
   linje: Kostnadslinje,
   hovedstol: number | null,
   sats: Satsversjon,
   stadium: string | null = null,
+  hovedstolKjent = true,
 ): LinjeResultat {
   const ukjent = (forklaring: string): LinjeResultat => ({
     linje,
@@ -312,7 +424,7 @@ function vurderLinje(
     }
 
     case "forsinkelsesrente":
-      return ukjent("Kontroll av renter kommer senere.");
+      return vurderRente(linje, hovedstol, hovedstolKjent);
     case "rettsgebyr": {
       // Aldri «over» for rettsgebyr i v1: bare «innenfor», «mulig_over» eller «ukjent».
       if (!stadium) return ukjent(UKJENT_ARSAK.manglerStadium);
@@ -360,6 +472,11 @@ export function sjekkKostnader(
   brevdato: string | null,
   /** Brevtypen/stadiet (faktura … namsmann). Null = ukjent stadium. */
   stadium: string | null = null,
+  /**
+   * Er hovedstolen lest fra brevet? Salær faller tilbake til totalbeløpet når den
+   * mangler, men renten gjør det aldri: uten kjent hovedstol er renten «ukjent».
+   */
+  hovedstolKjent = true,
 ): GebyrsjekkResultat {
   const dato = brevdato || idagOslo();
   const brevdatoAntatt = !brevdato;
@@ -390,7 +507,7 @@ export function sjekkKostnader(
   }
 
   const linjeResultater = linjer.map((linje) =>
-    vurderLinje(linje, hovedstol, sats, stadium),
+    vurderLinje(linje, hovedstol, sats, stadium, hovedstolKjent),
   );
 
   return {
@@ -423,7 +540,8 @@ export function gebyrFunnTekst(resultat: GebyrsjekkResultat): string {
 
   const funn = overLinjer.map((l) => {
     const navn = KOSTNADSNAVN[l.linje.type];
-    return `${navn} på ${kr(l.linje.belop)} kr overstiger høyeste lovlige sats (${kr(l.maksHoy as number)} kr) med ${kr(l.differanse as number)} kr`;
+    const grense = l.linje.type === "forsinkelsesrente" ? "høyeste beregnede rente" : "høyeste lovlige sats";
+    return `${navn} på ${kr(l.linje.belop)} kr overstiger ${grense} (${kr(l.maksHoy as number)} kr) med ${kr(l.differanse as number)} kr`;
   });
 
   return `Automatisk kontroll mot inkassoforskriftens maksimalsatser (gjeldende fra ${kortDato(resultat.satsGyldigFra)}) fant: ${funn.join("; ")}.`;
@@ -468,6 +586,28 @@ export function utregningRaderForLinje(
   if (l.vurdering !== "over" && l.vurdering !== "mulig_over") return null;
   // Rettsgebyr har ingen utregning å vise: forklaringen på linjen sier alt.
   if (l.linje.type === "rettsgebyr") return null;
+  if (l.linje.type === "forsinkelsesrente") {
+    const g = l.renteGrunnlag;
+    // Uten lagret grunnlag (eldre resultater) finnes det ingenting å regne fra.
+    if (!g || !l.linje.renteFra || !l.linje.renteTil) return null;
+    const rader: UtregningRad[] = [
+      { etikett: "Hovedstol", verdi: `${kr(g.hovedstol)} kr` },
+      { etikett: "Periode", verdi: `${kortDato(l.linje.renteFra)} – ${kortDato(l.linje.renteTil)}` },
+    ];
+    for (const s of g.segmenter) {
+      rader.push({
+        etikett: `${kr(g.hovedstol)} × ${prosent(s.sats)} % × ${s.dager}/${s.arsdager}`,
+        verdi: `${kr(Math.round(s.belop * 100) / 100)} kr`,
+      });
+    }
+    if (l.maksHoy !== null) rader.push({ etikett: "Høyeste beregnede rente", verdi: `${kr(l.maksHoy)} kr` });
+    if (l.linje.rentesats !== undefined) rader.push({ etikett: "Sats i brevet", verdi: `${prosent(l.linje.rentesats)} %` });
+    rader.push({ etikett: "Krevd i brevet", verdi: `${kr(l.linje.belop)} kr` });
+    if (l.vurdering === "over" && l.differanse !== null) {
+      rader.push({ etikett: "Over beregnet rente", verdi: `${kr(l.differanse)} kr` });
+    }
+    return rader;
+  }
 
   const rader: UtregningRad[] = [];
   if (l.linje.type === "salaer") {

@@ -228,8 +228,8 @@ export function LeggTilBrevFlyt({
   // beløp i bekreftelseskortet, følger panelet med.
   const gebyrsjekk = useMemo(() => {
     if (gyldigeLinjer.length === 0) return null;
-    return sjekkKostnader(gyldigeLinjer, hovedstolGrunnlag, brevdato || null, brevtype || null);
-  }, [gyldigeLinjer, hovedstolGrunnlag, brevdato, brevtype]);
+    return sjekkKostnader(gyldigeLinjer, hovedstolGrunnlag, brevdato || null, brevtype || null, tolkKr(hovedstolTekst) !== null);
+  }, [gyldigeLinjer, hovedstolGrunnlag, brevdato, brevtype, hovedstolTekst]);
 
   const sumkontroll = useMemo(
     () => kontrollerSum(tolkKr(belop), tolkKr(hovedstolTekst), gyldigeLinjer),

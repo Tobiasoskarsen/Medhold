@@ -14,6 +14,28 @@ Sist kjørt: 4.11.2026, 15:44:38. Forventet-filer: 1. Lest: 0.
 - testbrev_13.pdf: PDF mangler i fasit/brev/
 <!-- lesing:slutt -->
 
+<!-- rente:start -->
+## Lesing av renteperiode og sats (Del B)
+
+Sist kjørt: 11.11.2026, 22:19:10. 8 syntetiske brev × 20 kjøringer. Lest: 160. Lesefeil (kall feilet): 0.
+
+| Brev | Lest | renteFra feil | renteTil feil | rentesats feil | beløp feil | linje mangler | Kjøringer med minst én feil |
+|---|---|---|---|---|---|---|---|
+| rente_1.txt | 20 | 0 | 0 | 0 | 0 | 0 | 0 |
+| rente_2.txt | 20 | 0 | 0 | 0 | 0 | 0 | 0 |
+| rente_3.txt | 20 | 0 | 0 | 0 | 0 | 0 | 0 |
+| rente_4.txt | 20 | 0 | 0 | 0 | 0 | 0 | 0 |
+| rente_5.txt | 20 | 0 | 0 | 0 | 0 | 0 | 0 |
+| rente_6.txt | 20 | 0 | 0 | 0 | 0 | 0 | 0 |
+| rente_7.txt | 20 | 0 | 0 | 0 | 0 | 0 | 0 |
+| rente_8.txt | 20 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+Kjøringer med minst ett feil rentefelt, beløp eller manglende linje: 0 av 160 (ca. 0.0 per 20).
+Kjøringer der appens vurdering avvek fra fasit: 0.
+
+Grense (arbeidsordre): «over» på renter kan først slås på når lesingen er feil i høyst 1 av 20. Status: innenfor grensen. RENTE_KAN_VAERE_OVER = false.
+<!-- rente:slutt -->
+
 <!-- utkast:start -->
 ## Utkast (§E.4)
 

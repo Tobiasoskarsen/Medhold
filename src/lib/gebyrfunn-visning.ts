@@ -51,6 +51,12 @@ export function ukjentPille(forklaring: string): string {
       return "Stadium uklart";
     case UKJENT_ARSAK.ikkeKjentSats:
       return "Samsvarer ikke med kjent sats";
+    case UKJENT_ARSAK.manglerDato:
+      return "Mangler dato";
+    case UKJENT_ARSAK.renteperiodeMangler:
+      return "Periode ikke lagt inn";
+    case UKJENT_ARSAK.ugyldigPeriode:
+      return "Ugyldig periode";
     default:
       return "Ikke sjekket";
   }
