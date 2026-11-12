@@ -2,7 +2,13 @@
 
 import { useId, useState, type ReactNode } from "react";
 
-/** Kun visning. Panelene beholdes montert, så åpne detaljer og valg ikke mistes. */
+/**
+ * Segmentert kontroll for Oversikt, Dokumenter og Historikk (R8). Kun visning:
+ * panelene beholdes montert, så åpne detaljer og valg ikke mistes. Den aktive
+ * pillen glir mellom segmentene med CSS (tokenene --bevegelse-hurtig og
+ * --bevegelse-easing); redusert bevegelse gir ingen glidning, siden
+ * globals.css nuller ut alle overganger.
+ */
 export function Saksvisning({ oversikt, dokumenter, historikk, antallDokumenter }: {
   oversikt: ReactNode; dokumenter: ReactNode; historikk: ReactNode; antallDokumenter: number;
 }) {
@@ -14,20 +20,31 @@ export function Saksvisning({ oversikt, dokumenter, historikk, antallDokumenter 
     { navn: "Historikk", innhold: historikk },
   ];
   return (
-    <div className="mt-4">
-      <nav aria-label="Visning av saken" className="sticky top-[65px] z-10 -mx-1 mb-4 border-b border-strek bg-bakgrunn px-1">
-        <div className="grid grid-cols-3 gap-1">
+    <div className="mt-5">
+      <nav aria-label="Visning av saken">
+        <div className="relative grid grid-cols-3 rounded-full bg-flate-2 p-1">
+          <span
+            aria-hidden
+            className="absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-flate shadow-sm"
+            style={{
+              transform: `translateX(${valgt * 100}%)`,
+              transitionProperty: "transform",
+              transitionDuration: "var(--bevegelse-hurtig)",
+              transitionTimingFunction: "var(--bevegelse-easing)",
+            }}
+          />
           {sider.map((side, i) => <button key={side.navn} type="button"
             aria-pressed={valgt === i} aria-controls={`${id}-${i}`} onClick={() => setValgt(i)}
-            className={`relative min-h-12 min-w-0 rounded-t-liten px-1 pb-3 pt-2 text-hjelp font-semibold focus-visible:outline-2 focus-visible:outline-aksent ${valgt === i ? "text-blekk" : "text-dempet"}`}>
-            {side.navn}{i === 1 && antallDokumenter > 0 && <span className="ml-1 text-meta text-dempet">{antallDokumenter}</span>}
-            {valgt === i && <span aria-hidden className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-aksent" />}
+            className={`relative min-h-11 min-w-0 rounded-full px-1 text-[15px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blekk ${valgt === i ? "text-blekk" : "text-dempet"}`}>
+            {side.navn}{i === 1 && antallDokumenter > 0 && <span className="ml-1 text-meta font-medium text-dempet">{antallDokumenter}</span>}
           </button>)}
         </div>
       </nav>
-      {sider.map((side, i) => <section key={side.navn} id={`${id}-${i}`} hidden={valgt !== i} aria-label={side.navn}>
-        {side.innhold}
-      </section>)}
+      <div className="mt-4">
+        {sider.map((side, i) => <section key={side.navn} id={`${id}-${i}`} hidden={valgt !== i} aria-label={side.navn}>
+          {side.innhold}
+        </section>)}
+      </div>
     </div>
   );
 }

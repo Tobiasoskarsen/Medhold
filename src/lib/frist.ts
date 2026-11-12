@@ -19,6 +19,13 @@ export function fristChipTekst(dagerIgjen: number): string {
   return dagerIgjen === 1 ? "I morgen" : `${dagerIgjen} dager igjen`;
 }
 
+/** Pillen på saken (R8): «Frist i morgen», «Frist om 8 dager». */
+export function fristPilleTekst(dagerIgjen: number): string {
+  if (dagerIgjen < 0) return "Frist utløpt";
+  if (dagerIgjen === 0) return "Frist i dag";
+  return dagerIgjen === 1 ? "Frist i morgen" : `Frist om ${dagerIgjen} dager`;
+}
+
 // --- Gamle brev (MEDHOLD_SIKKERHET_ARBEIDSORDRE §C.2) ------------------------
 //
 // Et brev som er mer enn 45 dager gammelt er trolig ikke det siste i saken.
