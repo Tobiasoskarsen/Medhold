@@ -92,7 +92,7 @@ export const RETTSGEBYR_KILDER = { domstol: "https://www.domstol.no/no/rettsgeby
  * er målt mot fasit (fasit/rapport.md) og godkjent, er svaret nei: da blir
  * «klart over beregnet rente» vist som «mulig_over». Se Del B i ordren.
  */
-export const RENTE_KAN_VAERE_OVER = false;
+export const RENTE_KAN_VAERE_OVER = true;
 
 /**
  * Rettsgebyr kan først kreves når saken er brakt inn for forliksrådet eller
