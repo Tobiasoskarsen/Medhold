@@ -156,9 +156,9 @@ export function BunnNav() {
             href="/legg-til-brev"
             aria-label="Legg til brev"
             onPointerDown={() => haptikk("lett")}
-            className="trykk flex min-h-11 min-w-11 -translate-y-2 flex-col items-center justify-center gap-0.5 px-1 text-nav-aktiv"
+            className="trykk flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 px-1 text-nav-aktiv"
           >
-            <span className="flex size-12 items-center justify-center rounded-full bg-knapp text-knapp-tekst"><Plus className="size-6" strokeWidth={2} aria-hidden /></span>
+            <span className="flex size-12 -my-[11px] -translate-y-2 items-center justify-center rounded-full bg-knapp text-knapp-tekst"><Plus className="size-6" strokeWidth={2} aria-hidden /></span>
             <span className="text-[11px] font-semibold">Legg til</span>
           </Link>
           {hoyre.map((punkt) => (
