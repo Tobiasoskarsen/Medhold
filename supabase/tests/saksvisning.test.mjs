@@ -124,3 +124,16 @@ test('R8: ingen serverkomponent sender ikon-egenskapen til klientkomponenten Utv
  }
  const brevnavnRad=readFileSync('src/app/(app)/meg/BrevnavnRad.tsx','utf8');assert.ok(brevnavnRad.startsWith('"use client"'));
 });
+
+test('R8b Legg til brev: ett hovedvalg, to stille valg, PDF-grensen og feilmeldingen beholdes',()=>{
+ const src=readFileSync('src/app/legg-til-brev/LeggTilBrevFlyt.tsx','utf8').replace(/\r\n/g,'\n');
+ const a=src.indexOf('{inntak === "valg" && (');const b=src.indexOf('{inntak === "tekst" && (');
+ const valg=src.slice(a,b);
+ assert.equal((valg.match(/<Primærknapp(?![^>]*variant="stille")/g)||[]).length,1,'nøyaktig én primær handling');
+ assert.equal((valg.match(/variant="stille"/g)||[]).length,2);
+ assert.ok(/Ta bilde/.test(valg)&&/Last opp fil/.test(valg)&&/Lim inn tekst/.test(valg));
+ assert.ok(/PDF: maks \{MAKS_PDF_TEKST\} og \{MAKS_PDF_SIDER\} sider\./.test(valg));
+ assert.ok(/\{feil && <p[^>]*text-dom-rod/.test(valg),'feilmelding vises fortsatt');
+ assert.ok(!/Fotografer brevet|Skriv eller lim inn|Velg hvordan/.test(src));
+ assert.ok(!/InntakKort|startInntak/.test(src));
+});

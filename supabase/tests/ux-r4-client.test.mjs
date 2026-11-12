@@ -117,7 +117,7 @@ function harness({ save = async () => ({
     urls,
     render() { i = 0; return LeggTilBrevFlyt(props); },
     node(type) { const n = nodes(h.render()).find(x => x.type === type); assert.ok(n, `missing ${type}`); return n; },
-    async ready() { nodes(h.render()).find(n => n.props.tittel === "Lim inn tekst").props.onClick(); h.node("textarea").props.onChange({
+    async ready() { nodes(h.render()).find(n => n.props.variant === "stille" && n.props.children === "Lim inn tekst").props.onClick(); h.node("textarea").props.onChange({
         target: {
             value: "Syntetisk testbrev R4"
         }
