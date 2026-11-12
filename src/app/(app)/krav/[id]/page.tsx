@@ -9,7 +9,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   Skjermramme,
   Primærknapp,
-  StadiumLinje,
   FristRad,
   Tidslinje,
   TidslinjeHendelse,
@@ -17,7 +16,9 @@ import {
   SekvensDel,
 } from "@/components/ui";
 import { VenterPaSvarUtvidelse } from "./VenterPaSvarUtvidelse";
-import { DomMini, DomMiniFrist, DomMiniSum, FunnListe } from "@/components/Dom";
+import { DomMiniFrist, DomMiniSum } from "@/components/Dom";
+import { FunnKort } from "./FunnKort";
+import { KreditorAvatar } from "@/components/KreditorAvatar";
 import { sumavvikFra } from "@/lib/sumkontroll";
 import { Veivalg } from "@/components/Veivalg";
 import { Alvorsvarsel } from "@/components/Alvorsvarsel";
@@ -30,6 +31,7 @@ import {
   formaterDato,
   formaterDagManed,
   idagOslo,
+  dagerTil,
 } from "@/lib/dato";
 import {
   STADIUM_ETIKETT,
@@ -55,6 +57,8 @@ import type { GebyrsjekkResultat } from "@/lib/gebyr";
 import {
   brevAlderDager,
   erGammeltBrev,
+  erHastende,
+  fristPilleTekst,
   type FristSammenligning,
 } from "@/lib/frist";
 import { GammeltBrevKort } from "./GammeltBrevKort";
@@ -523,9 +527,11 @@ export default async function KravDetaljPage({
         <Link
           href="/krav"
           aria-label="Tilbake til saker"
-          className="trykk -ml-2.5 flex size-11 items-center justify-center text-blekk"
+          className="trykk -ml-1 flex size-11 items-center justify-center rounded-full text-blekk focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blekk"
         >
-          <ChevronLeft className="size-6" strokeWidth={2} aria-hidden />
+          <span className="flex size-10 items-center justify-center rounded-full bg-flate">
+            <ChevronLeft className="size-5" strokeWidth={2} aria-hidden />
+          </span>
         </Link>
         <KravMeny
           kravId={sak.id}
@@ -536,65 +542,171 @@ export default async function KravDetaljPage({
       </Toppstripe>
 
       <Sekvens>
-      {/* Kreditor, beløp og status. */}
+      {/* Kreditor, beløp og status (R8): sentrert. */}
       <SekvensDel>
-      {inkassoselskap && (
-        <p className="text-hjelp font-medium text-dempet">Sak hos {inkassoselskap}</p>
-      )}
-      <KravNavn
-        navn={hovednavn}
-        delId={sak.id}
-        delNavn={!sak.opprinnelig_kreditor}
-      />
-
-      {sak.belop_totalt != null && (
-        <p className="mt-1">
-          <KravBelop
-            verdi={sak.belop_totalt}
-            delId={sak.id}
-            className="tall-xl text-blekk"
-          />
-        </p>
-      )}
-
-      <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        {stadium && <StadiumLinje stadium={stadium} />}
-        {sak.status === "venter_pa_svar" && (
-          <span
-            className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
-          >
-            {STATUS_ETIKETT.venter_pa_svar}
-          </span>
+      <div className="flex flex-col items-center text-center">
+        <KreditorAvatar navn={hovednavn} className="size-14 text-[22px]" />
+        {inkassoselskap && (
+          <p className="mt-2 text-hjelp text-dempet">Sak hos {inkassoselskap}</p>
         )}
-        {utfallNa && (
-          <span
-            className={`inline-block rounded-full px-2.5 py-1 text-meta font-medium ring-1 ring-inset ${UTFALL_STIL[utfallNa]}`}
-          >
-            {UTFALL_ETIKETT[utfallNa]}
-          </span>
+        <div className="mt-2">
+          <KravNavn
+            navn={hovednavn}
+            delId={sak.id}
+            delNavn={!sak.opprinnelig_kreditor}
+          />
+        </div>
+
+        {sak.belop_totalt != null && (
+          <p className="mt-1">
+            <KravBelop
+              verdi={sak.belop_totalt}
+              delId={sak.id}
+              className="text-[40px] font-bold leading-none tracking-[-0.02em] tabular-nums text-blekk"
+            />
+          </p>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+          {stadium && (
+            <span className="rounded-full bg-flate px-3 py-1.5 text-[13px] font-medium text-blekk">
+              {brevtypeEtikett(stadium)}
+            </span>
+          )}
+          {nesteFrist && !lost && sak.status === "aktiv" && !(fristBrevGammelt && dagerTil(nesteFrist.forfallsdato) < 0) && (
+            <span
+              className={`rounded-full px-3 py-1.5 text-[13px] font-semibold ${
+                erHastende(dagerTil(nesteFrist.forfallsdato))
+                  ? "bg-dom-rod-bg text-dom-rod"
+                  : "bg-flate-2 text-blekk"
+              }`}
+            >
+              {fristPilleTekst(dagerTil(nesteFrist.forfallsdato))}
+            </span>
+          )}
+          {sak.status === "venter_pa_svar" && (
+            <span
+              className={`inline-block rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 ring-inset ${STATUS_STIL.venter_pa_svar}`}
+            >
+              {STATUS_ETIKETT.venter_pa_svar}
+            </span>
+          )}
+          {utfallNa && (
+            <span
+              className={`inline-block rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfallNa]}`}
+            >
+              {UTFALL_ETIKETT[utfallNa]}
+            </span>
+          )}
+        </div>
+        {utfall && !lost && utfallVisning(utfall, false).under && (
+          <p className="mt-2 text-hjelp leading-relaxed text-dempet">
+            {utfallVisning(utfall, false).under}
+          </p>
         )}
       </div>
-      {utfall && !lost && utfallVisning(utfall, false).under && (
-        <p className="mt-2 text-hjelp leading-relaxed text-dempet">
-          {utfallVisning(utfall, false).under}
-        </p>
-      )}
       </SekvensDel>
 
       </Sekvens>
       <Saksvisning antallDokumenter={brevListe.length + utkast.length}
         oversikt={<>
-      {/* Registrert stadium/status og relevant frist: situasjonen før valgene. */}
+      {sak.status === "aktiv" && sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
+        <SekvensDel>
+          <GammeltBrevKort
+            brevId={sisteBrev.id}
+            kravId={sak.id}
+            datoTekst={formaterDagManed(sisteBrevDato)}
+            uker={Math.floor(
+              brevAlderDager(sisteBrev.brevdato, sisteBrev.opprettet, idag) / 7,
+            )}
+            className="mt-seksjon"
+          />
+        </SekvensDel>
+      )}
+
+      {erSakAlvorlig && !lost && (
+        <SekvensDel>
+          <Alvorsvarsel signalord={signalord as string} className="mt-seksjon" />
+        </SekvensDel>
+      )}
+
+      {sak.status === "venter_pa_svar" && (
+        <section className="mb-4 rounded-helt border border-kant bg-flate p-5" aria-label="Venter på svar">
+          <p className="eyebrow">Status</p>
+          <h2 className="mt-1 text-[20px] font-bold tracking-tight text-blekk">Du venter på svar</h2>
+          {oppfolgingTilstandVerdi && <p className="mt-2 text-hjelp leading-relaxed text-dempet">{oppfolgingTekst(oppfolgingTilstandVerdi, null, varslerPa)}</p>}
+          <p className="mt-2 text-meta leading-relaxed text-dempet">Oppfølgingen er separat og endrer ikke fristen i brevet.</p>
+          <Link href={`/legg-til-brev?krav=${sak.id}`} className="trykk mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-knapp px-5 py-3 text-[15px] font-semibold text-knapp-tekst">Legg til svarbrev <Plus className="size-4" aria-hidden /></Link>
+          <div className="-mx-5 -mb-5 mt-4 border-t border-strek"><VenterPaSvarUtvidelse kravId={sak.id} sistEndret={sak.sist_endret as string} /></div>
+        </section>
+      )}
+
+      {/* Funnkortet (R8): alle funn i nyeste brev samlet, aldri skjult. */}
+      {harFunnListe && (
+        <SekvensDel>
+          <div className="mt-seksjon">
+            <FunnKort
+              gebyrsjekk={harOverGebyr ? (sisteBrev?.gebyrsjekk ?? null) : null}
+              utkastHref={
+                stotterUtkast(stadium) ? `/krav/${sak.id}/utkast?type=innsigelse` : undefined
+              }
+              betalHref={`/krav/${sak.id}/veier-ut`}
+              visKnapper={sak.status === "aktiv" && !lost && !erSakAlvorlig}
+              historisk={sisteBrevGammelt}
+              brevdato={sisteBrevDato}
+            >
+              {sumavvik && (
+                <DomMiniSum avvik={sumavvik} historisk={sisteBrevGammelt} brevdato={sisteBrevDato} />
+              )}
+              {harFristfunn && sisteBrev?.fristfunn && (
+                <DomMiniFrist
+                  differanseDager={Math.abs(sisteBrev.fristfunn.differanseDager ?? 0)}
+                  brevdato={sisteBrev.brevdato}
+                  beregnetDato={sisteBrev.fristfunn.beregnetDato as string}
+                  historisk={sisteBrevGammelt}
+                />
+              )}
+              <HovedstolVarsel avvik={hovedstolAvvik} />
+            </FunnKort>
+          </div>
+        </SekvensDel>
+      )}
+
+      {!erSakAlvorlig && stotterUtkast(stadium) && !lost && !(harFunnListe && sak.status === "aktiv") && (
+        <SekvensDel>
+          <details className="detaljrad mt-2" open={sak.status !== "venter_pa_svar"}>
+            <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk focus-visible:outline-2 focus-visible:outline-aksent">{sak.status === "venter_pa_svar" ? "Andre muligheter" : "Velg neste steg"}</summary>
+          <Veivalg
+            className="mt-1 [&>h2]:sr-only"
+            harGebyrfunn={harOverGebyr}
+            gebyrDifferanse={overDiff}
+            sumavvikDifferanse={sumavvik?.differanse ?? null}
+            svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
+            betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
+          />
+          </details>
+        </SekvensDel>
+      )}
+
       {nesteFrist && (
         <SekvensDel>
+          <details className="mt-3 rounded-helt border border-kant bg-flate px-4 [&>summary]:min-h-14 [&>summary]:py-3 [&[open]]:pb-4">
+            <summary className="text-[15px] text-blekk">
+              <span>
+                {nesteFrist.tittel} ·{" "}
+                <span className={`font-semibold tabular-nums ${erHastende(dagerTil(nesteFrist.forfallsdato)) && !(fristBrevGammelt && dagerTil(nesteFrist.forfallsdato) < 0) ? "text-dom-rod" : ""}`}>
+                  {formaterDagManed(nesteFrist.forfallsdato)}
+                </span>
+              </span>
+            </summary>
           <FristRad
             forfallsdato={nesteFrist.forfallsdato}
             tittel={nesteFrist.tittel}
             gammeltBrev={fristBrevGammelt}
             className="mt-3"
           />
-          <p className="mt-2 px-1 text-meta text-dempet">{nesteFrist.kilde === "beregnet" ? "Beregnet fra brevet – kontroller datoen." : "Fristen står oppgitt i brevet."}</p>
-          <details className="detaljrad mt-1 px-1"><summary className="min-h-11 cursor-pointer rounded-liten text-hjelp text-dempet focus-visible:outline-2 focus-visible:outline-aksent">Om fristen og fullføring</summary>
+          <p className="mt-2 text-meta text-dempet">{nesteFrist.kilde === "beregnet" ? "Beregnet fra brevet – kontroller datoen." : "Fristen står oppgitt i brevet."}</p>
+          <div className="space-y-1 pb-1">
           {nesteFrist.kilde === "beregnet" && nesteFristBrev?.brevdato ? (
             <Utregning
               className="mt-2"
@@ -628,90 +740,8 @@ export default async function KravDetaljPage({
             </p>
           ) : null}
           <FristKnapp fristId={nesteFrist.id} handling="fullfort" />
+          </div>
           </details>
-        </SekvensDel>
-      )}
-
-      {sak.status === "venter_pa_svar" && (
-        <section className="mb-4 rounded-kort border border-strek bg-flate p-5" aria-label="Venter på svar">
-          <p className="eyebrow">Status</p>
-          <h2 className="mt-1 text-[20px] font-bold tracking-tight text-blekk">Du venter på svar</h2>
-          {oppfolgingTilstandVerdi && <p className="mt-2 text-hjelp leading-relaxed text-dempet">{oppfolgingTekst(oppfolgingTilstandVerdi, null, varslerPa)}</p>}
-          <p className="mt-2 text-meta leading-relaxed text-dempet">Oppfølgingen er separat og endrer ikke fristen i brevet.</p>
-          <Link href={`/legg-til-brev?krav=${sak.id}`} className="trykk mt-4 inline-flex min-h-11 items-center gap-2 rounded-kontroll bg-knapp px-4 py-2.5 text-hjelp font-semibold text-knapp-tekst">Legg til svarbrev <Plus className="size-4" aria-hidden /></Link>
-          <div className="-mx-5 -mb-5 mt-4 border-t border-strek"><VenterPaSvarUtvidelse kravId={sak.id} sistEndret={sak.sist_endret as string} /></div>
-        </section>
-      )}
-
-      {/* Viktigste varsel eller handlingsvalg. Alvorsvarsel overstyrer
-          vanlige handlingsvalg (uendret betingelse). */}
-      {sak.status === "aktiv" && sisteBrevGammelt && sisteBrev && sisteBrevDato && !lost && (
-        <SekvensDel>
-          <GammeltBrevKort
-            brevId={sisteBrev.id}
-            kravId={sak.id}
-            datoTekst={formaterDagManed(sisteBrevDato)}
-            uker={Math.floor(
-              brevAlderDager(sisteBrev.brevdato, sisteBrev.opprettet, idag) / 7,
-            )}
-            className="mt-seksjon"
-          />
-        </SekvensDel>
-      )}
-
-      {erSakAlvorlig && !lost ? (
-        <SekvensDel>
-          <Alvorsvarsel signalord={signalord as string} className="mt-seksjon" />
-        </SekvensDel>
-      ) : (
-        stotterUtkast(stadium) &&
-        !lost && (
-          <SekvensDel>
-            <details className="detaljrad mt-2" open={sak.status !== "venter_pa_svar"}>
-              <summary className="min-h-11 cursor-pointer rounded-liten text-hjelp font-semibold text-blekk focus-visible:outline-2 focus-visible:outline-aksent">{sak.status === "venter_pa_svar" ? "Andre muligheter" : "Velg neste steg"}</summary>
-            <Veivalg
-              className="mt-1 [&>h2]:sr-only"
-              harGebyrfunn={harOverGebyr}
-              gebyrDifferanse={overDiff}
-              sumavvikDifferanse={sumavvik?.differanse ?? null}
-              svarMål={{ type: "href", href: `/krav/${sak.id}/utkast?type=innsigelse` }}
-              betaleMål={{ type: "href", href: `/krav/${sak.id}/veier-ut` }}
-            />
-            </details>
-          </SekvensDel>
-        )
-      )}
-
-      {/* Detaljer om funn. */}
-      {harFunnListe && (
-        <SekvensDel>
-          <h2 className="seksjonstittel mt-seksjon text-blekk">Funn i brevet</h2>
-          <FunnListe className="mt-gruppe">
-            {harOverGebyr && sisteBrev?.gebyrsjekk && (
-              <DomMini
-                resultat={sisteBrev.gebyrsjekk}
-                utkastHref={
-                  stotterUtkast(stadium)
-                    ? `/krav/${sak.id}/utkast?type=innsigelse`
-                    : undefined
-                }
-                historisk={sisteBrevGammelt}
-                brevdato={sisteBrevDato}
-              />
-            )}
-            {sumavvik && (
-              <DomMiniSum avvik={sumavvik} historisk={sisteBrevGammelt} brevdato={sisteBrevDato} />
-            )}
-            {harFristfunn && sisteBrev?.fristfunn && (
-              <DomMiniFrist
-                differanseDager={Math.abs(sisteBrev.fristfunn.differanseDager ?? 0)}
-                brevdato={sisteBrev.brevdato}
-                beregnetDato={sisteBrev.fristfunn.beregnetDato as string}
-                historisk={sisteBrevGammelt}
-              />
-            )}
-            <HovedstolVarsel avvik={hovedstolAvvik} />
-          </FunnListe>
         </SekvensDel>
       )}
 
@@ -755,11 +785,9 @@ export default async function KravDetaljPage({
         </>}
         dokumenter={<>
 
-          <h2 className="seksjonstittel mb-3 text-blekk">Brev og svar</h2>
-          <p className="mb-4 text-hjelp text-dempet">Åpne et brev eller fortsett på et lagret utkast.</p>
-          <div className="overflow-hidden rounded-kort border border-kant bg-flate divide-y divide-strek">
+          <div className="overflow-hidden rounded-helt border border-kant bg-flate divide-y divide-strek">
             {brevListe.map(b => <Link key={b.id} href={`/krav/${sak.id}/brev/${b.id}`} className="trykk flex min-h-[72px] items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-aksent">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-liten bg-flate-2 text-dempet"><FileText className="size-5" aria-hidden /></span>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-liten bg-tint-1-bg text-tint-1-tekst"><FileText className="size-5" aria-hidden /></span>
               <span className="min-w-0 flex-1"><span className="block text-hjelp font-semibold text-blekk">{brevtypeEtikett(b.brevtype)}</span><span className="mt-0.5 block break-words text-meta text-dempet">{[b.avsender, formaterKortDato(b.brevdato ?? b.opprettet)].filter(Boolean).join(" · ")}</span></span><ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
             </Link>)}
             {utkast.map(u => <Link key={u.id} href={`/krav/${sak.id}/utkast?utkast=${u.id}`} className="trykk flex min-h-[72px] items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-aksent">

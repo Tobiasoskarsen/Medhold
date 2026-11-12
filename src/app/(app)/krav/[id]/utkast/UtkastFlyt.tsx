@@ -12,7 +12,7 @@ import {
 } from "@/lib/utkast-vakt";
 import { kr } from "@/lib/gebyrfunn-visning";
 import { haptikk } from "@/lib/haptikk";
-import { FJAER, VARIGHET } from "@/lib/bevegelse";
+import { EASING, FJAER, VARIGHET } from "@/lib/bevegelse";
 import { UTKAST_STRØM_MARKØR } from "@/lib/ai";
 import {
   UTKAST_TYPER,
@@ -52,27 +52,7 @@ type Omfang = "delvis" | "helt";
 
 // Samme flate i alle faser, så teksten ikke hopper fra strømming til redigering.
 const DOKUMENT =
-  "min-h-[420px] w-full rounded-kort border border-kant bg-flate p-5 text-brod leading-[1.6] text-blekk";
-
-const FASER = ["Opplysninger", "Skriver", "Les og rediger"] as const;
-
-/** Hvor i flyten brukeren er. Ren visning av de tre eksisterende fasene. */
-function FaseLinje({ aktiv }: { aktiv: 0 | 1 | 2 }) {
-  return (
-    <ol className="mb-5 flex flex-wrap items-center gap-1.5 text-meta font-medium text-dempet">
-      {FASER.map((f, i) => (
-        <li
-          key={f}
-          aria-current={i === aktiv ? "step" : undefined}
-          className="flex items-center gap-1.5"
-        >
-          {i > 0 && <span className="h-px w-3 bg-strek" aria-hidden />}
-          <span className={i === aktiv ? "font-bold text-blekk" : ""}>{f}</span>
-        </li>
-      ))}
-    </ol>
-  );
-}
+  "min-h-[420px] w-full rounded-helt border border-kant bg-flate p-5 text-[15.5px] leading-[1.55] text-blekk";
 
 export function UtkastFlyt({
   sakId,
@@ -360,7 +340,7 @@ export function UtkastFlyt({
     try {
       await navigator.clipboard.writeText(tekst);
       setKopiert(true);
-      setTimeout(() => setKopiert(false), 2000);
+      setTimeout(() => setKopiert(false), 1600);
     } catch {
       setFeil("Kunne ikke kopiere. Marker teksten og kopier den manuelt.");
     }
@@ -392,7 +372,7 @@ export function UtkastFlyt({
       try {
         await navigator.clipboard.writeText(tekst);
         setKopiert(true);
-        setTimeout(() => setKopiert(false), 2000);
+        setTimeout(() => setKopiert(false), 1600);
       } catch {
         setFeil("Kunne ikke kopiere hele brevet. Kopier manuelt før du åpner e-post.");
         return;
@@ -441,9 +421,50 @@ export function UtkastFlyt({
     });
   }
 
+  // Statuslinjen (R8): hva som skjer med utkastet akkurat nå.
+  const statusTekst =
+    fase === "strømmer"
+      ? justerer
+        ? "Justerer ordlyden …"
+        : "Skriver svar …"
+      : fase === "ferdig"
+        ? erSendt
+          ? "Registrert sendt"
+          : ulagret
+            ? "Ulagrede endringer"
+            : lagretTekst !== startTekst
+              ? "Utkast lagret"
+              : "Utkast klart"
+        : null;
+
   return (
     <div>
-      <FaseLinje aktiv={fase === "skjema" ? 0 : fase === "strømmer" ? 1 : 2} />
+      <div className="flex items-start justify-between gap-3">
+        <h1 className="text-[28px] font-bold leading-tight tracking-[-0.02em] text-blekk">
+          Svar til {kreditor}
+        </h1>
+        {statusTekst && (
+          <span
+            role="status"
+            aria-live="polite"
+            className="mt-2 flex shrink-0 items-center gap-1.5 text-[14px] font-semibold text-blekk"
+          >
+            {fase === "ferdig" && !ulagret && (
+              <m.span
+                aria-hidden
+                initial={redusert ? false : { scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: VARIGHET.hurtig, ease: EASING }}
+                className="flex size-5 items-center justify-center rounded-full bg-knapp text-knapp-tekst"
+              >
+                <Check className="size-3.5" strokeWidth={3} />
+              </m.span>
+            )}
+            <span className={fase === "strømmer" ? "animate-pulse" : ""}>{statusTekst}</span>
+          </span>
+        )}
+      </div>
+      <div className="mt-5" />
       {fase === "skjema" ? (
         <>
           {harOverGebyr && (
@@ -609,18 +630,14 @@ export function UtkastFlyt({
                   />
                 )}
               </m.div>
-              {/* Plassen er alltid reservert: ingen hopp når teksten kommer. */}
-              <p className="mt-2 h-5 text-hjelp text-dempet" aria-live="polite">
-                {justerer ? "Justerer ordlyden …" : ""}
-              </p>
             </>
           )}
 
           {fase === "ferdig" && (
             <>
-              <p role="status" className="mt-3 text-hjelp text-dempet">{erSendt ? (lagret?.sendt_innhold || sendtBekreftet ? "Registrert sendt – bevart tekstversjon." : "Eldre sendt utkast: eksakt sendt tekst er ikke dokumentert.") : ulagret ? "Ulagrede endringer" : "Utkast lagret"}</p>
+              {erSendt && <p className="mt-3 text-[13px] text-dempet">{lagret?.sendt_innhold || sendtBekreftet ? "Bevart tekstversjon." : "Eldre sendt utkast: eksakt sendt tekst er ikke dokumentert."}</p>}
               {erSendt && <a href={`/krav/${sakId}`} className="inline-flex min-h-11 items-center rounded-liten font-semibold text-aksent underline focus-visible:outline-2 focus-visible:outline-aksent">Åpne saken</a>}
-              {!erSendt && <button type="button" disabled={!ulagret || lagrer || sender || sendtUkjent} className="trykk min-h-11 underline" onClick={async () => {
+              {!erSendt && (ulagret || lagrer) && <button type="button" disabled={!ulagret || lagrer || sender || sendtUkjent} className="trykk mt-3 block min-h-[52px] w-full rounded-full bg-flate-2 px-5 text-[16px] font-semibold text-blekk disabled:opacity-60" onClick={async () => {
                 if (!utkastId || skriveLas.current) return;
                 skriveLas.current = true;
                 setLagrer(true); setFeil(null);
@@ -644,12 +661,13 @@ export function UtkastFlyt({
                 finally { setLagrer(false); skriveLas.current = false; }
               }}>{lagrer ? "Lagrer …" : "Lagre endringer"}</button>}
               {synligFeil && <p role="alert" className="text-dom-rod">{synligFeil}</p>}
-              <p className="mt-3 text-hjelp leading-relaxed text-dempet">
-                {erSendt
-                  ? "Dette er teksten du registrerte som sendt. Den kan ikke endres."
-                  : `Lagre endringene før du lukker siden. Ulagret tekst finnes bare i denne fanen. Du sender brevet selv${avsender ? ` til ${avsender}` : ""}.`}
-              </p>
-              <p className="mt-1.5 text-meta text-dempet">{FORBEHOLD}</p>
+              {(erSendt || ulagret) && (
+                <p className="mt-3 text-hjelp leading-relaxed text-dempet">
+                  {erSendt
+                    ? "Dette er teksten du registrerte som sendt. Den kan ikke endres."
+                    : `Lagre endringene før du lukker siden. Ulagret tekst finnes bare i denne fanen. Du sender brevet selv${avsender ? ` til ${avsender}` : ""}.`}
+                </p>
+              )}
 
               {omfangBrukt === "delvis" && ubestridt !== null && (
                 <Kort className="mt-4">
@@ -703,23 +721,13 @@ export function UtkastFlyt({
                 </Kort>
               )}
 
-              <h2 className="seksjonstittel mt-seksjon text-blekk">{erSendt ? "Kopi av sendt tekst" : "Send brevet selv"}</h2>
-              <div className="mt-gruppe">
-                {forLangtForMailto ? (
-                  <Primærknapp onClick={apneEpost} disabled={ulagret || lagrer}>
-                    <span className="inline-flex items-center gap-2">
-                      <Mail className="size-4" aria-hidden />
-                      Kopier og åpne i e-post
-                    </span>
-                  </Primærknapp>
-                ) : (
-                  <Primærknapp onClick={apneEpost} disabled={ulagret || lagrer}>
-                    <span className="inline-flex items-center gap-2">
-                      <Mail className="size-4" aria-hidden />
-                      Åpne i e-post
-                    </span>
-                  </Primærknapp>
-                )}
+              <div className="mt-5">
+                <Primærknapp onClick={apneEpost} disabled={ulagret || lagrer}>
+                  <span className="inline-flex items-center gap-2">
+                    <Mail className="size-4" aria-hidden />
+                    {forLangtForMailto ? "Kopier og åpne i e-post" : "Åpne i e-post"}
+                  </span>
+                </Primærknapp>
                 {forLangtForMailto && (
                   <p className="mt-2 text-xs leading-relaxed text-dempet">
                     Brevet er for langt for e-postfeltet — vi kopierer teksten
@@ -728,12 +736,12 @@ export function UtkastFlyt({
                 )}
               </div>
 
-              <div className="mt-3 flex items-center gap-3">
+              <div className={`mt-2 grid gap-2 ${erSendt ? "grid-cols-1" : "grid-cols-2"}`}>
                 <button
                   type="button"
                   onClick={kopier}
                   disabled={ulagret || lagrer}
-                  className="trykk inline-flex min-h-11 shrink-0 items-center gap-2 rounded-kontroll border border-strek bg-flate px-4 py-2.5 text-sm font-medium text-blekk hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent"
+                  className="trykk inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-flate-2 px-5 text-[16px] font-semibold text-blekk focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blekk focus-visible:ring-offset-2 focus-visible:ring-offset-bakgrunn disabled:opacity-60"
                 >
                   {/* Ikonet morfer: kopi-ikonet roterer ut, haken fjærer inn. */}
                   <span className="relative flex size-4 items-center justify-center">
@@ -756,32 +764,23 @@ export function UtkastFlyt({
                   </span>
                   {kopiert ? "Kopiert" : "Kopier"}
                 </button>
-                <p className="text-xs leading-relaxed text-dempet">
-                  Ble ikke hele brevet med? Bruk Kopier og lim inn.
-                </p>
-              </div>
-
-              {/* Egen seksjon: dette er en registrering brukeren gjør etter å
-                  ha sendt selv — appen sender aldri noe. */}
-              {!erSendt && <div className="mt-seksjon border-t-[0.5px] border-strek pt-5">
-                <h2 className="seksjonstittel text-blekk">Har du sendt brevet?</h2>
-                <div className="mt-gruppe">
+                {/* Registreringen brukeren gjør etter å ha sendt selv — appen sender aldri noe. */}
+                {!erSendt && (
                   <Primærknapp
-                    variant="rolig"
+                    variant="stille"
                     onClick={jegHarSendtDet}
                     disabled={sender || ulagret || lagrer || erSendt}
                   >
-                    <span className="inline-flex items-center gap-2">
-                      <Check className="size-4" aria-hidden />
-                      {sender ? "Kontrollerer …" : sendtUkjent ? "Kontroller sendtstatus" : "Jeg har sendt det"}
-                    </span>
+                    {sender ? "Kontrollerer …" : sendtUkjent ? "Kontroller sendtstatus" : "Jeg har sendt det"}
                   </Primærknapp>
-                </div>
-                <p className="mt-2 text-xs leading-relaxed text-dempet">
-                  Da settes saken til «Venter på svar». Medhold sender ikke noe
-                  selv, men minner deg på å følge opp hvis det drøyer.
-                </p>
-              </div>}
+                )}
+              </div>
+              <p className="mt-3 text-center text-[13px] leading-relaxed text-dempet">
+                Ble ikke hele brevet med? Bruk Kopier og lim inn.
+                {!erSendt && " «Jeg har sendt det» setter saken til Venter på svar."}
+              </p>
+
+              <p className="mt-seksjon text-center text-[13px] text-dempet">{FORBEHOLD}</p>
             </>
           )}
         </>

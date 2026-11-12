@@ -28,7 +28,7 @@ export function Heltekort({
   const topp = (
     <>
       <p
-        className={`text-meta font-semibold uppercase tracking-[0.08em] ${
+        className={`text-[13px] font-semibold ${
           gull ? "text-gull" : "text-helt-etikett"
         }`}
       >
@@ -42,9 +42,7 @@ export function Heltekort({
       className={`rounded-helt border px-5 pb-[18px] pt-5 ${
         gull
           ? "border-gull/30 bg-gull-bg text-blekk"
-          : // Et svakt lys øverst til høyre gir flaten dybde uten å bli
-            // en «effekt» (visuell ordre, fase 2).
-            "border-helt-kant bg-helt-bg bg-[radial-gradient(130%_90%_at_100%_0%,rgb(255_255_255/0.08),transparent_55%)] text-helt-tekst"
+          : "border-helt-kant bg-helt-bg text-helt-tekst"
       } ${className}`}
       style={gull ? undefined : { boxShadow: "var(--kort-skygge)" }}
     >

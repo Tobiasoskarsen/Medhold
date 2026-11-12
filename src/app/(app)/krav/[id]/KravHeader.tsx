@@ -39,7 +39,7 @@ export function KravNavn({
 }) {
   return (
     <h1
-      className="text-[19px] font-semibold leading-snug tracking-[-0.01em] text-blekk"
+      className="text-[17px] font-semibold leading-snug tracking-[-0.01em] text-blekk"
       style={
         delNavn ? { viewTransitionName: `sak-navn-${delId}` } : undefined
       }

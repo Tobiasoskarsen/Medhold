@@ -5,7 +5,8 @@ import {
   beregnOversikt,
   hjemIngress,
   type HjemIngressInput,
-  type SakOppsummering, saksGrupper, brukGruppering } from "./oversikt.ts";
+  type SakOppsummering, saksGrupper, brukGruppering,
+  muligAvvikTotal, nyesteBrevPerSak, utestaaendeTotal } from "./oversikt.ts";
 import type { GebyrsjekkResultat, LinjeResultat, Vurdering } from "./gebyr.ts";
 
 function linje(vurdering: Vurdering, differanse: number | null): LinjeResultat {
@@ -234,4 +235,89 @@ test("saksGrupper: blandede statuser havner i riktig gruppe og beholder rekkefø
 test("brukGruppering: først over 10 saker som trenger handling", () => {
   assert.equal(brukGruppering(10), false);
   assert.equal(brukGruppering(11), true);
+});
+
+// --- R8: totalen og «Mulig avvik» på Hjem ----------------------------------------
+
+test("utestaaendeTotal: tom liste er 0", () => {
+  assert.equal(utestaaendeTotal([]), 0);
+});
+
+test("utestaaendeTotal: aktive og ventende teller, avsluttede gjør det ikke", () => {
+  assert.equal(
+    utestaaendeTotal([
+      { status: "aktiv", belop_totalt: 3258.9 },
+      { status: "aktiv", belop_totalt: 4912.3 },
+      { status: "venter_pa_svar", belop_totalt: 1288 },
+      { status: "fullfort", belop_totalt: 999 },
+    ]),
+    9459.2,
+  );
+});
+
+test("utestaaendeTotal: saker uten beløp hoppes over, og flyttallsstøy rundes av", () => {
+  assert.equal(
+    utestaaendeTotal([
+      { status: "aktiv", belop_totalt: null },
+      { status: "aktiv", belop_totalt: 0.1 },
+      { status: "venter_pa_svar", belop_totalt: 0.2 },
+    ]),
+    0.3,
+  );
+  assert.equal(utestaaendeTotal([{ status: "aktiv", belop_totalt: null }]), 0);
+});
+
+test("nyesteBrevPerSak: nyeste brevdato vinner, udatert brev sist, så opprettet", () => {
+  const b = (id: string, sak: string, brevdato: string | null, opprettet: string) => ({ id, sak_id: sak, brevdato, opprettet });
+  const per = nyesteBrevPerSak([
+    b("a", "s1", "2026-10-01", "2026-10-02T10:00:00Z"),
+    b("b", "s1", "2026-11-01", "2026-11-02T10:00:00Z"),
+    b("c", "s1", null, "2026-12-01T10:00:00Z"),
+    b("d", "s2", "2026-11-05", "2026-11-05T08:00:00Z"),
+    b("e", "s2", "2026-11-05", "2026-11-05T09:00:00Z"),
+    b("f", "s3", null, "2026-11-01T10:00:00Z"),
+    b("g", "s3", null, "2026-11-03T10:00:00Z"),
+  ]);
+  assert.equal(per.get("s1")?.id, "b");
+  assert.equal(per.get("s2")?.id, "e");
+  assert.equal(per.get("s3")?.id, "g");
+  assert.equal(per.size, 3);
+});
+
+test("muligAvvikTotal: summerer over-linjer i nyeste brev, og peker på saken med størst avvik", () => {
+  const nyeste = new Map<string, { gebyrsjekk: unknown }>([
+    ["s1", { gebyrsjekk: gebyrsjekk([linje("over", 150)]) }],
+    ["s2", { gebyrsjekk: gebyrsjekk([linje("over", 50), linje("over", 25.5), linje("innenfor", null)]) }],
+    ["s3", { gebyrsjekk: gebyrsjekk([linje("innenfor", null)]) }],
+  ]);
+  const r = muligAvvikTotal(
+    [
+      { id: "s1", stadium: "betalingsoppfordring", status: "aktiv" },
+      { id: "s2", stadium: "inkassovarsel", status: "venter_pa_svar" },
+      { id: "s3", stadium: "inkassovarsel", status: "aktiv" },
+    ],
+    nyeste,
+  );
+  assert.deepEqual(r, { sum: 225.5, stortSakId: "s1" });
+});
+
+test("muligAvvikTotal: hopper over avsluttede saker, stadier uten utkast, og mangler", () => {
+  const over = { gebyrsjekk: gebyrsjekk([linje("over", 100)]) };
+  const nyeste = new Map<string, { gebyrsjekk: unknown }>([
+    ["avsluttet", over], ["faktura", over], ["uten-stadium", over], ["tom", { gebyrsjekk: null }], ["rar", { gebyrsjekk: { linjer: "x" } }],
+  ]);
+  assert.deepEqual(
+    muligAvvikTotal(
+      [
+        { id: "avsluttet", stadium: "betalingsoppfordring", status: "fullfort" },
+        { id: "faktura", stadium: "faktura", status: "aktiv" },
+        { id: "uten-stadium", stadium: null, status: "aktiv" },
+        { id: "tom", stadium: "inkassovarsel", status: "aktiv" },
+        { id: "rar", stadium: "inkassovarsel", status: "aktiv" },
+        { id: "finnes-ikke", stadium: "inkassovarsel", status: "aktiv" },
+      ],
+      nyeste,
+    ),
+    { sum: 0, stortSakId: null },
+  );
 });

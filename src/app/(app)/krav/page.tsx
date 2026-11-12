@@ -14,6 +14,8 @@ import { rangerSaker } from "@/lib/prioritet";
 import { erHastende, fristChipTekst } from "@/lib/frist";
 import { STATUS_ETIKETT, type SakStatus, type SakUtfall } from "@/lib/types";
 import type { GebyrsjekkResultat } from "@/lib/gebyr";
+import { ProfilKnapp } from "@/components/ProfilKnapp";
+import { initialerFra } from "@/lib/tint";
 import { sumavvikFra } from "@/lib/sumkontroll";
 import type { HovedstolAvvik } from "@/lib/hovedstol-konsistens";
 
@@ -31,22 +33,16 @@ type SakRad = {
   hovedstol_avvik: HovedstolAvvik[] | null;
 };
 
-/** «{N} trenger handling · {M} venter på svar · {K} avsluttet» — ledd med 0 utelates. */
-function oversiktsstripe(saker: SakRad[]): string {
-  const aktiv = saker.filter((s) => s.status === "aktiv").length;
-  const venter = saker.filter((s) => s.status === "venter_pa_svar").length;
-  const avsluttet = saker.filter((s) => s.status === "fullfort").length;
-  return [
-    aktiv > 0 ? `${aktiv} trenger handling` : null,
-    venter > 0 ? `${venter} venter på svar` : null,
-    avsluttet > 0 ? `${avsluttet} avsluttet` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-}
-
 export default async function KravListePage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const initialer = initialerFra(
+    (user?.user_metadata?.brevnavn as string | undefined) ??
+      (user?.user_metadata?.fornavn as string | undefined),
+    user?.email,
+  );
 
   const [{ data: sakData }, { data: fristData }, { data: brevData }] =
     await Promise.all([
@@ -211,19 +207,15 @@ export default async function KravListePage() {
   }
   const antallKreditorer = grupper.length + enkeltstaendeSaker.length;
 
-  const stripe = oversiktsstripe(saker);
-
   return (
     <Skjermramme className="pt-6" animerInn={false}>
       <Sekvens>
       <SekvensDel>
-      <h1 className="tittel text-blekk">Saker</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="tittel text-blekk">Saker</h1>
+        <ProfilKnapp initialer={initialer} className="-mr-1" />
+      </div>
       </SekvensDel>
-      {stripe && (
-        <SekvensDel>
-          <p className="mt-1.5 text-[14px] text-dempet">{stripe}</p>
-        </SekvensDel>
-      )}
 
       {saker.length === 0 && (
         <SekvensDel>
@@ -242,7 +234,7 @@ export default async function KravListePage() {
       {trengerHandling.length > 0 && (
         <SekvensDel>
           <div className="mt-6">
-            <h2 className="seksjonstittel mb-gruppe text-blekk">Trenger handling</h2>
+            <h2 className="seksjonstittel mb-gruppe text-blekk">Trenger oppfølging</h2>
             {gruppert ? (
               <GruppertSaksliste
                 grupper={grupper}

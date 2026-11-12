@@ -38,7 +38,7 @@ export function AktivSaksliste({
 
   return (
     <>
-      <ul className="rounded-kort border border-kant bg-flate px-4 [&>li+li]:border-t [&>li+li]:border-strek">
+      <ul className="rounded-helt border border-kant bg-flate px-4 py-1 [&>li+li]:border-t [&>li+li]:border-strek">
         <AnimatePresence initial={false}>
           {synlige.map((sak, i) => {
             const utenforFasteFire = i >= SYNLIG_UTEN_UTVIDELSE;

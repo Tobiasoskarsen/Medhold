@@ -8,7 +8,9 @@
  * MEDHOLD_RETNING_B_ARBEIDSORDRE §2. Skjermene bruker KUN tokenene under via
  * Tailwind-utilities (`bg-bakgrunn`, `text-blekk`, `border-kant` …).
  * Fargeregler: gull KUN ved medhold (+ ordmerkets siste trinn), dom-rod KUN
- * for funn og hastende frister, heltekortet er fjordgrønt og aldri rødt.
+ * for funn og hastende frister. Heltekortet er hvitt og aldri rødt; fjordgrønn
+ * brukes på primærknapper, initialer og aktiv fane. Kreditor-tintene (--tint-N)
+ * brukes bare på den runde initial-sirkelen.
  */
 
 :root {
@@ -49,6 +51,15 @@
   --nav-kant: #e6e1d6;
   --nav-tekst: #64675f;
   --nav-aktiv: #103c38;
+
+  --tint-1-bg: #dcebe5;
+  --tint-1-tekst: #103c38;
+  --tint-2-bg: #fff1db;
+  --tint-2-tekst: #7a4a00;
+  --tint-3-bg: #e3f5f2;
+  --tint-3-tekst: #0f6b5f;
+  --tint-4-bg: #fde8ea;
+  --tint-4-tekst: #9a1f2a;
 
   --kort-skygge: none;
   --skjelett-lys: #ffffff99;
@@ -105,6 +116,15 @@
   --nav-tekst: #a4ada8;
   --nav-aktiv: #8fe3bf;
 
+  --tint-1-bg: #1d3a33;
+  --tint-1-tekst: #a9e6cc;
+  --tint-2-bg: #3d2e12;
+  --tint-2-tekst: #f2c987;
+  --tint-3-bg: #123a36;
+  --tint-3-tekst: #8fe3d3;
+  --tint-4-bg: #43212a;
+  --tint-4-tekst: #f4a9b2;
+
   --kort-skygge: inset 0 1px 0 #ffffff0a;
   --skjelett-lys: #ffffff0f;
   --skygge-hevet: 0 8px 24px -12px rgb(0 0 0 / 0.7);
@@ -158,6 +178,14 @@
   --color-nav-kant: var(--nav-kant);
   --color-nav-tekst: var(--nav-tekst);
   --color-nav-aktiv: var(--nav-aktiv);
+  --color-tint-1-bg: var(--tint-1-bg);
+  --color-tint-1-tekst: var(--tint-1-tekst);
+  --color-tint-2-bg: var(--tint-2-bg);
+  --color-tint-2-tekst: var(--tint-2-tekst);
+  --color-tint-3-bg: var(--tint-3-bg);
+  --color-tint-3-tekst: var(--tint-3-tekst);
+  --color-tint-4-bg: var(--tint-4-bg);
+  --color-tint-4-tekst: var(--tint-4-tekst);
 
   --font-sans: var(--font-schibsted);
 
@@ -178,8 +206,8 @@
 /* Mobilrammen (§0B): én felles beregning for bunnmenyen. --nav-plass er
    avstanden innhold må holde for å kunne scrolles helt over menyen. */
 :root {
-  --nav-hoyde: 62px;
-  --nav-luft: max(12px, env(safe-area-inset-bottom, 0px));
+  --nav-hoyde: 60px;
+  --nav-luft: env(safe-area-inset-bottom, 0px);
   --nav-plass: calc(var(--nav-hoyde) + var(--nav-luft) + 24px);
 }
 

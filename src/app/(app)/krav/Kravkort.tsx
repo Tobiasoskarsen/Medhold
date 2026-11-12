@@ -3,12 +3,12 @@
 import { useRef, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { m } from "motion/react";
-import { ChevronRight, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import { useInntreden, useSekvensForsinkelse } from "@/components/ui";
+import { KreditorAvatar } from "@/components/KreditorAvatar";
 import {
   STATUS_ETIKETT,
   UTFALL_ETIKETT,
-  UTFALL_STIL,
   type SakStatus,
   type SakUtfall,
 } from "@/lib/types";
@@ -35,8 +35,11 @@ import { erHastende, fristChipTekst } from "@/lib/frist";
  * teksten «hoppe» til noe annet midt i overgangen.
  *
  * `status === "fullfort"` → avsluttet-variant: dempet beløp (teksten skal
- * fortsatt være lett å lese), og utfallspillen erstatter underteksten (frist/venter/stadium). Ingen
- * funn-markør på avsluttede (Sakslisteordre §2.3).
+ * fortsatt være lett å lese), og utfallet står som statuslinje (R8: gull bare
+ * ved medhold). Ingen funn-markør på avsluttede (Sakslisteordre §2.3).
+ *
+ * R8: rund initial-sirkel med kreditorens tint, navn, én statuslinje og beløp.
+ * Ingen chevron. §-markørene for funn beholdes: de skjules aldri.
  */
 export function Kravkort({
   id,
@@ -129,7 +132,7 @@ export function Kravkort({
       href={href}
       onClick={klikk}
       onPointerDown={startTrykk}
-      className="trykk flex min-h-[64px] items-center gap-3 py-3"
+      className="trykk flex min-h-[68px] items-center gap-3 py-3"
       style={{
         opacity: aktiv ? PENDING_OPASITET : undefined,
         transitionProperty: "opacity",
@@ -137,26 +140,31 @@ export function Kravkort({
         transitionTimingFunction: "var(--bevegelse-easing)",
       }}
     >
+      <KreditorAvatar navn={navn} className="size-11 text-[17px]" />
       <span className="min-w-0 flex-1">
         <span
           ref={navnRef}
-          className="radtittel line-clamp-2 text-blekk"
+          className="block truncate text-[17px] font-semibold text-blekk"
         >
           {navn}
         </span>
         {avsluttet && utfall ? (
           <m.span
             {...merkeInntreden}
-            className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${UTFALL_STIL[utfall]}`}
+            className={`block text-[14px] ${
+              utfall === "medhold" || utfall === "delvis_medhold"
+                ? "font-semibold text-gull"
+                : "text-dempet"
+            }`}
           >
-            {UTFALL_ETIKETT[utfall]}
+            {utfall === "medhold" ? "Medhold – kravet er frafalt" : UTFALL_ETIKETT[utfall]}
           </m.span>
         ) : (
           undertekst && (
             <m.span
               {...merkeInntreden}
-              className={`radtekst block ${
-                hastende ? "font-semibold !text-dom-rod" : ""
+              className={`block text-[14px] ${
+                hastende ? "font-semibold text-dom-rod" : "text-dempet"
               }`}
             >
               {undertekst}
@@ -179,17 +187,14 @@ export function Kravkort({
           </m.span>
         )}
       </span>
-      <span className="flex shrink-0 items-center gap-1.5">
-        {belop && (
-          <span
-            ref={belopRef}
-            className={`text-brod font-bold tabular-nums ${avsluttet ? "text-dempet" : "text-blekk"}`}
-          >
-            {belop} kr
-          </span>
-        )}
-        <ChevronRight className="size-4 shrink-0 text-dempet" aria-hidden />
-      </span>
+      {belop && (
+        <span
+          ref={belopRef}
+          className={`shrink-0 text-[17px] font-bold tabular-nums ${avsluttet ? "text-dempet" : "text-blekk"}`}
+        >
+          {belop} kr
+        </span>
+      )}
     </a>
   );
 }
