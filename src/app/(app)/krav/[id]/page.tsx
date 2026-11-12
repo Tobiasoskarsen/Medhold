@@ -690,7 +690,7 @@ export default async function KravDetaljPage({
 
       {nesteFrist && (
         <SekvensDel>
-          <details className="mt-3 rounded-helt border border-kant bg-flate px-4 [&>summary]:min-h-14 [&>summary]:py-3 [&[open]]:pb-4">
+          <details className="detaljkort mt-3 rounded-helt border border-kant bg-flate px-4 [&>summary]:py-3 [&[open]]:pb-4">
             <summary className="text-[15px] text-blekk">
               <span>
                 {nesteFrist.tittel} ·{" "}
