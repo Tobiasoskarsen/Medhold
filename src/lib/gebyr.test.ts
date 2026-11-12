@@ -8,6 +8,7 @@ import {
   trinnEtikett,
   utregningRaderForLinje,
   SATSVERSJONER,
+  RENTE_KAN_VAERE_OVER,
   rettsgebyrSatserFor,
   UKJENT_ARSAK,
   type Kostnadslinje,
@@ -457,4 +458,151 @@ test("rettsgebyr har ingen utregning å vise", () => {
 test("uten stadium-argument er rettsgebyr ukjent (eldre kall og lagrede resultater)", () => {
   const gs = sjekkKostnader([{ type: "rettsgebyr", belop: 2071, tekst: "" }], null, "2026-06-01");
   assert.equal(gs.linjer[0].vurdering, "ukjent");
+});
+
+// --- Forsinkelsesrente (Del B) -------------------------------------------------
+
+// Ett «over» er rødt bare når lesingen er målt og godkjent (RENTE_KAN_VAERE_OVER).
+const KLART_OVER = RENTE_KAN_VAERE_OVER ? "over" : "mulig_over";
+
+/** 3 000 kr, 2026-09-01 → 2026-10-28, 12,25 %: høyeste rente er 58,40 kr. */
+const rente = (belop: number, felt: Partial<Kostnadslinje> = {}, hovedstol: number | null = 3000, kjent = true) =>
+  sjekkKostnader(
+    [{ type: "forsinkelsesrente", belop, tekst: "Forsinkelsesrente", renteFra: "2026-09-01", renteTil: "2026-10-28", ...felt }],
+    hovedstol,
+    "2026-11-02",
+    "betalingsoppfordring",
+    kjent,
+  ).linjer[0];
+
+test("rente lik beregnet er innenfor", () => {
+  const r = rente(58.4);
+  assert.equal(r.vurdering, "innenfor");
+  assert.equal(r.maksHoy, 58.4);
+  assert.match(r.forklaring, /^Rente beregnet fra 1\.9\.2026 til 28\.10\.2026 er innenfor \(58,40 kr\)\.$/);
+});
+
+test("rente 5 % over beregnet er mulig_over", () => {
+  const r = rente(61.32); // 58,40 × 1,05
+  assert.equal(r.vurdering, "mulig_over");
+  assert.match(r.forklaring, /^Over beregnet rente \(58,40 kr\); kan skyldes annen beregningsmåte\.$/);
+});
+
+test("rente 25 % over beregnet er klart over (over når lesingen er godkjent, ellers mulig_over)", () => {
+  const r = rente(73); // 58,40 × 1,25 = 73,00
+  assert.equal(r.vurdering, KLART_OVER);
+  if (RENTE_KAN_VAERE_OVER) {
+    assert.equal(r.differanse, 14.6);
+    assert.match(r.forklaring, /overstiger høyeste beregnede rente \(58,40 kr\) med 14,60 kr\. Grunnlag: 3\u00a0000 kr fra 1\.9\.2026 til 28\.10\.2026\./);
+  } else {
+    assert.equal(r.differanse, null, "uten godkjent lesing aldri rød");
+  }
+});
+
+test("slingring: 2 kr over beregnet er innenfor, litt mer er mulig_over, aldri falsk over", () => {
+  assert.equal(rente(60.4).vurdering, "innenfor"); // 58,40 + 2
+  assert.equal(rente(60.41).vurdering, "mulig_over");
+  assert.equal(rente(69.24).vurdering, "mulig_over"); // 58,40 × 1,10 + 5 = 69,24
+  assert.equal(rente(69.25).vurdering, KLART_OVER);
+  assert.equal(rente(57).vurdering, "innenfor", "under beregnet er alltid innenfor");
+  assert.equal(rente(0).vurdering, "innenfor");
+});
+
+test("oppgitt sats over lovens sats er mulig_over, aldri over, uansett beløp", () => {
+  const r = rente(58.4, { rentesats: 14 });
+  assert.equal(r.vurdering, "mulig_over");
+  assert.equal(r.differanse, null);
+  assert.equal(r.forklaring, "Oppgitt rente 14 % er høyere enn forsinkelsesrenten på 12,25 % i perioden.");
+  // Sats lik loven (eller 0,01 over) er ikke et funn.
+  assert.equal(rente(58.4, { rentesats: 12.25 }).vurdering, "innenfor");
+  assert.equal(rente(58.4, { rentesats: 12.26 }).vurdering, "innenfor");
+  assert.equal(rente(58.4, { rentesats: 12.27 }).vurdering, "mulig_over");
+  // Med flere satser i perioden gjelder den høyeste: 12,25 % over halvårsskiftet.
+  const skifte = rente(304.59, { renteFra: "2026-05-01", renteTil: "2026-07-31", rentesats: 12.25 }, 10000);
+  assert.equal(skifte.vurdering, "innenfor");
+});
+
+test("mangler dato eller hovedstol gir ukjent, aldri en gjetning", () => {
+  for (const felt of [{ renteFra: undefined }, { renteTil: undefined }, { renteFra: "" }, { renteTil: "" }]) {
+    const r = rente(58.4, felt as Partial<Kostnadslinje>);
+    assert.equal(r.vurdering, "ukjent");
+    assert.equal(r.forklaring, "Mangler dato eller hovedstol for å beregne renten.");
+  }
+  assert.equal(rente(58.4, {}, null).vurdering, "ukjent");
+  // Hovedstolen er ikke lest fra brevet (totalbeløpet er brukt som reserve): ukjent.
+  const reserve = rente(58.4, {}, 3500, false);
+  assert.equal(reserve.vurdering, "ukjent");
+  assert.equal(reserve.forklaring, "Mangler dato eller hovedstol for å beregne renten.");
+});
+
+test("perioden utenfor tabellen er ukjent, selv om brevet har en satsversjon", () => {
+  const r = rente(40, { renteFra: "2026-12-15", renteTil: "2027-01-10" });
+  assert.equal(r.vurdering, "ukjent");
+  assert.equal(r.forklaring, "Forsinkelsesrenten for perioden er ikke lagt inn ennå.");
+  const ugyldig = rente(40, { renteFra: "2026-10-28", renteTil: "2026-09-01" });
+  assert.equal(ugyldig.vurdering, "ukjent");
+  assert.equal(ugyldig.forklaring, "Rentens startdato er etter sluttdatoen.");
+});
+
+test("renten beregnes bare av hovedstol, ikke av andre linjer eller totalbeløpet", () => {
+  const gs = sjekkKostnader(
+    [
+      { type: "salaer", belop: 600, tekst: "" },
+      { type: "forsinkelsesrente", belop: 58.4, tekst: "", renteFra: "2026-09-01", renteTil: "2026-10-28" },
+    ],
+    3000,
+    "2026-11-02",
+    "betalingsoppfordring",
+  );
+  assert.equal(gs.linjer[1].vurdering, "innenfor");
+  assert.equal(gs.linjer[1].maksHoy, 58.4);
+});
+
+test("ukjent-pillene for renter viser årsaken", async () => {
+  const { ukjentPille } = await import("./gebyrfunn-visning.ts");
+  assert.equal(ukjentPille(rente(58.4, { renteFra: undefined }).forklaring), "Mangler dato");
+  assert.equal(ukjentPille(rente(40, { renteFra: "2026-12-15", renteTil: "2027-01-10" }).forklaring), "Periode ikke lagt inn");
+  assert.equal(ukjentPille(rente(40, { renteFra: "2026-10-28", renteTil: "2026-09-01" }).forklaring), "Ugyldig periode");
+});
+
+test("utregning for rente viser hovedstol × sats × dager / årsdager per renteperiode", () => {
+  const sats = satserForDato("2026-06-01")!;
+  const r = rente(61.32);
+  assert.deepEqual(utregningRaderForLinje(r, sats, null), [
+    { etikett: "Hovedstol", verdi: "3\u00a0000 kr" },
+    { etikett: "Periode", verdi: "1.9.2026 – 28.10.2026" },
+    { etikett: "3\u00a0000 × 12,25 % × 58/365", verdi: "58,40 kr" },
+    { etikett: "Høyeste beregnede rente", verdi: "58,40 kr" },
+    { etikett: "Krevd i brevet", verdi: "61,32 kr" },
+  ]);
+  const skifte = rente(350, { renteFra: "2026-05-01", renteTil: "2026-07-31" }, 10000);
+  const rader = utregningRaderForLinje(skifte, sats, null)!;
+  assert.deepEqual(rader.slice(2, 4), [
+    { etikett: "10\u00a0000 × 12 % × 61/365", verdi: "200,55 kr" },
+    { etikett: "10\u00a0000 × 12,25 % × 31/365", verdi: "104,04 kr" },
+  ]);
+  // Innenfor og ukjent har ingenting å vise.
+  assert.equal(utregningRaderForLinje(rente(58.4), sats, null), null);
+  assert.equal(utregningRaderForLinje(rente(58.4, { renteFra: undefined }), sats, null), null);
+});
+
+test("renter nevnes i funntekst bare når linjen er «over»", () => {
+  const med = (belop: number) =>
+    gebyrFunnTekst(
+      sjekkKostnader(
+        [{ type: "forsinkelsesrente", belop, tekst: "", renteFra: "2026-09-01", renteTil: "2026-10-28" }],
+        3000,
+        "2026-11-02",
+        "betalingsoppfordring",
+      ),
+    );
+  assert.equal(med(58.4), "");
+  assert.equal(med(61.32), "");
+  if (RENTE_KAN_VAERE_OVER) assert.match(med(73), /forsinkelsesrente på 73 kr overstiger høyeste beregnede rente \(58,40 kr\) med 14,60 kr/);
+  else assert.equal(med(73), "");
+});
+
+test("rentelinjer uten rentefelt (eldre lagrede brev og linjer uten datoer) er ukjent som før", () => {
+  const r = vurder({ type: "forsinkelsesrente", belop: 500, tekst: "" }, 3000);
+  assert.equal(r.vurdering, "ukjent");
 });

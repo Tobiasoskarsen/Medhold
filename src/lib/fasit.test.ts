@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 
-import { sjekkKostnader, KOSTNADSTYPER, type Kostnadstype } from "./gebyr.ts";
+import { sjekkKostnader, KOSTNADSTYPER, RENTE_KAN_VAERE_OVER, type Kostnadstype } from "./gebyr.ts";
 import { beregnFrist, BREVTYPER, type BrevType } from "./gjeld.ts";
 import { sammenlignFrist } from "./frist.ts";
 import { kontrollerSum } from "./sumkontroll.ts";
@@ -17,7 +17,7 @@ type Forventet = {
   brevdato: string | null;
   belop: number | null;
   hovedstol: number | null;
-  kostnadslinjer: { type: Kostnadstype; belop: number }[];
+  kostnadslinjer: { type: Kostnadstype; belop: number; renteFra?: string; renteTil?: string; rentesats?: number }[];
   fristIBrevet: string | null;
   saksnummer: string | null;
   avsender: string | null;
@@ -49,10 +49,16 @@ for (const fil of filer) {
   });
 
   test(`${fil}: gebyrsjekken stemmer med fasit`, () => {
-    const r = sjekkKostnader(linjer, f.hovedstol, f.brevdato);
+    // Hovedstolen er «kjent» når fasit har den; brevtypen er stadiet.
+    const r = sjekkKostnader(linjer, f.hovedstol, f.brevdato, f.brevtype, f.hovedstol !== null);
+    // En jurist ville sagt «over» på en klart for høy rente. Appen viser det som
+    // «mulig_over» til lesingen er målt og godkjent (RENTE_KAN_VAERE_OVER).
+    const forventet = f.forventetGebyrsjekk.map((v, i) =>
+      v === "over" && f.kostnadslinjer[i].type === "forsinkelsesrente" && !RENTE_KAN_VAERE_OVER ? "mulig_over" : v,
+    );
     assert.deepEqual(
       r.linjer.map((l) => l.vurdering),
-      f.forventetGebyrsjekk,
+      forventet,
     );
   });
 

@@ -1,0 +1,28 @@
+{
+  "brev": "rente_2.txt",
+  "verifisert": false,
+  "merknad": "Syntetisk brev for måling av rentelesing (Rente uten dato og sats). Tallene er regnet for hånd, ikke med appens kode. Sjekk mot brevet og sett verifisert: true.",
+  "brevtype": "betalingsoppfordring",
+  "brevdato": "2026-11-02",
+  "belop": 4158,
+  "hovedstol": 4000,
+  "kostnadslinjer": [
+    {
+      "type": "purregebyr",
+      "belop": 38
+    },
+    {
+      "type": "forsinkelsesrente",
+      "belop": 120
+    }
+  ],
+  "fristIBrevet": "2026-11-16",
+  "saksnummer": "RT-0002",
+  "avsender": "Fjordvik Inkasso AS",
+  "forventetGebyrsjekk": [
+    "innenfor",
+    "ukjent"
+  ],
+  "forventetFristfunn": "samstemmer",
+  "forventetSum": "stemmer"
+}

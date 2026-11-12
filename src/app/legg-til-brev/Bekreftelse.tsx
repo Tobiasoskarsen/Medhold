@@ -20,6 +20,7 @@ import {
 import type { Sumkontroll } from "@/lib/sumkontroll";
 import { formaterDato } from "@/lib/dato";
 import { tolkKr } from "@/lib/format";
+import { tolkSats } from "@/lib/rente";
 import { kr } from "@/lib/gebyrfunn-visning";
 
 const FELT =
@@ -109,6 +110,59 @@ function avsluttVedEnter(ferdig: () => void) {
       ferdig();
     }
   };
+}
+
+/**
+ * Ekstra rad for rentelinjer: fra-dato, til-dato og sats. Brukeren retter det
+ * AI-en leste (eller fyller inn det den ikke fant), og det som står her
+ * overstyrer. Tomt felt betyr «ukjent»: renten blir ikke vurdert. Ingen gjetting.
+ */
+function RenteFelt({
+  linje,
+  onEndre,
+}: {
+  linje: Kostnadslinje;
+  onEndre: (l: Kostnadslinje) => void;
+}) {
+  const [sats, setSats] = useState(linje.rentesats !== undefined ? String(linje.rentesats).replace(".", ",") : "");
+  const sett = (felt: "renteFra" | "renteTil", v: string) => {
+    const { [felt]: _fjernet, ...rest } = linje;
+    void _fjernet;
+    onEndre(v ? { ...rest, [felt]: v } : rest);
+  };
+  const lagreSats = () => {
+    const { rentesats: _fjernet, ...rest } = linje;
+    void _fjernet;
+    const n = tolkSats(sats);
+    onEndre(n !== null ? { ...rest, rentesats: n } : rest);
+    if (n === null) setSats("");
+  };
+  const felt = `${FELT} text-sm`;
+  return (
+    <div className="mb-2 grid grid-cols-2 gap-2 pt-1" role="group" aria-label="Renteperiode og sats">
+      <label className="block text-meta text-dempet">
+        Fra dato
+        <input type="date" value={linje.renteFra ?? ""} onChange={(e) => sett("renteFra", e.target.value)} className={`${felt} mt-1`} />
+      </label>
+      <label className="block text-meta text-dempet">
+        Til dato
+        <input type="date" value={linje.renteTil ?? ""} onChange={(e) => sett("renteTil", e.target.value)} className={`${felt} mt-1`} />
+      </label>
+      <label className="col-span-2 block text-meta text-dempet">
+        Sats i brevet (prosent per år, valgfritt)
+        <input
+          type="text"
+          inputMode="decimal"
+          value={sats}
+          onChange={(e) => setSats(e.target.value)}
+          onBlur={lagreSats}
+          onKeyDown={avsluttVedEnter(lagreSats)}
+          placeholder="F.eks. 12,25"
+          className={`${felt} mt-1`}
+        />
+      </label>
+    </div>
+  );
 }
 
 /** Beløpsfelt som tolkes ved blur — et ugyldig beløp beholder det gamle. */
@@ -269,13 +323,18 @@ export function Bekreftelse({
               />
             )}
             etter={
-              <button
-                type="button"
-                onClick={() => onLinjer(linjer.filter((_, j) => j !== i))}
-                className="mt-1 text-meta text-dempet underline decoration-strek underline-offset-2 transition hover:text-blekk"
-              >
-                Fjern
-              </button>
+              <>
+                {l.type === "forsinkelsesrente" && (
+                  <RenteFelt linje={l} onEndre={(ny) => onLinjer(linjer.map((x, j) => (j === i ? ny : x)))} />
+                )}
+                <button
+                  type="button"
+                  onClick={() => onLinjer(linjer.filter((_, j) => j !== i))}
+                  className="mt-1 text-meta text-dempet underline decoration-strek underline-offset-2 transition hover:text-blekk"
+                >
+                  Fjern
+                </button>
+              </>
             }
           />
         ))}

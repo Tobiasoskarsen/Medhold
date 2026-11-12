@@ -15,6 +15,7 @@ import {
   type AiResultat,
 } from "./ai-svar.ts";
 import { DOKUMENT_REGEL, avgrens } from "./dokumentdata.ts";
+import { normaliserRentefelt } from "./rente.ts";
 
 // Strukturert utdata. «AI tolker, kode beslutter»: modellen trekker KUN ut det
 // som eksplisitt står i brevet. Beregnede frister lages i kode, ikke her.
@@ -118,8 +119,23 @@ const SVAR_SKJEMA = {
             type: "string",
             description: "Linjen slik den står i brevet. Maks 120 tegn.",
           },
+          renteFra: {
+            type: "string",
+            description:
+              "Bare for linjer av typen forsinkelsesrente: datoen renten løper fra, ÅÅÅÅ-MM-DD, KUN hvis brevet oppgir den for denne rentelinjen. Ellers tom streng.",
+          },
+          renteTil: {
+            type: "string",
+            description:
+              "Bare for linjer av typen forsinkelsesrente: datoen renten løper til, ÅÅÅÅ-MM-DD, KUN hvis brevet oppgir den for denne rentelinjen. Aldri brevdatoen med mindre brevet sier at renten løper til den. Ellers tom streng.",
+          },
+          rentesats: {
+            type: "string",
+            description:
+              "Bare for linjer av typen forsinkelsesrente: rentesatsen i prosent per år slik brevet oppgir den, f.eks. «12,25» (uten %-tegn), KUN hvis brevet oppgir én sats for denne linjen. Ellers tom streng.",
+          },
         },
-        required: ["type", "belop", "tekst"],
+        required: ["type", "belop", "tekst", "renteFra", "renteTil", "rentesats"],
       },
     },
   },
@@ -155,6 +171,7 @@ Ufravikelige regler:
 - Skill mellom totalt utestående beløp (belop) og opprinnelig hovedstol (hovedstol = selve gjelden før gebyrer, renter og salær). Oppgi hovedstol kun når den står eksplisitt; ellers tom streng.
 - Foreslå kun frister som er eksplisitt nevnt i brevet, med dato kun når en konkret dato er oppgitt.
 - Trekk ut kostnadslinjer (gebyrer, salær, renter, rettsgebyr) KUN slik de står oppført i brevet, hver som egen linje med sitt beløp. Summer aldri, utled aldri, og ta ALDRI med hovedstolen/selve hovedkravet som en kostnadslinje. Er typen uklar, bruk 'annet'.
+- For rentelinjer (type forsinkelsesrente): fyll bare ut renteFra, renteTil og rentesats når brevet oppgir dem for denne rentelinjen. Aldri regn ut, aldri gjett, aldri bruk brevdato som renteTil med mindre brevet sier det. Oppgir brevet flere satser for samme linje, la rentesats stå tom. For alle andre linjer er disse feltene tomme.
 - I dag er ${idag}. Bruk dette bare til å forstå teksten – ikke til å regne ut frister som ikke står der. Bruk aldri dagens dato som brevdato: brevdato er datoen som står på brevet, ellers tom streng.
 - Ikke inkluder forbehold eller disclaimere i forklaringen; appen viser dette selv.
 
@@ -259,7 +276,19 @@ export function validerAnalyse(x: unknown): Analyse | null {
     if (typeof l.type !== "string" || !(KOSTNADSTYPER as readonly string[]).includes(l.type)) return null;
     if (typeof l.belop !== "number" || !Number.isFinite(l.belop) || l.belop < 0) return null;
     if (typeof l.tekst !== "string") return null;
-    linjer.push({ type: l.type as Kostnadslinje["type"], belop: l.belop, tekst: l.tekst });
+    // Rentefeltene er tilleggsopplysninger: feil type eller ugyldig verdi fjernes
+    // (ikke hele svaret), og andre linjetyper mister dem.
+    const streng = (v: unknown) => (typeof v === "string" ? v : undefined);
+    linjer.push(
+      normaliserRentefelt({
+        type: l.type as Kostnadslinje["type"],
+        belop: l.belop,
+        tekst: l.tekst,
+        renteFra: streng(l.renteFra),
+        renteTil: streng(l.renteTil),
+        rentesats: streng(l.rentesats) as unknown as number | undefined,
+      }),
+    );
   }
 
   return {

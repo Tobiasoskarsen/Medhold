@@ -12,7 +12,7 @@ Generert av \`scripts/fasit-lesing.ts\` og \`scripts/fasit-utkast.ts\`
 skriptene på nytt.
 `;
 
-export function skrivSeksjon(navn: "lesing" | "utkast", innhold: string): void {
+export function skrivSeksjon(navn: "lesing" | "rente" | "utkast", innhold: string): void {
   const start = `<!-- ${navn}:start -->`;
   const slutt = `<!-- ${navn}:slutt -->`;
   const blokk = `${start}\n${innhold.trim()}\n${slutt}`;
@@ -22,8 +22,15 @@ export function skrivSeksjon(navn: "lesing" | "utkast", innhold: string): void {
   if (i >= 0 && j > i) {
     tekst = tekst.slice(0, i) + blokk + tekst.slice(j + slutt.length);
   } else {
-    // Lesing står alltid før utkast, uansett hvilket skript som kjøres først.
-    const annen = navn === "lesing" ? "<!-- utkast:start -->" : null;
+    // Rekkefølge: lesing, rente, utkast — uansett hvilket skript som kjøres først.
+    const annen =
+      navn === "lesing"
+        ? tekst.includes("<!-- rente:start -->")
+          ? "<!-- rente:start -->"
+          : "<!-- utkast:start -->"
+        : navn === "rente"
+          ? "<!-- utkast:start -->"
+          : null;
     const k = annen ? tekst.indexOf(annen) : -1;
     tekst =
       k >= 0
