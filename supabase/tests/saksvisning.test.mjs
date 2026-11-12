@@ -61,13 +61,23 @@ test('R8 Hjem: totalen er aktive og ventende, «Mulig avvik» lenker til saken, 
  const rows={saker:[s1,s2,s3],frister:[{id:'f1',sak_id:'s1',brev_id:'b1',tittel:'Svarfrist',forfallsdato:'2099-01-01',saker:s1}],brev:[{id:'b1',sak_id:'s1',brevdato:'2026-11-02',opprettet:'2026-11-11T12:00:00Z',alvorlig:false,gebyrsjekk:gs}],utkast:[]};
  const db={auth:{getUser:async()=>({data:{user:{id:'owner',email:'t@example.com',user_metadata:{brevnavn:'Tobias Oskarsen'}}}})},from:table=>{const q={select(){return this},eq(){return this},in(){return this},order(){return this},not(){return this},limit(){return this},maybeSingle:async()=>({data:null}),then(fn){return Promise.resolve({data:rows[table]??[]}).then(fn)}};return q}};
  const ui=Object.fromEntries(['Skjermramme','Kort','Primærknapp','Belop','Sekvens','SekvensDel','Heltekort'].map(n=>[n,n]));
- const tree=await load('src/app/(app)/page.tsx',{'@/lib/supabase/server':{createClient:async()=>db},'@/components/ui':ui,'./HjelpKnapp':{HjelpKnapp:'HjelpKnapp'},'./Hurtigrad':{Hurtigrad:'Hurtigrad'}}).default();
+ const tree=await load('src/app/(app)/page.tsx',{'@/lib/supabase/server':{createClient:async()=>db},'@/components/ui':ui,'./HjelpKnapp':{HjelpKnapp:'HjelpKnapp'}}).default();
  const all=nodes(tree);
  const total=all.find(n=>n.type==='Belop');assert.equal(total.props.verdi,4546.9,'3 258,90 + 1 288 (avsluttet sak er ikke med)');
  const chip=all.find(n=>typeof n.type!=='string'&&n.props.href==='/krav/s1'&&text(n).startsWith('Mulig avvik'));assert.ok(chip,'chip til saken med avviket');assert.ok(text(chip).includes('150 kr'));assert.ok(!/for mye|ulovlig/i.test(text(chip)));
  const card=all.find(n=>n.type==='Heltekort');assert.equal(card.props.etikett,'Trenger oppfølging');assert.equal(card.props.knapp.props.href,'/krav/s1/utkast?type=innsigelse');assert.ok(text(card).includes('Beløpskontroll: 100 kr uten forklaring'));
- assert.ok(all.some(n=>n.type==='Hurtigrad'));
+ assert.ok(!all.some(n=>n.type==='Hurtigrad'));assert.ok(!/Skann|Last opp|Lim inn/.test(text(tree)),'ingen hurtigrad på Hjem');
  assert.ok(!/Hei,|Få hjelp/.test(text(tree)),'ingen hilsen eller ingress');
+});
+
+test('R8b Hjem: statuslinjen for frist om 2 dager er «2 dager igjen» uten dato',async()=>{
+ const d=new Date(Date.now()+2*864e5+36e5).toISOString().slice(0,10);
+ const s1={id:'s1',kreditor:'Fjelltopp Inkasso AS',tittel:'A',belop_totalt:3000,stadium:'betalingsoppfordring',status:'aktiv',utfall:null,sist_endret:'2026-11-11T12:00:00Z'};
+ const rows={saker:[s1],frister:[{id:'f1',sak_id:'s1',brev_id:null,tittel:'Svarfrist',forfallsdato:d,saker:s1}],brev:[],utkast:[]};
+ const db={auth:{getUser:async()=>({data:{user:{id:'o',email:'t@example.com',user_metadata:{}}}})},from:table=>{const q={select(){return this},eq(){return this},in(){return this},order(){return this},not(){return this},limit(){return this},maybeSingle:async()=>({data:null}),then(fn){return Promise.resolve({data:rows[table]??[]}).then(fn)}};return q}};
+ const ui=Object.fromEntries(['Skjermramme','Kort','Primærknapp','Belop','Sekvens','SekvensDel','Heltekort'].map(n=>[n,n]));
+ const tree=await load('src/app/(app)/page.tsx',{'@/lib/supabase/server':{createClient:async()=>db},'@/components/ui':ui,'./HjelpKnapp':{HjelpKnapp:'HjelpKnapp'}}).default();
+ const st=nodes(tree).find(n=>typeof n.props.status==='string'&&n.props.status.includes('igjen'));assert.ok(st,'statuslinje');assert.equal(st.props.status,'2 dager igjen');
 });
 
 const FUNN={satsGyldigFra:'2026-01-01',linjer:[{linje:{type:'salaer',belop:900,tekst:''},vurdering:'over',maksLav:null,maksHoy:750,differanse:150,forklaring:'900 kr overstiger høyeste lovlige salærsats (750 kr) med 150 kr.'}],antallOver:1,antallMuligOver:0,sumkontroll:{status:'avvik',sum:4812.3,total:4912.3,differanse:100}};

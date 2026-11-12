@@ -11,7 +11,6 @@ import {
 } from "@/components/ui";
 import { ChevronRight } from "lucide-react";
 import { HjelpKnapp } from "./HjelpKnapp";
-import { Hurtigrad } from "./Hurtigrad";
 import { KreditorAvatar } from "@/components/KreditorAvatar";
 import { dagerTil, formaterDagManed, formaterTallDato, idagOslo } from "@/lib/dato";
 import { erHastende, erGammeltBrev, fristChipTekst } from "@/lib/frist";
@@ -96,7 +95,7 @@ function SakRad({
     <div className="flex items-center gap-3">
       <KreditorAvatar navn={navnPa(x)} className="size-12 text-[18px]" />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[17px] font-semibold text-helt-tekst">{navnPa(x)}</span>
+        <span className="block line-clamp-2 text-[17px] font-semibold text-helt-tekst">{navnPa(x)}</span>
         <span
           className={`block text-[14px] ${
             gull ? "font-semibold text-gull" : hastende ? "font-semibold text-dom-rod" : "text-helt-dempet"
@@ -272,7 +271,7 @@ export default async function HjemPage() {
       toppHastende = true;
     } else {
       // Samme hastegrense (≤ 10 dager) som Saker og saken.
-      toppStatus = `${fristChipTekst(d)} · ${formaterDagManed(topFrist.forfallsdato)}`;
+      toppStatus = fristChipTekst(d);
       toppHastende = erHastende(d);
     }
   }
@@ -304,7 +303,6 @@ export default async function HjemPage() {
               </Link>
             )}
           </div>
-          <Hurtigrad />
         </SekvensDel>
       )}
 
