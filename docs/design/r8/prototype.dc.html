@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<title>Medhold prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+.fwd{animation:fwd .42s cubic-bezier(.22,.9,.24,1) both}
+.back{animation:back .42s cubic-bezier(.22,.9,.24,1) both}
+.up{animation:up .5s cubic-bezier(.22,.9,.24,1) both}
+.fade{animation:fade .25s ease both}
+.sheet{animation:sheet .42s cubic-bezier(.22,.9,.24,1) both}
+.press{transition:transform .16s cubic-bezier(.22,.9,.24,1),background-color .2s}
+.press:active{transform:scale(.97)}
+.tenke{background:linear-gradient(90deg,#6b6f66 0%,#6b6f66 35%,#16201e 50%,#6b6f66 65%,#6b6f66 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:tenke 1.6s linear infinite}
+.spin{animation:spin .8s linear infinite}
+.pop{animation:pop .36s cubic-bezier(.3,1.5,.5,1) both}
+.caret{display:inline-block;width:2px;height:1.05em;margin-left:1px;background:#103c38;vertical-align:text-bottom;animation:blink .9s steps(1) infinite}
+@keyframes fwd{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes back{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{transform:translateY(100%)}to{transform:none}}
+@keyframes tenke{from{background-position:120% 0}to{background-position:-120% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f3f0e9; font-family: Geist, -apple-system, system-ui, sans-serif; color: #16201e; overflow: hidden; -webkit-font-smoothing: antialiased">
+
+  <!-- HJEM -->
+  <sc-if value="{{isHjem}}" hint-placeholder-val="{{true}}">
+  <div class="{{anim}}" style="position: absolute; inset: 0; padding: 58px 18px 0; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <button type="button" class="press" onClick="{{goMeg}}" aria-label="Profil" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: #103c38; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600">TO</button>
+      <button type="button" aria-label="Varsler" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: #fbfaf6; color: #16201e; display: flex; align-items: center; justify-content: center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 004 0"></path></svg>
+      </button>
+    </div>
+
+    <div style="margin-top: 26px; text-align: center">
+      <div style="font-size: 15px; font-weight: 500; color: #5f635b">Utestående krav</div>
+      <div style="margin-top: 4px; font-size: 44px; line-height: 1.05; font-weight: 700; letter-spacing: -0.035em; font-variant-numeric: tabular-nums">{{totalTall}} kr</div>
+      <button type="button" class="press" onClick="{{goSak}}" style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 8px 7px 12px; border: 0; border-radius: 999px; background: #fde8ea; color: #b4232e; font-size: 13px; font-weight: 600">
+        Mulig avvik: 150 kr
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+      </button>
+    </div>
+
+    <div style="margin-top: 24px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+      <sc-for list="{{hurtig}}" as="h" hint-placeholder-count="4">
+        <button type="button" class="press up" onClick="{{h.go}}" style="{{h.stil}}; border: 0; background: transparent; color: #16201e; display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 13px; font-weight: 500">
+          <span style="width: 54px; height: 54px; border-radius: 50%; background: #fbfaf6; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(13,13,18,.06)">
+            <sc-if value="{{h.kamera}}" hint-placeholder-val="{{false}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg></sc-if>
+            <sc-if value="{{h.fil}}" hint-placeholder-val="{{false}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"></path><path d="M5 15v4h14v-4"></path></svg></sc-if>
+            <sc-if value="{{h.tekst}}" hint-placeholder-val="{{false}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6v3H9z"></path><path d="M8 5H6v16h12V5h-2"></path></svg></sc-if>
+            <sc-if value="{{h.spor}}" hint-placeholder-val="{{false}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#103c38" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.6L12 15l-1.8-4.4L5.5 9l4.7-1.4z"></path><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg></sc-if>
+          </span>
+          {{h.navn}}
+        </button>
+      </sc-for>
+    </div>
+
+    <div class="up" style="animation-delay: .12s; margin-top: 24px; background: #fbfaf6; border-radius: 22px; padding: 16px">
+      <div style="font-size: 13px; font-weight: 600; color: #5f635b; margin-bottom: 12px">Trenger oppfølging</div>
+      <button type="button" class="press" onClick="{{goSak}}" style="width: 100%; border: 0; background: transparent; padding: 0; color: inherit; display: flex; align-items: center; gap: 12px; text-align: left">
+        <span style="width: 44px; height: 44px; border-radius: 50%; background: #dcebe5; color: #103c38; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0">F</span>
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 16px; font-weight: 600">Fjelltopp Inkasso</span>
+          <span style="font-size: 14px; font-weight: 500; color: #b4232e">Svarfrist i morgen</span>
+        </span>
+        <span style="font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums">3 258,90 kr</span>
+      </button>
+      <button type="button" class="press" onClick="{{goSak}}" style="margin-top: 16px; width: 100%; height: 50px; border: 0; border-radius: 999px; background: #103c38; color: #ffffff; font-size: 16px; font-weight: 600">Se hva du kan gjøre</button>
+    </div>
+
+    <div class="up" style="animation-delay: .2s; margin-top: 12px; background: #fbfaf6; border-radius: 22px; padding: 6px 16px">
+      <sc-for list="{{andre}}" as="r" hint-placeholder-count="2">
+        <button type="button" class="press" onClick="{{r.open}}" style="width: 100%; border: 0; background: transparent; padding: 10px 0; color: inherit; display: flex; align-items: center; gap: 12px; text-align: left">
+          <span style="{{r.ikonStil}}; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0">{{r.bokstav}}</span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 16px; font-weight: 600">{{r.navn}}</span>
+            <span style="font-size: 14px; color: #5f635b">{{r.status}}</span>
+          </span>
+          <span style="font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums">{{r.belop}}</span>
+        </button>
+      </sc-for>
+    </div>
+  <div style="position: absolute; left: 31px; height: 74px; background: rgba(251,250,246,.92); backdrop-filter: blur(20px); border-top: 0.5px solid #e3dfd3; display: flex; justify-content: space-around; padding-top: 8px; box-sizing: border-box; top: 746px; width: 334px">
+    <button type="button" onClick="{{goHjem}}" style="width: 88px; border: 0; background: transparent; color: {{tabHjem}}; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; transition: color .2s">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>Hjem
+    </button>
+    <button type="button" onClick="{{apneArk}}" aria-label="Legg til brev" class="press" style="width: 88px; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: #103c38">
+      <span style="width: 48px; height: 48px; margin-top: -8px; border-radius: 50%; background: #103c38; color: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(16,60,56,.28)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></span>Legg til
+    </button>
+    <button type="button" onClick="{{goSaker}}" style="width: 88px; border: 0; background: transparent; color: {{tabSaker}}; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; transition: color .2s">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8 9h8M8 13h8M8 17h5"></path></svg>Saker
+    </button>
+  </div></div>
+  </sc-if>
+
+  <!-- SAKER -->
+  <sc-if value="{{isSaker}}" hint-placeholder-val="{{false}}">
+  <div class="{{anim}}" style="position: absolute; inset: 0; padding: 66px 18px 0">
+    <h1 style="margin: 0 2px 16px; font-size: 32px; font-weight: 700; letter-spacing: -0.03em">Saker</h1>
+    <div style="background: #fbfaf6; border-radius: 22px; padding: 6px 16px">
+      <sc-for list="{{alle}}" as="r" hint-placeholder-count="4">
+        <button type="button" class="press up" onClick="{{r.open}}" style="{{r.stil}}; width: 100%; border: 0; background: transparent; padding: 11px 0; color: inherit; display: flex; align-items: center; gap: 12px; text-align: left">
+          <span style="{{r.ikonStil}}; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0">{{r.bokstav}}</span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 16px; font-weight: 600">{{r.navn}}</span>
+            <span style="font-size: 14px; color: {{r.farge}}; font-weight: 500">{{r.status}}</span>
+          </span>
+          <span style="font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums">{{r.belop}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- LESER BREVET -->
+  <sc-if value="{{isLeser}}" hint-placeholder-val="{{false}}">
+  <div class="fade" style="position: absolute; inset: 0; padding: 0 32px; display: flex; flex-direction: column; justify-content: center; gap: 22px">
+    <div class="tenke" style="font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Leser brevet …</div>
+    <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px">
+      <sc-for list="{{steg}}" as="s" hint-placeholder-count="3">
+        <li style="display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 500; color: {{s.farge}}; transition: color .3s">
+          <span style="width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+            <sc-if value="{{s.ferdig}}" hint-placeholder-val="{{false}}"><svg class="pop" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="11" fill="#103c38"></circle><path d="M6.5 11.5l3 3 6-6.5" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+            <sc-if value="{{s.aktiv}}" hint-placeholder-val="{{false}}"><svg class="spin" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="#e3dfd3" stroke-width="2.5"></circle><path d="M10 2a8 8 0 018 8" fill="none" stroke="#103c38" stroke-width="2.5" stroke-linecap="round"></path></svg></sc-if>
+            <sc-if value="{{s.venter}}" hint-placeholder-val="{{true}}"><span style="width: 8px; height: 8px; border-radius: 50%; background: #cfcabb"></span></sc-if>
+          </span>
+          {{s.tekst}}
+        </li>
+      </sc-for>
+    </ul>
+  </div>
+  </sc-if>
+
+  <!-- SAK -->
+  <sc-if value="{{isSak}}" hint-placeholder-val="{{false}}">
+  <div class="{{anim}}" style="position: absolute; inset: 0; padding: 54px 18px 0; display: flex; flex-direction: column">
+    <button type="button" class="press" onClick="{{goHjemTilbake}}" aria-label="Tilbake" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: #fbfaf6; color: #16201e; display: flex; align-items: center; justify-content: center">
+      <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5L1.5 9l7 7.5"></path></svg>
+    </button>
+
+    <div style="margin-top: 18px; display: flex; flex-direction: column; align-items: center; text-align: center">
+      <span style="width: 56px; height: 56px; border-radius: 50%; background: #dcebe5; color: #103c38; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700">F</span>
+      <h1 style="margin: 10px 0 0; font-size: 17px; font-weight: 600">Fjelltopp Inkasso</h1>
+      <div style="margin-top: 2px; font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -0.035em; font-variant-numeric: tabular-nums">{{sakTall}} kr</div>
+      <div style="margin-top: 10px; display: flex; gap: 6px">
+        <span style="padding: 6px 12px; border-radius: 999px; background: #fbfaf6; font-size: 13px; font-weight: 500">Betalingsoppfordring</span>
+        <span style="padding: 6px 12px; border-radius: 999px; background: #fde8ea; color: #b4232e; font-size: 13px; font-weight: 600">Frist i morgen</span>
+      </div>
+    </div>
+
+    <div role="tablist" aria-label="Sak" style="margin-top: 20px; display: flex; background: #e8e3d6; border-radius: 999px; padding: 3px">
+      <sc-for list="{{sakFaner}}" as="f" hint-placeholder-count="3">
+        <button type="button" role="tab" aria-selected="{{f.aktiv}}" onClick="{{f.go}}" style="{{f.stil}}; flex: 1; height: 38px; border: 0; border-radius: 999px; font-size: 14px; transition: background-color .25s, box-shadow .25s">{{f.navn}}</button>
+      </sc-for>
+    </div>
+    <sc-if value="{{sakOversikt}}" hint-placeholder-val="{{true}}">
+    <div class="up" style="animation-delay: .1s; margin-top: 14px; background: #fbfaf6; border-radius: 22px; padding: 18px">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #b4232e">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"></path><circle cx="12" cy="12" r="9"></circle></svg>
+        Funn
+      </div>
+      <div style="margin-top: 8px; font-size: 19px; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em">Inkassosalæret er 150 kr høyere enn loven tillater.</div>
+      <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 15px">
+        <div style="display: flex; justify-content: space-between"><span style="color: #5f635b">I brevet</span><span style="font-weight: 600; font-variant-numeric: tabular-nums">900 kr</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #5f635b">Høyeste sats</span><span style="font-weight: 600; font-variant-numeric: tabular-nums">750 kr</span></div>
+      </div>
+      <button type="button" class="press" onClick="{{goUtkast}}" style="margin-top: 18px; width: 100%; height: 50px; border: 0; border-radius: 999px; background: #103c38; color: #ffffff; font-size: 16px; font-weight: 600">Lag svar</button>
+      <button type="button" class="press" style="margin-top: 8px; width: 100%; height: 50px; border: 0; border-radius: 999px; background: #ebe7dc; color: #16201e; font-size: 16px; font-weight: 600">Betalingsløsninger</button>
+    </div>
+
+    </sc-if>
+    <sc-if value="{{sakDok}}" hint-placeholder-val="{{false}}">
+    <div class="up" style="margin-top: 14px; background: #fbfaf6; border-radius: 22px; padding: 6px 16px">
+      <sc-for list="{{dokumenter}}" as="d" hint-placeholder-count="2">
+        <button type="button" class="press" style="width: 100%; border: 0; background: transparent; padding: 12px 0; color: inherit; display: flex; align-items: center; gap: 12px; text-align: left">
+          <span style="width: 40px; height: 40px; border-radius: 12px; background: #dcebe5; color: #103c38; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z"/><path d="M9 13h6M9 17h4"/></svg></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 600">{{d.navn}}</span><span style="font-size: 14px; color: #5f635b">{{d.dato}}</span></span>
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#6b6f66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l6 6-6 6"/></svg>
+        </button>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{sakHist}}" hint-placeholder-val="{{false}}">
+    <div class="up" style="margin-top: 14px; background: #fbfaf6; border-radius: 22px; padding: 18px 18px 8px">
+      <sc-for list="{{historikk}}" as="h" hint-placeholder-count="3">
+        <div style="display: flex; gap: 14px; padding-bottom: 18px">
+          <span style="width: 12px; height: 12px; margin-top: 5px; border-radius: 50%; background: {{h.farge}}; flex-shrink: 0"></span>
+          <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 600">{{h.tittel}}</span><span style="font-size: 14px; color: #5f635b">{{h.dato}}</span></span>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{sakOversikt}}" hint-placeholder-val="{{true}}"><label class="up" style="animation-delay: .2s; position: absolute; left: 18px; right: 18px; bottom: 30px; height: 54px; border-radius: 999px; background: #fbfaf6; box-shadow: 0 6px 24px rgba(13,13,18,.08); display: flex; align-items: center; gap: 10px; padding: 0 8px 0 18px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#103c38" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.6L12 15l-1.8-4.4L5.5 9l4.7-1.4z"></path></svg>
+      <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Spør om saken</span>
+      <input type="text" placeholder="Spør om saken …" style="flex: 1; border: 0; outline: none; background: transparent; font-size: 16px; color: #16201e">
+      <span style="width: 38px; height: 38px; border-radius: 50%; background: #103c38; color: #ffffff; display: flex; align-items: center; justify-content: center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>
+      </span>
+    </label></sc-if>
+  </div>
+  </sc-if>
+
+  <!-- UTKAST -->
+  <sc-if value="{{isUtkast}}" hint-placeholder-val="{{false}}">
+  <div class="{{anim}}" style="position: absolute; inset: 0; padding: 54px 18px 0; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <button type="button" class="press" onClick="{{goSakTilbake}}" aria-label="Tilbake til saken" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: #fbfaf6; color: #16201e; display: flex; align-items: center; justify-content: center">
+        <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5L1.5 9l7 7.5"></path></svg>
+      </button>
+      <sc-if value="{{skriver}}" hint-placeholder-val="{{true}}">
+        <span class="tenke" style="font-size: 15px; font-weight: 600">Skriver svar …</span>
+      </sc-if>
+      <sc-if value="{{ferdigSkrevet}}" hint-placeholder-val="{{false}}">
+        <span class="fade" style="display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600">
+          <svg class="pop" width="18" height="18" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="11" fill="#103c38"></circle><path d="M6.5 11.5l3 3 6-6.5" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          Utkast klart
+        </span>
+      </sc-if>
+    </div>
+
+    <h1 style="margin: 18px 2px 12px; font-size: 28px; font-weight: 700; letter-spacing: -0.03em">Svar til Fjelltopp</h1>
+    <div style="background: #fbfaf6; border-radius: 22px; padding: 20px; font-size: 15.5px; line-height: 1.55; height: 330px; overflow: hidden; white-space: pre-wrap; box-sizing: border-box">{{brevTekst}}<sc-if value="{{skriver}}" hint-placeholder-val="{{false}}"><span class="caret"></span></sc-if></div>
+
+    <sc-if value="{{ferdigSkrevet}}" hint-placeholder-val="{{false}}">
+      <div class="up" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px">
+        <button type="button" class="press" style="width: 100%; height: 52px; border: 0; border-radius: 999px; background: #103c38; color: #ffffff; font-size: 16px; font-weight: 600">Åpne i e-post</button>
+        <div style="display: flex; gap: 8px">
+          <button type="button" class="press" onClick="{{kopier}}" style="flex: 1; height: 50px; border: 0; border-radius: 999px; background: #fbfaf6; color: #16201e; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px">
+            <sc-if value="{{kopiert}}" hint-placeholder-val="{{false}}"><svg class="pop" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#103c38" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></sc-if>{{kopiTekst}}
+          </button>
+          <button type="button" class="press" style="flex: 1; height: 50px; border: 0; border-radius: 999px; background: #fbfaf6; color: #16201e; font-size: 15px; font-weight: 600">Rediger</button>
+        </div>
+        <p style="margin: 6px 8px 0; font-size: 13px; line-height: 1.4; color: #5f635b; text-align: center">Medhold er ikke en advokat. Du bestemmer og sender selv.</p>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- MEG -->
+  <sc-if value="{{isMeg}}" hint-placeholder-val="{{false}}">
+  <div class="{{anim}}" style="position: absolute; inset: 0; padding: 54px 18px 0; overflow: hidden">
+    <button type="button" class="press" onClick="{{goHjemTilbake}}" aria-label="Tilbake" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: #fbfaf6; color: #16201e; display: flex; align-items: center; justify-content: center">
+      <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5L1.5 9l7 7.5"/></svg>
+    </button>
+    <div style="margin-top: 6px; display: flex; flex-direction: column; align-items: center; text-align: center">
+      <span style="width: 72px; height: 72px; border-radius: 50%; background: #103c38; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 600">TO</span>
+      <h1 style="margin: 12px 0 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em">Tobias Oskarsen</h1>
+      <span style="margin-top: 2px; font-size: 15px; color: #5f635b">tobias@eksempel.no</span>
+    </div>
+    <div class="up" style="animation-delay: .05s; margin-top: 22px; background: #fbfaf6; border-radius: 22px; padding: 4px 16px">
+      <div style="display: flex; align-items: center; min-height: 56px; gap: 12px">
+        <span style="flex: 1; font-size: 16px">E-postpåminnelser</span>
+        <button type="button" role="switch" aria-checked="{{varsler}}" aria-label="E-postpåminnelser" onClick="{{byttVarsler}}" style="position: relative; width: 52px; height: 32px; border: 0; border-radius: 999px; background: {{varslerBg}}; transition: background-color .25s; padding: 0">
+          <span style="position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transform: translateX({{knappX}}px); transition: transform .28s cubic-bezier(.3,1.4,.5,1)"></span>
+        </button>
+      </div>
+      <div style="height: 1px; background: #e3dfd3"></div>
+      <div style="display: flex; align-items: center; min-height: 56px; gap: 12px">
+        <span style="flex: 1; font-size: 16px">Utseende</span>
+        <span style="font-size: 16px; color: #5f635b">Følg telefonen</span>
+      </div>
+    </div>
+    <div class="up" style="animation-delay: .1s; margin-top: 12px; background: #fbfaf6; border-radius: 22px; padding: 0 16px">
+      <sc-for list="{{megRader}}" as="r" hint-placeholder-count="4">
+        <button type="button" class="press" style="width: 100%; min-height: 56px; border: 0; background: transparent; color: inherit; display: flex; align-items: center; gap: 12px; padding: 0; text-align: left; font-size: 16px; border-top: {{r.linje}}">
+          <span style="flex: 1">{{r.navn}}</span>
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#6b6f66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l6 6-6 6"/></svg>
+        </button>
+      </sc-for>
+    </div>
+    <button type="button" class="press up" style="animation-delay: .15s; margin-top: 12px; width: 100%; height: 56px; border: 0; border-radius: 22px; background: #fbfaf6; color: #b4232e; font-size: 16px; font-weight: 600">Logg ut</button>
+    <p style="margin: 16px 0 0; text-align: center; font-size: 13px; color: #5f635b">Medhold 0.9 · Ikke profesjonell rådgivning</p>
+  </div>
+  </sc-if>
+
+  <!-- LEGG TIL-ARK -->
+  <sc-if value="{{arkApent}}" hint-placeholder-val="{{false}}">
+    <button type="button" class="fade" onClick="{{lukkArk}}" aria-label="Lukk" style="position: absolute; inset: 0; border: 0; background: rgba(13,13,18,.32)"></button>
+    <div class="sheet" style="position: absolute; left: 0; right: 0; bottom: 0; background: #fbfaf6; border-radius: 28px 28px 0 0; padding: 10px 18px 34px">
+      <div style="width: 38px; height: 5px; border-radius: 3px; background: #cfcabb; margin: 0 auto 18px"></div>
+      <h2 style="margin: 0 4px 14px; font-size: 22px; font-weight: 700; letter-spacing: -0.02em">Legg til brev</h2>
+      <sc-for list="{{arkValg}}" as="v" hint-placeholder-count="3">
+        <button type="button" class="press" onClick="{{v.go}}" style="width: 100%; min-height: 58px; border: 0; background: transparent; color: #16201e; display: flex; align-items: center; gap: 14px; padding: 0 4px; font-size: 17px; font-weight: 500; text-align: left">
+          <span style="width: 42px; height: 42px; border-radius: 50%; background: #ebe7dc; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">{{v.tegn}}</span>
+          {{v.navn}}
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- TAB BAR -->
+  <sc-if value="{{visTabs}}" hint-placeholder-val="{{true}}">
+  
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(...args) {
+super(...args);
+this.state = { screen: 'hjem', dir: 'fwd', n: 0, step: 0, typed: 0, copied: false, ark: false, sakTab: 'oversikt', varsler: true };
+this.timers = [];
+this.FULL = 'Hei,\n\nJeg har mottatt betalingsoppfordring datert 28. oktober og er uenig i deler av kravet.\n\nInkassosalæret er oppgitt til 900 kr. Høyeste lovlige sats er 750 kr. Jeg ber derfor om at 150 kr fjernes fra kravet.\n\nJeg ber om skriftlig svar innen 14 dager.\n\nVennlig hilsen\nTobias Oskarsen';
+}
+componentDidMount() { this.enter('hjem', 'fwd'); }
+componentWillUnmount() { this.clearAll(); }
+clearAll() { this.timers.forEach((t) => { clearTimeout(t); clearInterval(t); }); this.timers = []; }
+later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+count(to, ms) {
+const t0 = Date.now();
+const id = setInterval(() => {
+const p = Math.min(1, (Date.now() - t0) / ms);
+this.setState({ n: to * (1 - Math.pow(1 - p, 4)) });
+if (p >= 1) clearInterval(id);
+}, 16);
+this.timers.push(id);
+}
+enter(screen, dir) {
+this.clearAll();
+this.setState({ screen: screen, dir: dir || 'fwd', n: 0, step: 0, typed: 0, copied: false, ark: false, sakTab: 'oversikt' });
+if (screen === 'hjem') this.count(9459.2, 900);
+if (screen === 'sak') this.count(3258.9, 800);
+if (screen === 'leser') {
+this.later(() => this.setState({ step: 1 }), 800);
+this.later(() => this.setState({ step: 2 }), 1600);
+this.later(() => this.setState({ step: 3 }), 2400);
+this.later(() => this.enter('sak', 'fwd'), 2900);
+}
+if (screen === 'utkast') {
+this.later(() => {
+const id = setInterval(() => {
+const next = this.state.typed + 2;
+this.setState({ typed: next });
+if (next >= this.FULL.length) clearInterval(id);
+}, 16);
+this.timers.push(id);
+}, 700);
+}
+}
+renderVals() {
+const s = this.state;
+const nok = (v) => new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+const tint = { indigo: 'background:#dcebe5;color:#103c38', amber: 'background:#fff1db;color:#8a5300', teal: 'background:#e3f5f2;color:#0f6b5f', rose: 'background:#fde8ea;color:#b4232e' };
+const go = (sc) => () => this.enter(sc, 'fwd');
+const rad = (bokstav, navn, status, belop, farge, ikon, d, open) => ({ bokstav, navn, status, belop, farge, ikonStil: tint[ikon], stil: 'animation-delay:' + d + 's', open });
+const andre = [
+rad('N', 'Nordkapp Inkasso', 'Frist om 5 dager', '4 912,30 kr', '#5f635b', 'amber', 0, go('sak')),
+rad('B', 'Bølgen Kreditt', 'Venter på svar', '1 288,00 kr', '#5f635b', 'teal', 0, go('sak'))
+];
+const alle = [
+rad('F', 'Fjelltopp Inkasso', 'Svarfrist i morgen', '3 258,90 kr', '#b4232e', 'indigo', 0.04, go('sak')),
+rad('N', 'Nordkapp Inkasso', 'Frist om 5 dager', '4 912,30 kr', '#5f635b', 'amber', 0.09, go('sak')),
+rad('B', 'Bølgen Kreditt', 'Venter på svar', '1 288,00 kr', '#5f635b', 'teal', 0.14, go('sak')),
+rad('S', 'Skogbrukets Finans', 'Medhold – kravet er frafalt', '0,00 kr', '#0f6b5f', 'rose', 0.19, go('sak'))
+];
+const hurtig = [
+{ navn: 'Skann', kamera: true, go: go('leser'), stil: 'animation-delay:.02s' },
+{ navn: 'Last opp', fil: true, go: go('leser'), stil: 'animation-delay:.05s' },
+{ navn: 'Lim inn', tekst: true, go: go('leser'), stil: 'animation-delay:.08s' },
+{ navn: 'Spør', spor: true, go: go('sak'), stil: 'animation-delay:.11s' }
+];
+const tekster = ['Finner beløp og datoer', 'Sjekker gebyrer mot loven', 'Beregner fristen'];
+const steg = tekster.map((t, i) => ({ tekst: t, ferdig: s.step > i, aktiv: s.step === i, venter: s.step < i, farge: s.step >= i ? '#16201e' : '#6b6f66' }));
+const arkValg = [
+{ navn: 'Ta bilde', tegn: 'Kam', go: go('leser') },
+{ navn: 'Last opp fil', tegn: 'PDF', go: go('leser') },
+{ navn: 'Lim inn tekst', tegn: 'Aa', go: go('leser') }
+];
+
+const fane = (id, navn) => ({ navn, aktiv: s.sakTab === id, go: () => this.setState({ sakTab: id }), stil: s.sakTab === id ? 'background:#fbfaf6;color:#16201e;font-weight:600;box-shadow:0 1px 3px rgba(22,32,30,.14)' : 'background:transparent;color:#5f635b;font-weight:500' });
+const sakFaner = [fane('oversikt', 'Oversikt'), fane('dok', 'Dokumenter'), fane('hist', 'Historikk')];
+const dokumenter = [{ navn: 'Betalingsoppfordring', dato: '28. oktober' }, { navn: 'Purring', dato: '6. oktober' }];
+const historikk = [{ tittel: 'Du la til betalingsoppfordringen', dato: '11. november', farge: '#103c38' }, { tittel: 'Brev mottatt: betalingsoppfordring', dato: '28. oktober', farge: '#6b6f66' }, { tittel: 'Brev mottatt: purring', dato: '6. oktober', farge: '#6b6f66' }];
+const megRader = ['Satsene vi bruker', 'Alle brev', 'Kontakt support', 'Personvern og data'].map((n, i) => ({ navn: n, linje: i === 0 ? 'none' : '1px solid #e3dfd3' }));
+const skriver = s.screen === 'utkast' && s.typed < this.FULL.length;
+return {
+sakFaner, dokumenter, historikk, megRader, sakOversikt: s.sakTab === 'oversikt', sakDok: s.sakTab === 'dok', sakHist: s.sakTab === 'hist', varsler: s.varsler, varslerBg: s.varsler ? '#103c38' : '#cfcabb', knappX: s.varsler ? 20 : 0, byttVarsler: () => this.setState({ varsler: !s.varsler }), goMeg: () => this.enter('meg', 'fwd'), isHjem: s.screen === 'hjem', isSaker: s.screen === 'saker', isSak: s.screen === 'sak',
+isLeser: s.screen === 'leser', isMeg: s.screen === 'meg', isUtkast: s.screen === 'utkast',
+anim: s.dir === 'back' ? 'back' : 'fwd',
+visTabs: s.screen === 'hjem' || s.screen === 'saker',
+tabHjem: s.screen === 'hjem' ? '#103c38' : '#6b6f66',
+tabSaker: s.screen === 'saker' ? '#103c38' : '#6b6f66',
+totalTall: nok(s.n), sakTall: nok(s.n),
+andre, alle, hurtig, steg, arkValg,
+arkApent: s.ark,
+brevTekst: this.FULL.slice(0, s.typed),
+skriver, ferdigSkrevet: s.screen === 'utkast' && !skriver,
+kopiert: s.copied, kopiTekst: s.copied ? 'Kopiert' : 'Kopier',
+goHjem: () => this.enter('hjem', 'back'),
+goHjemTilbake: () => this.enter('hjem', 'back'),
+goSaker: () => this.enter('saker', 'fwd'),
+goSak: go('sak'),
+goSakTilbake: () => this.enter('sak', 'back'),
+goUtkast: go('utkast'),
+apneArk: () => this.setState({ ark: true }),
+lukkArk: () => this.setState({ ark: false }),
+kopier: () => { this.setState({ copied: true }); this.later(() => this.setState({ copied: false }), 1600); }
+};
+}
+}
+</script>
+</body>
+</html>
