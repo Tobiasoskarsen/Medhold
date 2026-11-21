@@ -6,7 +6,7 @@ export { Belop } from "./Belop";
 export { Skjelett } from "./Skjelett";
 export { Primærknapp } from "./Primaerknapp";
 export { Pillknapp } from "./Pillknapp";
-export { Pill } from "./Pill";
+export { Pill, VurderingPill } from "./Pill";
 export { BunnNav } from "./BunnNav";
 export { StadiumIndikator } from "./StadiumIndikator";
 export { Trapp } from "./Trapp";
