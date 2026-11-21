@@ -5,7 +5,7 @@ import { Avkrysning } from "@/components/ui/Avkrysning";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, m } from "motion/react";
-import { X, Camera, Upload, Type, Trash2 } from "lucide-react";
+import { X, Camera, Trash2 } from "lucide-react";
 import { Kort, Primærknapp } from "@/components/ui";
 import { Bevegelsesramme } from "@/components/Bevegelsesramme";
 import { VARIGHET, EASING, FJAER, STEG_GLID } from "@/lib/bevegelse";
@@ -121,12 +121,9 @@ function StegIndikator({ steg }: { steg: 1 | 2 | 3 }) {
 export function LeggTilBrevFlyt({
   krav,
   forvalgtKrav,
-  startInntak = null,
 }: {
   krav: KravValg[];
   forvalgtKrav: string | null;
-  /** Hurtigraden på Hjem: «tekst» åpner tekstfeltet; kamera og fil fremhever kortet. */
-  startInntak?: "kamera" | "fil" | "tekst" | null;
 }) {
   const router = useRouter();
   const [steg, setSteg] = useState<1 | 2 | 3>(1);
@@ -140,7 +137,7 @@ export function LeggTilBrevFlyt({
     stegRef.current = neste;
     setSteg(neste);
   }
-  const [inntak, setInntak] = useState<Inntak>(startInntak === "tekst" ? "tekst" : "valg");
+  const [inntak, setInntak] = useState<Inntak>("valg");
   const [tekst, setTekst] = useState("");
   const [bilder, setBilder] = useState<KlarFil[]>([]);
   const [klargjor, setKlargjor] = useState(false);
@@ -593,31 +590,21 @@ export function LeggTilBrevFlyt({
 
           {inntak === "valg" && (
             <>
-              <p className="mt-1.5 text-hjelp leading-relaxed text-dempet">
-                Velg hvordan du vil legge inn brevet.
-              </p>
-              <div className="mt-5 flex flex-col gap-2.5">
-                <InntakKort
-                  ikon={<Camera className="size-5" aria-hidden />}
-                  tittel="Ta bilde"
-                  tekst="Fotografer brevet med kameraet"
-                  fremhevet={startInntak === "kamera"}
-                  onClick={() => kameraInput.current?.click()}
-                />
-                <InntakKort
-                  ikon={<Upload className="size-5" aria-hidden />}
-                  tittel="Last opp fil"
-                  tekst={`Bilde eller PDF (PDF: maks ${MAKS_PDF_TEKST} og ${MAKS_PDF_SIDER} sider)`}
-                  fremhevet={startInntak === "fil"}
-                  onClick={() => filInput.current?.click()}
-                />
-                <InntakKort
-                  ikon={<Type className="size-5" aria-hidden />}
-                  tittel="Lim inn tekst"
-                  tekst="Skriv eller lim inn teksten selv"
-                  onClick={() => setInntak("tekst")}
-                />
+              <div className="mt-6 flex flex-col gap-3">
+                <Primærknapp onClick={() => kameraInput.current?.click()}>
+                  <Camera className="mr-2 size-5" aria-hidden />
+                  Ta bilde
+                </Primærknapp>
+                <Primærknapp variant="stille" onClick={() => filInput.current?.click()}>
+                  Last opp fil
+                </Primærknapp>
+                <Primærknapp variant="stille" onClick={() => setInntak("tekst")}>
+                  Lim inn tekst
+                </Primærknapp>
               </div>
+              <p className="mt-4 text-center text-meta text-dempet">
+                PDF: maks {MAKS_PDF_TEKST} og {MAKS_PDF_SIDER} sider.
+              </p>
               {feil && <p className="mt-4 text-hjelp text-dom-rod">{feil}</p>}
             </>
           )}
@@ -1200,36 +1187,5 @@ export function LeggTilBrevFlyt({
       </AnimatePresence>
     </m.main>
     </Bevegelsesramme>
-  );
-}
-
-function InntakKort({
-  ikon,
-  tittel,
-  tekst,
-  fremhevet = false,
-  onClick,
-}: {
-  ikon: React.ReactNode;
-  tittel: string;
-  tekst: string;
-  /** Valgt i hurtigraden på Hjem. Nettleseren tillater ikke å åpne filvelgeren uten et trykk. */
-  fremhevet?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-3.5 rounded-kontroll border bg-flate px-4 py-4 text-left transition hover:border-aksent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksent ${fremhevet ? "border-aksent ring-2 ring-aksent/30" : "border-strek"}`}
-    >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-aksent/10 text-aksent">
-        {ikon}
-      </span>
-      <span>
-        <span className="block text-sm font-medium text-blekk">{tittel}</span>
-        <span className="block text-hjelp text-dempet">{tekst}</span>
-      </span>
-    </button>
   );
 }
