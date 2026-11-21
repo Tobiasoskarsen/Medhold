@@ -404,3 +404,16 @@ body {
 .detaljrad > summary::after { content: ''; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); margin: 0 4px 4px; flex-shrink: 0; }
 .detaljrad[open] > summary::after { transform: rotate(225deg); margin-bottom: 0; }
 .detaljrad[open] { padding-bottom: 12px; }
+
+/* R8b: ingen nettleser-trekant på noen <summary>. Rader som ikke bruker .detaljrad
+   eller .detaljkort får en chevron i stedet, så det fortsatt er synlig at de kan åpnes. */
+summary { list-style: none; }
+summary::-webkit-details-marker { display: none; }
+details:not(.detaljrad):not(.detaljkort) > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+details:not(.detaljrad):not(.detaljkort) > summary::after,
+.detaljkort > summary::after { content: ''; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); margin: 0 4px 4px; flex-shrink: 0; }
+details[open]:not(.detaljrad):not(.detaljkort) > summary::after,
+.detaljkort[open] > summary::after { transform: rotate(225deg); margin-bottom: 0; }
+
+/* R8b: hvit rad med chevron (frist-raden i saksoversikten). */
+.detaljkort > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; cursor: pointer; }
