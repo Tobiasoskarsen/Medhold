@@ -139,7 +139,8 @@ function RenteFelt({
   };
   const felt = `${FELT} text-sm`;
   return (
-    <div className="mb-2 grid grid-cols-2 gap-2 pt-1" role="group" aria-label="Renteperiode og sats">
+    <fieldset className="mb-2 grid grid-cols-2 gap-2 rounded-kontroll border border-strek px-3 pb-3 pt-1">
+      <legend className="px-1 text-meta font-medium text-dempet">Renteperiode og sats</legend>
       <label className="block text-meta text-dempet">
         Fra dato
         <input type="date" value={linje.renteFra ?? ""} onChange={(e) => sett("renteFra", e.target.value)} className={`${felt} mt-1`} />
@@ -161,7 +162,7 @@ function RenteFelt({
           className={`${felt} mt-1`}
         />
       </label>
-    </div>
+    </fieldset>
   );
 }
 

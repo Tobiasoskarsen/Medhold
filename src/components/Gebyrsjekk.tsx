@@ -10,11 +10,11 @@ import {
 } from "@/lib/gebyr";
 import { NavLenke as Link } from "@/components/NavLenke";
 import { Kort } from "@/components/ui/Kort";
+import { VurderingPill } from "@/components/ui/Pill";
 import { Dom } from "@/components/Dom";
 import { Utregning } from "@/components/Utregning";
 import { formaterDato } from "@/lib/dato";
 import { formaterKr } from "@/lib/format";
-import { VURDERING_PILL } from "@/lib/gebyrfunn-visning";
 
 function kr(belop: number): string {
   return formaterKr(belop);
@@ -106,7 +106,6 @@ export function Gebyrsjekk({
 
           <ul className={harOver ? "space-y-3" : "mt-3 space-y-3"}>
             {rest.map((l, i) => {
-              const pill = VURDERING_PILL[l.vurdering];
               return (
                 <li
                   key={i}
@@ -117,9 +116,7 @@ export function Gebyrsjekk({
                       {KOSTNADSTYPE_ETIKETT[l.linje.type]}
                       <span className="text-dempet"> · {kr(l.linje.belop)} kr</span>
                     </span>
-                    <span className={`inline-block shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${pill.klasse}`}>
-                      {pill.tekst(l)}
-                    </span>
+                    <VurderingPill resultat={l} />
                   </div>
                   {l.vurdering !== "innenfor" && (
                     <p className="mt-1.5 text-hjelp text-dempet">{l.forklaring}</p>

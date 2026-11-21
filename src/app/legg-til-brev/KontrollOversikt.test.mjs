@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 import {renderToStaticMarkup} from 'react-dom/server';
 import ts from 'typescript';
 const require=createRequire(import.meta.url);
-function load(file){const out={};const js=ts.transpileModule(readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports',js)(name=>name==='next/image'?{default:'img'}:name==='@/components/Dom'?DOM_STUB:name.startsWith('@/lib/')?require('../../lib/'+name.slice(6)+'.ts'):require(name),out);return out;}
+function load(file){const out={};const js=ts.transpileModule(readFileSync(new URL(file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports',js)(name=>name==='next/image'?{default:'img'}:name==='@/components/Dom'?DOM_STUB:name==='@/components/ui/Pill'?load('../../components/ui/Pill.tsx'):name.startsWith('@/lib/')?require('../../lib/'+name.slice(6)+'.ts'):require(name),out);return out;}
 const DOM_STUB={FunnListe:({children})=>children,DomMini:()=>'[GEBYRFUNNKORT]',DomMiniSum:({avvik})=>`[SUMKORT ${avvik.differanse}]`};
 const {KontrollOversikt}=load('./KontrollOversikt.tsx');
 const {BrevReferanse}=load('./BrevReferanse.tsx');

@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { DomMini, DomMiniSum, FunnListe } from "@/components/Dom";
 import { KOSTNADSTYPE_ETIKETT, type GebyrsjekkResultat } from "@/lib/gebyr";
-import { gebyrsjekkSetning, kr, sumOverTotalTekst, VURDERING_PILL } from "@/lib/gebyrfunn-visning";
+import { VurderingPill } from "@/components/ui/Pill";
+import { gebyrsjekkSetning, kr, sumOverTotalTekst } from "@/lib/gebyrfunn-visning";
 import { sumavvikFra, type Sumkontroll } from "@/lib/sumkontroll";
 
 /**
@@ -43,16 +44,13 @@ export function KontrollOversikt({ resultat, sumkontroll, children }: {
         {linjer.length > 0 && (
           <ul className="mt-3 divide-y divide-strek">
             {linjer.map((linje, i) => {
-              const pill = VURDERING_PILL[linje.vurdering];
               return (
                 <li key={i} className="py-3 first:pt-0 last:pb-0">
                   <div className="flex items-center justify-between gap-3">
                     <span className="min-w-0 text-hjelp text-blekk">
                       {KOSTNADSTYPE_ETIKETT[linje.linje.type]} · {kr(linje.linje.belop)} kr
                     </span>
-                    <span className={`inline-block shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${pill.klasse}`}>
-                      {pill.tekst(linje)}
-                    </span>
+                    <VurderingPill resultat={linje} />
                   </div>
                   {linje.vurdering === "mulig_over" && (
                     <p className="mt-1 text-hjelp text-dempet">{linje.forklaring}</p>
