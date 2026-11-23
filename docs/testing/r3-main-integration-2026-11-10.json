@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-11-10T18:06:20.3104008Z",
+  "candidate": "9cfbb17e804af9028001a205bb18ddbaaac1c0c4",
+  "prs": [
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62
+  ],
+  "method": "merge commits, ancestry preserved",
+  "guardOnMain": true,
+  "productionDeploymentUnchanged": "dpl_Eu9RXYU4oUVgkyuQBGSYTQnvRtt3",
+  "productionMigrationsRun": false,
+  "productionDeployRun": false,
+  "candidateDiffFromTestedBranch": "vercel.json: main automatic Git deployments disabled",
+  "ci": "https://github.com/Tobiasoskarsen/Medhold/actions/runs/42871499686",
+  "integration": "https://github.com/Tobiasoskarsen/Medhold/actions/runs/42871540608",
+  "integrationStatus": "success: 20/20, cleanup=true, authenticated user JWT, correct test project",
+  "ciStatus": "success",
+  "artifact": "r3-github-integration-42871540608/r2-supabase-resultat.json"
+}
